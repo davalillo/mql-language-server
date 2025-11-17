@@ -26,7 +26,8 @@
     <PackageReference Include="Serilog" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.10" PrivateAssets="All" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
 
@@ -34,6 +35,17 @@
     <None Update="README.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <!-- ANTLR Grammar Generation -->
+  <ItemGroup>
+    <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <Listener>true</Listener>
+      <Visitor>true</Visitor>
+      <Package>Mql4Grammar</Package>
+      <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
+    </Antlr4>
   </ItemGroup>
 
 </Project>
