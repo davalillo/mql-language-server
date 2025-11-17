@@ -55,26 +55,26 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - [x] 3.1.4 Compilar modelos sin errores
 
 ### 3.2 ANTLR Grammar Definition
-- [ ] 3.2.1 Crear gramática MQL4 (`Mql4/Grammar/Mql4Grammar.g4`)
-- [ ] 3.2.2 Definir lexer rules (keywords, identifiers, numbers, strings)
-- [ ] 3.2.3 Definir parser rules (functions, variables, includes, directives)
-- [ ] 3.2.4 Configurar modo de comentarios y whitespace
-- [ ] 3.2.5 Configurar canales para tokens ocultos
+- [x] 3.2.1 Crear gramática MQL4 (`Mql4/Grammar/Mql4Grammar.g4`)
+- [x] 3.2.2 Definir lexer rules (keywords, identifiers, numbers, strings)
+- [x] 3.2.3 Definir parser rules (functions, variables, includes, directives)
+- [x] 3.2.4 Configurar modo de comentarios y whitespace
+- [x] 3.2.5 Configurar canales para tokens ocultos
 
 ### 3.3 ANTLR Parser Implementation
-- [ ] 3.3.1 Generar parser/lexer C# desde gramática
-- [ ] 3.3.2 Crear `Parser/Mql4AntlrParser.cs`
-- [ ] 3.3.3 Implementar ParseFile method usando ANTLR
-- [ ] 3.3.4 Implementar visitor/listener pattern
-- [ ] 3.3.5 Implementar FindSymbolAtPosition con AST
-- [ ] 3.3.6 Probar parser con código de ejemplo
+- [x] 3.3.1 Generar parser/lexer C# desde gramática
+- [x] 3.3.2 Crear `Parser/Mql4AntlrParser.cs`
+- [x] 3.3.3 Implementar ParseFile method usando ANTLR
+- [x] 3.3.4 Implementar visitor/listener pattern
+- [x] 3.3.5 Implementar FindSymbolAtPosition con AST
+- [x] 3.3.6 Probar parser con código de ejemplo
 
 ### 3.4 MQL4 Builtins
-- [ ] 3.4.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
-- [ ] 3.4.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
-- [ ] 3.4.3 Añadir variables built-in (Ask, Bid, Point, etc.)
-- [ ] 3.4.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
-- [ ] 3.4.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
+- [x] 3.4.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
+- [x] 3.4.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
+- [x] 3.4.3 Añadir variables built-in (Ask, Bid, Point, etc.)
+- [x] 3.4.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
+- [x] 3.4.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
 
 ### 3.5 LSP Server Core
 - [ ] 3.5.1 Crear `Lsp/Server/Mql4LspServer.cs`
@@ -285,8 +285,8 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 
 - **Total de tareas**: ~200
 - **Fases completadas**: 3/8
-- **Tareas completadas**: 43/200
-- **Progreso**: 21.5%
+- **Tareas completadas**: 58/200
+- **Progreso**: 29%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado
