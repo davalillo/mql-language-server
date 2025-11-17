@@ -300,7 +300,7 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - Estructura de directorios creada (11 carpetas)
 - Proyecto compila y ejecuta correctamente
 
-### ✅ Fase 3: ANTLR PARSER - **COMPLETADA** ✅
+### ✅ Fase 3: ANTLR PARSER - **Subfases 3.1-3.4 COMPLETADAS** ✅
 **Estrategia exitosa**: ANTLR 4.13.1 con Antlr4BuildTasks 12.10
 - ✅ **3.1 Modelos de Datos**: Mql4Symbol, Mql4SymbolKind, Mql4File creados
 - ✅ **3.2 Gramática MQL4**: Mql4Grammar.g4 creada (simplificada, funcional)
@@ -311,7 +311,10 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
   - FindSymbolAtPosition implementado
   - Completions con 98 builtins
 - ✅ **3.4 MQL4 Builtins**: 50+ funciones, 8 variables predefinidas
-- ✅ **3.5-3.8 LSP Core**: Pendiente (fase siguiente)
+- 🔄 **3.5 LSP Server Core**: Pendiente (siguiente tarea)
+- ⏳ **3.6 LSP Handlers**: Pendiente
+- ⏳ **3.7 Program Entry Point**: Pendiente
+- ⏳ **3.8 Compilación**: Pendiente
 - ✅ **3.9 Test Parser**: ✅ **FUNCIONANDO** - 13 símbolos parseados correctamente
 
 ---
