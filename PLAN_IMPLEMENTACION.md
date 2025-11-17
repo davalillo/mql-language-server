@@ -49,10 +49,10 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 🏗️ Fase 3: Implementación del Código LSP
 
 ### 3.1 Modelos de Datos
-- [ ] 3.1.1 Crear `Models/Symbol.cs` (Mql4Symbol class)
-- [ ] 3.1.2 Crear `Models/SymbolKind.cs` (Mql4SymbolKind constants)
-- [ ] 3.1.3 Crear `Models/Mql4File.cs` (Mql4File class)
-- [ ] 3.1.4 Compilar modelos sin errores
+- [x] 3.1.1 Crear `Models/Symbol.cs` (Mql4Symbol class)
+- [x] 3.1.2 Crear `Models/SymbolKind.cs` (Mql4SymbolKind constants)
+- [x] 3.1.3 Crear `Models/Mql4File.cs` (Mql4File class)
+- [x] 3.1.4 Compilar modelos sin errores
 
 ### 3.2 Parser MQL4
 - [ ] 3.2.1 Crear `Parser/Mql4Parser.cs`
