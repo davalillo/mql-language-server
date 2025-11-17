@@ -1,0 +1,37 @@
+# Build outputs
+bin/
+obj/
+dist/
+publish/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Rider
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+# NuGet packages
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Testing
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# macOS
+.DS_Store
