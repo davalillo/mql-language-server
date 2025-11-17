@@ -55,22 +55,22 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - [x] 3.1.4 Compilar modelos sin errores
 
 ### 3.2 Parser MQL4
-- [x] 3.2.1 Crear `Parser/Mql4Parser.cs`
-- [x] 3.2.2 Implementar regex patterns para funciones, variables, includes
-- [x] 3.2.3 Implementar ParseFile method
-- [x] 3.2.4 Implementar ParseFunctions method
-- [x] 3.2.5 Implementar ParseVariables method
-- [x] 3.2.6 Implementar ParseIncludes method
-- [x] 3.2.7 Implementar CalculateFullRange method
-- [x] 3.2.8 Implementar FindSymbolAtPosition method
-- [x] 3.2.9 Probar parser con código de ejemplo
+- [ ] 3.2.1 Crear `Parser/Mql4Parser.cs`
+- [ ] 3.2.2 Implementar regex patterns para funciones, variables, includes
+- [ ] 3.2.3 Implementar ParseFile method
+- [ ] 3.2.4 Implementar ParseFunctions method
+- [ ] 3.2.5 Implementar ParseVariables method
+- [ ] 3.2.6 Implementar ParseIncludes method
+- [ ] 3.2.7 Implementar CalculateFullRange method
+- [ ] 3.2.8 Implementar FindSymbolAtPosition method
+- [ ] 3.2.9 Probar parser con código de ejemplo
 
 ### 3.3 MQL4 Builtins
-- [x] 3.3.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
-- [x] 3.3.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
-- [x] 3.3.3 Añadir variables built-in (Ask, Bid, Point, etc.)
-- [x] 3.3.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
-- [x] 3.3.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
+- [ ] 3.3.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
+- [ ] 3.3.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
+- [ ] 3.3.3 Añadir variables built-in (Ask, Bid, Point, etc.)
+- [ ] 3.3.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
+- [ ] 3.3.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
 
 ### 3.4 LSP Server Core
 - [ ] 3.4.1 Crear `Lsp/Server/Mql4LspServer.cs`
@@ -280,9 +280,9 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 📊 Resumen de Estado
 
 - **Total de tareas**: ~200
-- **Fases completadas**: 3/8
-- **Tareas completadas**: 41/200
-- **Progreso**: 20.5%
+- **Fases completadas**: 2/8
+- **Tareas completadas**: 26/200
+- **Progreso**: 13%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado
@@ -295,12 +295,6 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - Configurado .NET 8 con dependencias OmniSharp
 - Estructura de directorios creada (11 carpetas)
 - Proyecto compila y ejecuta correctamente
-
-### ✅ Fase 3: En progreso (3.1 y 3.2-3.3 completadas)
-- **3.1 Modelos**: Mql4Symbol, Mql4SymbolKind, Mql4File
-- **3.2 Parser**: Mql4Parser con regex patterns, ParseFile, ParseFunctions, ParseVariables, etc.
-- **3.3 Builtins**: Mql4Builtins con 50+ funciones y variables predefinidas
-- **Test exitoso**: Parseó 61 símbolos (3 funciones + 58 builtins)
 
 ---
 
