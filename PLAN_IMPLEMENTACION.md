@@ -54,67 +54,71 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - [x] 3.1.3 Crear `Models/Mql4File.cs` (Mql4File class)
 - [x] 3.1.4 Compilar modelos sin errores
 
-### 3.2 Parser MQL4
-- [ ] 3.2.1 Crear `Parser/Mql4Parser.cs`
-- [ ] 3.2.2 Implementar regex patterns para funciones, variables, includes
-- [ ] 3.2.3 Implementar ParseFile method
-- [ ] 3.2.4 Implementar ParseFunctions method
-- [ ] 3.2.5 Implementar ParseVariables method
-- [ ] 3.2.6 Implementar ParseIncludes method
-- [ ] 3.2.7 Implementar CalculateFullRange method
-- [ ] 3.2.8 Implementar FindSymbolAtPosition method
-- [ ] 3.2.9 Probar parser con código de ejemplo
+### 3.2 ANTLR Grammar Definition
+- [ ] 3.2.1 Crear gramática MQL4 (`Mql4/Grammar/Mql4Grammar.g4`)
+- [ ] 3.2.2 Definir lexer rules (keywords, identifiers, numbers, strings)
+- [ ] 3.2.3 Definir parser rules (functions, variables, includes, directives)
+- [ ] 3.2.4 Configurar modo de comentarios y whitespace
+- [ ] 3.2.5 Configurar canales para tokens ocultos
 
-### 3.3 MQL4 Builtins
-- [ ] 3.3.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
-- [ ] 3.3.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
-- [ ] 3.3.3 Añadir variables built-in (Ask, Bid, Point, etc.)
-- [ ] 3.3.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
-- [ ] 3.3.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
+### 3.3 ANTLR Parser Implementation
+- [ ] 3.3.1 Generar parser/lexer C# desde gramática
+- [ ] 3.3.2 Crear `Parser/Mql4AntlrParser.cs`
+- [ ] 3.3.3 Implementar ParseFile method usando ANTLR
+- [ ] 3.3.4 Implementar visitor/listener pattern
+- [ ] 3.3.5 Implementar FindSymbolAtPosition con AST
+- [ ] 3.3.6 Probar parser con código de ejemplo
 
-### 3.4 LSP Server Core
-- [ ] 3.4.1 Crear `Lsp/Server/Mql4LspServer.cs`
-- [ ] 3.4.2 Implementar InitializeAsync method
-- [ ] 3.4.3 Implementar InitializedAsync method
-- [ ] 3.4.4 Implementar InitializeHandlers method
-- [ ] 3.4.5 Configurar ServerCapabilities
+### 3.4 MQL4 Builtins
+- [ ] 3.4.1 Crear `Mql4/Builtins/Mql4Builtins.cs`
+- [ ] 3.4.2 Añadir funciones built-in (OnInit, OnTick, OrderSend, etc.)
+- [ ] 3.4.3 Añadir variables built-in (Ask, Bid, Point, etc.)
+- [ ] 3.4.4 Implementar métodos de verificación (IsBuiltinFunction, IsBuiltinVariable)
+- [ ] 3.4.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
 
-### 3.5 LSP Handlers
-- [ ] 3.5.1 Crear `Lsp/Handlers/DocumentSymbolHandler.cs`
+### 3.5 LSP Server Core
+- [ ] 3.5.1 Crear `Lsp/Server/Mql4LspServer.cs`
+- [ ] 3.5.2 Implementar InitializeAsync method
+- [ ] 3.5.3 Implementar InitializedAsync method
+- [ ] 3.5.4 Implementar InitializeHandlers method
+- [ ] 3.5.5 Configurar ServerCapabilities
+
+### 3.6 LSP Handlers
+- [ ] 3.6.1 Crear `Lsp/Handlers/DocumentSymbolHandler.cs`
   - [ ] Implementar HandleAsync
   - [ ] Implementar ConvertToDocumentSymbol
-- [ ] 3.5.2 Crear `Lsp/Handlers/DefinitionHandler.cs`
+- [ ] 3.6.2 Crear `Lsp/Handlers/DefinitionHandler.cs`
   - [ ] Implementar HandleAsync
-- [ ] 3.5.3 Crear `Lsp/Handlers/ReferencesHandler.cs`
+- [ ] 3.6.3 Crear `Lsp/Handlers/ReferencesHandler.cs`
   - [ ] Implementar HandleAsync
-- [ ] 3.5.4 Crear `Lsp/Handlers/CompletionHandler.cs`
+- [ ] 3.6.4 Crear `Lsp/Handlers/CompletionHandler.cs`
   - [ ] Implementar HandleAsync
   - [ ] Implementar GetKeywordCompletions
   - [ ] Implementar GetBuiltinCompletions
   - [ ] Implementar GetSymbolCompletions
-- [ ] 3.5.5 Crear `Lsp/Handlers/HoverHandler.cs`
+- [ ] 3.6.5 Crear `Lsp/Handlers/HoverHandler.cs`
   - [ ] Implementar HandleAsync
-- [ ] 3.5.6 Crear `Lsp/Handlers/DidOpenTextDocumentHandler.cs`
+- [ ] 3.6.6 Crear `Lsp/Handlers/DidOpenTextDocumentHandler.cs`
   - [ ] Implementar HandleAsync
-- [ ] 3.5.7 Crear `Lsp/Handlers/DidCloseTextDocumentHandler.cs`
+- [ ] 3.6.7 Crear `Lsp/Handlers/DidCloseTextDocumentHandler.cs`
   - [ ] Implementar HandleAsync
-- [ ] 3.5.8 Crear `Lsp/Handlers/DidChangeTextDocumentHandler.cs`
+- [ ] 3.6.8 Crear `Lsp/Handlers/DidChangeTextDocumentHandler.cs`
   - [ ] Implementar HandleAsync
   - [ ] Implementar ApplyChanges
 
-### 3.6 Program Entry Point
-- [ ] 3.6.1 Editar `Program.cs`
-- [ ] 3.6.2 Configurar Serilog logger
-- [ ] 3.6.3 Crear stdio connection
-- [ ] 3.6.4 Crear instancia de Mql4LspServer
-- [ ] 3.6.5 Registrar handlers
-- [ ] 3.6.6 Configurar start/stop listening
+### 3.7 Program Entry Point
+- [ ] 3.7.1 Editar `Program.cs`
+- [ ] 3.7.2 Configurar Serilog logger
+- [ ] 3.7.3 Crear stdio connection
+- [ ] 3.7.4 Crear instancia de Mql4LspServer
+- [ ] 3.7.5 Registrar handlers
+- [ ] 3.7.6 Configurar start/stop listening
 
-### 3.7 Compilación y Verificación
-- [ ] 3.7.1 Compilar proyecto (`dotnet build -c Release`)
-- [ ] 3.7.2 Verificar que no hay errores de compilación
-- [ ] 3.7.3 Verificar warnings resueltos
-- [ ] 3.7.4 Probar ejecución básica del LSP
+### 3.8 Compilación y Verificación
+- [ ] 3.8.1 Compilar proyecto (`dotnet build -c Release`)
+- [ ] 3.8.2 Verificar que no hay errores de compilación
+- [ ] 3.8.3 Verificar warnings resueltos
+- [ ] 3.8.4 Probar ejecución básica del LSP
 
 ---
 
@@ -296,12 +300,18 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - Estructura de directorios creada (11 carpetas)
 - Proyecto compila y ejecuta correctamente
 
+### 🔄 Fase 3: REINICIADA con ANTLR (más robusto para código complejo)
+**Cambio de estrategia**: Revertido parser regex → Implementación ANTLR
+- **Motivo**: Proyecto con código MQL4 complejo requiere parser robusto
+- **Ventajas ANTLR**: Gramática formal, AST preciso, mejor para LSP
+- **Estado actual**: 3.1 Modelos completados, 3.2-3.4 pendientes
+
 ---
 
 ## 🎯 Próximos Pasos
 
-1. **Confirmar plan** con el usuario
-2. **Comenzar Fase 2** (si Fase 1 completada)
-3. **Actualizar progreso** después de cada fase
-4. **Documentar blockers** si los hay
-5. **Validar completitud** al final de cada fase
+1. **Iniciar Fase 3.2**: Crear gramática MQL4 (.g4)
+2. **Generar parser**: Usar ANTLR para crear lexer/parser C#
+3. **Implementar visitor**: Patrón visitor para extraer símbolos
+4. **Probar con código complejo**: Validar en casos reales
+5. **Continuar con LSP handlers**
