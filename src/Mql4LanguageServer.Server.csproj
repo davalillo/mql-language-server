@@ -26,7 +26,6 @@
     <!-- Only publish as self-contained when NOT packing for NuGet -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>portable</DebugType>
   </PropertyGroup>
