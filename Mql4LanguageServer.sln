@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mql4LanguageServer.Server", "src\Mql4LanguageServer.Server.csproj", "{1F9246E2-86C5-4FF6-9D33-276F027CE1DE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mql4LanguageServer.Tests", "tests\Mql4LanguageServer.Tests.csproj", "{5EC17AEE-EDBC-42E7-9198-E98DE87E03A7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{1F9246E2-86C5-4FF6-9D33-276F027CE1DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F9246E2-86C5-4FF6-9D33-276F027CE1DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F9246E2-86C5-4FF6-9D33-276F027CE1DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EC17AEE-EDBC-42E7-9198-E98DE87E03A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EC17AEE-EDBC-42E7-9198-E98DE87E03A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EC17AEE-EDBC-42E7-9198-E98DE87E03A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EC17AEE-EDBC-42E7-9198-E98DE87E03A7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
