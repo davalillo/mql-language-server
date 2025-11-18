@@ -216,11 +216,36 @@ Test coverage: 11 tests covering parser, LSP handlers, and edge cases.
 ## CI/CD
 
 Automated builds and releases via GitHub Actions:
-- **Multi-platform builds**: Ubuntu, Windows, macOS
-- **Automated testing**: All tests run on every push/PR
-- **Binary releases**: Standalone binaries uploaded to GitHub Releases
-- **NuGet packaging**: Automatic .nupkg generation
-- **Checksums**: SHA256 checksums for all artifacts
+
+### Workflow Triggers:
+
+**main branch** (fast CI):
+- ✅ Multi-platform builds (Ubuntu, Windows, macOS)
+- ✅ Automated testing (unit tests)
+- ⚡ No artifact generation (faster)
+
+**Tags v\*** (releases):
+- ✅ Multi-platform builds
+- ✅ Automated testing
+- ✅ Binary releases (GitHub Releases)
+- ✅ NuGet packaging
+- ✅ Checksums (SHA256)
+- ✅ Binary validation tests
+
+### Release Process:
+
+```bash
+# Development (main branch)
+git commit -am "feature: new capability"
+git push origin main
+# → Build + Tests (~3-5 minutes)
+
+# Release
+git tag v1.2.0
+git push origin v1.2.0
+# → Build + Tests + Release + Artifacts (~15-20 minutes)
+# → All artifacts uploaded to GitHub Releases automatically
+```
 
 See [.github/workflows/build.yml](.github/workflows/build.yml) for details.
 
@@ -262,7 +287,7 @@ cd mql4-language-server
 ./build.sh
 
 # Test the binary
-./src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server --stdio
+./src/bin/linux-x64/mql4-lsp-server --stdio
 ```
 
 **Windows**:
@@ -272,15 +297,15 @@ cd mql4-language-server
 .\build.ps1
 
 # Test the binary
-.\src\bin\Release\net8.0\publish\win-x64\mql4-lsp-server.exe --stdio
+.\src\bin\win-x64\mql4-lsp-server.exe --stdio
 ```
 
 ### Build Outputs
 
 After building, find binaries in:
-- `src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server`
-- `src/bin/Release/net8.0/publish/osx-x64/mql4-lsp-server`
-- `src/bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe`
+- `src/bin/linux-x64/mql4-lsp-server`
+- `src/bin/osx-x64/mql4-lsp-server`
+- `src/bin/win-x64/mql4-lsp-server.exe`
 
 ## Usage
 
