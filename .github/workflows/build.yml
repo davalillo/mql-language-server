@@ -68,13 +68,13 @@ jobs:
       run: dotnet restore
 
     - name: Build Linux x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/linux-x64/
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o ../bin/linux-x64/
 
     - name: Build macOS x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/osx-x64/
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o ../bin/osx-x64/
 
     - name: Build Windows x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/win-x64/
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o ../bin/win-x64/
 
     - name: Make Linux binary executable
       run: chmod +x bin/linux-x64/mql4-lsp-server
