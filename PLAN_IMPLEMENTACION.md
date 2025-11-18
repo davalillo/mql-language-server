@@ -91,27 +91,39 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - Compilación exitosa
 
 ### 3.6 LSP Handlers
-- [ ] 3.6.1 Crear `Lsp/Handlers/DocumentSymbolHandler.cs`
-  - [ ] Implementar HandleAsync
-  - [ ] Implementar ConvertToDocumentSymbol
-- [ ] 3.6.2 Crear `Lsp/Handlers/DefinitionHandler.cs`
-  - [ ] Implementar HandleAsync
-- [ ] 3.6.3 Crear `Lsp/Handlers/ReferencesHandler.cs`
-  - [ ] Implementar HandleAsync
-- [ ] 3.6.4 Crear `Lsp/Handlers/CompletionHandler.cs`
-  - [ ] Implementar HandleAsync
-  - [ ] Implementar GetKeywordCompletions
-  - [ ] Implementar GetBuiltinCompletions
-  - [ ] Implementar GetSymbolCompletions
-- [ ] 3.6.5 Crear `Lsp/Handlers/HoverHandler.cs`
-  - [ ] Implementar HandleAsync
-- [ ] 3.6.6 Crear `Lsp/Handlers/DidOpenTextDocumentHandler.cs`
-  - [ ] Implementar HandleAsync
-- [ ] 3.6.7 Crear `Lsp/Handlers/DidCloseTextDocumentHandler.cs`
-  - [ ] Implementar HandleAsync
-- [ ] 3.6.8 Crear `Lsp/Handlers/DidChangeTextDocumentHandler.cs`
-  - [ ] Implementar HandleAsync
-  - [ ] Implementar ApplyChanges
+- [x] 3.6.1 Crear `Lsp/Handlers/DocumentSymbolHandler.cs`
+  - [x] Implementar HandleAsync
+  - [x] Implementar ConvertToSymbolInformationOrDocumentSymbol
+- [x] 3.6.2 Crear `Lsp/Handlers/DefinitionHandler.cs`
+  - [x] Implementar HandleAsync
+- [x] 3.6.3 Crear `Lsp/Handlers/ReferencesHandler.cs`
+  - [x] Implementar HandleAsync
+- [x] 3.6.4 Crear `Lsp/Handlers/CompletionHandler.cs`
+  - [x] Implementar HandleAsync
+  - [x] Implementar GetKeywordCompletions
+  - [x] Implementar GetBuiltinCompletions
+  - [x] Implementar GetSymbolCompletions
+- [x] 3.6.5 Crear `Lsp/Handlers/HoverHandler.cs`
+  - [x] Implementar HandleAsync
+- [x] 3.6.6 Crear `Lsp/Handlers/DidOpenTextDocumentHandler.cs`
+  - [x] Implementar HandleAsync
+- [x] 3.6.7 Crear `Lsp/Handlers/DidCloseTextDocumentHandler.cs`
+  - [x] Implementar HandleAsync
+- [x] 3.6.8 Crear `Lsp/Handlers/DidChangeTextDocumentHandler.cs`
+  - [x] Implementar HandleAsync
+  - [x] Implementar ApplyChanges
+
+**✅ COMPLETADO - Fase 3.6: LSP Handlers**
+- DocumentSymbolHandler: Extract functions/variables for outline view
+- DefinitionHandler: Go-to-definition support
+- ReferencesHandler: Find all references within file
+- CompletionHandler: Auto-completion with MQL4 keywords and builtins
+- HoverHandler: Symbol information on mouse hover
+- DidOpenTextDocumentHandler: Document opening handler
+- DidCloseTextDocumentHandler: Document closing handler
+- DidChangeTextDocumentHandler: Document change synchronization
+- Mql4LspServer updated with all handlers registered via MediatR
+- Compilation successful with no errors
 
 ### 3.7 Program Entry Point
 - [ ] 3.7.1 Editar `Program.cs`
@@ -291,9 +303,9 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 📊 Resumen de Estado
 
 - **Total de tareas**: ~200
-- **Fases completadas**: 3.5/8
-- **Tareas completadas**: 63/200
-- **Progreso**: 31%
+- **Fases completadas**: 3.6/8
+- **Tareas completadas**: 71/200
+- **Progreso**: 36%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado
@@ -307,7 +319,7 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - Estructura de directorios creada (11 carpetas)
 - Proyecto compila y ejecuta correctamente
 
-### ✅ Fase 3: ANTLR PARSER - **Subfases 3.1-3.4 COMPLETADAS** ✅
+### ✅ Fase 3: ANTLR PARSER - **Subfases 3.1-3.6 COMPLETADAS** ✅
 **Estrategia exitosa**: ANTLR 4.13.1 con Antlr4BuildTasks 12.10
 - ✅ **3.1 Modelos de Datos**: Mql4Symbol, Mql4SymbolKind, Mql4File creados
 - ✅ **3.2 Gramática MQL4**: Mql4Grammar.g4 creada (simplificada, funcional)
@@ -318,8 +330,14 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
   - FindSymbolAtPosition implementado
   - Completions con 98 builtins
 - ✅ **3.4 MQL4 Builtins**: 50+ funciones, 8 variables predefinidas
-- 🔄 **3.5 LSP Server Core**: Pendiente (siguiente tarea)
-- ⏳ **3.6 LSP Handlers**: Pendiente
+- ✅ **3.5 LSP Server Core**: Mql4LspServer with initialization
+- ✅ **3.6 LSP Handlers**: All 8 handlers implemented successfully
+  - DocumentSymbolHandler: Outline view support
+  - DefinitionHandler: Go-to-definition
+  - ReferencesHandler: Find all references
+  - CompletionHandler: Auto-completion with MQL4 keywords
+  - HoverHandler: Symbol information on hover
+  - TextDocumentSync handlers (open, close, change)
 - ⏳ **3.7 Program Entry Point**: Pendiente
 - ⏳ **3.8 Compilación**: Pendiente
 - ✅ **3.9 Test Parser**: ✅ **FUNCIONANDO** - 13 símbolos parseados correctamente
@@ -328,19 +346,19 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 
 ## 🎯 Próximos Pasos
 
-1. **Continuar con Fase 3.5**: LSP Server Core Implementation
-   - Crear `Lsp/Server/Mql4LspServer.cs`
-   - Implementar InitializeAsync, InitializedAsync
-   - Configurar ServerCapabilities
-2. **Fase 3.6**: Implementar LSP Handlers
-   - DocumentSymbolHandler
-   - DefinitionHandler
-   - ReferencesHandler
-   - CompletionHandler
-   - HoverHandler
-   - Document change handlers
-3. **Fase 3.7**: Program Entry Point
-   - Configurar Serilog
+1. **Fase 3.7**: Program Entry Point
+   - Editar `Program.cs` for LSP server initialization
+   - Configurar Serilog logger
    - Crear stdio connection
-   - Registrar handlers
-4. **Fase 3.8**: Compilación y verificación final
+   - Crear instancia de Mql4LspServer
+   - Registrar handlers via MediatR
+   - Configurar start/stop listening
+2. **Fase 3.8**: Compilación y verificación final
+   - Compilar proyecto (`dotnet build -c Release`)
+   - Verificar que no hay errores de compilación
+   - Probar ejecución básica del LSP
+3. **Fase 4**: Tests Unitarios
+   - Crear proyecto xUnit
+   - Implementar tests del parser
+   - Ejecutar y verificar tests
+4. **Fase 5**: Compilación Standalone para múltiples plataformas
