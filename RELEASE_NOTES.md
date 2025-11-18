@@ -56,7 +56,7 @@ Configure your LSP client to use:
 ### Compatibility
 - **.NET Runtime**: Self-contained (no .NET installation required)
 - **LSP Version**: 3.17
-- **Editors**: VSCode, Neovim, Emacs, Serena (with wrapper)
+- **Editors**: VSCode, Neovim, Emacs (any LSP-compatible editor)
 
 ### Checksums
 See `SHA256SUMS.txt` for binary checksums.
