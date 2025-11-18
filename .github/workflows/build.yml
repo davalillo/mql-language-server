@@ -159,20 +159,33 @@ jobs:
         path: ./
 
     - name: Make binary executable (Unix)
-      if: matrix.os != 'windows-latest'
-      run: chmod +x mql4-lsp-server
+      if: matrix.os == 'ubuntu-latest'
+      run: chmod +x bin/linux-x64/mql4-lsp-server
 
-    - name: Test binary execution
-      run: timeout 3 ./mql4-lsp-server --help || timeout 3 ./mql4-lsp-server --stdio || true
+    - name: Make binary executable (macOS)
+      if: matrix.os == 'macos-latest'
+      run: chmod +x bin/osx-x64/mql4-lsp-server
+
+    - name: Test Linux binary execution
+      if: matrix.os == 'ubuntu-latest'
+      run: timeout 3 ./bin/linux-x64/mql4-lsp-server --help || timeout 3 ./bin/linux-x64/mql4-lsp-server --stdio || true
+      shell: bash
+
+    - name: Test macOS binary execution
+      if: matrix.os == 'macos-latest'
+      run: timeout 3 ./bin/osx-x64/mql4-lsp-server --help || timeout 3 ./bin/osx-x64/mql4-lsp-server --stdio || true
       shell: bash
 
     - name: Verify binary info
       run: |
         if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          file mql4-lsp-server.exe
-          ls -lh mql4-lsp-server.exe
+          file bin/win-x64/mql4-lsp-server.exe
+          ls -lh bin/win-x64/mql4-lsp-server.exe
+        elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          file bin/linux-x64/mql4-lsp-server
+          ls -lh bin/linux-x64/mql4-lsp-server
         else
-          file mql4-lsp-server
-          ls -lh mql4-lsp-server
+          file bin/osx-x64/mql4-lsp-server
+          ls -lh bin/osx-x64/mql4-lsp-server
         fi
       shell: bash
