@@ -1,71 +1,62 @@
 using System;
-using System.IO;
-using System.Linq;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 
-// Test harness for MQL4 ANTLR Parser
-Console.WriteLine("=== MQL4 ANTLR Parser Test ===");
-Console.WriteLine();
-
-// Parse test file
-var parser = new Mql4AntlrParser();
-var testFilePath = "/home/guillermo/source/mql4-language-server/test_parser.mq4";
-
-Console.WriteLine($"Test file path: {testFilePath}");
-Console.WriteLine();
-
-try
+namespace Mql4LanguageServer
 {
-    var mql4File = parser.ParseFileFromPath(testFilePath);
-
-    Console.WriteLine($"Parsed file: {mql4File.FilePath}");
-    Console.WriteLine($"Symbols found: {mql4File.Symbols.Count}");
-    Console.WriteLine($"Includes found: {mql4File.Includes.Count}");
-    Console.WriteLine();
-
-    // Display symbols
-    Console.WriteLine("--- Symbols ---");
-    foreach(var symbol in mql4File.Symbols)
+    /// <summary>
+    /// Entry point for the MQL4 Language Server
+    ///
+    /// Phase 3.5: Basic LSP Server Core implementation
+    /// </summary>
+    class Program
     {
-        Console.WriteLine($"  {symbol.Name} ({symbol.Kind})");
-        Console.WriteLine($"    Range: Line {symbol.Range.Start.Line}-{symbol.Range.End.Line}");
-        Console.WriteLine($"    Detail: {symbol.Detail}");
-    }
-    Console.WriteLine();
+        static async Task<int> Main(string[] args)
+        {
+            // Configure Serilog for structured logging
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .WriteTo.Console(outputTemplate:
+                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File("mql4-lsp-server.log", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
 
-    // Display includes
-    Console.WriteLine("--- Includes ---");
-    foreach(var include in mql4File.Includes)
-    {
-        Console.WriteLine($"  {include}");
-    }
-    Console.WriteLine();
+            try
+            {
+                Log.Information("Starting MQL4 Language Server");
+                Log.Information("Phase 3.5: LSP Server Core Implementation");
 
-    // Test FindSymbolAtPosition
-    Console.WriteLine("--- Testing FindSymbolAtPosition ---");
-    var testPos = parser.FindSymbolAtPosition(10, 5); // Line 10, column 5
-    if(testPos != null)
-    {
-        Console.WriteLine($"Found symbol at position: {testPos.Name}");
-    }
-    else
-    {
-        Console.WriteLine("No symbol found at position");
-    }
-    Console.WriteLine();
+                // Create a simple service collection
+                var services = new ServiceCollection()
+                    .AddLogging(builder => builder.AddSerilog())
+                    .AddSingleton<Lsp.Server.Mql4LspServer>()
+                    .BuildServiceProvider();
 
-    // Test completions
-    Console.WriteLine("--- Testing Completions ---");
-    var completions = parser.GetCompletions(5, 1);
-    Console.WriteLine($"Total completions available: {completions.Count()}");
-    Console.WriteLine($"First 10 completions: {string.Join(", ", completions.Take(10))}");
-    Console.WriteLine();
+                // Create and initialize the MQL4 LSP Server
+                var server = services.GetRequiredService<Lsp.Server.Mql4LspServer>();
+                server.Initialize();
 
-    Console.WriteLine("=== Test completed successfully ===");
-}
-catch(Exception ex)
-{
-    Console.Error.WriteLine($"Error: {ex.Message}");
-    Console.Error.WriteLine($"Stack trace: {ex.StackTrace}");
+                Log.Information("MQL4 Language Server initialized successfully");
+                Log.Information("Server Core Complete - Handlers pending Phase 3.6");
+
+                // For now, just exit - full LSP protocol implementation in Phase 3.6
+                await Task.Delay(100);
+
+                Log.Information("MQL4 Language Server shutting down");
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "MQL4 Language Server terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+    }
 }
