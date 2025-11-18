@@ -1,3 +1,0 @@
-f6217bcbeba10ca998d7f3ad59fbcc43e272efd8e30dc49678d1325783a7ba8d  ../src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server
-44fb25cd58028ac37ce87305ec33d83fc656bfbce7661e461f2ecae1aa595296  ../src/bin/Release/net8.0/publish/osx-x64/mql4-lsp-server
-e9f6b95feafadf95633df10fb14dd6e3f4abb713e0a7c7465a66979fb1541806  ../src/bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe

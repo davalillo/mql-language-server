@@ -39,3 +39,7 @@ coverage/
 # Log files
 *.log
 mql4-lsp-server*.log
+
+# Release artifacts
+release-v*/
+release-artifacts/
