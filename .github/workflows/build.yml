@@ -121,17 +121,26 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        # Create release using gh CLI
+        # Create release without files first
         gh release create ${{ github.ref_name }} \
           --title "MQL4 Language Server ${{ github.ref_name }}" \
           --notes-file RELEASE_NOTES.md \
           --draft=false \
-          --prerelease=false \
+          --prerelease=false
+
+    - name: Upload Release Assets
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Upload assets separately to avoid name conflicts
+        gh release upload ${{ github.ref_name }} \
           bin/linux-x64/mql4-lsp-server \
           bin/osx-x64/mql4-lsp-server \
           bin/win-x64/mql4-lsp-server.exe \
           bin/SHA256SUMS.txt \
-          nupkg/*.nupkg
+          nupkg/*.nupkg \
+          --clobber
 
   test-binaries:
     name: Test ${{ matrix.os }} binary
