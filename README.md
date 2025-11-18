@@ -1,6 +1,10 @@
 # MQL4 Language Server
 
-Language Server Protocol (LSP) implementation for MQL4 (MetaTrader 4).
+[![Build Status](https://github.com/davalillo/mql4-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql4-language-server/actions)
+[![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
+[![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
+
+Language Server Protocol (LSP) implementation for MQL4 (MetaTrader 4). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
 
 ## Features
 
@@ -187,24 +191,96 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 - ✅ Parser ANTLR funcionando al 100%
 - ✅ 13 símbolos parseados correctamente
 - ✅ 98 completions disponibles (builtins + símbolos locales)
-- ✅ Integrado con modelos LSP
-- 🔄 Pendiente: LSP Server Core (Fase 3.5)
+- ✅ LSP Server Core (Fases 3.5-3.8 COMPLETADAS)
+  - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
+  - CompletionHandler, HoverHandler
+  - TextDocumentSync handlers (Open/Close/Change)
+- ✅ Program Entry Point con stdio transport
+- ✅ Tests Unitarios (Fase 4): 11 tests implementados y pasando
+- ✅ Standalone Compilation (Fase 5)
+  - Binarios: Linux x64 (71MB), macOS x64 (71MB), Windows x64 (72MB)
+  - Build scripts: build.sh (Linux/macOS), build.ps1 (Windows)
+- ✅ CI/CD: GitHub Actions con matrix builds
+- ✅ NuGet Packaging: pack.ps1 script disponible
+- ✅ Repository: https://github.com/davalillo/mql4-language-server
+
+## Testing
+
+Run unit tests:
+```bash
+dotnet test
+```
+
+Test coverage: 11 tests covering parser, LSP handlers, and edge cases.
+
+## CI/CD
+
+Automated builds and releases via GitHub Actions:
+- **Multi-platform builds**: Ubuntu, Windows, macOS
+- **Automated testing**: All tests run on every push/PR
+- **Binary releases**: Standalone binaries uploaded to GitHub Releases
+- **NuGet packaging**: Automatic .nupkg generation
+- **Checksums**: SHA256 checksums for all artifacts
+
+See [.github/workflows/build.yml](.github/workflows/build.yml) for details.
 
 ## Installation
 
-### Via NuGet (Planned)
+### Standalone Binaries (Recommended)
+
+Download a pre-built binary from [GitHub Releases](https://github.com/davalillo/mql4-language-server/releases):
+
+- **Linux**: `mql4-lsp-server` (71MB, self-contained)
+- **macOS**: `mql4-lsp-server` (71MB, self-contained)
+- **Windows**: `mql4-lsp-server.exe` (72MB, self-contained)
+
+Make executable (Linux/macOS):
 ```bash
-dotnet tool install -g mql4-language-server
+chmod +x mql4-lsp-server
+```
+
+### Via .NET Tool (NuGet)
+
+```bash
+dotnet tool install -g mql4-language-server --version 1.0.0
+```
+
+Or install from local build:
+```bash
+./pack.ps1
+dotnet tool install -g mql4-language-server --add-source ./nupkg
 ```
 
 ### From Source
+
+**Prerequisites**: .NET 8 SDK
+
+**Linux/macOS**:
 ```bash
-git clone https://github.com/YOUR_USERNAME/mql4-language-server.git
+git clone https://github.com/davalillo/mql4-language-server.git
 cd mql4-language-server
-dotnet build -c Release
-dotnet publish -c Release -r linux-x64 --self-contained
-dotnet publish -c Release -r win-x64 --self-contained
+./build.sh
+
+# Test the binary
+./src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server --stdio
 ```
+
+**Windows**:
+```powershell
+git clone https://github.com/davalillo/mql4-language-server.git
+cd mql4-language-server
+.\build.ps1
+
+# Test the binary
+.\src\bin\Release\net8.0\publish\win-x64\mql4-lsp-server.exe --stdio
+```
+
+### Build Outputs
+
+After building, find binaries in:
+- `src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server`
+- `src/bin/Release/net8.0/publish/osx-x64/mql4-lsp-server`
+- `src/bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe`
 
 ## Usage
 
