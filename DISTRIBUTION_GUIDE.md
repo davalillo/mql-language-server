@@ -28,9 +28,9 @@ Esta guía documenta todos los métodos de distribución disponibles para el MQL
 # .\build.ps1  # Windows
 
 # 2. Binarios generados en:
-# src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server
-# src/bin/Release/net8.0/publish/osx-x64/mql4-lsp-server
-# src/bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe
+# src/bin/linux-x64/mql4-lsp-server
+# src/bin/osx-x64/mql4-lsp-server
+# src/bin/win-x64/mql4-lsp-server.exe
 
 # 3. Crear checksums
 sha256sum mql4-lsp-server > SHA256SUMS.txt
@@ -220,42 +220,62 @@ sha256sum -c SHA256SUMS.txt
 4. **Downloads**: Analytics de descarga
 5. **CI/CD**: Automatizado con GitHub Actions
 
-**Proceso**:
+**Proceso AUTOMÁTICO (Recomendado)**:
 ```bash
 # 1. Tag y push
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.2.0
+git push origin v1.2.0
 
 # 2. GitHub Actions automáticamente:
-# - Build para todas las plataformas
-# - Ejecutar tests
-# - Crear NuGet package
-# - Upload artifacts
+# - Build para las 3 plataformas (Ubuntu, Windows, macOS)
+# - Ejecutar tests unitarios
 # - Crear release en GitHub
+# - Upload binarios standalone
+# - Upload NuGet package
+# - Generar y upload checksums SHA256
+# - Validar binarios en producción
 
-# 3. Manual (alternativo):
-# - Crear release en https://github.com/davalillo/mql4-language-server/releases
-# - Subir binarios manualmente
-# - Añadir release notes
-# - Generar checksums
+# 3. Resultado (~15-20 min):
+# https://github.com/davalillo/mql4-language-server/releases/tag/v1.2.0
+# → mql4-lsp-server (70MB)
+# → mql4-lsp-server.exe (71MB)
+# → mql4-language-server.1.0.0.nupkg (2MB)
+# → SHA256SUMS.txt
 ```
+
+**Proceso MANUAL (alternativo, ya no necesario)**:
+- Crear release en https://github.com/davalillo/mql4-language-server/releases
+- Subir binarios manualmente
+- Generar checksums
+- ⚠️ **Recomendado usar proceso automático**
 
 ## ✅ Checklist de Release
 
-Para cada release (v1.0.0, v1.1.0, etc.):
+Para cada release (v1.2.0, v1.3.0, etc.):
 
+### Proceso AUTOMÁTICO (GitHub Actions):
+- [ ] Tests pasan: `dotnet test` (en main branch)
+- [ ] Git tag creado: `git tag v1.2.0`
+- [ ] Git tag push: `git push origin v1.2.0`
+- [ ] ✅ **TODO LO DEMÁS ES AUTOMÁTICO:**
+  - ✅ Build para las 3 plataformas
+  - ✅ Ejecutar tests unitarios
+  - ✅ Crear GitHub Release
+  - ✅ Upload binarios standalone
+  - ✅ Upload NuGet package
+  - ✅ Generar checksums SHA256
+  - ✅ Validar binarios en producción
+
+### Proceso MANUAL (alternativo, no recomendado):
 - [ ] Tests pasan: `dotnet test`
 - [ ] Binarios compilados: `build.sh` / `build.ps1`
 - [ ] Checksums generados: `sha256sum * > SHA256SUMS.txt`
 - [ ] NuGet package creado: `dotnet pack ...`
-- [ ] Git tag creado: `git tag v1.0.0`
-- [ ] Git tag push: `git push origin v1.0.0`
-- [ ] GitHub Release creado (manual o automático)
-- [ ] Release notes escritas (cambios, bugs fixed, new features)
-- [ ] Binarios subidos a Release
-- [ ] Checksums subidos a Release
-- [ ] NuGet package subido (opcional)
-- [ ] README.md actualizado (si es necesario)
+- [ ] GitHub Release creado manualmente
+- [ ] Binarios subidos manualmente
+- [ ] Checksums subidos manualmente
+- [ ] Release notes escritas
+- [ ] README.md actualizado
 
 ## 📚 Recursos Adicionales
 
@@ -267,6 +287,6 @@ Para cada release (v1.0.0, v1.1.0, etc.):
 
 ---
 
-**Versión**: 1.0.0
+**Versión**: 1.0.12
 **Fecha**: 2025-11-18
 **Autor**: MQL4 Language Server Team
