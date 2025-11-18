@@ -80,7 +80,7 @@ jobs:
       run: chmod +x bin/osx-x64/mql4-lsp-server
 
     - name: Create NuGet package
-      run: dotnet pack -c Release -o nupkg --no-build
+      run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release -o nupkg/
 
     - name: Upload binaries artifact
       uses: actions/upload-artifact@v4
