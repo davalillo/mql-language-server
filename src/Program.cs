@@ -1,15 +1,20 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Mql4LanguageServer.Lsp.Handlers;
+using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Parser;
 using Serilog;
+using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Mql4LanguageServer
 {
     /// <summary>
     /// Entry point for the MQL4 Language Server
     ///
-    /// Phase 3.5: Basic LSP Server Core implementation
+    /// Phase 3.7: Complete LSP Server with stdio connection and all handlers
     /// </summary>
     class Program
     {
@@ -25,26 +30,59 @@ namespace Mql4LanguageServer
 
             try
             {
+                Log.Information("=================================================");
                 Log.Information("Starting MQL4 Language Server");
-                Log.Information("Phase 3.5: LSP Server Core Implementation");
+                Log.Information("Phase 3.7: Complete LSP Server Implementation");
+                Log.Information("=================================================");
 
-                // Create a simple service collection
-                var services = new ServiceCollection()
-                    .AddLogging(builder => builder.AddSerilog())
-                    .AddSingleton<Lsp.Server.Mql4LspServer>()
-                    .BuildServiceProvider();
+                // Create Language Server with stdio transport
+                var server = LanguageServer.Create(options =>
+                {
+                    options
+                        .WithInput(Console.OpenStandardInput())
+                        .WithOutput(Console.OpenStandardOutput())
+                        .WithLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()))
+                        .WithServices(services =>
+                        {
+                            // Register parser
+                            services.AddSingleton<Mql4AntlrParser>();
 
-                // Create and initialize the MQL4 LSP Server
-                var server = services.GetRequiredService<Lsp.Server.Mql4LspServer>();
-                server.Initialize();
+                            // Register all handlers
+                            services.AddSingleton<DocumentSymbolHandler>();
+                            services.AddSingleton<DefinitionHandler>();
+                            services.AddSingleton<ReferencesHandler>();
+                            services.AddSingleton<CompletionHandler>();
+                            services.AddSingleton<HoverHandler>();
+                            services.AddSingleton<DidOpenTextDocumentHandler>();
+                            services.AddSingleton<DidCloseTextDocumentHandler>();
+                            services.AddSingleton<DidChangeTextDocumentHandler>();
 
-                Log.Information("MQL4 Language Server initialized successfully");
-                Log.Information("Server Core Complete - Handlers pending Phase 3.6");
+                            // Register LSP server
+                            services.AddSingleton<Mql4LspServer>();
+                        });
+                });
 
-                // For now, just exit - full LSP protocol implementation in Phase 3.6
-                await Task.Delay(100);
+                Log.Information("Language Server created successfully");
+                Log.Information("All LSP Handlers registered:");
+                Log.Information("  - DocumentSymbolHandler (Outline View)");
+                Log.Information("  - DefinitionHandler (Go-to-Definition)");
+                Log.Information("  - ReferencesHandler (Find All References)");
+                Log.Information("  - CompletionHandler (Auto-completion)");
+                Log.Information("  - HoverHandler (Symbol Information)");
+                Log.Information("  - TextDocumentSync Handlers (Open/Close/Change)");
 
-                Log.Information("MQL4 Language Server shutting down");
+                // Initialize the LSP server
+                server.Initialize(default);
+
+                Log.Information("=================================================");
+                Log.Information("MQL4 Language Server is ready");
+                Log.Information("Listening on stdio...");
+                Log.Information("=================================================");
+
+                // Wait for disconnect - this keeps the server running
+                await Task.Delay(-1, CancellationToken.None);
+
+                Log.Information("MQL4 Language Server shutting down...");
 
                 return 0;
             }
