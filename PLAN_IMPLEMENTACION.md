@@ -2,6 +2,18 @@
 
 Este plan detalla todas las fases necesarias para implementar el MQL4 LSP completo.
 
+## 📌 Reglas de Oro - IMPORTANTE
+
+### ✅ Actualización Obligatoria del Plan
+**Tras completar cada fase, DEBE actualizarse este documento ANTES del commit de git:**
+1. Marcar todas las tareas de la fase como completadas (`- [x]`)
+2. Añadir resumen detallado de lo implementado
+3. Actualizar contador de progreso (Fases completadas y porcentaje)
+4. Actualizar sección "Próximos Pasos"
+5. Verificar coherencia entre plan y estado real del repositorio
+
+**Esta actualización es obligatoria y debe realizarse SIEMPRE para mantener la documentación sincronizada con el desarrollo.**
+
 ## 📋 Fase 1: Creación del Repositorio Git
 
 - [x] 1.1 Crear directorio del proyecto
