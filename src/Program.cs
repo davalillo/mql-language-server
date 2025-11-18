@@ -72,7 +72,7 @@ namespace Mql4LanguageServer
                 Log.Information("  - TextDocumentSync Handlers (Open/Close/Change)");
 
                 // Initialize the LSP server
-                server.Initialize(default);
+                await server.Initialize(default);
 
                 Log.Information("=================================================");
                 Log.Information("MQL4 Language Server is ready");
@@ -93,7 +93,7 @@ namespace Mql4LanguageServer
             }
             finally
             {
-                Log.CloseAndFlush();
+                await Log.CloseAndFlushAsync();
             }
         }
     }
