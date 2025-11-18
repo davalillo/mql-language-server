@@ -224,7 +224,7 @@ These are vulnerabilities in **transitive dependencies** (dependencies of depend
   - Does not parse external URIs
   - Only reads MQL4 files locally
 
-See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed analysis and justification.
+See [SECURITY_ANALYSIS.md](docs/references/SECURITY.md) for detailed analysis and justification.
 
 ## Testing
 
