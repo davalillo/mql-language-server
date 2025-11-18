@@ -79,9 +79,9 @@ jobs:
     - name: Move binaries to root bin/
       run: |
         mkdir -p bin/linux-x64 bin/osx-x64 bin/win-x64
-        cp src/bin/Release/net8.0/linux-x64/mql4-lsp-server bin/linux-x64/
-        cp src/bin/Release/net8.0/osx-x64/mql4-lsp-server bin/osx-x64/
-        cp src/bin/Release/net8.0/win-x64/mql4-lsp-server.exe bin/win-x64/
+        cp src/bin/Release/net8.0/linux-x64/publish/mql4-lsp-server bin/linux-x64/
+        cp src/bin/Release/net8.0/osx-x64/publish/mql4-lsp-server bin/osx-x64/
+        cp src/bin/Release/net8.0/win-x64/publish/mql4-lsp-server.exe bin/win-x64/
 
     - name: Make Linux binary executable
       run: chmod +x bin/linux-x64/mql4-lsp-server
