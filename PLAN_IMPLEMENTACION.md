@@ -77,11 +77,18 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 - [x] 3.4.5 Implementar métodos de obtención (GetBuiltinFunctions, GetBuiltinVariables)
 
 ### 3.5 LSP Server Core
-- [ ] 3.5.1 Crear `Lsp/Server/Mql4LspServer.cs`
-- [ ] 3.5.2 Implementar InitializeAsync method
-- [ ] 3.5.3 Implementar InitializedAsync method
-- [ ] 3.5.4 Implementar InitializeHandlers method
-- [ ] 3.5.5 Configurar ServerCapabilities
+- [x] 3.5.1 Crear `Lsp/Server/Mql4LspServer.cs`
+- [x] 3.5.2 Implementar InitializeAsync method
+- [x] 3.5.3 Implementar InitializedAsync method
+- [x] 3.5.4 Implementar InitializeHandlers method
+- [x] 3.5.5 Configurar ServerCapabilities
+
+**✅ COMPLETADO - Fase 3.5: LSP Server Core**
+- Mql4LspServer.cs creado con estructura base
+- Program.cs actualizado para usar el LSP server
+- Logger configurado con Serilog
+- Servicio registrado en DI container
+- Compilación exitosa
 
 ### 3.6 LSP Handlers
 - [ ] 3.6.1 Crear `Lsp/Handlers/DocumentSymbolHandler.cs`
@@ -284,9 +291,9 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 📊 Resumen de Estado
 
 - **Total de tareas**: ~200
-- **Fases completadas**: 3/8
-- **Tareas completadas**: 58/200
-- **Progreso**: 29%
+- **Fases completadas**: 3.5/8
+- **Tareas completadas**: 63/200
+- **Progreso**: 31%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado

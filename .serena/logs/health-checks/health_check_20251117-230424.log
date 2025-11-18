@@ -1,0 +1,78 @@
+INFO  2025-11-17 23:04:24,693 serena.cli:health_check:634 - Starting health check for project: /home/guillermo/source/mql4-language-server
+INFO  2025-11-17 23:04:24,693 serena.cli:health_check:638 - Creating SerenaAgent with disabled dashboard...
+INFO  2025-11-17 23:04:24,694 serena.agent:__init__:130 - Will record tool usage statistics with token count estimator: CHAR_COUNT.
+INFO  2025-11-17 23:04:24,707 serena.agent:__init__:134 - Starting Serena server (version=0.1.4-fadca374-dirty, process id=605754, parent process id=605728)
+INFO  2025-11-17 23:04:24,707 serena.agent:__init__:135 - Configuration file: None
+INFO  2025-11-17 23:04:24,707 serena.agent:__init__:136 - Available projects: 
+INFO  2025-11-17 23:04:24,707 serena.agent:__init__:137 - Loaded tools (38): read_file, create_text_file, list_dir, find_file, replace_regex, delete_lines, replace_lines, insert_at_line, search_for_pattern, restart_language_server, get_symbols_overview, find_symbol, find_referencing_symbols, replace_symbol_body, insert_after_symbol, insert_before_symbol, rename_symbol, write_memory, read_memory, list_memories, delete_memory, edit_memory, execute_shell_command, activate_project, remove_project, switch_modes, get_current_config, check_onboarding_performed, onboarding, think_about_collected_information, think_about_task_adherence, think_about_whether_you_are_done, summarize_changes, prepare_for_new_conversation, initial_instructions, jet_brains_find_symbol, jet_brains_find_referencing_symbols, jet_brains_get_symbols_overview
+INFO  2025-11-17 23:04:24,707 serena.config.serena_config:apply:110 - SerenaAgentContext[name='desktop-app'] included 1 tools: switch_modes
+INFO  2025-11-17 23:04:24,707 serena.agent:__init__:151 - Number of exposed tools: 29
+INFO  2025-11-17 23:04:24,720 serena.agent:_update_active_tools:382 - Active tools (29): activate_project, check_onboarding_performed, create_text_file, delete_memory, edit_memory, execute_shell_command, find_file, find_referencing_symbols, find_symbol, get_current_config, get_symbols_overview, initial_instructions, insert_after_symbol, insert_before_symbol, list_dir, list_memories, onboarding, prepare_for_new_conversation, read_file, read_memory, rename_symbol, replace_regex, replace_symbol_body, search_for_pattern, switch_modes, think_about_collected_information, think_about_task_adherence, think_about_whether_you_are_done, write_memory
+INFO  2025-11-17 23:04:24,723 serena.util.file_system:start:360 - Loading of .gitignore files starting ...
+INFO  2025-11-17 23:04:24,723 serena.util.file_system:_load_gitignore_files:148 - Processing .gitignore file: /home/guillermo/source/mql4-language-server/.gitignore
+INFO  2025-11-17 23:04:24,724 serena.util.file_system:_load_gitignore_files:148 - Processing .gitignore file: /home/guillermo/source/mql4-language-server/.serena/.gitignore
+INFO  2025-11-17 23:04:24,724 serena.util.file_system:stop:367 - Loading of .gitignore files completed in 0.001 seconds
+INFO  2025-11-17 23:04:24,725 serena.agent:load_project_from_path_or_name:449 - Added new project mql4-language-server for path /home/guillermo/source/mql4-language-server
+INFO  2025-11-17 23:04:24,725 serena.agent:_activate_project:419 - Activating mql4-language-server at /home/guillermo/source/mql4-language-server
+INFO  2025-11-17 23:04:24,725 serena.agent:_update_active_tools:382 - Active tools (29): activate_project, check_onboarding_performed, create_text_file, delete_memory, edit_memory, execute_shell_command, find_file, find_referencing_symbols, find_symbol, get_current_config, get_symbols_overview, initial_instructions, insert_after_symbol, insert_before_symbol, list_dir, list_memories, onboarding, prepare_for_new_conversation, read_file, read_memory, rename_symbol, replace_regex, replace_symbol_body, search_for_pattern, switch_modes, think_about_collected_information, think_about_task_adherence, think_about_whether_you_are_done, write_memory
+INFO  2025-11-17 23:04:24,725 serena.task_executor:issue_task:192 - Scheduling Task-1:init_language_server_manager
+INFO  2025-11-17 23:04:24,726 serena.cli:health_check:641 - SerenaAgent created successfully
+INFO  2025-11-17 23:04:24,726 serena.cli:health_check:644 - Searching for analyzable files...
+INFO  2025-11-17 23:04:24,727 serena.cli:health_check:653 - Found analyzable file: src/Program.cs
+INFO  2025-11-17 23:04:24,727 serena.cli:health_check:671 - Testing GetSymbolsOverviewTool on file: src/Program.cs
+INFO  2025-11-17 23:04:24,727 serena.task_executor:issue_task:192 - Scheduling Task-2:<lambda>
+INFO  2025-11-17 23:04:24,808 serena.task_executor:_process_task_queue:123 - Starting execution of Task-1:init_language_server_manager
+INFO  2025-11-17 23:04:24,809 serena.task_executor:start:360 - Task-1:init_language_server_manager starting ...
+INFO  2025-11-17 23:04:24,810 serena.agent:start:360 - Language server initialization starting ...
+INFO  2025-11-17 23:04:24,810 serena.project:create_language_server_manager:384 - Creating language server manager for /home/guillermo/source/mql4-language-server
+INFO  2025-11-17 23:04:24,811 sensai.util.logging:start:360 - Language server startup (language=csharp) starting ...
+INFO  2025-11-17 23:04:24,811 serena.ls_manager:create_language_server:44 - Creating language server instance for /home/guillermo/source/mql4-language-server, language=csharp.
+INFO  2025-11-17 23:04:24,977 solidlsp:_ensure_dotnet_runtime:287 - Found system .NET 9 runtime
+INFO  2025-11-17 23:04:24,978 solidlsp:_ensure_language_server:307 - Using cached Microsoft.CodeAnalysis.LanguageServer from /home/guillermo/.serena/language_servers/static/CSharpLanguageServer/Microsoft.CodeAnalysis.LanguageServer.linux-x64.5.0.0-1.25329.6/Microsoft.CodeAnalysis.LanguageServer.dll
+INFO  2025-11-17 23:04:24,979 solidlsp:__init__:221 - Found solution/project file: /home/guillermo/source/mql4-language-server/Mql4LanguageServer.sln
+INFO  2025-11-17 23:04:24,984 solidlsp:load_cache:1597 - Loading document symbols cache from /home/guillermo/source/mql4-language-server/.serena/cache/csharp/document_symbols_cache_v23-06-25.pkl
+INFO  2025-11-17 23:04:24,992 solidlsp:load_cache:1601 - Loaded 24 document symbols from cache.
+INFO  2025-11-17 23:04:24,994 solidlsp:start:1689 - Starting language server with language csharp for /home/guillermo/source/mql4-language-server
+INFO  2025-11-17 23:04:24,994 solidlsp:_start_server:653 - Starting Microsoft.CodeAnalysis.LanguageServer process
+INFO  2025-11-17 23:04:24,994 solidlsp.ls_handler:start:193 - Starting language server process via command: ['/home/guillermo/.dotnet/dotnet', '/home/guillermo/.serena/language_servers/static/CSharpLanguageServer/Microsoft.CodeAnalysis.LanguageServer.linux-x64.5.0.0-1.25329.6/Microsoft.CodeAnalysis.LanguageServer.dll', '--logLevel=Information', '--extensionLogDirectory=/home/guillermo/.serena/language_servers/static/CSharpLanguageServer/logs', '--stdio']
+INFO  2025-11-17 23:04:24,996 solidlsp:_start_server:664 - Sending initialize request to language server
+INFO  2025-11-17 23:04:25,502 solidlsp:window_log_message:549 - LSP: [Program] Language server initialized
+INFO  2025-11-17 23:04:25,702 solidlsp:_open_solution_and_projects:739 - Opened solution file: /home/guillermo/source/mql4-language-server/Mql4LanguageServer.sln
+INFO  2025-11-17 23:04:25,713 solidlsp:_start_server:698 - Microsoft.CodeAnalysis.LanguageServer initialized and ready Waiting for language server to index project files... This may take a while for large projects
+INFO  2025-11-17 23:04:25,713 sensai.util.logging:stop:367 - Language server startup (language=csharp) completed in 0.903 seconds
+INFO  2025-11-17 23:04:25,714 serena.agent:stop:367 - Language server initialization completed in 0.904 seconds
+INFO  2025-11-17 23:04:25,714 serena.task_executor:stop:367 - Task-1:init_language_server_manager completed in 0.905 seconds
+INFO  2025-11-17 23:04:25,714 serena.task_executor:_process_task_queue:123 - Starting execution of Task-2:<lambda>
+INFO  2025-11-17 23:04:25,714 serena.task_executor:start:360 - Task-2:<lambda> starting ...
+ERROR 2025-11-17 23:04:25,717 solidlsp:window_log_message:549 - LSP: [initialized] [Microsoft.CodeAnalysis.LanguageServer.HostWorkspace.Razor.RazorDynamicFileInfoProvider] RazorDynamicFileInfoProvider not initialized. RazorWorkspaceService or RazorLspDynamicFileInfoProvider is null.
+INFO  2025-11-17 23:04:25,718 serena.task_executor:stop:367 - Task-2:<lambda> completed in 0.003 seconds
+INFO  2025-11-17 23:04:25,718 serena.cli:health_check:674 - GetSymbolsOverviewTool returned 1 symbols
+INFO  2025-11-17 23:04:25,718 serena.cli:health_check:699 - Using symbol for testing: Program (kind: 5)
+INFO  2025-11-17 23:04:25,718 serena.cli:health_check:702 - Testing FindSymbolTool for symbol: Program
+INFO  2025-11-17 23:04:25,718 serena.task_executor:issue_task:192 - Scheduling Task-3:<lambda>
+INFO  2025-11-17 23:04:25,786 solidlsp:window_log_message:549 - LSP: [solution/open] [LanguageServerProjectSystem] Loading /home/guillermo/source/mql4-language-server/Mql4LanguageServer.sln...
+INFO  2025-11-17 23:04:25,818 serena.task_executor:_process_task_queue:123 - Starting execution of Task-3:<lambda>
+INFO  2025-11-17 23:04:25,818 serena.task_executor:start:360 - Task-3:<lambda> starting ...
+INFO  2025-11-17 23:04:25,819 serena.task_executor:stop:367 - Task-3:<lambda> completed in 0.001 seconds
+INFO  2025-11-17 23:04:25,820 serena.cli:health_check:707 - FindSymbolTool found 1 matches for symbol Program
+INFO  2025-11-17 23:04:25,820 serena.cli:health_check:710 - Testing FindReferencingSymbolsTool for symbol: Program
+INFO  2025-11-17 23:04:25,820 serena.task_executor:issue_task:192 - Scheduling Task-4:<lambda>
+INFO  2025-11-17 23:04:25,920 serena.task_executor:_process_task_queue:123 - Starting execution of Task-4:<lambda>
+INFO  2025-11-17 23:04:25,921 serena.task_executor:start:360 - Task-4:<lambda> starting ...
+WARNING 2025-11-17 23:04:27,190 solidlsp:window_log_message:549 - LSP: [project/open] [LanguageServerProjectLoader] Warning while loading /home/guillermo/source/mql4-language-server/src/Mql4LanguageServer.Server.csproj: Package "Microsoft.Build.Utilities.Core" 17.8.3 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3q9-fxm7-j8fq
+WARNING 2025-11-17 23:04:27,190 solidlsp:window_log_message:549 - LSP: [project/open] [LanguageServerProjectLoader] Warning while loading /home/guillermo/source/mql4-language-server/src/Mql4LanguageServer.Server.csproj: Package "System.Private.Uri" 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-5f2m-466j-3848
+WARNING 2025-11-17 23:04:27,190 solidlsp:window_log_message:549 - LSP: [project/open] [LanguageServerProjectLoader] Warning while loading /home/guillermo/source/mql4-language-server/src/Mql4LanguageServer.Server.csproj: Package "System.Private.Uri" 4.3.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-x5qj-9vmx-7g6g
+WARNING 2025-11-17 23:04:27,191 solidlsp:window_log_message:549 - LSP: [project/open] [LanguageServerProjectLoader] Warning while loading /home/guillermo/source/mql4-language-server/src/Mql4LanguageServer.Server.csproj: Package "System.Private.Uri" 4.3.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-xhfc-gr8f-ffwc
+INFO  2025-11-17 23:04:27,197 solidlsp:window_log_message:549 - LSP: [project/open] [LanguageServerProjectLoader] Completed (re)load of all projects in 00:00:01.2995008
+WARNING 2025-11-17 23:04:31,993 solidlsp:request_references:659 - Found a reference in a path outside the repository, probably the LS is parsing things in installed packages or in the standardlib! Path: /tmp/MetadataAsSource/2607c825082d42a59c8b1e45510a9e8b/DecompilationMetadataAsSourceFileProvider/21f1456906c64acfa61a55f1f60b7da0/Console.cs. This is a bug but we currently simply skip these references.
+INFO  2025-11-17 23:04:32,044 serena.task_executor:stop:367 - Task-4:<lambda> completed in 6.123 seconds
+INFO  2025-11-17 23:04:32,044 serena.cli:health_check:714 - FindReferencingSymbolsTool found 28 references for symbol Program
+INFO  2025-11-17 23:04:32,045 serena.cli:health_check:720 - Testing SearchForPatternTool for pattern: Program
+INFO  2025-11-17 23:04:32,045 serena.task_executor:issue_task:192 - Scheduling Task-5:<lambda>
+INFO  2025-11-17 23:04:32,144 serena.task_executor:_process_task_queue:123 - Starting execution of Task-5:<lambda>
+INFO  2025-11-17 23:04:32,145 serena.task_executor:start:360 - Task-5:<lambda> starting ...
+INFO  2025-11-17 23:04:32,149 serena.text_utils:search_files:365 - Processing 12 files.
+INFO  2025-11-17 23:04:32,188 serena.text_utils:search_files:406 - Found 0 total matches across 12 files
+INFO  2025-11-17 23:04:32,188 serena.task_executor:stop:367 - Task-5:<lambda> completed in 0.043 seconds
+INFO  2025-11-17 23:04:32,188 serena.cli:health_check:727 - SearchForPatternTool found 0 pattern matches for Program
+INFO  2025-11-17 23:04:32,189 serena.cli:health_check:741 - Health check completed successfully
