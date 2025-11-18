@@ -35,3 +35,7 @@ coverage/
 
 # macOS
 .DS_Store
+
+# Log files
+*.log
+mql4-lsp-server*.log
