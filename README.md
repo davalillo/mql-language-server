@@ -204,6 +204,28 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 - ✅ NuGet Packaging: pack.ps1 script disponible
 - ✅ Repository: https://github.com/davalillo/mql4-language-server
 
+## ⚠️ NuGet Package Vulnerabilities
+
+Build warnings: The project shows 4 NuGet vulnerability warnings from transitive dependencies:
+
+- `System.Net.Http` 4.3.0 (HIGH)
+- `Microsoft.Build.Utilities.Core` 17.8.3 (HIGH)
+- `System.Private.Uri` 4.3.0 (HIGH/MODERATE)
+
+**Assessment**: ✅ **No impact on functionality**
+
+These are vulnerabilities in **transitive dependencies** (dependencies of dependencies) that:
+- Are deep in the .NET ecosystem
+- Are not directly used by our code
+- Cannot be easily updated without breaking changes
+- **Do not affect our LSP server** which:
+  - Runs as standalone process (not library)
+  - Does not make HTTP requests
+  - Does not parse external URIs
+  - Only reads MQL4 files locally
+
+See [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md) for detailed analysis and justification.
+
 ## Testing
 
 Run unit tests:
