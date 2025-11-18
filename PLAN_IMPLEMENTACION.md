@@ -174,25 +174,33 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 🧪 Fase 4: Tests Unitarios
 
 ### 4.1 Proyecto de Tests
-- [ ] 4.1.1 Crear proyecto xUnit en `tests/`
-- [ ] 4.1.2 Añadir proyecto de tests a la solución
-- [ ] 4.1.3 Configurar dependencias de test (xUnit, Microsoft.NET.Test.Sdk, coverlet)
-- [ ] 4.1.4 Añadir referencia al proyecto principal
+- [x] 4.1.1 Crear proyecto xUnit en `tests/`
+- [x] 4.1.2 Añadir proyecto de tests a la solución
+- [x] 4.1.3 Configurar dependencias de test (xUnit, Microsoft.NET.Test.Sdk, coverlet)
+- [x] 4.1.4 Añadir referencia al proyecto principal
 
 ### 4.2 Tests del Parser
-- [ ] 4.2.1 Crear `tests/Parser/Mql4ParserTests.cs`
-- [ ] 4.2.2 Test: ParseFunction_ParsesSuccessfully
-- [ ] 4.2.3 Test: ParseVariable_ParsesSuccessfully
-- [ ] 4.2.4 Test: ParseInclude_ParsesSuccessfully
-- [ ] 4.2.5 Test: ParseBuiltins_AddsBuiltinFunctions
-- [ ] 4.2.6 Test: FindSymbolAtPosition_FindsCorrectSymbol
+- [x] 4.2.1 Crear `tests/Parser/Mql4ParserTests.cs`
+- [x] 4.2.2 Test: ParseFunction_ParsesSuccessfully
+- [x] 4.2.3 Test: ParseVariable_ParsesSuccessfully
+- [x] 4.2.4 Test: ParseInclude_ParsesSuccessfully
+- [x] 4.2.5 Test: ParseBuiltins_AddsBuiltinFunctions
+- [x] 4.2.6 Test: FindSymbolAtPosition_FindsCorrectSymbol
 
 ### 4.3 Ejecución de Tests
-- [ ] 4.3.1 Ejecutar todos los tests (`dotnet test`)
-- [ ] 4.3.2 Verificar que todos los tests pasan
-- [ ] 4.3.3 Verificar cobertura de código
-- [ ] 4.3.4 Ejecutar tests en modo verbose
-- [ ] 4.3.5 Ejecutar un test específico
+- [x] 4.3.1 Ejecutar todos los tests (`dotnet test`)
+- [x] 4.3.2 Verificar que todos los tests pasan
+- [x] 4.3.3 Verificar cobertura de código
+- [x] 4.3.4 Ejecutar tests en modo verbose
+- [x] 4.3.5 Ejecutar un test específico
+
+**✅ COMPLETADO - Fase 4: Tests Unitarios**
+- Proyecto xUnit creado en `tests/`
+- 11 tests unitarios implementados (5 principales + 6 edge cases)
+- Todos los tests pasan exitosamente (11/11 passed)
+- Tests cubren: Functions, Variables, Includes, Builtins, Symbol position
+- Dependencies: xUnit 2.4.2, Microsoft.NET.Test.Sdk, coverlet.collector 6.0.4
+- Proyecto añadido a la solución y configurado correctamente
 
 ---
 
@@ -333,9 +341,9 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 ## 📊 Resumen de Estado
 
 - **Total de tareas**: ~200
-- **Fases completadas**: 3.8/8
-- **Tareas completadas**: 83/200
-- **Progreso**: 42%
+- **Fases completadas**: 4/8
+- **Tareas completadas**: 105/200
+- **Progreso**: 53%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado
@@ -385,15 +393,18 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 
 ## 🎯 Próximos Pasos
 
-1. **Fase 4**: Tests Unitarios
-   - Crear proyecto xUnit en directorio `tests/`
-   - Implementar tests del parser ANTLR
-   - Ejecutar y verificar tests con cobertura
-2. **Fase 5**: Compilación Standalone para múltiples plataformas
-   - Build Windows x64
-   - Build Linux x64
-   - Crear binarios standalone self-contained
-3. **Fase 6**: Despliegue y Distribución
+1. **Fase 5**: Compilación Standalone para múltiples plataformas
+   - Crear build scripts (build.sh, build.ps1)
+   - Compilar para Windows x64 (self-contained)
+   - Compilar para Linux x64 (self-contained)
+   - Compilar para macOS x64 (self-contained)
+   - Verificar binarios funcionan sin .NET runtime
+   - Configurar GitHub Actions CI/CD
+2. **Fase 6**: Despliegue y Distribución
    - Crear paquetes NuGet
    - Configurar GitHub Releases
-   - Documentar proceso de instalación
+   - Automatizar proceso de release
+3. **Fase 7**: Integración con Serena
+   - Crear wrapper Python para Serena IDE
+   - Configurar MQL4 como language en Serena
+   - Implementar tests de integración
