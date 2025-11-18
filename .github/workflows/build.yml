@@ -104,12 +104,12 @@ jobs:
 
     - name: Calculate checksums
       run: |
-        cd bin
+        cd src/bin
         sha256sum linux-x64/mql4-lsp-server > SHA256SUMS.txt
         sha256sum osx-x64/mql4-lsp-server >> SHA256SUMS.txt
         sha256sum win-x64/mql4-lsp-server.exe >> SHA256SUMS.txt
         cat SHA256SUMS.txt
-        cd ..
+        cd ../../..
 
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
@@ -121,10 +121,10 @@ jobs:
         draft: false
         prerelease: false
         files: |
-          bin/linux-x64/mql4-lsp-server
-          bin/osx-x64/mql4-lsp-server
-          bin/win-x64/mql4-lsp-server.exe
-          bin/SHA256SUMS.txt
+          src/bin/linux-x64/mql4-lsp-server
+          src/bin/osx-x64/mql4-lsp-server
+          src/bin/win-x64/mql4-lsp-server.exe
+          src/bin/SHA256SUMS.txt
           nupkg/*.nupkg
 
   test-binaries:
