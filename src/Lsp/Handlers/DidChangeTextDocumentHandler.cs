@@ -31,7 +31,7 @@ public class DidChangeTextDocumentHandler : IRequestHandler<DidChangeTextDocumen
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
     }
 
-    public async Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
+    public Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
     {
         try
         {
@@ -65,7 +65,7 @@ public class DidChangeTextDocumentHandler : IRequestHandler<DidChangeTextDocumen
             _logger.LogError(ex, "Error handling didChange for {Uri}", request.TextDocument.Uri);
         }
 
-        return Unit.Value;
+        return Task.FromResult(Unit.Value);
     }
 
     private string ApplyChanges(string originalContent, Container<TextDocumentContentChangeEvent> changes)
