@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 📋 Project Overview
 
-This repository contains a **comprehensive implementation guide** for building an MQL4 Language Server Protocol (LSP) in C# .NET 8. The repository itself is currently a specification document (`instrucciones_agente.md`) with complete implementation instructions. The actual codebase needs to be created following the 7-phase implementation plan outlined in the guide.
+This repository contains a **comprehensive implementation guide** for building an MQL4 Language Server Protocol (LSP) in C# .NET 8. The repository itself is currently a specification document (`instrucciones_agente.md`) with complete implementation instructions. The actual codebase needs to be created following the implementation plan outlined in the guide.
 
 ### What is MQL4 LSP?
-A Language Server that provides IDE features (completion, go-to-definition, hover, etc.) for MQL4 (MetaTrader 4) trading scripts. It enables any LSP-compatible editor (VSCode, Serena, etc.) to offer intelligent code features for MQL4 developers.
+A Language Server that provides IDE features (completion, go-to-definition, hover, etc.) for MQL4 (MetaTrader 4) trading scripts. It enables any LSP-compatible editor (VSCode, Neovim, Emacs, etc.) to offer intelligent code features for MQL4 developers.
 
 ## 🏗️ Architecture Overview
 
@@ -159,7 +159,7 @@ The implementation guide outlines 7 phases:
 4. **Unit Tests** - xUnit tests for parser and core functionality
 5. **Standalone Compilation** - Build self-contained binaries for multiple platforms
 6. **Deployment** - NuGet packaging, GitHub releases, air-gapped distribution
-7. **Serena Integration** - Python wrapper for Serena IDE integration
+7. **Editor Integration** - Integration with LSP-compatible editors (VSCode, Neovim, etc.)
 
 ## 🎯 Key Features (When Implemented)
 

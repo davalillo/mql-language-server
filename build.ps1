@@ -16,9 +16,19 @@ Remove-Item -Path "bin/Release/net8.0/publish" -Recurse -Force -ErrorAction Sile
 Write-Host "✅ Clean complete" -ForegroundColor Green
 Write-Host ""
 
+# Build first (this generates ANTLR files)
+Write-Host "🔨 Building project (generating ANTLR parser)..." -ForegroundColor Yellow
+dotnet build --configuration Release --no-restore
+Write-Host "✅ Build complete - ANTLR parser generated" -ForegroundColor Green
+Write-Host ""
+
 # Build for Windows x64
 Write-Host "🪟 Building for Windows x64 (self-contained)..." -ForegroundColor Yellow
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o "./bin/Release/net8.0/publish/win-x64"
+dotnet publish -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true `
+  -p:DebugType=None `
+  -p:DebugSymbols=false `
+  -o "./bin/Release/net8.0/publish/win-x64"
 Write-Host "✅ Windows x64 build complete: ./bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe" -ForegroundColor Green
 Write-Host ""
 

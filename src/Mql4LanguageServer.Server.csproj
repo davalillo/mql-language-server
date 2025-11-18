@@ -58,12 +58,12 @@
 
   <!-- ANTLR Grammar Generation -->
   <ItemGroup>
-    <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
+    <Antlr4 Include="Mql4/Grammar/Mql4Grammar.g4">
       <Generator>MSBuild:Compile</Generator>
       <Listener>true</Listener>
       <Visitor>true</Visitor>
       <Package>Mql4Grammar</Package>
-      <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
+      <AntOutDir>$(MSBuildProjectDirectory)/Parser/Generated</AntOutDir>
     </Antlr4>
   </ItemGroup>
 

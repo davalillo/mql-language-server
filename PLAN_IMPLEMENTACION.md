@@ -290,82 +290,45 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 
 ---
 
-## 🔗 Fase 7: Integración con Serena
+## ✅ Fase 7: Verificación Final
 
-### 7.1 Wrapper Python
-- [ ] 7.1.1 Crear `src/solidlsp/language_servers/mql4_language_server.py`
-- [ ] 7.1.2 Implementar MQL4LanguageServer class
-- [ ] 7.1.3 Implementar is_ignored_dirname
-- [ ] 7.1.4 Implementar _ensure_server_installed
-  - [ ] Detectar instalación del sistema
-  - [ ] Detectar instalación via dotnet tool
-  - [ ] Detectar instalación local
-  - [ ] Detectar plataforma (Windows/Linux/macOS)
-  - [ ] Detectar arquitectura (x64/arm64)
-- [ ] 7.1.5 Implementar __init__
-- [ ] 7.1.6 Implementar _start_server
-- [ ] 7.1.7 Registrar handlers (initialize, logMessage)
+### 7.1 Checklist de Funcionalidades
+- [ ] 7.1.1 Proyecto compila sin errores (`dotnet build`)
+- [ ] 7.1.2 Tests pasan (`dotnet test`)
+- [ ] 7.1.3 Binarios Windows generados
+- [ ] 7.1.4 Binarios Linux generados
+- [ ] 7.1.5 Binarios macOS generados
+- [ ] 7.1.6 Binarios son standalone (funcionan sin .NET)
+- [ ] 7.1.7 LSP responde a initialize request
+- [ ] 7.1.8 LSP parsea archivos .mq4 correctamente
+- [ ] 7.1.9 LSP encuentra símbolos (functions, variables)
+- [ ] 7.1.10 LSP proporciona completion
+- [ ] 7.1.11 LSP integrado en editor LSP compatible (VSCode, Neovim, etc.)
+- [ ] 7.1.12 Tests end-to-end pasan
 
-### 7.2 Configuración de Serena
-- [ ] 7.2.1 Añadir MQL4 a Language enum en `ls_config.py`
-- [ ] 7.2.2 Añadir matcher de archivos (*.mq4, *.mqh)
-- [ ] 7.2.3 Registrar MQL4LanguageServer class
-- [ ] 7.2.4 Probar configuración
+### 7.2 Optimización del Parser
+- [ ] 7.2.1 Resolver todos los warnings del build
+- [ ] 7.2.2 Optimizar rendimiento del parser
+- [ ] 7.2.3 Añadir logging detallado
+- [ ] 7.2.4 Verificar memory leaks
+- [ ] 7.2.5 Review de código final
 
-### 7.3 Tests en Serena
-- [ ] 7.3.1 Crear `test/solidlsp/mql4/test_mql4_basic.py`
-- [ ] 7.3.2 Test: test_find_symbols
-- [ ] 7.3.3 Test: test_find_references
-- [ ] 7.3.4 Test: test_cross_file_references
-- [ ] 7.3.5 Test: test_predefined_functions
-- [ ] 7.3.6 Test: test_completion
-- [ ] 7.3.7 Configurar marker @pytest.mark.mql4 en pytest
-- [ ] 7.3.8 Ejecutar tests en Serena
-- [ ] 7.3.9 Verificar integración completa
-
-### 7.4 Documentación de Integración
-- [ ] 7.4.1 Documentar proceso de integración en README.md
-- [ ] 7.4.2 Crear ejemplo de configuración
-- [ ] 7.4.3 Documentar troubleshooting
-
----
-
-## ✅ Fase 8: Verificación Final
-
-### 8.1 Checklist de Funcionalidades
-- [ ] 8.1.1 Proyecto compila sin errores (`dotnet build`)
-- [ ] 8.1.2 Tests pasan (`dotnet test`)
-- [ ] 8.1.3 Binarios Windows generados
-- [ ] 8.1.4 Binarios Linux generados
-- [ ] 8.1.5 Binarios son standalone (funcionan sin .NET)
-- [ ] 8.1.6 LSP responde a initialize request
-- [ ] 8.1.7 LSP parsea archivos .mq4 correctamente
-- [ ] 8.1.8 LSP encuentra símbolos (functions, variables)
-- [ ] 8.1.9 LSP proporciona completion
-- [ ] 8.1.10 LSP integrado en Serena (wrapper funciona)
-- [ ] 8.1.11 Tests Serena pasan
-
-### 8.2 Documentación Final
-- [ ] 8.2.1 README.md actualizado con instrucciones completas
-- [ ] 8.2.2 Ejemplos de uso incluidos
-- [ ] 8.2.3 Guía de instalación actualizada
-- [ ] 8.2.4 Troubleshooting documentado
-
-### 8.3 Limpieza y Polish
-- [ ] 8.3.1 Resolver todos los warnings
-- [ ] 8.3.2 Optimizar rendimiento del parser
-- [ ] 8.3.3 Añadir logging detallado
-- [ ] 8.3.4 Verificar memory leaks
-- [ ] 8.3.5 Review de código final
+### 7.3 Documentación Final
+- [ ] 7.3.1 README.md actualizado con instrucciones completas
+- [ ] 7.3.2 Ejemplos de uso incluidos (archivos .mq4)
+- [ ] 7.3.3 Guía de instalación actualizada
+- [ ] 7.3.4 Guía de configuración para editores LSP (VSCode, Neovim, etc.)
+- [ ] 7.3.5 Troubleshooting documentado
+- [ ] 7.3.6 FAQ añadida
 
 ---
 
 ## 📊 Resumen de Estado
 
-- **Total de tareas**: ~200
-- **Fases completadas**: 6/8
-- **Tareas completadas**: 158/200
-- **Progreso**: 79%
+- **Total de tareas**: ~180
+- **Fases completadas**: 6/7
+- **Tareas completadas**: 158/180
+- **Progreso**: 88%
 
 ### ✅ Fase 1: COMPLETADA
 - Repositorio Git inicializado
@@ -415,17 +378,17 @@ Este plan detalla todas las fases necesarias para implementar el MQL4 LSP comple
 
 ## 🎯 Próximos Pasos
 
-1. **Fase 6**: Despliegue y Distribución - **EN PROCESO**
-   - ✅ Crear primera release en GitHub (v1.0.0)
-   - ✅ Subir binarios standalone a GitHub Releases
-   - ✅ Subir paquete NuGet a nuget.org (opcional)
-   - ✅ Crear documentación de instalación completa (DISTRIBUTION_GUIDE.md)
-   - 🔄 Esperar verificación final de workflow GitHub Actions
-2. **Fase 7**: Integración con Serena
-   - Crear wrapper Python para Serena IDE
-   - Configurar MQL4 como language en Serena
-   - Implementar tests de integración
-3. **Fase 8**: Verificación Final
-   - Checklist completo de funcionalidades
-   - Tests de integración en editores reales
-   - Documentación final y ejemplos
+1. **Fase 7**: Verificación Final
+   - ✅ Build exitoso para todas las plataformas
+   - ✅ Releases automáticas via GitHub Actions
+   - 🔄 Ejecutar checklist completo de funcionalidades
+   - 🔄 Optimizar rendimiento del parser
+   - 🔄 Crear tests end-to-end LSP
+   - 🔄 Documentar integración con editores LSP (VSCode, Neovim, etc.)
+   - 🔄 Limpiar warnings y optimizar código
+   - 🔄 Crear FAQ y troubleshooting guide
+   - 🔄 Actualizar documentación final (README, guías, ejemplos)
+
+**Estado**: Proyecto MQL4 Language Server 88% completado
+- ✅ Fases 1-6: COMPLETADAS (LSP funcional, standalone, distribución automática)
+- 🔄 Fase 7: EN PROCESO (verificación final, optimización, documentación)

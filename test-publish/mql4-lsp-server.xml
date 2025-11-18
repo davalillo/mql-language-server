@@ -1,0 +1,1587 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>mql4-lsp-server</name>
+    </assembly>
+    <members>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.CompletionHandler">
+            <summary>
+            Handler for completion requests (auto-completion)
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.DefinitionHandler">
+            <summary>
+            Handler for definition requests (go-to-definition)
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.DidChangeTextDocumentHandler">
+            <summary>
+            Handler for didChange text document notification
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.DidCloseTextDocumentHandler">
+            <summary>
+            Handler for didClose text document notification
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.DidOpenTextDocumentHandler">
+            <summary>
+            Handler for didOpen text document notification
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.DocumentSymbolHandler">
+            <summary>
+            Handler for document symbol requests (outline view)
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.HoverHandler">
+            <summary>
+            Handler for hover requests (display symbol information on mouse hover)
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Handlers.ReferencesHandler">
+            <summary>
+            Handler for references requests (find all references)
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Lsp.Server.Mql4LspServer">
+             <summary>
+             MQL4 Language Server Protocol (LSP) server implementation.
+             Provides IDE features for MQL4 (MetaTrader 4) trading scripts.
+            
+             Phase 3.5: Server Core with basic initialization and capabilities.
+             Phase 3.6: LSP Handlers implemented (DocumentSymbol, Definition, References, Completion, Hover, and TextDocumentSync)
+             </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Lsp.Server.Mql4LspServer.Initialize">
+            <summary>
+            Initialize the LSP server with handlers and capabilities
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Models.Mql4File">
+            <summary>
+            Represents an MQL4 file (.mq4 or .mqh)
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4File.FilePath">
+            <summary>
+            File path
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4File.Content">
+            <summary>
+            File content
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4File.Symbols">
+            <summary>
+            Parsed symbols
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4File.Includes">
+            <summary>
+            Included files
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Models.Mql4Symbol">
+            <summary>
+            Represents a symbol in MQL4 code (function, variable, etc.)
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Name">
+            <summary>
+            Name of the symbol
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Kind">
+            <summary>
+            Kind of symbol (Function, Variable, etc.)
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Range">
+            <summary>
+            Range within the document
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.SelectionRange">
+            <summary>
+            Selection range (usually same as Range)
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.FullRange">
+            <summary>
+            Full range including body
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Detail">
+            <summary>
+            Detailed description
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Children">
+            <summary>
+            Children symbols (for hierarchical structure)
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.Parent">
+            <summary>
+            Parent symbol
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.IsPredefined">
+            <summary>
+            Is this a predefined MQL4 symbol?
+            </summary>
+        </member>
+        <member name="P:Mql4LanguageServer.Models.Mql4Symbol.FilePath">
+            <summary>
+            Source file path
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Models.Mql4SymbolKind">
+            <summary>
+            MQL4 specific symbol kinds
+            Based on LSP SymbolKind enum
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins">
+            <summary>
+            MQL4 Built-in Functions and Variables
+            </summary>
+        </member>
+        <member name="F:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.BuiltInFunctions">
+            <summary>
+            Built-in MQL4 functions (name -> signature)
+            </summary>
+        </member>
+        <member name="F:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.BuiltInVariables">
+            <summary>
+            Built-in MQL4 variables
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.IsBuiltinFunction(System.String)">
+            <summary>
+            Check if a name is a built-in function
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.IsBuiltinVariable(System.String)">
+            <summary>
+            Check if a name is a built-in variable
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.IsBuiltin(System.String)">
+            <summary>
+            Check if a name is a built-in (function or variable)
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.GetBuiltinFunctionSignature(System.String)">
+            <summary>
+            Get builtin function signature
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Mql4.Builtins.Mql4Builtins.GetBuiltinVariableDescription(System.String)">
+            <summary>
+            Get builtin variable description
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Parser.Mql4AntlrParser">
+            <summary>
+            MQL4 ANTLR Parser - Wraps the generated ANTLR parser with MQL4-specific functionality
+            </summary>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.ParseFile(System.String,System.String)">
+            <summary>
+            Parse an MQL4 file from its content
+            </summary>
+            <param name="content">File content to parse</param>
+            <param name="filePath">File path (for error reporting)</param>
+            <returns>Parsed Mql4File with symbols</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.ParseFileFromPath(System.String)">
+            <summary>
+            Parse an MQL4 file from a file path
+            </summary>
+            <param name="filePath">Path to the MQL4 file</param>
+            <returns>Parsed Mql4File with symbols</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.FindSymbolAtPosition(System.Int32,System.Int32)">
+            <summary>
+            Find a symbol at a specific position in the file
+            </summary>
+            <param name="line">Line number (1-based)</param>
+            <param name="column">Column number (1-based)</param>
+            <returns>Symbol at position, or null if not found</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.FindSymbolsByName(System.String)">
+            <summary>
+            Find all symbols matching a name pattern
+            </summary>
+            <param name="name">Name pattern (case-insensitive)</param>
+            <returns>List of matching symbols</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.GetAllSymbols">
+            <summary>
+            Get all symbols in the file
+            </summary>
+            <returns>All symbols</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.GetIncludes">
+            <summary>
+            Get all include directives
+            </summary>
+            <returns>All includes</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.IsBuiltin(System.String)">
+            <summary>
+            Check if a symbol is a builtin function or variable
+            </summary>
+            <param name="name">Symbol name</param>
+            <returns>True if builtin</returns>
+        </member>
+        <member name="M:Mql4LanguageServer.Parser.Mql4AntlrParser.GetCompletions(System.Int32,System.Int32)">
+            <summary>
+            Get completion suggestions at a position
+            </summary>
+            <param name="line">Line number</param>
+            <param name="column">Column number</param>
+            <returns>List of completion items</returns>
+        </member>
+        <member name="T:Mql4LanguageServer.Parser.SyntaxErrorListener">
+            <summary>
+            ANTLR Error Listener for syntax error reporting
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Parser.Mql4SymbolVisitor">
+            <summary>
+            ANTLR Visitor to extract MQL4 symbols from the parse tree
+            </summary>
+        </member>
+        <member name="T:Mql4LanguageServer.Program">
+             <summary>
+             Entry point for the MQL4 Language Server
+            
+             Phase 3.7: Complete LSP Server with stdio connection and all handlers
+             </summary>
+        </member>
+        <member name="T:Mql4Grammar.Mql4GrammarBaseListener">
+            <summary>
+            This class provides an empty implementation of <see cref="T:Mql4Grammar.IMql4GrammarListener"/>,
+            which can be extended to create a listener which only needs to handle a subset
+            of the available methods.
+            </summary>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            <para>The default implementation does nothing.</para>
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.EnterEveryRule(Antlr4.Runtime.ParserRuleContext)">
+            <inheritdoc/>
+            <remarks>The default implementation does nothing.</remarks>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.ExitEveryRule(Antlr4.Runtime.ParserRuleContext)">
+            <inheritdoc/>
+            <remarks>The default implementation does nothing.</remarks>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.VisitTerminal(Antlr4.Runtime.Tree.ITerminalNode)">
+            <inheritdoc/>
+            <remarks>The default implementation does nothing.</remarks>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseListener.VisitErrorNode(Antlr4.Runtime.Tree.IErrorNode)">
+            <inheritdoc/>
+            <remarks>The default implementation does nothing.</remarks>
+        </member>
+        <member name="T:Mql4Grammar.Mql4GrammarBaseVisitor`1">
+            <summary>
+            This class provides an empty implementation of <see cref="T:Mql4Grammar.IMql4GrammarVisitor`1"/>,
+            which can be extended to create a visitor which only needs to handle a subset
+            of the available methods.
+            </summary>
+            <typeparam name="Result">The return type of the visit operation.</typeparam>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.Mql4GrammarBaseVisitor`1.VisitLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            <para>
+            The default implementation returns the result of calling <see cref="M:Antlr4.Runtime.Tree.AbstractParseTreeVisitor`1.VisitChildren(Antlr4.Runtime.Tree.IRuleNode)"/>
+            on <paramref name="context"/>.
+            </para>
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="T:Mql4Grammar.IMql4GrammarListener">
+            <summary>
+            This interface defines a complete listener for a parse tree produced by
+            <see cref="T:Mql4Grammar.Mql4GrammarParser"/>.
+            </summary>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.EnterLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Enter a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarListener.ExitLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Exit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+        </member>
+        <member name="T:Mql4Grammar.IMql4GrammarVisitor`1">
+            <summary>
+            This interface defines a complete generic visitor for a parse tree produced
+            by <see cref="T:Mql4Grammar.Mql4GrammarParser"/>.
+            </summary>
+            <typeparam name="Result">The return type of the visit operation.</typeparam>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitCompilationUnit(Mql4Grammar.Mql4GrammarParser.CompilationUnitContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.compilationUnit"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitDirective(Mql4Grammar.Mql4GrammarParser.DirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.directive"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitIncludeDirective(Mql4Grammar.Mql4GrammarParser.IncludeDirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.includeDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitPropertyDirective(Mql4Grammar.Mql4GrammarParser.PropertyDirectiveContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.propertyDirective"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitGlobalDeclaration(Mql4Grammar.Mql4GrammarParser.GlobalDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.globalDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitFunctionDeclaration(Mql4Grammar.Mql4GrammarParser.FunctionDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.functionDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitParameterList(Mql4Grammar.Mql4GrammarParser.ParameterListContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameterList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitParameter(Mql4Grammar.Mql4GrammarParser.ParameterContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.parameter"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitVariableDeclaration(Mql4Grammar.Mql4GrammarParser.VariableDeclarationContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.variableDeclaration"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitDataType(Mql4Grammar.Mql4GrammarParser.DataTypeContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.dataType"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitBlock(Mql4Grammar.Mql4GrammarParser.BlockContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.block"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitStatement(Mql4Grammar.Mql4GrammarParser.StatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.statement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitExpressionStatement(Mql4Grammar.Mql4GrammarParser.ExpressionStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expressionStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitIfStatement(Mql4Grammar.Mql4GrammarParser.IfStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.ifStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitWhileStatement(Mql4Grammar.Mql4GrammarParser.WhileStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.whileStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitForStatement(Mql4Grammar.Mql4GrammarParser.ForStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.forStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitReturnStatement(Mql4Grammar.Mql4GrammarParser.ReturnStatementContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.returnStatement"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitExpression(Mql4Grammar.Mql4GrammarParser.ExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.expression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitLogicalOrExpression(Mql4Grammar.Mql4GrammarParser.LogicalOrExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalOrExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitLogicalAndExpression(Mql4Grammar.Mql4GrammarParser.LogicalAndExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.logicalAndExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitEqualityExpression(Mql4Grammar.Mql4GrammarParser.EqualityExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.equalityExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitRelationalExpression(Mql4Grammar.Mql4GrammarParser.RelationalExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.relationalExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitAdditiveExpression(Mql4Grammar.Mql4GrammarParser.AdditiveExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.additiveExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitMultiplicativeExpression(Mql4Grammar.Mql4GrammarParser.MultiplicativeExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.multiplicativeExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitUnaryExpression(Mql4Grammar.Mql4GrammarParser.UnaryExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.unaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitPostfixExpression(Mql4Grammar.Mql4GrammarParser.PostfixExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.postfixExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitArgumentList(Mql4Grammar.Mql4GrammarParser.ArgumentListContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.argumentList"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitPrimaryExpression(Mql4Grammar.Mql4GrammarParser.PrimaryExpressionContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.primaryExpression"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+        <member name="M:Mql4Grammar.IMql4GrammarVisitor`1.VisitLiteral(Mql4Grammar.Mql4GrammarParser.LiteralContext)">
+            <summary>
+            Visit a parse tree produced by <see cref="M:Mql4Grammar.Mql4GrammarParser.literal"/>.
+            </summary>
+            <param name="context">The parse tree.</param>
+            <return>The visitor result.</return>
+        </member>
+    </members>
+</doc>
