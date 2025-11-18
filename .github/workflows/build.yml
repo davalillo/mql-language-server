@@ -68,19 +68,20 @@ jobs:
       run: dotnet restore
 
     - name: Build Linux x64
-      run: |
-        cd ${{ github.workspace }}
-        dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/linux-x64/
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/linux-x64/
 
     - name: Build macOS x64
-      run: |
-        cd ${{ github.workspace }}
-        dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/osx-x64/
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/osx-x64/
 
     - name: Build Windows x64
+      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/win-x64/
+
+    - name: Move binaries to root bin/
       run: |
-        cd ${{ github.workspace }}
-        dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o bin/win-x64/
+        mkdir -p bin/linux-x64 bin/osx-x64 bin/win-x64
+        cp src/bin/linux-x64/mql4-lsp-server bin/linux-x64/
+        cp src/bin/osx-x64/mql4-lsp-server bin/osx-x64/
+        cp src/bin/win-x64/mql4-lsp-server.exe bin/win-x64/
 
     - name: Make Linux binary executable
       run: chmod +x bin/linux-x64/mql4-lsp-server
