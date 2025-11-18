@@ -102,30 +102,30 @@ jobs:
         path: nupkg/*.nupkg
         retention-days: 90
 
+    - name: Calculate checksums
+      run: |
+        cd bin
+        sha256sum linux-x64/mql4-lsp-server > SHA256SUMS.txt
+        sha256sum osx-x64/mql4-lsp-server >> SHA256SUMS.txt
+        sha256sum win-x64/mql4-lsp-server.exe >> SHA256SUMS.txt
+        cat SHA256SUMS.txt
+        cd ..
+
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        RELEASE_NAME="MQL4 Language Server v$VERSION"
-
-        # Calculate checksums
-        (cd bin && sha256sum linux-x64/mql4-lsp-server > SHA256SUMS.txt)
-        (cd bin && sha256sum osx-x64/mql4-lsp-server >> SHA256SUMS.txt)
-        (cd bin && sha256sum win-x64/mql4-lsp-server.exe >> SHA256SUMS.txt)
-
-        # TODO: Create release with assets
-        # gh release create $VERSION \
-        #   --title "$RELEASE_NAME" \
-        #   --notes-file RELEASE_NOTES.md \
-        #   --latest \
-        #   bin/linux-x64/mql4-lsp-server \
-        #   bin/osx-x64/mql4-lsp-server \
-        #   bin/win-x64/mql4-lsp-server.exe \
-        #   nupkg/*.nupkg \
-        #   bin/SHA256SUMS.txt
-      shell: bash
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: MQL4 Language Server ${{ github.ref_name }}
+        body_path: RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+        files: |
+          bin/linux-x64/mql4-lsp-server
+          bin/osx-x64/mql4-lsp-server
+          bin/win-x64/mql4-lsp-server.exe
+          bin/SHA256SUMS.txt
+          nupkg/*.nupkg
 
   test-binaries:
     name: Test ${{ matrix.os }} binary
