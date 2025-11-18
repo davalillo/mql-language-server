@@ -9,15 +9,35 @@
     <!-- <TreatWarningsAsErrors>true</TreatWarningsAsErrors> -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <!-- NuGet Tool Configuration -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>mql4-lsp-server</ToolCommandName>
+    <PackageId>mql4-language-server</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>MQL4 Language Server Team</Authors>
+    <Description>Language Server Protocol implementation for MQL4 (MetaTrader 4)</Description>
+    <PackageTags>lsp;mql4;metatrader;language-server</PackageTags>
+    <RepositoryUrl>https://github.com/davalillo/mql4-language-server</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <!-- Only publish as self-contained when NOT packing for NuGet -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishTrimmed>false</PublishTrimmed>
     <DebugType>portable</DebugType>
   </PropertyGroup>
+
+  <!-- Override settings when packing as NuGet Tool -->
+  <Target Name="PackTool" AfterTargets="Build">
+    <PropertyGroup>
+      <SelfContained>false</SelfContained>
+      <PublishSingleFile>false</PublishSingleFile>
+    </PropertyGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />

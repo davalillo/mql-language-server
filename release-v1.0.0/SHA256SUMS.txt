@@ -1,0 +1,2 @@
+f6217bcbeba10ca998d7f3ad59fbcc43e272efd8e30dc49678d1325783a7ba8d  mql4-lsp-server
+e9f6b95feafadf95633df10fb14dd6e3f4abb713e0a7c7465a66979fb1541806  mql4-lsp-server.exe
