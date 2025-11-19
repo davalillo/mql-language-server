@@ -2,7 +2,7 @@
 # VERSIÓN FINAL – MANUAL FUNCIONA PERFECTO (2025)
 # - Ejecuta en dispatch si tag 'v*' (incluyendo private para pruebas)
 # - No más skips innecesarios ni errores 422
-# - Debug: Logs en skipped jobs (fixeado para no unrecognized function)
+# - Quitados debug skipped para evitar unrecognized function
 
 name: Build and Release (granular + dispatch)
 
@@ -55,10 +55,6 @@ jobs:
     outputs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
-      - name: Debug skip reason
-        if: always() && (job.status == 'skipped')
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
-
       - name: Checkout (privado)
         uses: actions/checkout@v4
 
@@ -103,10 +99,6 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
-      - name: Debug skip reason
-        if: always() && (job.status == 'skipped')
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
-
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
@@ -137,10 +129,6 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
-      - name: Debug skip reason
-        if: always() && (job.status == 'skipped')
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
-
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
