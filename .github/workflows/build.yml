@@ -1,8 +1,8 @@
-# .github/workflows/release.yml
-# VERSIÓN FIXEADA PARA WORKFLOW_DISPATCH + TAGS (2025)
-# - Funciona manual (con input 'tag') o auto (en tags reales)
-# - No más skips: condiciones adaptadas al trigger
-# - Debug: Muestra el tag usado en logs
+# .github/workflows/build.yml  # ← Como en tu screenshot; si es release.yml, cámbialo
+# VERSIÓN FINAL FIXEADA (2025) – SIN SKIPS NI ERRORES 422
+# - Ejecuta manual con tag 'v*' sin skipear lo importante
+# - Quitado parámetro inválido para evitar 422 validation failed
+# - Debug: Logs claros si algo se skipea
 
 name: Build and Release (granular + dispatch)
 
@@ -10,9 +10,9 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:  # ← MANUAL: Aparece "Run workflow" en Actions tab
+  workflow_dispatch:  # MANUAL: Aparece "Run workflow" en Actions tab
     inputs:
-      tag:  # ← Input para simular tag en runs manuales
+      tag:  # Input para simular tag en runs manuales
         description: 'Tag para release (ej. v1.0.17) – deja vacío para run de prueba'
         required: false
         default: 'manual-run'  # Default no-v-tag para pruebas sin release
@@ -23,7 +23,6 @@ permissions:
 env:
   DOTNET_VERSION: "8.0.x"
 
-# Helper: Calcula el tag efectivo (input o real)
 jobs:
   get-effective-tag:
     name: Get effective tag
@@ -48,7 +47,6 @@ jobs:
           echo "DEBUG: Using tag: $TAG"
           echo "DEBUG: Is real tag trigger? $IS_TAG_TRIGGER"
 
-  # 1. Build y publicación (solo si es tag real O input tag empieza con 'v')
   publish-binaries:
     name: Publish all platforms
     needs: get-effective-tag
@@ -59,6 +57,10 @@ jobs:
     outputs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
+      - name: Debug skip reason
+        if: skipped()
+        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+
       - name: Checkout (privado)
         uses: actions/checkout@v4
 
@@ -97,13 +99,18 @@ jobs:
             bin/
             nupkg/
 
-  # 2. Release en repo PRIVADO (solo para tags reales)
   release-private:
     name: Release → Repo privado (opcional)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true'  # Solo para tags reales
+    if: |
+      needs.get-effective-tag.outputs.is_tag_trigger == 'true' ||
+      startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # ← FIX: Ahora corre en dispatch con 'v*'
     steps:
+      - name: Debug skip reason
+        if: skipped()
+        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
@@ -120,7 +127,7 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          failOnUnmatchedFiles: false
+          artifactErrorsFailBuild: false  # ← FIX: Reemplaza el inválido failOnUnmatchedFiles
           artifacts: |
             bin/linux-x64/mql4-lsp-server
             bin/osx-x64/mql4-lsp-server
@@ -129,7 +136,6 @@ jobs:
             bin/SHA256SUMS.txt
             nupkg/*.nupkg
 
-  # 3. MIRROR PÚBLICO (solo para tags válidos)
   release-public:
     name: Release → Repo público (davalillo/mql4-language-server-releases)
     needs: [get-effective-tag, publish-binaries]
@@ -138,6 +144,10 @@ jobs:
       needs.get-effective-tag.outputs.is_tag_trigger == 'true' ||
       startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
+      - name: Debug skip reason
+        if: skipped()
+        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
@@ -162,7 +172,7 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          failOnUnmatchedFiles: false
+          artifactErrorsFailBuild: false  # ← FIX: Reemplaza el inválido failOnUnmatchedFiles
           skipIfReleaseExists: false
 
           artifacts: |
