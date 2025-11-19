@@ -2,11 +2,8 @@ name: Build and Release
 
 on:
   push:
-    branches: [ main ]
     tags:
       - 'v*'
-  pull_request:
-    branches: [ main ]
 
 permissions:
   contents: write
@@ -140,6 +137,27 @@ jobs:
           bin/win-x64/mql4-lsp-server.exe \
           bin/SHA256SUMS.txt \
           nupkg/*.nupkg \
+          --clobber
+
+    - name: Mirror Release to Public Repository
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Create release in public mirror (ignore errors if already exists)
+        gh release create ${{ github.ref_name }} \
+          --repo davalillo/mql4-language-server-releases \
+          --title "MQL4 Language Server ${{ github.ref_name }}" \
+          --notes "Binaries for version ${{ github.ref_name }}" \
+          --draft=false 2>/dev/null || true
+
+        # Upload binaries to public mirror
+        gh release upload ${{ github.ref_name }} \
+          bin/linux-x64/mql4-lsp-server \
+          bin/osx-x64/mql4-lsp-server \
+          bin/win-x64/mql4-lsp-server.exe \
+          bin/SHA256SUMS.txt \
+          --repo davalillo/mql4-language-server-releases \
           --clobber
 
   test-binaries:
