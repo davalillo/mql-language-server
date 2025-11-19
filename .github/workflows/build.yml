@@ -1,7 +1,7 @@
 # .github/workflows/build.yml
 # VERSIÓN FINAL – MANUAL FUNCIONA PERFECTO (2025)
 # - Ejecuta en dispatch si tag 'v*' (incluyendo private para pruebas)
-- No más skips innecesarios ni errores 422
+# - No más skips innecesarios ni errores 422
 # - Debug: Logs en skipped jobs
 
 name: Build and Release (granular + dispatch)
@@ -101,7 +101,7 @@ jobs:
     name: Release → Repo privado (opcional)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # FIX: Ahora corre en dispatch con 'v*'
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # FIX: Corre en dispatch con 'v*'
     steps:
       - name: Debug skip reason
         if: skipped()
@@ -123,7 +123,6 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          # Quitado failOnUnmatchedFiles (inválido) → usa artifactErrorsFailBuild si necesitas, pero no es necesario
           artifacts: |
             bin/linux-x64/mql4-lsp-server
             bin/osx-x64/mql4-lsp-server
@@ -157,16 +156,15 @@ jobs:
           owner: davalillo
 
           tag: ${{ needs.publish-binaries.outputs.tag }}
-          name: "MQL4 Language Server ${{ needs.publish-binaries.outputs.tag }}"
           body: |
             Binaries y paquete NuGet para la versión ${{ needs.publish-binaries.outputs.tag }}.
 
             Verifica integridad con SHA256SUMS.txt
+            DEBUG: Token presente? ${{ secrets.PUBLIC_RELEASES_TOKEN != '' }}
 
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          # Quitado failOnUnmatchedFiles (inválido) → usa artifactErrorsFailBuild si necesitas, pero no es necesario
           skipIfReleaseExists: false
 
           artifacts: |
