@@ -93,10 +93,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: mql4-lsp-binaries-${{ github.sha }}
-        path: |
-          bin/linux-x64/mql4-lsp-server
-          bin/osx-x64/mql4-lsp-server
-          bin/win-x64/mql4-lsp-server.exe
+        path: bin/
         retention-days: 90
 
     - name: Upload NuGet package artifact
