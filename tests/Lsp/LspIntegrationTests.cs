@@ -161,6 +161,80 @@ public class LspIntegrationTests
     }
 
     [Fact]
+    public async Task DocumentSymbolHandler_Handle_ReturnsDocumentSymbols()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
+        var parser = new Mql4AntlrParser();
+        var handler = new DocumentSymbolHandler(mockLogger.Object, parser);
+
+        // Create a temporary test file
+        var testFile = Path.Combine(Path.GetTempPath(), $"test-{Guid.NewGuid():N}.mq4");
+        var mql4Code = @"
+            int OnInit()
+            {
+                return 0;
+            }
+
+            void OnTick()
+            {
+                Print(""Tick"");
+            }
+
+            int myVariable = 10;
+        ";
+        await File.WriteAllTextAsync(testFile, mql4Code);
+
+        try
+        {
+            // Create request parameters
+            var documentUri = new Uri($"file://{testFile}");
+            var request = new DocumentSymbolParams
+            {
+                TextDocument = new TextDocumentIdentifier(documentUri)
+            };
+
+            // Act
+            var result = await handler.Handle(request, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            var symbols = result.ToArray();
+            Assert.True(symbols.Length > 0, $"Expected at least one symbol, found {symbols.Length}");
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(testFile))
+            {
+                File.Delete(testFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DocumentSymbolHandler_Handle_ReturnsNullForNonExistentFile()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
+        var mockParser = new Mock<Mql4AntlrParser>();
+        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object);
+
+        // Create request with non-existent file
+        var documentUri = new Uri("file:///non/existent/file.mq4");
+        var request = new DocumentSymbolParams
+        {
+            TextDocument = new TextDocumentIdentifier(documentUri)
+        };
+
+        // Act
+        var result = await handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public void DefinitionHandler_CanBeCreated()
     {
         // Arrange
