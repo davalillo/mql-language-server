@@ -51,7 +51,7 @@ jobs:
     name: Publish all platforms
     needs: get-effective-tag
     runs-on: ubuntu-latest
-    if: (needs.get-effective-tag.outputs.is_tag_trigger == 'true') || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     outputs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
@@ -101,7 +101,7 @@ jobs:
     name: Release → Repo privado (opcional)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: (needs.get-effective-tag.outputs.is_tag_trigger == 'true') || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # FIX: Corre en dispatch con 'v*'
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
       - name: Debug skip reason
         if: skipped()
@@ -135,7 +135,7 @@ jobs:
     name: Release → Repo público (davalillo/mql4-language-server-releases)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: (needs.get-effective-tag.outputs.is_tag_trigger == 'true') || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
       - name: Debug skip reason
         if: skipped()
@@ -144,7 +144,7 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: binaries-${{ needs.publish-binaries.outputs.effective_tag }}
+          name: binaries-${{ needs.publish-binaries.outputs.tag }}
           path: .
 
       - name: Create/Update release público – 100% infalible
