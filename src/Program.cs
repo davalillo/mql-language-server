@@ -21,10 +21,12 @@ namespace Mql4LanguageServer
         static async Task<int> Main(string[] args)
         {
             // Configure Serilog for structured logging
+            // IMPORTANT: Write to stderr to avoid polluting JSON-RPC stdout
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .WriteTo.Console(outputTemplate:
-                    "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Console(
+                    standardErrorFromLevel: Serilog.Events.LogEventLevel.Information,
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File("mql4-lsp-server.log", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
