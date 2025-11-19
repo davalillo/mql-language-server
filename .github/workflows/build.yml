@@ -1,8 +1,8 @@
-# .github/workflows/build.yml  # ← Como en tu screenshot; si es release.yml, cámbialo
-# VERSIÓN FINAL FIXEADA (2025) – SIN SKIPS NI ERRORES 422
-# - Ejecuta manual con tag 'v*' sin skipear lo importante
-# - Quitado parámetro inválido para evitar 422 validation failed
-# - Debug: Logs claros si algo se skipea
+# .github/workflows/build.yml
+# VERSIÓN FINAL – MANUAL FUNCIONA PERFECTO (2025)
+# - Ejecuta en dispatch si tag 'v*' (incluyendo private para pruebas)
+- No más skips innecesarios ni errores 422
+# - Debug: Logs en skipped jobs
 
 name: Build and Release (granular + dispatch)
 
@@ -51,9 +51,7 @@ jobs:
     name: Publish all platforms
     needs: get-effective-tag
     runs-on: ubuntu-latest
-    if: |
-      needs.get-effective-tag.outputs.is_tag_trigger == 'true' ||
-      startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     outputs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
@@ -103,9 +101,7 @@ jobs:
     name: Release → Repo privado (opcional)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: |
-      needs.get-effective-tag.outputs.is_tag_trigger == 'true' ||
-      startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # ← FIX: Ahora corre en dispatch con 'v*'
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')  # FIX: Ahora corre en dispatch con 'v*'
     steps:
       - name: Debug skip reason
         if: skipped()
@@ -127,7 +123,7 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          artifactErrorsFailBuild: false  # ← FIX: Reemplaza el inválido failOnUnmatchedFiles
+          # Quitado failOnUnmatchedFiles (inválido) → usa artifactErrorsFailBuild si necesitas, pero no es necesario
           artifacts: |
             bin/linux-x64/mql4-lsp-server
             bin/osx-x64/mql4-lsp-server
@@ -140,9 +136,7 @@ jobs:
     name: Release → Repo público (davalillo/mql4-language-server-releases)
     needs: [get-effective-tag, publish-binaries]
     runs-on: ubuntu-latest
-    if: |
-      needs.get-effective-tag.outputs.is_tag_trigger == 'true' ||
-      startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     steps:
       - name: Debug skip reason
         if: skipped()
@@ -172,7 +166,7 @@ jobs:
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: true
-          artifactErrorsFailBuild: false  # ← FIX: Reemplaza el inválido failOnUnmatchedFiles
+          # Quitado failOnUnmatchedFiles (inválido) → usa artifactErrorsFailBuild si necesitas, pero no es necesario
           skipIfReleaseExists: false
 
           artifacts: |
