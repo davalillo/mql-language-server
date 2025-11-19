@@ -38,6 +38,7 @@ namespace Mql4LanguageServer
                 Log.Information("=================================================");
 
                 // Create Language Server with stdio transport
+                // IMPORTANT: Handlers must be registered via .WithHandler<>() for capabilities to be announced
                 var server = LanguageServer.Create(options =>
                 {
                     options
@@ -49,7 +50,7 @@ namespace Mql4LanguageServer
                             // Register parser
                             services.AddSingleton<Mql4AntlrParser>();
 
-                            // Register all handlers
+                            // Register all handlers in DI
                             services.AddSingleton<DocumentSymbolHandler>();
                             services.AddSingleton<DefinitionHandler>();
                             services.AddSingleton<ReferencesHandler>();
@@ -61,7 +62,16 @@ namespace Mql4LanguageServer
 
                             // Register LSP server
                             services.AddSingleton<Mql4LspServer>();
-                        });
+                        })
+                        // Register handlers with server - this enables capabilities announcement
+                        .WithHandler<DocumentSymbolHandler>()
+                        .WithHandler<DefinitionHandler>()
+                        .WithHandler<ReferencesHandler>()
+                        .WithHandler<CompletionHandler>()
+                        .WithHandler<HoverHandler>()
+                        .WithHandler<DidOpenTextDocumentHandler>()
+                        .WithHandler<DidCloseTextDocumentHandler>()
+                        .WithHandler<DidChangeTextDocumentHandler>();
                 });
 
                 Log.Information("Language Server created successfully");
