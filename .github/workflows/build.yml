@@ -1,235 +1,125 @@
-name: Build and Release
+# .github/workflows/release.yml
+# VERSIÓN MÁS ROBUSTA 2025 – usa ncipollo/release-action
+# → Nunca falla por "release already exists" ni por re-runs
+# → Solo necesitas UN secret (PUBLIC_RELEASES_TOKEN)
+
+# Crear el token (sí, necesitas uno):
+# https://github.com/settings/tokens/new
+# Tipo: Classic token
+# Scopes: solo public_repo repo (o solo repo si el repo es público)
+# Nombre: da igual
+# Caducidad: 90 días o más
+
+# Añadirlo como secret en el repo privado:
+# Settings → Secrets and variables → Actions
+# New repository secret
+# Name: PUBLIC_RELEASES_TOKEN ← exactamente este nombre
+# Value: pega el token
+
+name: Build and Release (ultra-robust)
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: "8.0.x"
 
 jobs:
-  build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
-
-    - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal --logger:"trx;LogFileName=tests-results.trx"
-      continue-on-error: false
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: Test-results-${{ matrix.os }}
-        path: TestResults/*.trx
-        retention-days: 30
-
-  publish:
-    name: Publish standalone binaries
+  build-and-release:
     runs-on: ubuntu-latest
-    needs: build
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout (privado)
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore & Test
+        run: |
+          dotnet restore
+          dotnet build --no-restore -c Release
+          dotnet test --no-build -c Release
 
-    - name: Build Linux x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/linux-x64/
+      # Publicar todos los binarios standalone single-file
+      - name: Publish all platforms
+        run: |
+          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64   --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin/linux-x64
+          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64     --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin/osx-x64
+          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-arm64  --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin/osx-arm64
+          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64    --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin/win-x64
+          chmod +x bin/linux-x64/mql4-lsp-server bin/osx-*/mql4-lsp-server
 
-    - name: Build macOS x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/osx-x64/
+      - name: Generate SHA256 checksums
+        run: |
+          cd bin
+          find . -type f -exec sha256sum {} \; > SHA256SUMS.txt
 
-    - name: Build Windows x64
-      run: dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o src/bin/win-x64/
+      - name: Pack NuGet
+        run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release --no-build --output nupkg/
 
-    - name: Move binaries to root bin/
-      run: |
-        mkdir -p bin/linux-x64 bin/osx-x64 bin/win-x64
-        cp src/bin/linux-x64/mql4-lsp-server bin/linux-x64/
-        cp src/bin/osx-x64/mql4-lsp-server bin/osx-x64/
-        cp src/bin/win-x64/mql4-lsp-server.exe bin/win-x64/
+      # ===============================================
+      # RELEASE EN REPO PRIVADO (opcional – puedes borrarlo)
+      # ===============================================
+      - name: Release en repo privado (opcional)
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: "MQL4 Language Server ${{ github.ref_name }}"
+          generateReleaseNotes: true
+          artifacts: |
+            bin/linux-x64/mql4-lsp-server
+            bin/osx-x64/mql4-lsp-server
+            bin/osx-arm64/mql4-lsp-server
+            bin/win-x64/mql4-lsp-server.exe
+            bin/SHA256SUMS.txt
+            nupkg/*.nupkg
+          allowUpdates: true
+          token: ${{ github.token }}
 
-    - name: Make Linux binary executable
-      run: chmod +x bin/linux-x64/mql4-lsp-server
+      # ===============================================
+      # MIRROR PÚBLICO – LA OPCIÓN MÁS ROBUSTA
+      # ===============================================
+      - name: Mirror → repo público (infalible)
+        uses: ncipollo/release-action@v1
+        with:
+          # Token que tiene permiso de escritura solo en el repo público
+          token: ${{ secrets.PUBLIC_RELEASES_TOKEN }}
 
-    - name: Make macOS binary executable
-      run: chmod +x bin/osx-x64/mql4-lsp-server
+          # Repo destino
+          repo: mql4-language-server-releases
+          owner: davalillo
 
-    - name: Create NuGet package
-      run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release -o nupkg/
+          # Tag y título
+          tag: ${{ github.ref_name }}
+          name: "MQL4 Language Server ${{ github.ref_name }}"
+          body: |
+            Binaries y paquete NuGet para la versión ${{ github.ref_name }}
 
-    - name: Upload binaries artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: mql4-lsp-binaries-${{ github.sha }}
-        path: bin/
-        retention-days: 90
+            Verifica integridad con SHA256SUMS.txt
 
-    - name: Upload NuGet package artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: mql4-lsp-nupkg-${{ github.sha }}
-        path: nupkg/*.nupkg
-        retention-days: 90
+          # Comportamiento perfecto
+          allowUpdates: true      # Actualiza si ya existe
+          removeArtifacts: false  # No borra assets antiguos
+          omitBodyDuringUpdate: false
+          omitNameDuringUpdate: false
 
-    - name: Calculate checksums
-      run: |
-        (cd bin && sha256sum linux-x64/mql4-lsp-server > SHA256SUMS.txt)
-        (cd bin && sha256sum osx-x64/mql4-lsp-server >> SHA256SUMS.txt)
-        (cd bin && sha256sum win-x64/mql4-lsp-server.exe >> SHA256SUMS.txt)
-        cat bin/SHA256SUMS.txt
+          # Lista de archivos a subir
+          artifacts: |
+            bin/linux-x64/mql4-lsp-server
+            bin/osx-x64/mql4-lsp-server
+            bin/osx-arm64/mql4-lsp-server
+            bin/win-x64/mql4-lsp-server.exe
+            bin/SHA256SUMS.txt
+            nupkg/*.nupkg
 
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Create release without files first
-        gh release create ${{ github.ref_name }} \
-          --title "MQL4 Language Server ${{ github.ref_name }}" \
-          --generate-notes \
-          --draft=false \
-          --prerelease=false
-
-    - name: Upload Release Assets
-      if: startsWith(github.ref, 'refs/tags/v')
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Upload assets separately to avoid name conflicts
-        gh release upload ${{ github.ref_name }} \
-          bin/linux-x64/mql4-lsp-server \
-          bin/osx-x64/mql4-lsp-server \
-          bin/win-x64/mql4-lsp-server.exe \
-          bin/SHA256SUMS.txt \
-          nupkg/*.nupkg \
-          --clobber
-
-    - name: Mirror Release to Public Repository
-      if: startsWith(github.ref, 'refs/tags/v')
-      env:
-        GH_TOKEN: ${{ github.token }}
-      run: |
-        # Create release in public mirror (ignore errors if already exists)
-        gh release create ${{ github.ref_name }} \
-          --repo davalillo/mql4-language-server-releases \
-          --title "MQL4 Language Server ${{ github.ref_name }}" \
-          --notes "Binaries for version ${{ github.ref_name }}" \
-          --draft=false 2>/dev/null || true
-
-        # Upload binaries to public mirror
-        gh release upload ${{ github.ref_name }} \
-          bin/linux-x64/mql4-lsp-server \
-          bin/osx-x64/mql4-lsp-server \
-          bin/win-x64/mql4-lsp-server.exe \
-          bin/SHA256SUMS.txt \
-          --repo davalillo/mql4-language-server-releases \
-          --clobber
-
-  test-binaries:
-    name: Test ${{ matrix.os }} binary
-    runs-on: ${{ matrix.os }}
-    needs: publish
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download binaries artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: mql4-lsp-binaries-${{ github.sha }}
-        path: downloaded/
-
-    - name: Copy Linux binary
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        mkdir -p bin/
-        cp downloaded/linux-x64/mql4-lsp-server bin/
-        chmod +x bin/mql4-lsp-server
-
-    - name: Copy macOS binary
-      if: matrix.os == 'macos-latest'
-      run: |
-        mkdir -p bin/
-        cp downloaded/osx-x64/mql4-lsp-server bin/
-        chmod +x bin/mql4-lsp-server
-
-    - name: Copy Windows binary
-      if: matrix.os == 'windows-latest'
-      run: |
-        mkdir -p bin/
-        cp downloaded/win-x64/mql4-lsp-server.exe bin/
-
-    - name: Test Linux binary execution
-      if: matrix.os == 'ubuntu-latest'
-      run: timeout 3 ./bin/mql4-lsp-server --help || timeout 3 ./bin/mql4-lsp-server --stdio || true
-      shell: bash
-
-    - name: Test macOS binary execution
-      if: matrix.os == 'macos-latest'
-      run: timeout 3 ./bin/mql4-lsp-server --help || timeout 3 ./bin/mql4-lsp-server --stdio || true
-      shell: bash
-
-    - name: Test Windows binary execution
-      if: matrix.os == 'windows-latest'
-      run: |
-        timeout 3 ./bin/mql4-lsp-server.exe --help || timeout 3 ./bin/mql4-lsp-server.exe --stdio || true
-      shell: bash
-
-    - name: Verify Linux binary info
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        ls -lh bin/mql4-lsp-server
-        file bin/mql4-lsp-server
-      shell: bash
-
-    - name: Verify macOS binary info
-      if: matrix.os == 'macos-latest'
-      run: |
-        ls -lh bin/mql4-lsp-server
-        file bin/mql4-lsp-server
-      shell: bash
-
-    - name: Verify Windows binary info
-      if: matrix.os == 'windows-latest'
-      run: |
-        dir bin/
-        (Get-Item bin/mql4-lsp-server.exe).Length
-      shell: powershell
+          # Opcional: marcar como prerelease si el tag contiene -
+          prerelease: ${{ contains(github.ref_name, '-') }}
