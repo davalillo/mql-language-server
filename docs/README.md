@@ -8,6 +8,7 @@ Welcome to the MQL4 Language Server documentation. This repository is organized 
 - **[Installation Guide](../README.md#installation)** - Get started with MQL4 LSP
 - **[Editor Integration](guides/EDITOR_INTEGRATION.md)** - Configure VSCode, Neovim, Emacs, etc.
 - **[Local Installation](guides/LOCAL_INSTALLATION.md)** - Install without publishing to NuGet
+- **[Manual Testing Guide](guides/MANUAL_TESTING.md)** - Test LSP features manually
 
 ### 🔧 Development
 - **[Build Instructions](../README.md#from-source)** - How to build from source
