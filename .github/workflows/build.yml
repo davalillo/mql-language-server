@@ -2,7 +2,7 @@
 # VERSIÓN FINAL – MANUAL FUNCIONA PERFECTO (2025)
 # - Ejecuta en dispatch si tag 'v*' (incluyendo private para pruebas)
 # - No más skips innecesarios ni errores 422
-# - Debug: Logs en skipped jobs
+# - Debug: Logs en skipped jobs (fixeado para no nested error)
 
 name: Build and Release (granular + dispatch)
 
@@ -57,7 +57,8 @@ jobs:
     steps:
       - name: Debug skip reason
         if: skipped()
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+        run: | 
+          echo "DEBUG: Skipped because not tag trigger and tag not v*"
 
       - name: Checkout (privado)
         uses: actions/checkout@v4
@@ -105,7 +106,8 @@ jobs:
     steps:
       - name: Debug skip reason
         if: skipped()
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+        run: | 
+          echo "DEBUG: Skipped because not tag trigger and tag not v*"
 
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -139,7 +141,8 @@ jobs:
     steps:
       - name: Debug skip reason
         if: skipped()
-        run: echo "DEBUG: Skipped because not tag trigger and tag not v*"
+        run: | 
+          echo "DEBUG: Skipped because not tag trigger and tag not v*"
 
       - name: Download binaries
         uses: actions/download-artifact@v4
