@@ -5,19 +5,21 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+
 using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+
 namespace Mql4LanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for references requests (find all references)
 /// </summary>
-public class ReferencesHandler : IRequestHandler<ReferenceParams, LocationContainer?>
+public class ReferencesHandler : IReferencesHandler
 {
     private readonly ILogger<ReferencesHandler> _logger;
     private readonly Mql4AntlrParser _parser;
@@ -26,6 +28,14 @@ public class ReferencesHandler : IRequestHandler<ReferenceParams, LocationContai
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+    }
+
+    public ReferenceRegistrationOptions GetRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new ReferenceRegistrationOptions
+        {
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+        };
     }
 
     public async Task<LocationContainer?> Handle(ReferenceParams request, CancellationToken cancellationToken)

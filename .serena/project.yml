@@ -4,7 +4,7 @@
 #   haskell          java             julia            kotlin           lua              markdown
 #   nix              perl             php              python           python_jedi      r
 #   rego             ruby             ruby_solargraph  rust             scala            swift
-#   terraform        typescript       typescript_vts   zig
+#   terraform        typescript       typescript_vts   yaml             zig
 # Note:
 #   - For C, use cpp
 #   - For JavaScript, use typescript
@@ -15,6 +15,8 @@
 # Note that when using the JetBrains backend, language servers are not used and this list is correspondingly ignored.
 languages:
 - csharp
+- markdown
+- yaml
 
 # the encoding used by text files in the project
 # For a list of possible encodings, see https://docs.python.org/3.11/library/codecs.html#standard-encodings
@@ -74,11 +76,38 @@ read_only: false
 #  * `think_about_task_adherence`: Thinking tool for determining whether the agent is still on track with the current task.
 #  * `think_about_whether_you_are_done`: Thinking tool for determining whether the task is truly completed.
 #  * `write_memory`: Writes a named memory (for future reference) to Serena's project-specific memory store.
-excluded_tools: []
+# Deshabilita tools de lectura/edición básica para forzar uso de simbólicos (evita que Claude las ignore)
+excluded_tools:
+- read_file          # Deja que use get_symbols_overview en su lugar
+- list_dir           # Prioriza search_for_pattern o find_symbol
+- execute_shell_command  # Deshabilita bash directo; usa onboarding para builds
+- create_text_file
+- delete_lines
 
 # initial prompt for the project. It will always be given to the LLM upon activating the project
 # (contrary to the memories, which are loaded on demand).
-initial_prompt: ""
+initial_prompt: |
+  Eres un ingeniero de software senior experto en este código base.
+
+  REGLAS DE ARRANQUE OBLIGATORIAS (ejecútalas siempre al inicio de cada nueva conversación):
+  1. LO PRIMERO: ejecuta `activate_project` sin parámetros.
+  2. Luego ejecuta `get_current_config` para confirmar proyecto activo.
+  3. Si es necesario, ejecuta `onboarding`.
+  4. Nunca respondas al usuario hasta completar 1-3.
+
+  REGLAS INQUEBRANTABLES:
+  • NUNCA uses herramientas nativas de Claude para leer, buscar o editar código.
+  • Usa EXCLUSIVAMENTE herramientas de Serena MCP.
+  • Edición solo con: insert_at_line, replace_lines, insert_after_symbol, replace_symbol_body.
+  • Antes de editar: siempre explora con get_symbols_overview / find_referencing_symbols.
+  • Después de editar: siempre think_about_whether_you_are_done + dotnet build (cuando vuelva a estar habilitado execute_shell_command).
+
+  Si intentas usar Update, Bash, sed, create_text_file o cualquier vía no-MCP → detente y reintenta con herramientas de Serena.
+
+# Opcional: Incluye tools de "pensamiento" para auto-check
+included_optional_tools:
+- think_about_task_adherence  # Fuerza chequeos como "¿Estoy usando Serena?"
+- get_current_config
+- initial_instructions
 
 project_name: "mql4-language-server"
-included_optional_tools: []

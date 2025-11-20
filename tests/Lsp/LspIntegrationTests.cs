@@ -62,22 +62,14 @@ public class LspIntegrationTests
         var serviceProvider = services.BuildServiceProvider();
 
         // Act & Assert
-        Assert.True(typeof(DocumentSymbolHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(DefinitionHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(ReferencesHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(CompletionHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(HoverHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(DidOpenTextDocumentHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(DidCloseTextDocumentHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
-        Assert.True(typeof(DidChangeTextDocumentHandler).GetInterfaces()
-            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>)));
+        Assert.Contains(typeof(DocumentSymbolHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(DefinitionHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(ReferencesHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(CompletionHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(HoverHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(DidOpenTextDocumentHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(DidCloseTextDocumentHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
+        Assert.Contains(typeof(DidChangeTextDocumentHandler).GetInterfaces(), i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>));
     }
 
     #endregion

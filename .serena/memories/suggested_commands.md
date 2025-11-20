@@ -1,139 +1,335 @@
-# Suggested Commands
+# Suggested Commands for Development
 
-## Development Environment
-System: Linux (WSL2 - Microsoft Standard)
-.NET Version: 9.0.100 (compatible with net8.0 target)
+## Build Commands
 
-## Common Development Commands
-
-### Build
+### Standard Build
 ```bash
-# Build Debug configuration
+# Build the project in Debug mode
 dotnet build
 
-# Build Release configuration  
+# Build in Release mode
 dotnet build -c Release
+
+# Build with detailed output
+dotnet build -v detailed
 
 # Clean build artifacts
 dotnet clean
-
-# Restore NuGet packages
-dotnet restore
 ```
 
-### Run
+### ANTLR Parser Rebuild
 ```bash
-# Run in development mode
-dotnet run
+# Build complete (regenerates parser automatically)
+dotnet build -c Release
 
-# Run with specific arguments (LSP stdio mode)
-dotnet run -- --stdio
-
-# Run compiled binary directly (after build)
-./src/bin/Debug/net8.0/mql4-lsp-server --stdio
+# Files generated in Parser/Generated/:
+# - Mql4GrammarParser.cs
+# - Mql4GrammarLexer.cs
+# - Mql4GrammarBaseVisitor.cs
+# - Mql4GrammarListener.cs
+# - Mql4GrammarVisitor.cs
 ```
 
-### Testing (Phase 4 - Not Yet Implemented)
+## Testing Commands
+
+### Run All Tests
 ```bash
-# Run all tests (when implemented)
+# Run all tests
 dotnet test
 
-# Run tests with verbose output
-dotnet test --verbosity normal
+# Run tests with detailed output
+dotnet test --verbosity detailed
 
-# Run specific test
-dotnet test --filter FullyQualifiedName~Mql4ParserTests.ParseFunction
+# Run tests without building
+dotnet test --no-build --verbosity normal
+
+# Run tests and show coverage
+dotnet test --collect:"XPlat Code Coverage"
 ```
 
-### Publishing Standalone Binaries
-
+### Run Specific Tests
 ```bash
-# Linux x64 (self-contained)
+# Run a single test class
+dotnet test --filter FullyQualifiedName~Mql4ParserTests
+
+# Run a specific test method
+dotnet test --filter FullyQualifiedName~Mql4ParserTests.ParseFunction_ParsesSuccessfully
+
+# Run tests matching pattern
+dotnet test --filter "DisplayName~ParseVariable"
+```
+
+### Test Reports
+```bash
+# Run tests and generate TRX report
+dotnet test --logger trx
+
+# Run tests and generate HTML report
+dotnet test --logger html
+```
+
+## Standalone Binary Creation
+
+### Build Scripts (Recommended)
+```bash
+# Linux/macOS
+./build.sh
+
+# Windows
+.\build.ps1
+```
+
+### Manual Build Commands
+
+#### Build for Linux x64
+```bash
+cd src/
 dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true
+# Output: src/bin/linux-x64/mql4-lsp-server
+```
 
-# Windows x64 (self-contained)
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
-
-# macOS x64 (self-contained)
+#### Build for macOS x64
+```bash
+cd src/
 dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
-
-# Make Linux/macOS binary executable
-chmod +x src/bin/Release/net8.0/linux-x64/publish/mql4-lsp-server
+# Output: src/bin/osx-x64/mql4-lsp-server
 ```
 
-### NuGet Packaging (Phase 6 - Not Yet Implemented)
+#### Build for Windows x64
 ```bash
-# Create NuGet package
+cd src/
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# Output: src/bin/win-x64/mql4-lsp-server.exe
+```
+
+### Make Executable (Linux/macOS)
+```bash
+chmod +x bin/Release/net8.0/linux-x64/publish/mql4-lsp-server
+chmod +x bin/Release/net8.0/osx-x64/publish/mql4-lsp-server
+```
+
+## Testing Standalone Binary
+
+### Test the Binary
+```bash
+# Linux/macOS
+./src/bin/linux-x64/mql4-lsp-server --stdio
+
+# Windows
+.\src\bin\win-x64\mql4-lsp-server.exe --stdio
+```
+
+### Test with Sample MQL4 Code
+Create a test file (e.g., `test.mq4`):
+```mql4
+int OnInit()
+{
+    double price = Ask;
+    return 0;
+}
+
+void OnTick()
+{
+    Print("Tick");
+}
+```
+
+Then use with LSP-compatible editor (VSCode, Neovim, etc.)
+
+## NuGet Packaging
+
+### Create NuGet Package
+```bash
+# From root directory
+./pack.ps1
+
+# Manual packaging
 dotnet pack -c Release -o ./nupkg
-
-# Install as global tool locally
-dotnet tool install --global mql4-language-server --version 1.0.0 --add-source ./nupkg
 ```
 
-### Git Commands
+### Install as Global Tool (Local)
 ```bash
-# Check status
+dotnet tool install -g mql4-language-server --add-source ./nupkg
+```
+
+### Install as Global Tool (From GitHub Releases)
+```bash
+dotnet tool install -g mql4-language-server --version 1.0.0
+```
+
+### Use the Tool
+```bash
+# Run the LSP server
+mql4-lsp-server --stdio
+```
+
+## CI/CD
+
+### Git Workflow for CI
+```bash
+# Development (main branch) - fast CI
+git commit -am "feature: new capability"
+git push origin main
+# → Build + Tests (~3-5 minutes)
+
+# Release
+git tag v1.2.0
+git push origin v1.2.0
+# → Build + Tests + Release + Artifacts (~15-20 minutes)
+```
+
+### Manual Build Verification
+```bash
+# Verify all platforms build
+dotnet build -c Release
+dotnet test --no-build
+
+# Verify artifacts
+ls -la src/bin/Release/net8.0/*/publish/
+```
+
+## Git Commands
+
+### Check Status
+```bash
 git status
-
-# View recent commits
-git log --oneline -10
-
-# View diff
 git diff
+git diff --staged
+```
 
-# Stage and commit changes
+### Commit Changes
+```bash
+# Stage all changes
 git add .
-git commit -m "feat: description"
+
+# Commit with message
+git commit -m "feat: add new LSP handler"
 
 # Push to remote
 git push origin main
 ```
 
-### ANTLR Grammar Commands
+### Create Release Tag
 ```bash
-# ANTLR parser regeneration happens automatically during build
-# If you modify Mql4Grammar.g4, just rebuild:
-dotnet build
-
-# Generated files appear in:
-# src/Parser/Generated/
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
-### Code Analysis
+## Development Utilities
+
+### Watch for Changes (if using dotnet watch)
 ```bash
-# List files
-ls -la src/
-
-# Find C# files
-find src/ -name "*.cs" -type f
-
-# Search for pattern in code
-grep -r "class Mql4AntlrParser" src/
-
-# Count lines of code (excluding generated)
-find src/ -name "*.cs" -not -path "*/Generated/*" -not -path "*/bin/*" -not -path "*/obj/*" | xargs wc -l
+dotnet watch run --project src/Mql4LanguageServer.Server.csproj
 ```
 
-### System Utilities (Linux/WSL)
+### NuGet Package Restore
 ```bash
-# Check .NET version
-dotnet --version
-
-# List installed SDKs
-dotnet --list-sdks
-
-# Check disk space
-df -h
-
-# View process list
-ps aux | grep mql4
-
-# Kill process by name
-pkill mql4-lsp-server
+dotnet restore
+dotnet restore --verbosity detailed
 ```
 
-## Important Notes
-- Always run commands from the repository root directory unless specified
-- ANTLR grammar changes require rebuild (`dotnet build`)
-- Self-contained publishes include all dependencies (large file size ~60-100MB)
-- Use `--self-contained false` for framework-dependent deployments (smaller size)
+### Update Dependencies
+```bash
+dotnet list package --outdated
+dotnet add package <PackageName>
+```
+
+### Clean Artifacts
+```bash
+# Clean solution
+dotnet clean
+
+# Remove bin/obj directories
+find . -type d -name bin -o -name obj | xargs rm -rf
+
+# Remove generated ANTLR files
+rm -rf src/Parser/Generated/*
+```
+
+## Debugging
+
+### Run with Debug Output
+```bash
+# Enable detailed logging
+dotnet build -v detailed
+dotnet test -v detailed
+
+# Check logs
+tail -f mql4-lsp-server.log
+```
+
+### Attach Debugger (VS Code)
+```bash
+# Use C# extension
+# F5 to start debugging
+# Or use launch.json configuration
+```
+
+## Editor Integration
+
+### VSCode Settings
+Add to `.vscode/settings.json`:
+```json
+{
+  "languageServers": {
+    "MQL4": {
+      "command": "mql4-lsp-server",
+      "args": ["--stdio"]
+    }
+  }
+}
+```
+
+### Neovim LSP Configuration
+```lua
+local lspconfig = require('lspconfig')
+lspconfig.mql4_lsp = {
+  cmd = {'mql4-lsp-server', '--stdio'},
+  filetypes = {'mq4', 'mq5', 'mql4', 'mql5'},
+}
+```
+
+## Performance Testing
+
+### Measure Build Time
+```bash
+time dotnet build -c Release
+```
+
+### Measure Test Execution
+```bash
+time dotnet test --no-build --verbosity quiet
+```
+
+### Check Binary Size
+```bash
+ls -lh src/bin/Release/net8.0/*/publish/mql4-lsp-server*
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**ANTLR not generating files**
+```bash
+# Ensure Antlr4BuildTasks is installed
+dotnet restore
+dotnet build -c Release
+```
+
+**Tests failing**
+```bash
+# Clean and rebuild
+dotnet clean
+dotnet restore
+dotnet test --verbosity detailed
+```
+
+**LSP server not responding**
+```bash
+# Check logs
+cat mql4-lsp-server.log
+
+# Verify it's running
+ps aux | grep mql4-lsp-server
+```

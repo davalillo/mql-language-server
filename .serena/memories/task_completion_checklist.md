@@ -1,166 +1,149 @@
 # Task Completion Checklist
 
-When completing a development task, follow this checklist:
+## Pre-Development Checklist
 
-## 1. Code Quality
+- [ ] .NET 8 SDK installed
+- [ ] Git configured with user name and email
+- [ ] Repository cloned: `git clone https://github.com/davalillo/mql4-language-server.git`
+- [ ] Dependencies restored: `dotnet restore`
 
-### Build Verification
-```bash
-# Ensure code compiles without errors
-dotnet build -c Release
+## Build & Test Checklist
 
-# Verify no warnings (when enabled)
-dotnet build --no-incremental
-```
+### Before Committing Changes
 
-### ANTLR Grammar Changes
-If you modified `src/Mql4/Grammar/Mql4Grammar.g4`:
-```bash
-# Rebuild to regenerate parser
-dotnet build
+- [ ] Code compiles: `dotnet build -c Release`
+- [ ] All unit tests pass: `dotnet test`
+- [ ] No compiler warnings
+- [ ] No NuGet vulnerabilities in production code
+  - Note: 4 NuGet vulnerability warnings in transitive dependencies are **expected and acceptable** (System.Net.Http 4.3.0, Microsoft.Build.Utilities.Core 17.8.3, System.Private.Uri 4.3.0)
+  - These are deep ecosystem dependencies that don't affect the LSP server
 
-# Verify generated files in src/Parser/Generated/
-ls -la src/Parser/Generated/
-```
+### Standalone Binary Testing
 
-## 2. Testing (When Tests Exist - Phase 4+)
+- [ ] Linux binary builds and runs: `./build.sh`
+- [ ] Windows binary builds and runs (if on Windows): `.\build.ps1`
+- [ ] macOS binary builds and runs (if on macOS)
+- [ ] Binary size reasonable (~71-72MB for standalone)
 
-```bash
-# Run all tests
-dotnet test
+## Code Quality Checklist
 
-# Ensure all tests pass
-dotnet test --verbosity normal
+### Code Style
+- [ ] Follow C# naming conventions (PascalCase for classes/methods, camelCase for variables)
+- [ ] Use XML documentation comments for public APIs
+- [ ] Private fields use underscore prefix (`_fieldName`)
+- [ ] Case-insensitive symbol matching implemented (`StringComparer.OrdinalIgnoreCase`)
 
-# Check code coverage (when configured)
-dotnet test /p:CollectCoverage=true
-```
+### Testing
+- [ ] Unit tests added for new functionality
+- [ ] Tests follow AAA pattern (Arrange, Act, Assert)
+- [ ] Test names follow `MethodUnderTest_Scenario_ExpectedBehavior()` convention
+- [ ] Edge cases covered (empty input, invalid input, out of range)
 
-## 3. Documentation
+### ANTLR-Specific
+- [ ] Grammar rules use lowercase names
+- [ ] Tokens use `K_` prefix for keywords to avoid conflicts
+- [ ] Generated files in `Parser/Generated/` directory
+- [ ] ANTLR error listener configured
 
-### Code Documentation
-- [ ] XML documentation comments for public APIs
-- [ ] Inline comments for complex logic
-- [ ] Update README.md if user-facing changes
+## Feature Implementation Checklist
 
-### Commit Documentation
-- [ ] Update PLAN_IMPLEMENTACION.md if completing a phase
-- [ ] Update README.md "Decisiones Tecnológicas" if architectural decision
-- [ ] Update CLAUDE.md if changing development workflow
+### New LSP Handler
+- [ ] Create handler class inheriting from appropriate LSP interface
+- [ ] Register handler in `Program.cs` (both service and explicit registration)
+- [ ] Add unit tests
+- [ ] Test with sample MQL4 code
 
-## 4. Git Workflow
+### Parser Enhancement
+- [ ] Update ANTLR grammar file (`.g4`)
+- [ ] Rebuild parser: `dotnet build -c Release`
+- [ ] Verify generated files
+- [ ] Update parser visitor to handle new rules
+- [ ] Add tests for new parsing functionality
 
-### Stage Changes
-```bash
-# Review changes
-git status
-git diff
+### Built-in Functions/Variables
+- [ ] Add to `Mql4Builtins.cs`
+- [ ] Update completions if needed
+- [ ] Add tests to verify builtin detection
 
-# Stage relevant files
-git add src/path/to/changed/files
+## Pre-Release Checklist
 
-# Do NOT stage generated files
-# src/Parser/Generated/* is in .gitignore
-```
+### Documentation
+- [ ] README.md updated with new features
+- [ ] CHANGELOG.md updated (if exists)
+- [ ] Code comments up to date
 
-### Commit Message
-Follow Conventional Commits format:
-```bash
-git commit -m "type(scope): description
+### Testing
+- [ ] All tests pass on local machine
+- [ ] Integration tests with editors (VSCode, Neovim)
+- [ ] Test with real MQL4 code samples
 
-Optional body with more details
+### Binary Validation
+- [ ] Standalone binaries created for all platforms
+- [ ] Binaries tested in isolation (no .NET runtime)
+- [ ] Correct file permissions on Linux/macOS (`chmod +x`)
 
-Refs: #issue-number"
-```
+### Git
+- [ ] Changes committed with clear message
+- [ ] Tag created for release (e.g., `v1.2.0`)
+- [ ] Push to remote: `git push origin main` and `git push origin v1.2.0`
 
-Examples:
-- `feat(parser): Add array declaration support`
-- `fix(lsp): Correct document symbol range`
-- `docs(readme): Update installation guide`
+## Release Process
 
-### Push Changes
-```bash
-# Push to origin
-git push origin main
+### For Release Tags
+- [ ] Create and push version tag: `git tag v1.x.x && git push origin v1.x.x`
+- [ ] CI/CD pipeline triggers automatically
+- [ ] Verify GitHub Actions build passes
+- [ ] Verify artifacts uploaded to GitHub Releases
+- [ ] Verify NuGet package published (if applicable)
 
-# Or to feature branch
-git push origin feature/your-branch
-```
+### For Main Branch
+- [ ] Create and push feature branch: `git checkout -b feature/name`
+- [ ] Commit changes: `git commit -am "feat: description"`
+- [ ] Push branch: `git push origin feature/name`
+- [ ] Create Pull Request
+- [ ] After merge: `git checkout main && git pull origin main`
 
-## 5. Verification After Push
+## Post-Release Checklist
 
-- [ ] CI/CD pipeline passes (when configured - Phase 5+)
-- [ ] No build errors in CI
-- [ ] All tests pass in CI
-- [ ] Artifacts generated successfully
+- [ ] Verify GitHub Releases page updated
+- [ ] Test download and installation of new binary
+- [ ] Verify NuGet package installation works
+- [ ] Check for any reported issues
+- [ ] Update documentation if needed
 
-## 6. Manual Testing (Until Unit Tests Exist)
+## Editor Integration Testing
 
-### Test LSP Server Manually
-```bash
-# Build and run
-dotnet build -c Release
-./src/bin/Release/net8.0/linux-x64/mql4-lsp-server --stdio
+### VSCode
+- [ ] Extension loads without errors
+- [ ] Completion works
+- [ ] Go to definition works
+- [ ] Hover shows information
+- [ ] Document symbols displayed
 
-# Test with sample MQL4 file
-cat test_parser.mq4 | ./src/bin/Release/net8.0/linux-x64/mql4-lsp-server
-```
+### Neovim
+- [ ] LSP client connects successfully
+- [ ] All features work as expected
+- [ ] No errors in LSP logs
 
-### Verify Parser
-```bash
-# Test parser with sample code
-# (Create test script when Program.cs supports it)
-dotnet run -- test test_parser.mq4
-```
+## Common Pitfalls to Avoid
 
-## 7. Phase-Specific Checks
+- [ ] Don't use `Microsoft.LanguageServer.Protocol` (doesn't exist) - use `OmniSharp.Extensions.LanguageProtocol`
+- [ ] Don't forget to register handlers in `Program.cs` (both as services and explicitly)
+- [ ] Don't use case-sensitive string comparisons for MQL4 symbols
+- [ ] Don't commit generated ANTLR files - they're rebuilt on each build
+- [ ] Don't write to stdout (reserved for JSON-RPC) - use stderr for logging
+- [ ] Don't forget to make binaries executable on Linux/macOS (`chmod +x`)
 
-### Phase 3 (LSP Implementation)
-- [ ] Parser extracts symbols correctly
-- [ ] Built-in functions are recognized
-- [ ] Symbol positions are accurate
-- [ ] LSP handlers implemented (when applicable)
+## Performance Considerations
 
-### Phase 4 (Unit Tests) - When Implemented
-- [ ] Test coverage ≥80%
-- [ ] All edge cases tested
-- [ ] Error handling tested
+- [ ] Parser handles large MQL4 files without timeout
+- [ ] Completion doesn't freeze on large codebases
+- [ ] Memory usage reasonable for multi-file projects
+- [ ] Binary size acceptable (< 100MB standalone)
 
-### Phase 5 (Standalone Builds) - When Implemented
-- [ ] Standalone builds for all platforms
-- [ ] Binaries are executable
-- [ ] No missing dependencies
+## Security Considerations
 
-## 8. Documentation Updates
-
-When completing a phase:
-```bash
-# Update implementation plan
-# Edit PLAN_IMPLEMENTACION.md to mark phase complete
-
-# Update README if user-facing changes
-# Edit README.md
-
-# Commit documentation changes separately
-git add PLAN_IMPLEMENTACION.md README.md
-git commit -m "docs: Mark Phase X as complete"
-```
-
-## Common Mistakes to Avoid
-
-- ❌ Committing generated ANTLR files (`src/Parser/Generated/*`)
-- ❌ Pushing without building first
-- ❌ Incomplete XML documentation
-- ❌ Forgetting to update PLAN_IMPLEMENTACION.md
-- ❌ Not testing ANTLR grammar changes
-- ❌ Hardcoding paths (use portable paths)
-
-## Quick Checklist
-
-Before `git push`:
-- [ ] `dotnet build` succeeds
-- [ ] Code is documented
-- [ ] No generated files staged
-- [ ] Commit message follows conventions
-- [ ] PLAN_IMPLEMENTACION.md updated (if completing phase)
-- [ ] Manual testing performed
+- [ ] No hardcoded credentials or API keys
+- [ ] No HTTP requests (LSP server is local)
+- [ ] File access properly validated
+- [ ] Input sanitization for file paths

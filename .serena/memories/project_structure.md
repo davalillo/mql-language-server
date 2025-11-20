@@ -1,86 +1,297 @@
 # Project Structure
 
 ## Root Directory
+
 ```
 mql4-language-server/
-├── README.md                      # User documentation + tech decisions
-├── CLAUDE.md                      # Claude Code development guide
-├── PLAN_IMPLEMENTACION.md         # 7-phase implementation plan
-├── instrucciones_agente.md        # Original specification
-├── Mql4LanguageServer.sln         # Visual Studio solution
-├── test_parser.mq4                # Sample MQL4 file for testing
-├── .gitignore                     # Git ignore rules
-├── .claude/                       # Claude Code configuration
-└── src/                           # Main source code
+├── README.md                           # Main project documentation
+├── CLAUDE.md                           # Claude Code instructions
+├── Mql4LanguageServer.sln              # Solution file
+├── build.sh                            # Build script (Linux/macOS)
+├── build.ps1                           # Build script (Windows)
+├── pack.ps1                            # NuGet packaging script
+├── .gitignore                          # Git ignore rules
+├── .github/
+│   └── workflows/
+│       └── build.yml                   # CI/CD pipeline
+│
+├── src/                                # Source code
+│   ├── Mql4LanguageServer.Server.csproj
+│   ├── Program.cs                      # Entry point
+│   │
+│   ├── Models/                         # Data models
+│   │   ├── Symbol.cs                   # Symbol representation
+│   │   ├── SymbolKind.cs               # LSP symbol types
+│   │   └── Mql4File.cs                 # Parsed file representation
+│   │
+│   ├── Parser/                         # MQL4 code parser
+│   │   ├── Mql4AntlrParser.cs          # ANTLR parser wrapper
+│   │   ├── Mql4SymbolVisitor.cs        # ANTLR visitor for symbols
+│   │   ├── Mql4Grammar.g4              # ANTLR grammar definition
+│   │   └── Generated/                  # Generated parser files
+│   │       ├── Mql4GrammarParser.cs
+│   │       ├── Mql4GrammarLexer.cs
+│   │       ├── Mql4GrammarBaseListener.cs
+│   │       ├── Mql4GrammarBaseVisitor.cs
+│   │       ├── Mql4GrammarListener.cs
+│   │       └── Mql4GrammarVisitor.cs
+│   │
+│   ├── Mql4/                           # MQL4-specific resources
+│   │   └── Builtins/
+│   │       └── Mql4Builtins.cs         # Built-in functions/variables
+│   │
+│   └── Lsp/                            # LSP implementation
+│       ├── Server/
+│       │   └── Mql4LspServer.cs        # Main LSP server
+│       └── Handlers/                   # LSP request handlers
+│           ├── DocumentSymbolHandler.cs
+│           ├── DefinitionHandler.cs
+│           ├── ReferencesHandler.cs
+│           ├── CompletionHandler.cs
+│           ├── HoverHandler.cs
+│           ├── DidOpenTextDocumentHandler.cs
+│           ├── DidCloseTextDocumentHandler.cs
+│           └── DidChangeTextDocumentHandler.cs
+│
+├── tests/                              # Unit tests
+│   ├── Mql4LanguageServer.Tests.csproj
+│   │
+│   ├── Parser/                         # Parser tests
+│   │   └── Mql4ParserTests.cs          # 11 unit tests
+│   │
+│   └── Lsp/                            # LSP handler tests
+│       └── LspIntegrationTests.cs      # Integration tests
+│
+└── docs/                               # Documentation
+    ├── README.md                       # Documentation index
+    ├── guides/                         # User guides
+    │   ├── EDITOR_INTEGRATION.md       # Editor setup instructions
+    │   ├── LOCAL_INSTALLATION.md       # Installation guide
+    │   ├── DISTRIBUTION.md             # Distribution methods
+    │   └── MANUAL_TESTING.md           # Testing guide
+    │
+    ├── references/                     # Technical references
+    │   ├── BUILD_FIXES.md              # Build troubleshooting
+    │   ├── RELEASE_NOTES.md            # Release information
+    │   ├── SECURITY_FIX_SUMMARY.md     # Security notes
+    │   ├── SECURITY.md                 # Security analysis
+    │   └── FAQ.md                      # Frequently asked questions
+    │
+    ├── instrucciones_agente.md         # Implementation guide
+    └── VERIFICATION_REPORT.md          # Verification report
 ```
 
-## src/ Directory Structure
+## Source Code Organization
 
+### Models/ (Data Layer)
+- **`Symbol.cs`**: Represents a code symbol (function, variable, etc.)
+  - Properties: Name, Kind, Range, Detail, FilePath
+  - Used throughout LSP handlers
+
+- **`SymbolKind.cs`**: LSP-compliant symbol type definitions
+  - Enum mapping to LSP symbol kinds
+  - Function: 12, Variable: 13, etc.
+
+- **`Mql4File.cs`**: Represents a parsed MQL4 file
+  - Properties: Symbols, Includes, FilePath
+  - Returned by parser
+
+### Parser/ (Parsing Layer)
+- **`Mql4AntlrParser.cs`**: Main parser class
+  - ParseFile(content, filePath)
+  - FindSymbolAtPosition(line, column)
+  - FindSymbolsByName(name)
+  - GetCompletions(line, column)
+  - IsBuiltin(name)
+
+- **`Mql4Grammar.g4`**: ANTLR 4 grammar definition
+  - Defines MQL4 syntax rules
+  - Simplified but functional grammar
+
+- **`Generated/`**: Auto-generated by ANTLR
+  - **DO NOT EDIT MANUALLY**
+  - Regenerated on each build
+  - Contains parser, lexer, visitors
+
+- **`Mql4SymbolVisitor.cs`**: Custom ANTLR visitor
+  - Walks the parse tree
+  - Extracts symbols and includes
+  - Creates Symbol objects
+
+### Mql4/Builtins/ (Knowledge Base)
+- **`Mql4Builtins.cs`**: MQL4 standard library
+  - BuiltInFunctions: Dictionary of built-in functions
+  - BuiltInVariables: Dictionary of built-in variables
+  - Event handlers: OnInit, OnTick, OnDeinit
+  - Trading functions: OrderSend, OrderClose, etc.
+  - Predefined variables: Ask, Bid, Point, Digits, etc.
+
+### Lsp/Handlers/ (LSP Layer)
+- **`DocumentSymbolHandler.cs`**: Outline view
+  - Returns all symbols in a document
+  - Used for code structure navigation
+
+- **`DefinitionHandler.cs`**: Go-to-definition
+  - Finds symbol declaration from usage
+  - Returns location of definition
+
+- **`ReferencesHandler.cs`**: Find all references
+  - Finds all usages of a symbol
+  - Cross-file reference support
+
+- **`CompletionHandler.cs`**: Auto-completion
+  - Returns completions at cursor position
+  - Includes built-ins and local symbols
+
+- **`HoverHandler.cs`**: Hover information
+  - Shows symbol information on hover
+  - Displays type, description
+
+- **`DidOpenTextDocumentHandler.cs`**: Text sync - open
+- **`DidCloseTextDocumentHandler.cs`**: Text sync - close
+- **`DidChangeTextDocumentHandler.cs`**: Text sync - change
+  - Handles text document lifecycle
+  - Triggers re-parsing on changes
+
+### Lsp/Server/ (Server Layer)
+- **`Mql4LspServer.cs`**: Main LSP server
+  - Handles initialization
+  - Manages handlers registration
+
+### Program.cs (Entry Point)
+- **`Main()`**: Application entry point
+  - Configures Serilog logging
+  - Creates Language Server with stdio transport
+  - Registers all handlers and services
+  - Initializes and starts server
+
+## Test Organization
+
+### Parser Tests (Mql4ParserTests.cs)
+11 unit tests covering:
+- ParseFunction_ParsesSuccessfully
+- ParseVariable_ParsesSuccessfully
+- ParseInclude_ParsesSuccessfully
+- ParseBuiltins_AddsBuiltinFunctions
+- FindSymbolAtPosition_FindsCorrectSymbol
+- GetCompletions_ReturnsBuiltinAndLocalSymbols
+- ParseFile_EmptyCode_ReturnsEmptySymbols
+- ParseFile_CommentOnly_ReturnsEmptySymbols
+- FindSymbolAtPosition_OutOfRange_ReturnsNull
+- FindSymbolsByName_NonExistent_ReturnsEmpty
+
+### Lsp Tests (LspIntegrationTests.cs)
+Integration tests for:
+- LSP handler interactions
+- End-to-end workflows
+
+## Build Outputs
+
+### After `dotnet build`
 ```
 src/
-├── Mql4LanguageServer.Server.csproj   # Project file
-├── Program.cs                          # Entry point (Main method)
-│
-├── Models/                             # ✅ Data models (Phase 3.1)
-│   ├── Symbol.cs                       # Symbol representation
-│   ├── Mql4File.cs                     # File representation
-│   └── SymbolKind.cs                   # LSP-compliant symbol kinds
-│
-├── Parser/                             # ✅ ANTLR parser (Phase 3.2)
-│   ├── Mql4AntlrParser.cs              # Main parser class
-│   └── Generated/                      # ANTLR-generated files (auto)
-│       ├── Mql4GrammarParser.cs
-│       ├── Mql4GrammarLexer.cs
-│       ├── Mql4GrammarVisitor.cs
-│       ├── Mql4GrammarBaseVisitor.cs
-│       ├── Mql4GrammarListener.cs
-│       ├── Mql4GrammarBaseListener.cs
-│       └── *.tokens, *.interp
-│
-├── Mql4/                               # MQL4-specific code
-│   ├── Grammar/                        # ✅ ANTLR grammar (Phase 3.2)
-│   │   └── Mql4Grammar.g4              # ANTLR 4 grammar definition
-│   └── Builtins/                       # ✅ MQL4 built-ins (Phase 3.3)
-│       └── Mql4Builtins.cs             # MQL4 standard library defs
-│
-└── Lsp/                                # ⏳ LSP implementation (Phase 3.4+)
-    ├── Server/                         # ⏳ Empty (Phase 3.5)
-    ├── Handlers/                       # ⏳ Empty (Phase 3.6-3.9)
-    └── Capabilities/                   # ⏳ Empty (Phase 3.4)
+├── bin/
+│   └── Debug/
+│       └── net8.0/
+│           ├── Mql4LanguageServer.Server.dll
+│           └── ... (dependencies)
+└── obj/
+    └── Debug/
+        └── net8.0/
+            └── ... (build artifacts)
 ```
 
-## Build Artifacts
-
+### After `dotnet publish -c Release -r linux-x64`
 ```
-src/bin/
-├── Debug/net8.0/                   # Debug build output
-│   ├── mql4-lsp-server             # Linux executable
-│   ├── mql4-lsp-server.dll         # .NET assembly
-│   └── [dependencies]
-│
-└── Release/net8.0/
-    └── win-x64/                    # Windows standalone build
-        ├── mql4-lsp-server.exe     # Windows executable
-        └── [all dependencies bundled]
+src/
+└── bin/
+    └── Release/
+        └── net8.0/
+            └── linux-x64/
+                └── publish/
+                    └── mql4-lsp-server (71MB, self-contained)
 ```
 
-## Important Files
+### Generated Parser Files
+```
+src/Parser/Generated/
+├── Mql4GrammarParser.cs          # 2000+ lines
+├── Mql4GrammarLexer.cs           # 1000+ lines
+├── Mql4GrammarBaseListener.cs    # Generated listener base
+├── Mql4GrammarBaseVisitor.cs     # Generated visitor base
+├── Mql4GrammarListener.cs        # Generated listener
+└── Mql4GrammarVisitor.cs         # Generated visitor
+```
 
-### Configuration
-- `src/Mql4LanguageServer.Server.csproj` - Project dependencies and ANTLR build config
+## Key File Relationships
 
-### Source Code
-- `src/Program.cs` - Application entry point
-- `src/Parser/Mql4AntlrParser.cs` - Parser logic with ANTLR visitor pattern
-- `src/Mql4/Grammar/Mql4Grammar.g4` - ANTLR grammar definition
-- `src/Mql4/Builtins/Mql4Builtins.cs` - MQL4 built-in functions/variables
-- `src/Models/*.cs` - Data models for symbols and files
+```
+Program.cs
+  ↓ creates
+Mql4LspServer (singleton)
+  ↓ uses
+Mql4AntlrParser (singleton)
+  ↓ invokes
+Mql4SymbolVisitor
+  ↓ uses
+ANTLR Generated Files
+  ↓ produces
+Mql4File (Symbols, Includes)
+  ↓ consumed by
+All LSP Handlers
+```
 
-### Generated (Do Not Edit Manually)
-All files in `src/Parser/Generated/` are auto-generated by ANTLR during build.
+```
+Mql4AntlrParser
+  ↓ consults
+Mql4Builtins
+  ↓ returns
+Symbol objects (for LSP)
+```
 
-## Not Yet Implemented
-- `tests/` directory (Phase 4)
-- Build scripts (`build.sh`, `build.ps1`, etc.) (Phase 5)
-- GitHub Actions workflow (`.github/workflows/build.yml`) (Phase 5)
-- LSP handler implementations in `src/Lsp/` (Phase 3.4-3.9)
+```
+LSP Handlers
+  ↓ request
+Symbol data
+  ↓ use
+StringComparer.OrdinalIgnoreCase (case-insensitive)
+```
+
+## File Sizes (Typical)
+
+- `Mql4LanguageServer.Server.csproj`: ~5KB
+- `Program.cs`: ~3KB
+- `Mql4AntlrParser.cs`: ~8KB
+- `Mql4Grammar.g4`: ~15KB
+- Generated parser files: ~3000 lines total
+- `Mql4Builtins.cs`: ~10KB
+- Handler files: ~2-5KB each
+- Test files: ~10-15KB each
+
+## Language Distribution
+
+- **C#**: ~80% of code
+- **ANTLR4**: ~10% of code (grammar)
+- **XAML/XML**: ~5% (project files)
+- **Shell/PowerShell**: ~3% (build scripts)
+- **Markdown**: ~2% (documentation)
+
+## Dependencies (Main)
+
+NuGet packages (from .csproj):
+- `OmniSharp.Extensions.LanguageProtocol` 0.19.9
+- `OmniSharp.Extensions.JsonRpc` 0.19.9
+- `OmniSharp.Extensions.LanguageServer.Shared` 0.19.9
+- `Serilog` 4.0.0
+- `Serilog.Extensions.Hosting` 8.0.0
+- `Serilog.Extensions.Logging` 8.0.0
+- `Serilog.Settings.Configuration` 8.0.0
+- `Serilog.Sinks.Console` 5.0.0
+- `Serilog.Sinks.File` 5.0.0
+- `Antlr4.Runtime` 4.13.1
+- `Antlr4BuildTasks` 12.10
+
+Test dependencies:
+- `xunit` 2.4.2
+- `Microsoft.NET.Test.Sdk` 17.8.0
+- `coverlet.collector` 6.0.0

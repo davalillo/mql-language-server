@@ -4,20 +4,23 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
+
 using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Mql4.Builtins;
 using Mql4LanguageServer.Parser;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
 namespace Mql4LanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for completion requests (auto-completion)
 /// </summary>
-public class CompletionHandler : IRequestHandler<CompletionParams, CompletionList?>
+public class CompletionHandler : ICompletionHandler
 {
     private readonly ILogger<CompletionHandler> _logger;
     private readonly Mql4AntlrParser _parser;
@@ -26,6 +29,14 @@ public class CompletionHandler : IRequestHandler<CompletionParams, CompletionLis
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+    }
+
+    public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new CompletionRegistrationOptions
+        {
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+        };
     }
 
     public async Task<CompletionList?> Handle(CompletionParams request, CancellationToken cancellationToken)

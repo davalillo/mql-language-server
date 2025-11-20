@@ -1,139 +1,219 @@
 # Code Style and Conventions
 
-## C# Coding Standards
+## C# Naming Conventions
 
-### Naming Conventions
-- **Classes/Interfaces**: PascalCase (e.g., `Mql4AntlrParser`, `IMql4Parser`)
-- **Methods**: PascalCase (e.g., `ParseFile`, `ExtractSymbols`)
-- **Properties**: PascalCase (e.g., `SymbolName`, `FilePath`)
-- **Private Fields**: camelCase with underscore prefix (e.g., `_symbols`, `_logger`)
-- **Parameters**: camelCase (e.g., `filePath`, `sourceCode`)
-- **Local Variables**: camelCase (e.g., `symbols`, `nameToken`)
-- **Constants**: PascalCase (e.g., `MaxSymbols`, `DefaultTimeout`)
+### Classes and Methods
+- **Classes**: PascalCase (e.g., `Mql4AntlrParser`, `CompletionHandler`)
+- **Methods**: PascalCase (e.g., `ParseFile()`, `FindSymbolAtPosition()`)
+- **Properties**: PascalCase
+- **Constants**: PascalCase (e.g., `BuildConfiguration`)
 
-### Namespace Organization
+### Variables and Parameters
+- **Variables**: camelCase (e.g., `filePath`, `content`, `symbolList`)
+- **Private fields**: camelCase with underscore prefix (e.g., `_parsedFile`, `_symbolsByName`)
+- **Parameters**: camelCase
+
+### Files and Directories
+- **Files**: PascalCase matching class name (e.g., `CompletionHandler.cs`)
+- **Directories**: PascalCase for namespaces (e.g., `Lsp/Handlers/`)
+
+## Documentation Style
+
+### XML Documentation Comments
 ```csharp
-// Root namespace for all code
-namespace Mql4LanguageServer;
-
-// Subnamespaces by feature area
-namespace Mql4LanguageServer.Models;
-namespace Mql4LanguageServer.Parser;
-namespace Mql4LanguageServer.Mql4.Builtins;
-namespace Mql4LanguageServer.Lsp.Handlers;
+/// <summary>
+/// Parse an MQL4 file from its content
+/// </summary>
+/// <param name="content">File content to parse</param>
+/// <param name="filePath">File path (for error reporting)</param>
+/// <returns>Parsed Mql4File with symbols</returns>
+public Mql4File ParseFile(string content, string filePath = "unknown")
 ```
 
-### Type Annotations
-- **Nullable Reference Types**: Enabled (`<Nullable>enable</Nullable>`)
-- Use nullable annotations consistently:
-  ```csharp
-  string? optionalName;          // Nullable string
-  string requiredName;            // Non-nullable string
-  List<Symbol>? symbols;          // Nullable list
-  ```
-
-### Documentation Comments
-- **XML Documentation**: Required for public APIs
-- **Format**:
-  ```csharp
-  /// <summary>
-  /// Parses MQL4 source code and extracts symbols.
-  /// </summary>
-  /// <param name="sourceCode">The MQL4 source code to parse</param>
-  /// <returns>Parsed Mql4File containing symbols</returns>
-  public Mql4File ParseFile(string sourceCode) { }
-  ```
-
-### ANTLR-Specific Conventions
-
-#### Token Naming
-- **Keywords**: Prefix with `K_` to avoid conflicts
-  ```antlr
-  K_INT     : 'int';
-  K_DOUBLE  : 'double';
-  K_VOID    : 'void';
-  ```
-
-#### Context Access
-ANTLR generates methods matching token/rule names:
+### Comments in Code
+- Use `//` for single-line comments
+- Use `/* */` for multi-line comments
+- Use region directives for test organization:
 ```csharp
-// ANTLR context methods are in PascalCase matching grammar
-var functionName = context.IDENTIFIER();  // Token access
-var parameters = context.parameterList(); // Rule access
+#region ParseFunction Tests
+#endregion
 ```
 
-#### Comment Handling
-```antlr
-// Use channel(HIDDEN) instead of skip for LSP compatibility
-COMMENT_LINE  : '//' ~[\r\n]* -> channel(HIDDEN);
-COMMENT_BLOCK : '/*' .*? '*/'  -> channel(HIDDEN);
-```
+## Code Structure
 
-### Error Handling
-- Use exceptions for exceptional cases
-- Log errors with Serilog:
-  ```csharp
-  try {
-      // parsing logic
-  } catch (Exception ex) {
-      _logger.Error(ex, "Failed to parse file: {FilePath}", filePath);
-      throw;
-  }
-  ```
+### Using Directives
+- System namespaces first (alphabetically)
+- Third-party namespaces second (alphabetically)
+- Project namespaces last (alphabetically)
 
-### Project-Specific Patterns
+### Class Structure
+1. Fields (private)
+2. Constructor
+3. Public methods
+4. Private methods
+5. Properties (if any)
 
-#### Parser Pattern
-Use ANTLR Visitor pattern for AST traversal:
+Example:
 ```csharp
-public class Mql4SymbolVisitor : Mql4GrammarBaseVisitor<object?>
+public class Mql4AntlrParser
 {
-    public override object? VisitFunctionDefinition(FunctionDefinitionContext context)
+    private readonly Mql4File _parsedFile;
+    private readonly Dictionary<string, List<Mql4Symbol>> _symbolsByName;
+
+    public Mql4AntlrParser()
     {
-        // Extract symbol information
-        return base.VisitFunctionDefinition(context);
+        _parsedFile = new Mql4File();
+        _symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public Mql4File ParseFile(string content, string filePath = "unknown")
+    {
+        // Implementation
+    }
+
+    private void BuildSymbolIndex()
+    {
+        // Implementation
     }
 }
 ```
 
-#### Symbol Extraction
-Store symbols with position information for LSP:
+## Testing Conventions (xUnit)
+
+### Test Class Naming
+- Test classes: `[Feature]Tests` (e.g., `Mql4ParserTests`)
+
+### Test Method Naming
+- Format: `MethodUnderTest_Scenario_ExpectedBehavior()`
+- Example: `ParseFunction_ParsesSuccessfully()`
+
+### Test Structure (AAA Pattern)
 ```csharp
-new Symbol
+[Fact]
+public void ParseFunction_ParsesSuccessfully()
 {
-    Name = functionName,
-    Kind = SymbolKind.Function,
-    StartLine = context.Start.Line,
-    StartColumn = context.Start.Column,
-    EndLine = context.Stop.Line,
-    EndColumn = context.Stop.Column
-};
+    // Arrange
+    var code = @"
+        int OnInit()
+        {
+            return 0;
+        }
+    ";
+
+    // Act
+    var file = _parser.ParseFile(code, "test.mq4");
+
+    // Assert
+    Assert.NotNull(file);
+    Assert.NotNull(file.Symbols);
+}
 ```
 
-## File Organization
-- One class per file (except nested classes)
-- File name matches primary class name
-- Group related functionality in subdirectories
+## ANTLR-Specific Conventions
 
-## Git Commit Messages
-Follow Conventional Commits format:
+### Grammar File Naming
+- `.g4` extension (e.g., `Mql4Grammar.g4`)
+- Generated files in `Parser/Generated/`
+
+### Token Naming
+- Use `K_` prefix for keywords to avoid conflicts (e.g., `K_DOUBLE`)
+- Token names in uppercase (e.g., `COMMENT`, `IDENTIFIER`)
+
+### Token Usage in C#
+- ANTLR generates methods matching token names exactly
+- Use `context.IDENTIFIER()` (uppercase) not `context.identifier()`
+
+### Grammar Rules
+- Grammar rule names in lowercase (e.g., `variableDeclaration`)
+- Visitor methods generated in PascalCase from rule names
+
+## MQL4-Specific Conventions
+
+### Case Insensitivity
+- **Always** use `StringComparer.OrdinalIgnoreCase` for symbol lookups
+- Symbol matching is case-insensitive throughout
+- Example: `_symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase)`
+
+### Symbol Kinds
+- Function: `(SymbolKind)12`
+- Variable: `(SymbolKind)13`
+- Uses LSP-compliant symbol kinds
+
+### Line/Column Positions
+- 0-based internally (ANTLR)
+- Convert to 1-based for LSP responses
+- LSP uses 0-based positions in JSON
+
+## Error Handling
+
+### Parser Errors
+- Add custom error listener: `parser.AddErrorListener(new SyntaxErrorListener());`
+- Log errors but continue parsing
+- Return partial results if parse fails
+
+### Logging
+- Use Serilog for structured logging
+- Write to stderr to avoid polluting JSON-RPC stdout
+- Include file path and line numbers in error messages
+
+## Code Organization
+
+### Namespace Structure
 ```
-feat(parser): Add support for array declarations
-fix(lsp): Correct symbol range calculation
-docs(readme): Update installation instructions
-refactor(models): Simplify Symbol class hierarchy
-test(parser): Add test for nested function parsing
+Mql4LanguageServer
+├── Models (Symbol.cs, Mql4File.cs, SymbolKind.cs)
+├── Parser (Mql4AntlrParser.cs, Generated/*)
+├── Mql4/Builtins (Mql4Builtins.cs)
+└── Lsp/
+    ├── Server (Mql4LspServer.cs)
+    └── Handlers (*Handler.cs)
 ```
 
-Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`
+### Dependency Injection
+- All handlers registered as singletons
+- Parser registered as singleton
+- Services configured in `Program.cs`
 
-## Code Quality
-- **Warnings as Errors**: Currently disabled, to be enabled in production
-- **XML Documentation**: Required for public APIs
-- **No Warnings**: `1591` suppressed (missing XML docs)
+## String Formatting
 
-## ANTLR Grammar Style
-- Clear, readable rule names
-- Simplify grammar for LSP use (don't parse full language semantics)
-- Document complex rules with comments
-- Use meaningful token names
+### String Interpolation
+- Use `$"..."` for simple cases
+- Include variable names for clarity: `$"Expected at least 2 functions, found {file.Symbols.Count}"`
+
+### String Concatenation
+- Use `$""` for multi-line strings
+- Example:
+```csharp
+var code = @"
+    int OnInit()
+    {
+        return 0;
+    }
+";
+```
+
+## Collections
+
+### Dictionary Initialization
+```csharp
+_symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+```
+
+### LINQ Usage
+- Use `FirstOrDefault()` for safe lookups
+- Use `Contains()` for membership testing
+- Use `Select()` for projections
+
+## Accessibility Modifiers
+
+### Default to Private
+- Fields: `private` (or `private readonly`)
+- Methods: `public` only when needed externally
+- Classes: `public` for LSP handlers
+
+## Code Metrics
+
+- Keep methods focused (< 50 lines when possible)
+- Extract complex logic into private methods
+- Use meaningful variable names
+- Avoid deep nesting (> 3 levels)

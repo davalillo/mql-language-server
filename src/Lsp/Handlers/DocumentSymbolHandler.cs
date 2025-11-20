@@ -4,19 +4,22 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
 namespace Mql4LanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for document symbol requests (outline view)
 /// </summary>
-public class DocumentSymbolHandler : IRequestHandler<DocumentSymbolParams, SymbolInformationOrDocumentSymbolContainer?>
+public class DocumentSymbolHandler : IDocumentSymbolHandler
 {
     private readonly ILogger<DocumentSymbolHandler> _logger;
     private readonly Mql4AntlrParser _parser;
@@ -71,5 +74,13 @@ public class DocumentSymbolHandler : IRequestHandler<DocumentSymbolParams, Symbo
             Range = symbol.Range,
             SelectionRange = symbol.SelectionRange
         });
+    }
+
+    public DocumentSymbolRegistrationOptions GetRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new DocumentSymbolRegistrationOptions
+        {
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+        };
     }
 }
