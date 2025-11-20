@@ -39,7 +39,7 @@ public class CompletionHandler : ICompletionHandler
         };
     }
 
-    public async Task<CompletionList?> Handle(CompletionParams request, CancellationToken cancellationToken)
+    public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
     {
         try
         {
@@ -52,7 +52,7 @@ public class CompletionHandler : ICompletionHandler
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 _logger.LogWarning("File not found: {FilePath}", filePath);
-                return null;
+                return new CompletionList(Array.Empty<CompletionItem>(), false);
             }
 
             // Parse the file
@@ -77,7 +77,7 @@ public class CompletionHandler : ICompletionHandler
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing completion request for {Uri}", request.TextDocument.Uri);
-            return null;
+            return new CompletionList(Array.Empty<CompletionItem>(), false);
         }
     }
 

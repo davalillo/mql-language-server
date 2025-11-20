@@ -14,7 +14,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Mql4LanguageServer.Lsp.Handlers;
 
