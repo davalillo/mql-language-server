@@ -88,16 +88,34 @@ namespace Mql4LanguageServer
                 Log.Information("  - HoverHandler (Symbol Information)");
                 Log.Information("  - TextDocumentSync Handlers (Open/Close/Change)");
 
-                // Initialize the LSP server
-                await server.Initialize(default);
+                Log.Information("About to call server.Initialize()...");
+                await Task.Delay(100);  // Give time for log to flush
+
+                // Initialize with timeout for testing - in production, client connects immediately
+                try
+                {
+                    using (var cts = CancellationTokenSource.CreateLinkedTokenSource(default, CancellationToken.None))
+                    {
+                        cts.CancelAfter(TimeSpan.FromSeconds(5));
+                        await server.Initialize(cts.Token);
+                    }
+                    Log.Information("server.Initialize() completed - client connected!");
+                }
+                catch (OperationCanceledException)
+                {
+                    Log.Warning("server.Initialize() timed out - no LSP client connected. This is expected when running manually.");
+                    Log.Information("In production, the LSP client (VSCode, Neovim, etc.) will connect automatically.");
+                }
+
+                Log.Information("server.Initialize() process finished!");
 
                 Log.Information("=================================================");
                 Log.Information("MQL4 Language Server is ready");
                 Log.Information("Listening on stdio...");
                 Log.Information("=================================================");
 
-                // Wait for disconnect - this keeps the server running
-                await Task.Delay(-1, CancellationToken.None);
+                // Wait for the server to shutdown when the client disconnects
+                await Task.Delay(Timeout.Infinite, CancellationToken.None);
 
                 Log.Information("MQL4 Language Server shutting down...");
 
