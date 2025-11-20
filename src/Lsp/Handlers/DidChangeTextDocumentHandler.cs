@@ -3,32 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Mql4LanguageServer.Lsp.Server;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
 namespace Mql4LanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for didChange text document notification
 /// </summary>
-public class DidChangeTextDocumentHandler : IRequestHandler<DidChangeTextDocumentParams, Unit>
+public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
 {
     private readonly ILogger<DidChangeTextDocumentHandler> _logger;
     private readonly Mql4AntlrParser _parser;
-    private readonly Dictionary<Uri, Mql4File> _openFiles;
+    private readonly OpenDocumentStore _openFiles;
 
     public DidChangeTextDocumentHandler(
         ILogger<DidChangeTextDocumentHandler> logger,
         Mql4AntlrParser parser,
-        Dictionary<Uri, Mql4File> openFiles)
+        OpenDocumentStore openFiles)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
+    }
+
+    public TextDocumentChangeRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new TextDocumentChangeRegistrationOptions
+        {
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+        };
     }
 
     public Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
@@ -51,10 +65,7 @@ public class DidChangeTextDocumentHandler : IRequestHandler<DidChangeTextDocumen
 
                     var newMql4File = _parser.ParseFile(newContent, filePath);
 
-                    lock (_openFiles)
-                    {
-                        _openFiles[documentUri] = newMql4File;
-                    }
+                    _openFiles.AddOrUpdate(documentUri, newMql4File);
 
                     _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMql4File.Symbols.Count);
                 }

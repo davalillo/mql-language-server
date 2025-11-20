@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Lsp.Handlers;
 using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using Serilog;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Server;
 
 namespace Mql4LanguageServer
@@ -49,6 +52,9 @@ namespace Mql4LanguageServer
                             // Register parser
                             services.AddSingleton<Mql4AntlrParser>();
 
+                            // Register document store for tracking open files
+                            services.AddSingleton<OpenDocumentStore>();
+
                             // Register all handlers
                             services.AddSingleton<DocumentSymbolHandler>();
                             services.AddSingleton<DefinitionHandler>();
@@ -61,7 +67,16 @@ namespace Mql4LanguageServer
 
                             // Register LSP server
                             services.AddSingleton<Mql4LspServer>();
-                        });
+                        })
+                        // Explicitly register handlers with OmniSharp
+                        .WithHandler<DocumentSymbolHandler>()
+                        .WithHandler<DefinitionHandler>()
+                        .WithHandler<ReferencesHandler>()
+                        .WithHandler<CompletionHandler>()
+                        .WithHandler<HoverHandler>()
+                        .WithHandler<DidOpenTextDocumentHandler>()
+                        .WithHandler<DidCloseTextDocumentHandler>()
+                        .WithHandler<DidChangeTextDocumentHandler>();
                 });
 
                 Log.Information("Language Server created successfully");
