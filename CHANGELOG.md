@@ -1,3 +1,31 @@
+## [1.2.0] - 2025-11-21
+
+### Added
+- feat(migration): Migrate from .NET 8.0 to .NET 10.0
+- feat(code-quality): Eliminate all compiler warnings
+- fix(ci): Avoid workflow failure due to test warnings
+
+### Changed
+- TreatWarningsAsErrors enabled in both Server and Tests projects
+- Updated to .NET 10.0.100 SDK (LTS, soporte hasta 2028)
+- Removed obsolete System.Text.RegularExpressions package (now in .NET 10 runtime)
+- Removed obsolete System.Net.Http package (now in .NET 10 runtime)
+
+### Fixed
+- Security vulnerability NU1903 (System.Net.Http updated)
+- CS8625: null literal to non-nullable (3 instances)
+- CS0219: unused variable (1 instance)
+- CS8602: dereference null (4 instances)
+- VSTHRD200: add Async suffix to async methods (22 instances)
+- xUnit2012: Assert.True → Assert.Contains/NotEmpty (3 instances)
+- xUnit2013: Assert.Equal → Assert.Single (2 instances)
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 228/228 Passed
+- Compatibility: 100% - no breaking changes detected
+- Performance: Running on .NET 10.0 runtime with improvements
+
 ## [1.1.0] - 2025-11-21
 
 ### Added
