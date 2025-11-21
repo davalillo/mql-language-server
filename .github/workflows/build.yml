@@ -57,9 +57,8 @@ jobs:
       - name: Restore & Test
         run: |
           dotnet restore
-          dotnet build --no-restore -c Release -warnaserror-
-          dotnet test --no-build -c Release --verbosity normal || true
-          echo "Tests completed (warnings may be present but tests passed)"
+          dotnet build --no-restore -c Release
+          dotnet test --no-build -c Release --verbosity normal
 
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries

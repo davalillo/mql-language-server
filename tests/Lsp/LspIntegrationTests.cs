@@ -122,7 +122,6 @@ public class LspIntegrationTests
     {
         // Arrange
         var parser = new Mql4AntlrParser();
-        var code = "int myVar = 10;";
 
         // Act
         var completions = parser.GetCompletions(0, 1).ToList();
@@ -153,7 +152,7 @@ public class LspIntegrationTests
     }
 
     [Fact]
-    public async Task DocumentSymbolHandler_Handle_ReturnsDocumentSymbols()
+    public async Task DocumentSymbolHandler_Handle_ReturnsDocumentSymbolsAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
@@ -205,7 +204,7 @@ public class LspIntegrationTests
     }
 
     [Fact]
-    public async Task DocumentSymbolHandler_Handle_ReturnsNullForNonExistentFile()
+    public async Task DocumentSymbolHandler_Handle_ReturnsNullForNonExistentFileAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();

@@ -70,7 +70,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithValidDocument_ShouldParseAndStore()
+    public async Task DidOpenTextDocumentHandler_Handle_WithValidDocument_ShouldParseAndStoreAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -106,7 +106,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithNullContent_ShouldNotThrow()
+    public async Task DidOpenTextDocumentHandler_Handle_WithNullContent_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -120,7 +120,7 @@ public class TextDocumentSyncAndErrorHandlingTests
             TextDocument = new TextDocumentItem
             {
                 Uri = documentUri,
-                Text = null,
+                Text = string.Empty,
                 Version = 1
             }
         };
@@ -131,7 +131,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithEmptyDocument_ShouldParse()
+    public async Task DidOpenTextDocumentHandler_Handle_WithEmptyDocument_ShouldParseAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -158,7 +158,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithMqhFile_ShouldParse()
+    public async Task DidOpenTextDocumentHandler_Handle_WithMqhFile_ShouldParseAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -187,7 +187,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidCloseTextDocumentHandler_Handle_WithValidDocument_ShouldRemove()
+    public async Task DidCloseTextDocumentHandler_Handle_WithValidDocument_ShouldRemoveAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
@@ -211,7 +211,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidCloseTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrow()
+    public async Task DidCloseTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
@@ -230,7 +230,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithValidChanges_ShouldUpdateDocument()
+    public async Task DidChangeTextDocumentHandler_Handle_WithValidChanges_ShouldUpdateDocumentAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -269,7 +269,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithNoChanges_ShouldNotThrow()
+    public async Task DidChangeTextDocumentHandler_Handle_WithNoChanges_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -294,7 +294,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrow()
+    public async Task DidChangeTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -393,7 +393,7 @@ public class TextDocumentSyncAndErrorHandlingTests
     #region Integration Tests - Complete LSP Workflow
 
     [Fact]
-    public async Task CompleteLspWorkflow_DidOpen_FindDefinition_Complete_ShouldWork()
+    public async Task CompleteLspWorkflow_DidOpen_FindDefinition_Complete_ShouldWorkAsync()
     {
         // Arrange
         var store = new OpenDocumentStore();
@@ -437,7 +437,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task CompleteLspWorkflow_MultipleDocuments_ShouldTrackAll()
+    public async Task CompleteLspWorkflow_MultipleDocuments_ShouldTrackAllAsync()
     {
         // Arrange
         var store = new OpenDocumentStore();
@@ -477,7 +477,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task CompleteLspWorkflow_UpdateDocument_ShouldReParse()
+    public async Task CompleteLspWorkflow_UpdateDocument_ShouldReParseAsync()
     {
         // Arrange
         var store = new OpenDocumentStore();
@@ -508,7 +508,8 @@ void OnTick()
         }, CancellationToken.None);
 
         Assert.True(store.TryGetValue(documentUri, out var initialFile));
-        Assert.Equal(1, initialFile.Symbols.Count);
+        Assert.NotNull(initialFile);
+        Assert.Single(initialFile.Symbols);
 
         // Act 2: Update document
         var changeParams = new DidChangeTextDocumentParams
@@ -529,11 +530,12 @@ void OnTick()
 
         // Assert 2: Document updated and re-parsed
         Assert.True(store.TryGetValue(documentUri, out var updatedFile));
+        Assert.NotNull(updatedFile);
         Assert.Equal(2, updatedFile.Symbols.Count); // OnInit and NewFunc
     }
 
     [Fact]
-    public async Task CompleteLspWorkflow_OpenAndClose_ShouldManageMemory()
+    public async Task CompleteLspWorkflow_OpenAndClose_ShouldManageMemoryAsync()
     {
         // Arrange
         var store = new OpenDocumentStore();
@@ -579,7 +581,7 @@ void OnTick()
     #region Error Handling and Exception Path Tests
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithParserException_ShouldLogError()
+    public async Task DidOpenTextDocumentHandler_Handle_WithParserException_ShouldLogErrorAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -604,7 +606,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidCloseTextDocumentHandler_Handle_WithException_ShouldLogError()
+    public async Task DidCloseTextDocumentHandler_Handle_WithException_ShouldLogErrorAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
@@ -625,7 +627,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithException_ShouldLogError()
+    public async Task DidChangeTextDocumentHandler_Handle_WithException_ShouldLogErrorAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -653,7 +655,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithNullChangeText_ShouldNotThrow()
+    public async Task DidChangeTextDocumentHandler_Handle_WithNullChangeText_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -671,7 +673,7 @@ void OnTick()
                 Version = 2
             },
             ContentChanges = new Container<TextDocumentContentChangeEvent>(
-                new TextDocumentContentChangeEvent { Text = null }
+                new TextDocumentContentChangeEvent { Text = string.Empty }
             )
         };
 
@@ -681,7 +683,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithMalformedUri_ShouldLogError()
+    public async Task DidOpenTextDocumentHandler_Handle_WithMalformedUri_ShouldLogErrorAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -705,7 +707,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithEmptyChangeList_ShouldNotThrow()
+    public async Task DidChangeTextDocumentHandler_Handle_WithEmptyChangeList_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
@@ -730,11 +732,12 @@ void OnTick()
         Assert.Equal(Unit.Value, result);
         // Document should not be updated when there are no changes
         Assert.True(store.TryGetValue(documentUri, out var file));
+        Assert.NotNull(file);
         Assert.Equal("original", file.Content);
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithVeryLargeDocument_ShouldNotThrow()
+    public async Task DidOpenTextDocumentHandler_Handle_WithVeryLargeDocument_ShouldNotThrowAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
@@ -759,7 +762,7 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidChangeTextDocumentHandler_Handle_WithConcurrentUpdates_ShouldHandleGracefully()
+    public async Task DidChangeTextDocumentHandler_Handle_WithConcurrentUpdates_ShouldHandleGracefullyAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
