@@ -35,10 +35,6 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "OrderGetString", "string OrderGetString(int prop_id)" },
 
             // Price and Market Data
-            { "Ask", "double Ask" },
-            { "Bid", "double Bid" },
-            { "Digits", "int Digits" },
-            { "Point", "double Point" },
             { "SymbolInfoDouble", "double SymbolInfoDouble(string symbol, int prop_id)" },
             { "SymbolInfoInteger", "long SymbolInfoInteger(string symbol, int prop_id)" },
             { "MarketInfo", "double MarketInfo(string symbol, int type)" },
@@ -237,6 +233,8 @@ namespace Mql4LanguageServer.Mql4.Builtins
         /// </summary>
         public static bool IsBuiltinFunction(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                return false;
             return BuiltInFunctions.ContainsKey(name);
         }
 
@@ -245,6 +243,8 @@ namespace Mql4LanguageServer.Mql4.Builtins
         /// </summary>
         public static bool IsBuiltinVariable(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                return false;
             return BuiltInVariables.ContainsKey(name);
         }
 
@@ -253,6 +253,8 @@ namespace Mql4LanguageServer.Mql4.Builtins
         /// </summary>
         public static bool IsBuiltin(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                return false;
             return IsBuiltinFunction(name) || IsBuiltinVariable(name);
         }
 
