@@ -108,11 +108,11 @@ public class FixtureTests
         Assert.NotNull(mqhFile);
 
         // Both should have symbols
-        Assert.True(mq4File.Symbols.Count > 0);
-        Assert.True(mqhFile.Symbols.Count > 0);
+        Assert.NotEmpty(mq4File.Symbols);
+        Assert.NotEmpty(mqhFile.Symbols);
 
         // MQ4 should have some functions (parser may not extract all)
-        Assert.True(mq4File.Symbols.Any(s => s.Detail?.Contains("Function") == true));
+        Assert.Contains(mq4File.Symbols, s => s.Detail?.Contains("Function") == true);
 
         // MQH should have trading functions
         Assert.Contains(mqhFile.Symbols, s => s.Name == "PlaceMarketOrder");

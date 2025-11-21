@@ -298,7 +298,7 @@ public class ServerCoverageTests
         file.Symbols.Add(symbol);
 
         // Assert
-        Assert.Equal(1, file.Symbols.Count);
+        Assert.Single(file.Symbols);
         Assert.Equal("TestFunc", file.Symbols[0].Name);
     }
 
