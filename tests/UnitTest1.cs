@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace Mql4LanguageServer.Tests;
 
 public class UnitTest1

@@ -10,6 +10,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591;NU1903;NU1902</NoWarn>
 
+    <!-- Enable argument passing for single-file apps -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
     <!-- NuGet Tool Configuration -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>mql4-lsp-server</ToolCommandName>
