@@ -104,9 +104,13 @@ namespace Mql4LanguageServer.Parser
         /// <returns>Symbol at position, or null if not found</returns>
         public Mql4Symbol? FindSymbolAtPosition(int line, int column)
         {
+            // Convert from 1-based (LSP) to 0-based (internal)
+            var searchLine = line - 1;
+            var searchColumn = column - 1;
+
             foreach (var symbol in _parsedFile.Symbols)
             {
-                if (IsPositionInRange(line, column, symbol.Range))
+                if (IsPositionInRange(searchLine, searchColumn, symbol.Range))
                 {
                     return symbol;
                 }
@@ -242,7 +246,7 @@ namespace Mql4LanguageServer.Parser
             if (nameToken != null)
             {
                 var name = nameToken.GetText();
-                var range = CreateRangeFromContext(context);
+                var range = CreateRangeFromToken(nameToken.Symbol);
 
                 var symbol = new Mql4Symbol
                 {
@@ -265,7 +269,7 @@ namespace Mql4LanguageServer.Parser
             if (nameToken != null)
             {
                 var name = nameToken.GetText();
-                var range = CreateRangeFromContext(context);
+                var range = CreateRangeFromToken(nameToken.Symbol);
 
                 var symbol = new Mql4Symbol
                 {
@@ -287,6 +291,15 @@ namespace Mql4LanguageServer.Parser
             Includes.Add(includeText);
 
             return base.VisitIncludeDirective(context);
+        }
+
+        private LspRange CreateRangeFromToken(IToken token)
+        {
+            return new LspRange
+            (
+                new LspPosition(token.Line - 1, token.Column),
+                new LspPosition(token.Line - 1, token.Column + token.Text.Length)
+            );
         }
 
         private LspRange CreateRangeFromContext(ParserRuleContext context)

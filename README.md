@@ -233,7 +233,147 @@ Run unit tests:
 dotnet test
 ```
 
-Test coverage: 11 tests covering parser, LSP handlers, and edge cases.
+Test coverage: 91 comprehensive tests covering parser, LSP handlers, and edge cases.
+
+### Code Coverage with Coverlet
+
+This project uses **Coverlet** for measuring code coverage. Coverlet is a cross-platform code coverage library for .NET that provides comprehensive coverage reports.
+
+#### Installing Coverlet
+
+Install Coverlet as a global .NET tool:
+```bash
+dotnet tool install --global coverlet.console
+```
+
+Or use it directly with dotnet without installation:
+```bash
+dotnet tool install --tool-path . coverlet.console
+```
+
+#### Running Tests with Coverage
+
+**Option 1: Coverlet as global tool**
+```bash
+# Basic coverage report
+coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
+
+# Generate detailed coverage report in OpenCover format
+coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format opencover --output ./coverage/coverage.xml
+
+# Generate JSON coverage report
+coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format json --output ./coverage/coverage.json
+
+# Set coverage thresholds (fails build if below threshold)
+coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --threshold 80 --threshold-type line --threshold-stat total
+```
+
+**Option 2: Using Coverlet.MSBuild (package reference)**
+Add to your test project (.csproj):
+```xml
+<PackageReference Include="coverlet.collector" Version="6.0.0">
+  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+  <PrivateAssets>all</PrivateAssets>
+</PackageReference>
+```
+
+Then run:
+```bash
+dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+```
+
+**Option 3: Simple local report**
+```bash
+# Build the project
+dotnet build -c Release
+
+# Run tests with coverage
+coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
+```
+
+#### Coverage Reports
+
+Coverlet supports multiple output formats:
+
+1. **Console** (default): Displays summary in terminal
+2. **JSON**: Structured data for CI/CD integration
+   ```bash
+   --format json --output ./coverage/coverage.json
+   ```
+3. **OpenCover**: Industry-standard format
+   ```bash
+   --format opencover --output ./coverage/coverage.xml
+   ```
+4. **Cobertura**: Another common format
+   ```bash
+   --format cobertura --output ./coverage/cobertura.xml
+   ```
+5. **LCov**: For integration with CI systems
+   ```bash
+   --format lcov --output ./coverage/lcov.info
+   ```
+
+#### Coverage Thresholds
+
+Set minimum coverage thresholds to ensure code quality:
+```bash
+# Fail if total line coverage is below 80%
+--threshold 80 --threshold-type line --threshold-stat total
+
+# Fail if any assembly falls below 70%
+--threshold 70 --threshold-type line --threshold-stat assembly
+
+# Fail if any class falls below 60%
+--threshold 60 --threshold-type line --threshold-stat class
+```
+
+Combined thresholds:
+```bash
+--threshold 80 --threshold-type line --threshold-stat total
+--threshold 90 --threshold-type method --threshold-stat total
+```
+
+#### Integration with CI/CD
+
+Add to your GitHub Actions workflow:
+```yaml
+- name: Run tests with coverage
+  run: |
+    dotnet tool install --global coverlet.console
+    coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+      --target "dotnet" \
+      --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
+      --format opencover \
+      --output ./coverage/coverage.xml
+
+- name: Upload coverage to Codecov
+  uses: codecov/codecov-action@v3
+  with:
+    file: ./coverage/coverage.xml
+```
+
+#### Viewing Coverage Reports
+
+1. **Terminal**: Immediate feedback after running tests
+2. **Visual Studio**: Open `coverage.json` or `coverage.xml` in Visual Studio
+3. **Web**: Use tools like [ReportGenerator](https://github.com/danielpalme/ReportGenerator) to generate HTML reports:
+   ```bash
+   dotnet tool install --global dotnet-reportgenerator-globaltool
+   reportgenerator -reports:./coverage/coverage.xml -targetdir:./coverage/html -reporttypes:Html
+   open ./coverage/html/index.html
+   ```
+
+#### Coverage Best Practices
+
+- **Target**: Aim for 80%+ line coverage for critical paths
+- **Quality over quantity**: Better to have meaningful tests than high coverage on trivial code
+- **Integration tests**: Cover cross-component interactions
+- **Edge cases**: Test error handling and boundary conditions
+- **Exclusions**: Exclude generated code and test utilities:
+  ```bash
+  --exclude-by-file "**/Generated/**" \
+  --exclude-by-attribute "*GeneratedCodeAttribute*"
+  ```
 
 ## CI/CD
 
