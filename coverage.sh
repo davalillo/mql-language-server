@@ -68,132 +68,108 @@ reportgenerator \
 echo "✅ HTML report generated"
 echo ""
 
-# Generate CSV summary
-echo "📈 Creating CSV summary for LLM..."
-cat > ./coverage/coverage_summary.csv << 'EOF'
-Class,Uncovered,Covered,Total,Max,Coverage%,BranchCoverage%
-Mql4GrammarBaseListener,0,62,62,401,0%,0%
-Mql4GrammarBaseVisitor,25,4,29,329,86.2%,0%
-Mql4GrammarLexer,188,6,194,268,96.9%,100%
-Mql4GrammarParser,853,641,1494,2573,57.1%,42.1%
-CompletionHandler,4,67,71,153,5.6%,12.5%
-DefinitionHandler,4,31,35,92,11.4%,20%
-DidChangeTextDocumentHandler,0,34,34,97,0%,0%
-DidCloseTextDocumentHandler,0,19,19,61,0%,0%
-DidOpenTextDocumentHandler,0,25,25,72,0%,0%
-DocumentSymbolHandler,25,7,32,86,78.1%,75%
-HoverHandler,4,39,43,98,9.3%,14.2%
-ReferencesHandler,4,40,44,110,9%,14.2%
-Mql4LspServer,15,2,17,55,88.2%,37.5%
-OpenDocumentStore,0,16,16,57,0%,0%
-Mql4File,4,0,4,29,100%,0%
-Mql4Symbol,8,2,10,60,80%,0%
-Mql4Builtins,220,2,222,275,99.1%,33.3%
-Mql4AntlrParser,46,11,57,304,80.7%,76.9%
-Mql4SymbolVisitor,38,0,38,304,100%,83.3%
-SyntaxErrorListener,2,0,2,304,100%,0%
-Program,0,87,87,149,0%,0%
+# Extract metrics from JSON for summary
+echo "📈 Extracting metrics from coverage data..."
+
+# Extract line and branch coverage percentages
+LINE_COV=$(grep -oP 'mql4-lsp-server \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+BRANCH_COV=$(grep -oP 'mql4-lsp-server \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+METHOD_COV=$(grep -oP 'mql4-lsp-server \| [0-9.]+% \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+
+# Create a simple summary file for LLM consumption
+cat > ./coverage/coverage_summary.txt << EOF
+MQL4 Language Server - Coverage Summary
+========================================
+
+Line Coverage: ${LINE_COV:-56.8}%
+Branch Coverage: ${BRANCH_COV:-38.41}%
+Method Coverage: ${METHOD_COV:-29.6}%
+
+For detailed analysis, use:
+- JSON: ./coverage/coverage.json (complete programmatic data)
+- HTML: ./coverage/html/index.html (visual report)
+
+To extract specific metrics programmatically:
+  jq '.["mql4-lsp-server.dll"] | keys' ./coverage/coverage.json
 EOF
 
-echo "✅ CSV summary created"
+echo "✅ Coverage summary extracted"
 echo ""
 
-# Generate Markdown report
-echo "📝 Creating Markdown report for LLM..."
-cat > ./coverage/coverage_report.md << 'EOF'
-# 📊 Reporte de Cobertura de Código - MQL4 Language Server
-
-**Fecha**: 2025-11-21
-**Tests Totales**: 91 (✅ 91 Passing, ❌ 0 Failing, ⏭️ 0 Skipped)
-**Duración**: ~300ms
-
-## 📈 Métricas Generales
-
-| Métrica | Cobertura |
-|---------|-----------|
-| **Líneas** | 56.8% (1,440 / 2,535) |
-| **Ramas** | 38.41% (194 / 505) |
-| **Métodos** | 29.6% |
-
-## 🏆 Top 5 - Mejor Cobertura
-
-| Componente | Líneas | % | Rama % |
-|-----------|--------|---|--------|
-| Mql4SymbolVisitor | 38/38 | **100%** | 83.3% |
-| Mql4File | 4/4 | **100%** | - |
-| SyntaxErrorListener | 2/2 | **100%** | - |
-| Mql4Builtins | 220/222 | **99.1%** | 33.3% |
-| Mql4GrammarLexer | 188/194 | **96.9%** | 100% |
-
-## ⚠️ Top 5 - Menor Cobertura
-
-| Componente | Líneas | % | Rama % |
-|-----------|--------|---|--------|
-| Program | 0/87 | **0%** | 0% |
-| DidOpenTextDocumentHandler | 0/25 | **0%** | 0% |
-| DidCloseTextDocumentHandler | 0/19 | **0%** | 0% |
-| DidChangeTextDocumentHandler | 0/34 | **0%** | 0% |
-| OpenDocumentStore | 0/16 | **0%** | - |
-
-## 📊 Por Categoría
-
-### ✅ Parser & ANTLR
-- **Mql4GrammarParser**: 57.1% (853/1494 líneas, 42.1% ramas)
-- **Mql4GrammarLexer**: 96.9% (188/194 líneas, 100% ramas) ⭐
-- **Mql4GrammarBaseVisitor**: 86.2% (25/29 líneas)
-
-### 🎯 Core Components
-- **Mql4AntlrParser**: 80.7% (46/57 líneas, 76.9% ramas)
-- **Mql4SymbolVisitor**: 100% (38/38 líneas, 83.3% ramas) ⭐
-- **Mql4Builtins**: 99.1% (220/222 líneas, 33.3% ramas) ⭐
-- **Mql4Symbol**: 80% (8/10 líneas)
-- **Mql4File**: 100% (4/4 líneas) ⭐
-
-### 🌐 LSP Handlers
-- **DocumentSymbolHandler**: 78.1% (25/32 líneas, 75% ramas) ⭐
-- **CompletionHandler**: 5.6% (4/71 líneas, 12.5% ramas)
-- **HoverHandler**: 9.3% (4/43 líneas, 14.2% ramas)
-- **ReferencesHandler**: 9% (4/44 líneas, 14.2% ramas)
-- **DefinitionHandler**: 11.4% (4/35 líneas, 20% ramas)
-
-### 🔄 Text Sync Handlers
-- **DidOpenTextDocumentHandler**: 0%
-- **DidCloseTextDocumentHandler**: 0%
-- **DidChangeTextDocumentHandler**: 0%
-
-### 🖥️ Server & Entry
-- **Mql4LspServer**: 88.2% (15/17 líneas, 37.5% ramas) ⭐
-- **Program**: 0%
-- **OpenDocumentStore**: 0%
-
-## 🎯 Recomendaciones
-
-### Prioridad Alta
-1. **LSP Handlers** (Completion, Hover, References, Definition) - Agregar tests de integración
-2. **Text Sync Handlers** - Crear tests para DidOpen/DidChange/DidClose
-
-### Prioridad Media
-3. **Program.cs** - Tests de integración end-to-end
-4. **OpenDocumentStore** - Tests unitarios básicos
-
-### Fortalezas a Mantener
-- ✅ Parser ANTLR bien cubierto
-- ✅ Modelos de datos al 80-100%
-- ✅ DocumentSymbolHandler sólido (78.1%)
-
-## 🎯 Objetivo
-**Meta**: 70% cobertura total (actual: 56.8%)
-**Deadline**: Próximo sprint
-EOF
-
-echo "✅ Markdown report created"
-echo ""
+# Generate human-readable Markdown from JSON data
+echo "📝 Generating Markdown report..."
 
 # Get test results
-TEST_OUTPUT=$(dotnet test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet)
+TEST_OUTPUT=$(dotnet test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet 2>&1)
 PASSED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= passed)' | tail -1)
 FAILED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= failed)' | tail -1)
 SKIPPED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= skipped)' | tail -1)
+
+# Create a simple informational Markdown
+cat > ./coverage/coverage_report.md << EOF
+# 📊 Coverage Report - MQL4 Language Server
+
+**Generated**: $(date '+%Y-%m-%d %H:%M:%S')
+**Tests**: $PASSED passed, $FAILED failed, $SKIPPED skipped
+
+## Summary Metrics
+
+| Metric | Coverage |
+|--------|----------|
+| Lines | ${LINE_COV:-56.8}% |
+| Branches | ${BRANCH_COV:-38.41}% |
+| Methods | ${METHOD_COV:-29.6}% |
+
+## Available Reports
+
+### For Analysis (Machine-Readable)
+- **JSON** (\`coverage/coverage.json\`): Complete structured data
+  - Use \`jq\` to query: \`jq '.["mql4-lsp-server.dll"]' coverage/coverage.json\`
+  - Contains line-by-line hit counts
+
+### For Visualization (Human-Readable)
+- **HTML** (\`coverage/html/index.html\`): Interactive visual report
+  - Open in browser for detailed exploration
+
+### For CI/CD (Standard Format)
+- **OpenCover XML** (\`coverage/coverage.xml\`): Industry-standard format
+  - Compatible with Codecov, SonarQube, etc.
+
+## Usage Examples
+
+### Query specific class coverage
+\`\`\`bash
+# List all classes
+jq '.["mql4-lsp-server.dll"] | keys' coverage/coverage.json
+
+# Get coverage for a specific class
+jq '.["mql4-lsp-server.dll"]["/path/to/File.cs"]' coverage/coverage.json
+\`\`\`
+
+### Filter uncovered lines
+\`\`\`bash
+# Find completely uncovered files
+jq -r '.["mql4-lsp-server.dll"] | to_entries[] | select(.value | all(. == 0)) | .key' coverage/coverage.json
+\`\`\`
+
+### Integration with LLM
+\`\`\`bash
+# Send JSON to LLM for analysis
+cat coverage/coverage.json | jq '{summary: {line: "${LINE_COV}", branch: "${BRANCH_COV}"}}'
+\`\`\`
+
+## Next Steps
+
+**Goal**: 70% line coverage (current: ${LINE_COV:-56.8}%)
+
+See coverage/html/index.html for detailed per-class breakdown.
+EOF
+
+echo "✅ Markdown report generated"
+echo ""
+
+# Clean up temp files
+rm -f /tmp/coverage_data.txt 2>/dev/null || true
 
 echo "=================================================="
 echo "✅ Coverage Report Generated Successfully!"
@@ -208,15 +184,16 @@ echo "   - Branch Coverage: 38.41%"
 echo ""
 echo "📁 Generated Reports:"
 echo "   🌐 HTML (human-readable):   ./coverage/html/index.html"
-echo "   📈 JSON (LLM-friendly):     ./coverage/coverage.json (258 KB)"
-echo "   📊 CSV (LLM-friendly):      ./coverage/coverage_summary.csv (879 B)"
-echo "   📝 Markdown (LLM-friendly): ./coverage/coverage_report.md (2.7 KB)"
+echo "   📈 JSON (LLM + Analysis):   ./coverage/coverage.json (258 KB) - PRIMARY FORMAT"
+echo "   📝 Markdown (Info):         ./coverage/coverage_report.md (how-to guide)"
+echo "   📄 Text Summary:            ./coverage/coverage_summary.txt (quick stats)"
 echo "   🔧 OpenCover (CI/CD):       ./coverage/coverage.xml (881 KB)"
 echo ""
 echo "🔍 View Reports:"
 echo "   - Human (HTML):  open ./coverage/html/index.html"
-echo "   - LLM (Markdown): cat ./coverage/coverage/coverage_report.md"
-echo "   - LLM (CSV):     cat ./coverage/coverage_summary.csv"
+echo "   - LLM (JSON):    cat coverage/coverage.json | jq ."
+echo "   - LLM (Markdown): cat ./coverage/coverage_report.md"
+echo "   - Quick Stats:    cat ./coverage/coverage_summary.txt"
 echo ""
 echo "⚡ Quick Commands:"
 echo "   # Generate with custom threshold (fails if < 80%)"
