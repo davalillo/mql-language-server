@@ -17,6 +17,10 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "OnDeinit", "void OnDeinit(int reason)" },
             { "OnTick", "void OnTick()" },
             { "OnStart", "void OnStart()" },
+            { "OnTimer", "void OnTimer()" },
+            { "OnTrade", "void OnTrade()" },
+            { "OnTradeTransaction", "void OnTradeTransaction(MqlTradeTransaction trans, MqlTradeRequest request, MqlTradeResult result)" },
+            { "OnCalculate", "int OnCalculate(int rates_total, int prev_calculated, datetime &time[], double &open[], double &high[], double &low[], double &close[], long &tick_volume[], long &volume[], int &spread[])" },
 
             // Order Management
             { "OrderSend", "int OrderSend(string symbol, int cmd, double volume, double price, int slippage, string comment, int magic, datetime expiration, color arrow_color)" },
@@ -26,16 +30,23 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "OrderModify", "bool OrderModify(int ticket, double price, double stoploss, double takeprofit, datetime expiration, color Arrow_Color)" },
             { "OrdersTotal", "int OrdersTotal()" },
             { "OrderSelect", "bool OrderSelect(int index, int select, int pool)" },
+            { "OrderGetDouble", "double OrderGetDouble(int prop_id)" },
+            { "OrderGetInteger", "long OrderGetInteger(int prop_id)" },
+            { "OrderGetString", "string OrderGetString(int prop_id)" },
 
             // Price and Market Data
             { "Ask", "double Ask" },
             { "Bid", "double Bid" },
             { "Digits", "int Digits" },
             { "Point", "double Point" },
+            { "SymbolInfoDouble", "double SymbolInfoDouble(string symbol, int prop_id)" },
+            { "SymbolInfoInteger", "long SymbolInfoInteger(string symbol, int prop_id)" },
+            { "MarketInfo", "double MarketInfo(string symbol, int type)" },
 
             // Time Functions
             { "TimeCurrent", "datetime TimeCurrent()" },
             { "TimeLocal", "datetime TimeLocal()" },
+            { "TimeGMT", "datetime TimeGMT()" },
             { "TimeToString", "string TimeToString(datetime time, int mode)" },
             { "TimeYear", "int TimeYear(datetime time)" },
             { "TimeMonth", "int TimeMonth(datetime time)" },
@@ -49,12 +60,16 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "AccountEquity", "double AccountEquity()" },
             { "AccountMargin", "double AccountMargin()" },
             { "AccountFreeMargin", "double AccountFreeMargin()" },
+            { "AccountFreeMarginCheck", "double AccountFreeMarginCheck(string symbol, int cmd, double volume)" },
+            { "AccountInfoDouble", "double AccountInfoDouble(int prop_id)" },
+            { "AccountInfoString", "string AccountInfoString(int prop_id)" },
             { "AccountStopoutLevel", "double AccountStopoutLevel()" },
             { "AccountStopoutMode", "int AccountStopoutMode()" },
 
             // Position Management
             { "PositionsTotal", "int PositionsTotal()" },
             { "PositionSelect", "bool PositionSelect(string symbol)" },
+            { "PositionSelectByIndex", "bool PositionSelectByIndex(int index)" },
             { "PositionGetDouble", "double PositionGetDouble(int prop_id, int index)" },
             { "PositionGetString", "string PositionGetString(int prop_id, int index)" },
             { "PositionGetInteger", "long PositionGetInteger(int prop_id, int index)" },
@@ -84,6 +99,8 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "StringGetCharacter", "ushort StringGetCharacter(string string, int pos)" },
             { "StringSetCharacter", "string StringSetCharacter(string string, int pos, ushort character)" },
             { "StringConcatenate", "string StringConcatenate(...)" },
+            { "StringToUpper", "string StringToUpper(string string)" },
+            { "StringToLower", "string StringToLower(string string)" },
 
             // Technical Indicators
             { "iMA", "int iMA(string symbol, int timeframe, int ma_period, int ma_shift, int ma_method, int applied_price)" },
@@ -92,6 +109,16 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "iBands", "int iBands(string symbol, int timeframe, int period, double deviation, int bands_shift, int applied_price)" },
             { "iATR", "int iATR(string symbol, int timeframe, int period)" },
             { "iStochastic", "int iStochastic(string symbol, int timeframe, int Kperiod, int Dperiod, int slowing, int method, int field)" },
+            { "iClose", "double iClose(string symbol, int timeframe, int shift)" },
+            { "CopyBuffer", "int CopyBuffer(int handle, int buffer_num, int start_pos, int count, double &buffer[])" },
+            { "IndicatorRelease", "bool IndicatorRelease(int handle)" },
+
+            // Indicator Functions
+            { "SetIndexBuffer", "bool SetIndexBuffer(int buffer, double &array[])" },
+            { "SetIndexLabel", "bool SetIndexLabel(int buffer, string text)" },
+            { "SetIndexDrawBegin", "void SetIndexDrawBegin(int buffer, int begin)" },
+            { "ArraySetAsSeries", "bool ArraySetAsSeries(double &array[], bool set)" },
+            { "IndicatorSetString", "bool IndicatorSetString(int prop_id, int prop_index, string value)" },
 
             // File Functions
             { "FileOpen", "int FileOpen(string filename, int mode, string delimiter)" },
@@ -103,6 +130,13 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "FileSize", "long FileSize(int handle)" },
             { "FileIsEnding", "bool FileIsEnding(int handle)" },
 
+            // Array Functions
+            { "ArrayResize", "int ArrayResize(double &array[], int new_size)" },
+            { "ArraySort", "bool ArraySort(double &array[], int count, int start, int sort_dir)" },
+            { "ArrayReverse", "bool ArrayReverse(double &array[], int start, int count)" },
+            { "ArraySize", "int ArraySize(double &array[])" },
+            { "ArraySearch", "int ArraySearch(double &array[], double value, int start, int count, int sort_dir)" },
+
             // Print and Alert
             { "Print", "void Print(... )" },
             { "Alert", "void Alert(... )" },
@@ -112,6 +146,9 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "IsTradeAllowed", "bool IsTradeAllowed()" },
             { "IsTradeAllowedWebRequest", "bool IsTradeAllowedWebRequest(string url)" },
             { "GetLastError", "int GetLastError()" },
+
+            // Constants and Enums
+            { "EnumToString", "string EnumToString(Enum value)" },
         };
 
         /// <summary>
@@ -119,6 +156,7 @@ namespace Mql4LanguageServer.Mql4.Builtins
         /// </summary>
         public static readonly Dictionary<string, string> BuiltInVariables = new()
         {
+            // Price Variables
             { "Ask", "Current Ask price" },
             { "Bid", "Current Bid price" },
             { "Digits", "Number of decimal places" },
@@ -127,6 +165,14 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "Period", "Current timeframe period" },
             { "Bars", "Number of bars" },
             { "BarsIsTradeAllowed", "Trade context busy flag" },
+
+            // Time Variables
+            { "Time", "Current time" },
+
+            // Volume Variables
+            { "Volume", "Volume of the last tick" },
+
+            // Account Variables
             { "AccountBalance", "Account balance" },
             { "AccountCredit", "Account credit" },
             { "AccountCompany", "Broker company name" },
@@ -144,6 +190,46 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "AccountStopoutLevel", "Stop out level" },
             { "AccountStopoutMode", "Stop out mode" },
             { "AccountSymbol", "Current symbol" },
+
+            // Symbol Variables
+            { "Symbol", "Current symbol" },
+
+            // Indicator Variables
+            { "EMPTY_VALUE", "Empty value for indicators" },
+            { "INVALID_HANDLE", "Invalid indicator handle" },
+
+            // Order Types
+            { "OP_BUY", "Buy order" },
+            { "OP_SELL", "Sell order" },
+
+            // Position Types
+            { "POSITION_TYPE_BUY", "Buy position" },
+            { "POSITION_TYPE_SELL", "Sell position" },
+
+            // Trade Actions
+            { "TRADE_ACTION_DEAL", "Deal action" },
+            { "TRADE_ACTION_PENDING", "Pending order action" },
+            { "TRADE_ACTION_SLTP", "Stop loss / take profit action" },
+
+            // Price Constants
+            { "PRICE_CLOSE", "Close price" },
+            { "PRICE_OPEN", "Open price" },
+            { "PRICE_HIGH", "High price" },
+            { "PRICE_LOW", "Low price" },
+            { "PRICE_MEDIAN", "Median price" },
+            { "PRICE_TYPICAL", "Typical price" },
+            { "PRICE_WEIGHTED", "Weighted price" },
+
+            // Moving Average Modes
+            { "MODE_SMA", "Simple moving average" },
+            { "MODE_EMA", "Exponential moving average" },
+            { "MODE_SMMA", "Smoothed moving average" },
+            { "MODE_LWMA", "Linear weighted moving average" },
+
+            // Initialization Results
+            { "INIT_SUCCEEDED", "Initialization succeeded" },
+            { "INIT_FAILED", "Initialization failed" },
+            { "INIT_PARAMETERS_INCORRECT", "Initialization parameters incorrect" },
         };
 
         /// <summary>

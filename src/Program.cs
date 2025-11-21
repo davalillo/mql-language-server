@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,19 @@ namespace Mql4LanguageServer
     {
         static async Task<int> Main(string[] args)
         {
+            // Check for --version flag first
+            if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
+            {
+                var version = Assembly.GetExecutingAssembly().GetName().Version;
+                // Use AppContext.BaseDirectory for single-file apps compatibility
+                var executablePath = System.IO.Path.Combine(AppContext.BaseDirectory, "mql4-lsp-server");
+                var buildDate = System.IO.File.GetLastWriteTime(executablePath);
+
+                Console.WriteLine($"MQL4 Language Server v{version?.Major}.{version?.Minor}.{version?.Build}");
+                Console.WriteLine($"Build Date: {buildDate:yyyy-MM-dd HH:mm:ss}");
+                return 0;
+            }
+
             // Configure Serilog for structured logging
             // IMPORTANT: Write to stderr to avoid polluting JSON-RPC stdout
             Log.Logger = new LoggerConfiguration()
