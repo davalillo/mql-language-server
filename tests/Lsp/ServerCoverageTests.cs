@@ -273,7 +273,7 @@ public class ServerCoverageTests
     }
 
     [Fact]
-    public void Mql4LspServer_Initialize_SendsServerStatusNotification()
+    public void Mql4LspServer_Initialize_DoesNotSendServerStatusNotification()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<Mql4LspServer>>();
@@ -281,26 +281,15 @@ public class ServerCoverageTests
         var parser = new Mql4AntlrParser();
         var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
 
-        // Setup mock to capture notification calls
-        var notificationsSent = new List<(string method, object parameters)>();
-        mockServer.Setup(s => s.SendNotification(It.IsAny<string>(), It.IsAny<object>()))
-            .Callback<string, object>((method, parameters) =>
-            {
-                notificationsSent.Add((method, parameters));
-            });
+        // Note: experimental/serverStatus notification is now sent from Program.cs
+        // after server.Initialize() completes, not from Mql4LspServer.Initialize()
 
         // Act
         server.Initialize();
 
-        // Assert
-        mockServer.Verify(s => s.SendNotification("experimental/serverStatus", It.IsAny<object>()), Times.Once);
-        Assert.Single(notificationsSent);
-        Assert.Equal("experimental/serverStatus", notificationsSent[0].method);
-
-        // Verify the notification has the expected structure
-        var notificationParams = notificationsSent[0].parameters;
-        Assert.NotNull(notificationParams);
-        Assert.True(notificationParams.GetType().Name.Contains("<>") || notificationParams.GetType().Name.Contains("AnonymousType"));
+        // Assert - Verify that Mql4LspServer.Initialize() does NOT send serverStatus
+        // (it's handled in Program.cs after server.Initialize() completes)
+        mockServer.Verify(s => s.SendNotification("experimental/serverStatus", It.IsAny<object>()), Times.Never);
     }
 
     #endregion
