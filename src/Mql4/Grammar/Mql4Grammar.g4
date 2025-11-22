@@ -116,15 +116,20 @@ parameter
     ;
 
 variableDeclaration
-    : storageModifier? dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
+    : storageModifier? dataType IDENTIFIER (LBRACKET RBRACKET)? (ASSIGN (expression | arrayInitialization))? SEMICOLON
     ;
 
 storageModifier
     : K_INPUT | K_EXTERN | K_STATIC
     ;
 
+arrayInitialization
+    : LBRACE (expression (COMMA expression)*)? RBRACE
+    ;
+
 dataType
-    : K_INT | K_DOUBLE | K_STRING | K_BOOL | K_VOID | K_DATETIME | K_COLOR | IDENTIFIER
+    : K_INT | K_DOUBLE | K_STRING | K_BOOL | K_VOID | K_DATETIME | K_COLOR
+    | IDENTIFIER (DOT IDENTIFIER)*  // Support complex types like MqlTradeRequest
     ;
 
 block
@@ -134,12 +139,18 @@ block
 statement
     : block
     | variableDeclaration
+    | assignmentStatement
     | expressionStatement
     | ifStatement
     | whileStatement
     | forStatement
     | switchStatement
     | returnStatement
+    ;
+
+assignmentStatement
+    : IDENTIFIER (LBRACKET expression RBRACKET)? ASSIGN expression SEMICOLON
+    | primaryExpression DOT IDENTIFIER ASSIGN expression SEMICOLON
     ;
 expressionStatement
     : expression? SEMICOLON
@@ -154,7 +165,7 @@ whileStatement
     ;
 
 forStatement
-    : K_FOR LPAREN expression? SEMICOLON expression? SEMICOLON expression? RPAREN statement
+    : K_FOR LPAREN (variableDeclaration | assignmentStatement | expression)? SEMICOLON expression? SEMICOLON (assignmentExpression | expression)? RPAREN statement
     ;
 
 returnStatement
@@ -170,7 +181,8 @@ caseClause
     ;
 
 expression
-    : logicalOrExpression
+    : assignmentExpression
+    | logicalOrExpression
     ;
 
 logicalOrExpression
@@ -215,6 +227,11 @@ postfixExpression
 
 argumentList
     : expression (COMMA expression)*
+    ;
+
+assignmentExpression
+    : IDENTIFIER (LBRACKET expression RBRACKET)? ASSIGN expression
+    | postfixExpression ASSIGN expression
     ;
 
 primaryExpression

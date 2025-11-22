@@ -157,6 +157,18 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -192,6 +204,18 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStatement([NotNull] Mql4GrammarParser.StatementContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.expressionStatement"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -396,6 +420,18 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgumentList([NotNull] Mql4GrammarParser.ArgumentListContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
 	/// <para>The default implementation does nothing.</para>

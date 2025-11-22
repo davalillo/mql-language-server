@@ -132,6 +132,16 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -161,6 +171,16 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitStatement([NotNull] Mql4GrammarParser.StatementContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.expressionStatement"/>.
 	/// </summary>
@@ -331,6 +351,16 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitArgumentList([NotNull] Mql4GrammarParser.ArgumentListContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
 	/// </summary>

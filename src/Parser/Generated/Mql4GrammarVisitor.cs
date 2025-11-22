@@ -93,6 +93,12 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -110,6 +116,12 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitStatement([NotNull] Mql4GrammarParser.StatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.expressionStatement"/>.
 	/// </summary>
@@ -212,6 +224,12 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitArgumentList([NotNull] Mql4GrammarParser.ArgumentListContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
 	/// </summary>
