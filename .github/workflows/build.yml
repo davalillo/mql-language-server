@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 env:
-  DOTNET_VERSION: "8.0.x"
+  DOTNET_VERSION: "10.0.x"
 
 jobs:
   get-effective-tag:
@@ -63,25 +63,33 @@ jobs:
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries
         run: |
-          # Linux
-          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin_temp/linux
-          mkdir -p bin
-          mv bin_temp/linux/mql4-lsp-server bin/mql4-lsp-server-linux-x64
+          platforms=("linux-x64" "osx-x64" "osx-arm64" "win-x64")
+          outputs=("linux" "osx-x64" "osx-arm64" "win")
+          names=("mql4-lsp-server-linux-x64" "mql4-lsp-server-osx-x64" "mql4-lsp-server-osx-arm64" "mql4-lsp-server-win-x64.exe")
           
-          # macOS Intel
-          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin_temp/osx-x64
-          mv bin_temp/osx-x64/mql4-lsp-server bin/mql4-lsp-server-osx-x64
-          
-          # macOS Apple Silicon
-          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin_temp/osx-arm64
-          mv bin_temp/osx-arm64/mql4-lsp-server bin/mql4-lsp-server-osx-arm64
-          
-          # Windows
-          dotnet publish src/Mql4LanguageServer.Server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=true --output bin_temp/win
-          mv bin_temp/win/mql4-lsp-server.exe bin/mql4-lsp-server-win-x64.exe
-          
-          # Permisos de ejecución (importante para unix)
-          chmod +x bin/mql4-lsp-server-*
+          for i in "${!platforms[@]}"; do
+            rid="${platforms[$i]}"
+            out_dir="${outputs[$i]}"
+            final_name="${names[$i]}"
+            
+            echo "Building $rid → $final_name"
+            
+            dotnet publish src/Mql4LanguageServer.Server.csproj \
+              -c Release -r "$rid" --self-contained true \
+              -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfExtract=true \
+              -p:DebugType=None -p:DebugSymbols=false \
+              --output "bin_temp/$out_dir"
+            
+            mkdir -p bin
+            if [[ "$rid" == win-x64 ]]; then
+              mv "bin_temp/$out_dir/mql4-lsp-server.exe" "bin/$final_name"
+            else
+              mv "bin_temp/$out_dir/mql4-lsp-server" "bin/$final_name"
+            fi
+          done
+    
+          chmod +x bin/mql4-lsp-server-*  
 
       - name: Generate SHA256SUMS.txt
         run: |
@@ -93,6 +101,7 @@ jobs:
         run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release --no-build --output nupkg/
 
       - name: Upload artifacts
+        if: ${{ !env.ACT && !github.event.act }}
         uses: actions/upload-artifact@v4
         with:
           name: binaries-${{ needs.get-effective-tag.outputs.effective_tag }}
