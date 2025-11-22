@@ -87,6 +87,12 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -134,6 +140,18 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitReturnStatement([NotNull] Mql4GrammarParser.ReturnStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.switchStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSwitchStatement([NotNull] Mql4GrammarParser.SwitchStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
