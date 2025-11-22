@@ -38,18 +38,11 @@ namespace Mql4LanguageServer.Lsp.Server
 
         /// <summary>
         /// Initialize the LSP server with handlers and capabilities
+        /// Note: experimental/serverStatus notification is sent from Program.cs after initialization
         /// </summary>
         public void Initialize()
         {
             _logger.LogInformation("Initializing MQL4 Language Server...");
-
-            // Send experimental/serverStatus notification
-            _server.SendNotification("experimental/serverStatus", new
-            {
-                state = "initialized",
-                message = "MQL4 Language Server initialized successfully"
-            });
-
             _logger.LogInformation("MQL4 Language Server initialized successfully");
             _logger.LogInformation("Server ready to serve LSP requests for MQL4 files");
             _logger.LogInformation("Phase 3.6 Complete: All LSP Handlers implemented and registered via MediatR");

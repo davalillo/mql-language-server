@@ -116,6 +116,13 @@ namespace Mql4LanguageServer
                         await server.Initialize(cts.Token);
                     }
                     Log.Information("server.Initialize() completed - client connected!");
+
+                    // Send experimental/serverStatus notification after initialization
+                    server.SendNotification("experimental/serverStatus", new
+                    {
+                        quiescent = true
+                    });
+                    Log.Information("Sent experimental/serverStatus notification (quiescent: true)");
                 }
                 catch (OperationCanceledException)
                 {
