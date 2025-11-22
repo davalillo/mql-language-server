@@ -102,6 +102,70 @@ public class Mql4ParserTests
         Assert.All(file.Symbols, s => Assert.NotNull(s.Range));
     }
 
+    [Fact]
+    public void ParseVariable_WithInputModifier_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            input int MagicNumber = 12345;
+            input string Symbol = ""EURUSD"";
+            extern double LotSize = 0.1;
+            static int counter = 0;
+            int normalVar = 42;
+        ";
+
+        // Act - Test that the code parses without throwing exceptions
+        var exception = Record.Exception(() => _parser.ParseFile(code, "test.mq4"));
+
+        // Assert
+        Assert.Null(exception); // No parsing errors
+
+        // Verify that symbols are extracted
+        var file = _parser.ParseFile(code, "test.mq4");
+        Assert.NotNull(file.Symbols);
+        Assert.True(file.Symbols.Count >= 5, $"Expected at least 5 variables, found {file.Symbols.Count}");
+    }
+
+    [Fact]
+    public void ParseVariable_WithInputModifier_Debug()
+    {
+        // Arrange
+        var code = @"
+            input int MagicNumber = 12345;
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Debug - Print all symbols and their details
+        Console.WriteLine($"Total symbols: {file.Symbols.Count}");
+        foreach (var symbol in file.Symbols)
+        {
+            Console.WriteLine($"Symbol: {symbol.Name}, Detail: {symbol.Detail}");
+        }
+    }
+
+    [Fact]
+    public void ParseVariable_StorageModifiers_AppearInCompletions()
+    {
+        // Arrange
+        var code = @"
+            input int MagicNumber = 12345;
+            extern string Symbol = ""EURUSD"";
+            static int counter = 0;
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+        var completions = _parser.GetCompletions(1, 1).ToList();
+
+        // Assert
+        Assert.NotNull(completions);
+        Assert.Contains(completions, c => c.Equals("MagicNumber", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(completions, c => c.Equals("Symbol", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(completions, c => c.Equals("counter", StringComparison.OrdinalIgnoreCase));
+    }
+
     #endregion
 
     #region ParseInclude Tests
@@ -128,6 +192,23 @@ public class Mql4ParserTests
         Assert.Contains(file.Includes, i => i.Contains("stdlib.mqh"));
         Assert.Contains(file.Includes, i => i.Contains("custom.mqh"));
         Assert.Contains(file.Includes, i => i.Contains("Trade/Trade.mqh"));
+    }
+
+    [Fact]
+    public void ParseInclude_WithAngleBrackets_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #include <stdlib.mqh>
+            #include <Trade/Trade.mqh>
+            #include ""custom.mqh""
+        ";
+
+        // Act - Test that the code parses without throwing exceptions
+        var exception = Record.Exception(() => _parser.ParseFile(code, "test.mq4"));
+
+        // Assert
+        Assert.Null(exception); // No parsing errors
     }
 
     #endregion
@@ -258,6 +339,88 @@ public class Mql4ParserTests
         var distinctCompletions = completions.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         Assert.Equal(completions.Count, distinctCompletions.Count);
     }
+
+    #endregion
+
+    #region ParseSwitchStatement Tests
+
+    [Fact]
+    public void ParseSwitchStatement_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int mode = 1;
+                switch(mode)
+                {
+                    case 1:
+                        Print(""Mode 1"");
+                        break;
+                    case 2:
+                        Print(""Mode 2"");
+                        break;
+                    default:
+                        Print(""Unknown mode"");
+                        break;
+                }
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.True(file.Symbols.Count >= 1, $"Expected at least 1 function, found {file.Symbols.Count}");
+
+        // Verify OnTick function
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name.Equals("OnTick", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(onTick);
+        Assert.Equal((SymbolKind)12, onTick.Kind); // Function kind
+        Assert.NotNull(onTick.Range);
+    }
+
+    [Fact]
+    public void ParseSwitchStatement_WithMultipleCases_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            int GetOrderType(string symbol)
+            {
+                switch(symbol)
+                {
+                    case ""EURUSD"":
+                        return OP_BUY;
+                    case ""GBPUSD"":
+                        return OP_SELL;
+                    case ""USDJPY"":
+                        return OP_BUYLIMIT;
+                    default:
+                        return OP_BUYSTOP;
+                }
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.True(file.Symbols.Count >= 1, $"Expected at least 1 function, found {file.Symbols.Count}");
+
+        // Verify GetOrderType function
+        var getOrderType = file.Symbols.FirstOrDefault(s => s.Name.Equals("GetOrderType", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(getOrderType);
+        Assert.Equal((SymbolKind)12, getOrderType.Kind); // Function kind
+        Assert.NotNull(getOrderType.Range);
+    }
+
+    #endregion
+
+    #region Edge Cases
 
     #endregion
 

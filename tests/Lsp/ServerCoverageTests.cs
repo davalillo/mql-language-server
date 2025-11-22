@@ -7,6 +7,7 @@ using Mql4LanguageServer.Lsp.Handlers;
 using Mql4LanguageServer.Parser;
 using Mql4LanguageServer.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -269,6 +270,37 @@ public class ServerCoverageTests
 
         // Act & Assert - should not throw
         server.Initialize();
+    }
+
+    [Fact]
+    public void Mql4LspServer_Initialize_SendsServerStatusNotification()
+    {
+        // Arrange
+        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockServer = new Mock<ILanguageServer>();
+        var parser = new Mql4AntlrParser();
+        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+
+        // Setup mock to capture notification calls
+        var notificationsSent = new List<(string method, object parameters)>();
+        mockServer.Setup(s => s.SendNotification(It.IsAny<string>(), It.IsAny<object>()))
+            .Callback<string, object>((method, parameters) =>
+            {
+                notificationsSent.Add((method, parameters));
+            });
+
+        // Act
+        server.Initialize();
+
+        // Assert
+        mockServer.Verify(s => s.SendNotification("experimental/serverStatus", It.IsAny<object>()), Times.Once);
+        Assert.Single(notificationsSent);
+        Assert.Equal("experimental/serverStatus", notificationsSent[0].method);
+
+        // Verify the notification has the expected structure
+        var notificationParams = notificationsSent[0].parameters;
+        Assert.NotNull(notificationParams);
+        Assert.True(notificationParams.GetType().Name.Contains("<>") || notificationParams.GetType().Name.Contains("AnonymousType"));
     }
 
     #endregion

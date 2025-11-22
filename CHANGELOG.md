@@ -1,3 +1,24 @@
+## [1.3.0] - 2025-11-22
+
+### Added
+- feat(parser): Support for #include <file> syntax (angle brackets) in ANTLR grammar
+- feat(parser): Support for storage modifiers (input, extern, static) in variable declarations
+- feat(parser): Support for switch-case statements in MQL4 code
+- feat(lsp): Send experimental/serverStatus notification on initialization
+- feat(tests): Add comprehensive tests for new parser features
+
+### Fixed
+- fix(parser): Critical parsing errors for #include with angle brackets
+- fix(parser): Recognition of input modifier in variable declarations
+- fix(parser): Recognition of switch-case control flow statements
+- fix(lsp): Missing server status notification to clients
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 233/233 Passed
+- Compatibility: 100% - no breaking changes detected
+- Parser: ANTLR grammar enhanced with new MQL4 syntax support
+
 ## [1.2.0] - 2025-11-21
 
 ### Added

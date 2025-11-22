@@ -122,6 +122,16 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -201,6 +211,26 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitReturnStatement([NotNull] Mql4GrammarParser.ReturnStatementContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.switchStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterSwitchStatement([NotNull] Mql4GrammarParser.SwitchStatementContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.switchStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitSwitchStatement([NotNull] Mql4GrammarParser.SwitchStatementContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>

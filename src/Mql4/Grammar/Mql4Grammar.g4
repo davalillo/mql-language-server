@@ -40,6 +40,7 @@ K_DEFAULT  : 'default';
 K_BREAK    : 'break';
 K_CONTINUE : 'continue';
 K_RETURN   : 'return';
+K_INPUT    : 'input';
 K_TRUE     : 'true';
 K_FALSE    : 'false';
 
@@ -90,7 +91,7 @@ directive
     ;
 
 includeDirective
-    : DIRECTIVE_INCLUDE STRING
+    : DIRECTIVE_INCLUDE (STRING | LT IDENTIFIER GT)
     ;
 
 propertyDirective
@@ -115,7 +116,11 @@ parameter
     ;
 
 variableDeclaration
-    : dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
+    : storageModifier? dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
+    ;
+
+storageModifier
+    : K_INPUT | K_EXTERN | K_STATIC
     ;
 
 dataType
@@ -133,9 +138,9 @@ statement
     | ifStatement
     | whileStatement
     | forStatement
+    | switchStatement
     | returnStatement
     ;
-
 expressionStatement
     : expression? SEMICOLON
     ;
@@ -154,6 +159,14 @@ forStatement
 
 returnStatement
     : K_RETURN expression? SEMICOLON
+    ;
+
+switchStatement
+    : K_SWITCH LPAREN expression RPAREN LBRACE caseClause* RBRACE
+    ;
+
+caseClause
+    : (K_CASE expression | K_DEFAULT) COLON statement*
     ;
 
 expression

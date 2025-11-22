@@ -271,12 +271,36 @@ namespace Mql4LanguageServer.Parser
                 var name = nameToken.GetText();
                 var range = CreateRangeFromToken(nameToken.Symbol);
 
+                // Check for storage modifier directly in the context
+                string modifier = "";
+                if (context.storageModifier() != null)
+                {
+                    var storageModContext = context.storageModifier();
+                    if (storageModContext.K_INPUT() != null)
+                        modifier = "input";
+                    else if (storageModContext.K_EXTERN() != null)
+                        modifier = "extern";
+                    else if (storageModContext.K_STATIC() != null)
+                        modifier = "static";
+                }
+
+                // Build detail with storage modifier if present
+                string detail;
+                if (!string.IsNullOrEmpty(modifier))
+                {
+                    detail = $"{modifier} {context.dataType().GetText()} {name}";
+                }
+                else
+                {
+                    detail = $"{context.dataType().GetText()} {name}";
+                }
+
                 var symbol = new Mql4Symbol
                 {
                     Name = name,
                     Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
                     Range = range,
-                    Detail = $"{context.dataType().GetText()} {name}"
+                    Detail = detail
                 };
 
                 Symbols.Add(symbol);
@@ -287,8 +311,25 @@ namespace Mql4LanguageServer.Parser
 
         public override Mql4Symbol? VisitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context)
         {
-            var includeText = context.GetText();
-            Includes.Add(includeText);
+            // Extract include path - handle both "file" and <file> formats
+            string includePath = "";
+
+            if (context.STRING() != null)
+            {
+                // Format: #include "file.mqh"
+                includePath = context.STRING().GetText();
+            }
+            else if (context.LT() != null && context.IDENTIFIER() != null && context.GT() != null)
+            {
+                // Format: #include <file.mqh>
+                var identifier = context.IDENTIFIER().GetText();
+                includePath = $"<{identifier}>";
+            }
+
+            if (!string.IsNullOrEmpty(includePath))
+            {
+                Includes.Add(includePath);
+            }
 
             return base.VisitIncludeDirective(context);
         }
