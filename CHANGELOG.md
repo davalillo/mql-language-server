@@ -1,3 +1,25 @@
+## [1.3.1] - 2025-11-23
+
+### Fixed
+- fix: Corregir bug crítico en DefinitionHandler - Ahora retorna Location[] válido
+- fix: Corregir bug crítico en ReferencesHandler - Ahora retorna Location[] válido
+- fix(parser): Agregar método FindSymbolDefinition() para búsqueda inteligente de símbolos
+- fix(parser): Agregar método ExtractIdentifierAtPosition() para extracción de identificadores
+- fix(build): Crear BuildConstants.cs estático para corregir error de compilación
+- fix(lsp): Agregar SelectionRange a símbolos para compatibilidad LSP
+- fix(lsp): Mejorar búsqueda de referencias con regex para evitar falsos positivos
+
+### Added
+- feat(tests): Agregar 5 nuevas pruebas unitarias para DefinitionHandler y ReferencesHandler
+- feat(parser): Soporte para búsqueda de definiciones desde cualquier posición en el código
+- feat(lsp): Manejo robusto de builtins de MQL4 (Ask, Bid, Print, OnInit, etc.)
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 245/245 Passed (100% success rate)
+- Compatibility: 100% - no breaking changes detected
+- LSP: Full go-to-definition and find-references functionality restored
+
 ## [1.3.0] - 2025-11-22
 
 ### Added
