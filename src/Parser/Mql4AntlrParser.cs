@@ -108,6 +108,7 @@ namespace Mql4LanguageServer.Parser
             var searchLine = line - 1;
             var searchColumn = column - 1;
 
+            // First, check if position is within a symbol's range (for clicking on declarations)
             foreach (var symbol in _parsedFile.Symbols)
             {
                 if (IsPositionInRange(searchLine, searchColumn, symbol.Range))
@@ -117,6 +118,105 @@ namespace Mql4LanguageServer.Parser
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Find a symbol definition by extracting the identifier at position and looking it up
+        /// </summary>
+        /// <param name="content">File content</param>
+        /// <param name="line">Line number (1-based)</param>
+        /// <param name="column">Column number (1-based)</param>
+        /// <returns>Symbol definition at position, or null if not found</returns>
+        public Mql4Symbol? FindSymbolDefinition(string content, int line, int column)
+        {
+            // Convert from 1-based to 0-based
+            var searchLine = line - 1;
+            var searchColumn = column - 1;
+
+            // Extract identifier at position
+            var identifier = ExtractIdentifierAtPosition(content, searchLine, searchColumn);
+
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return null;
+            }
+
+            // Check if it's a builtin
+            if (IsBuiltin(identifier))
+            {
+                // For builtins, return a pseudo-symbol with the identifier name
+                return new Mql4Symbol
+                {
+                    Name = identifier,
+                    Kind = LspSymbolKind.Function,
+                    Detail = "MQL4 Built-in",
+                    Range = new LspRange(
+                        new LspPosition(searchLine, searchColumn),
+                        new LspPosition(searchLine, searchColumn + identifier.Length)
+                    )
+                };
+            }
+
+            // Look up the identifier in defined symbols
+            var symbols = FindSymbolsByName(identifier);
+            if (symbols.Any())
+            {
+                // Return the first matching symbol (could be improved to handle overloads)
+                return symbols.First();
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extract identifier at a specific position in the file content
+        /// </summary>
+        /// <param name="content">File content</param>
+        /// <param name="line">Line number (0-based)</param>
+        /// <param name="column">Column number (0-based)</param>
+        /// <returns>Identifier at position, or null if not found</returns>
+        private string? ExtractIdentifierAtPosition(string content, int line, int column)
+        {
+            var lines = content.Split('\n');
+
+            if (line < 0 || line >= lines.Length)
+            {
+                return null;
+            }
+
+            var currentLine = lines[line];
+
+            if (column < 0 || column >= currentLine.Length)
+            {
+                return null;
+            }
+
+            // Check if position is within an identifier
+            if (!char.IsLetterOrDigit(currentLine[column]) && currentLine[column] != '_')
+            {
+                return null;
+            }
+
+            // Find start of identifier
+            var start = column;
+            while (start > 0 && (char.IsLetterOrDigit(currentLine[start - 1]) || currentLine[start - 1] == '_'))
+            {
+                start--;
+            }
+
+            // Find end of identifier
+            var end = column;
+            while (end < currentLine.Length && (char.IsLetterOrDigit(currentLine[end]) || currentLine[end] == '_'))
+            {
+                end++;
+            }
+
+            if (end <= start)
+            {
+                return null;
+            }
+
+            return currentLine.Substring(start, end - start);
         }
 
         /// <summary>
@@ -253,7 +353,8 @@ namespace Mql4LanguageServer.Parser
                     Name = name,
                     Kind = (LspSymbolKind)Mql4SymbolKind.Function,
                     Range = range,
-                    Detail = $"Function returning {context.dataType().GetText()}"
+                    Detail = $"Function returning {context.dataType().GetText()}",
+                    SelectionRange = range,
                 };
 
                 Symbols.Add(symbol);
@@ -300,6 +401,7 @@ namespace Mql4LanguageServer.Parser
                     Name = name,
                     Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
                     Range = range,
+                    SelectionRange = range,
                     Detail = detail
                 };
 

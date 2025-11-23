@@ -54,8 +54,8 @@ public class DefinitionHandler : IDefinitionHandler
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol at position
-            var symbol = _parser.FindSymbolAtPosition(line, character);
+            // Find symbol definition at position
+            var symbol = _parser.FindSymbolDefinition(content, line, character);
 
             if (symbol == null)
             {
