@@ -497,4 +497,105 @@ public class Mql4ParserTests
     }
 
     #endregion
+
+
+    #region FindSymbolDefinition Tests
+
+    [Fact]
+    public void FindSymbolDefinition_FindsFunctionDefinition()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                OnInit();
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+        
+        // Find OnInit definition when called from OnTick
+        var symbol = _parser.FindSymbolDefinition(code, 4, 17);
+
+        // Assert
+        Assert.NotNull(symbol);
+        Assert.Equal("OnInit", symbol.Name, ignoreCase: true);
+        Assert.Equal(SymbolKind.Function, symbol.Kind);
+    }
+
+    [Fact]
+    public void FindSymbolDefinition_FindsVariableDefinition()
+    {
+        // Arrange
+        var code = @"
+            int myVar = 10;
+            void OnTick()
+            {
+                myVar = 20;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+        
+        // Find myVar definition
+        var symbol = _parser.FindSymbolDefinition(code, 5, 17);
+
+        // Assert
+        Assert.NotNull(symbol);
+        Assert.Equal("myVar", symbol.Name, ignoreCase: true);
+        Assert.Equal(SymbolKind.Variable, symbol.Kind);
+    }
+
+    [Fact]
+    public void FindSymbolDefinition_ReturnsNullForNonExistentSymbol()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                NonExistentFunction();
+            }
+        ";
+
+        // Act
+        var symbol = _parser.FindSymbolDefinition(code, 4, 17);
+
+        // Assert
+        Assert.Null(symbol);
+    }
+
+    [Fact]
+    public void FindSymbolDefinition_ReturnsNullForInvalidPosition()
+    {
+        // Arrange
+        var code = @"void OnTick() { }";
+
+        // Act
+        var symbol = _parser.FindSymbolDefinition(code, 999, 999);
+
+        // Assert
+        Assert.Null(symbol);
+    }
+
+    #endregion
+
+
+    [Fact]
+    public void ExtractIdentifierAtPosition_ReturnsNullForOutOfRange()
+    {
+        // Arrange
+        var code = "void OnTick() { }";
+
+        // Act
+        var method = _parser.GetType().GetMethod("ExtractIdentifierAtPosition",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var identifier = method?.Invoke(_parser, new object[] { code, 999, 999 });
+
+        // Assert
+        Assert.Null(identifier);
+    }
+
+
 }

@@ -32,20 +32,7 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
-  <!-- Generate BuildConstants.cs with embedded build date -->
-  <Target Name="GenerateBuildConstants" BeforeTargets="CoreCompile" Condition="'$(Configuration)'=='Release'">
-    <PropertyGroup>
-      <BuildDate>$([System.DateTime]::Now.ToString("yyyyMMdd_HHmmss"))</BuildDate>
-      <BuildConstantsPath>$(IntermediateOutputPath)BuildConstants.cs</BuildConstantsPath>
-    </PropertyGroup>
-    <PropertyGroup>
-      <ExecCommand>bash -c &quot;printf '// Auto-generated build constants\nnamespace Mql4LanguageServer {\n    public static class BuildConstants {\n        public const string BuildDate = \&quot;$(BuildDate)\&quot;;\n    }\n}' > '$(BuildConstantsPath)'&quot;</ExecCommand>
-    </PropertyGroup>
-    <Exec Command="$(ExecCommand)" />
-    <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)BuildConstants.cs" />
-    </ItemGroup>
-  </Target>
+  <!-- BuildConstants.cs is now a static file in the project root -->
 
   <!-- Override settings when packing as NuGet Tool -->
   <Target Name="PackTool" AfterTargets="Build">

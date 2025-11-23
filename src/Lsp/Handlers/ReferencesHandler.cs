@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
@@ -62,8 +63,8 @@ public class ReferencesHandler : IReferencesHandler
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol at position
-            var symbol = _parser.FindSymbolAtPosition(line, character);
+            // Find symbol definition at position
+            var symbol = _parser.FindSymbolDefinition(content, line, character);
 
             if (symbol == null)
             {
@@ -75,22 +76,27 @@ public class ReferencesHandler : IReferencesHandler
             // For now, return only references in the same file
             var references = new List<Location>();
 
-            // Search in current file
+            // Search in current file using regex to avoid false positives
             var lines = content.Split('\n');
             for (int i = 0; i < lines.Length; i++)
             {
                 var currentLine = lines[i];
-                var index = currentLine.IndexOf(symbol.Name, StringComparison.Ordinal);
+                
+                // Use regex to find identifier matches (not inside strings or comments)
+                var matches = System.Text.RegularExpressions.Regex.Matches(
+                    currentLine,
+                    @"\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b"
+                );
 
-                if (index >= 0)
+                foreach (System.Text.RegularExpressions.Match match in matches)
                 {
                     // Convert 0-based line to LSP 0-based position
                     references.Add(new Location
                     {
                         Uri = documentUri,
                         Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, index),
-                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, index + symbol.Name.Length)
+                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index),
+                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index + match.Length)
                         )
                     });
                 }
