@@ -24,9 +24,8 @@ namespace Mql4LanguageServer
     {
         static async Task<int> Main(string[] args)
         {
-            // Use AppContext.BaseDirectory for single-file apps compatibility
-            var executablePath = System.IO.Path.Combine(AppContext.BaseDirectory, "mql4-lsp-server");
-            var buildDate = System.IO.File.GetLastWriteTime(executablePath);
+            // Get build date from BuildConstants (immutable, embedded at compile time)
+            var buildDateStr = BuildConstants.BuildDate;
 
             // Check for --version flag first
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
@@ -34,7 +33,7 @@ namespace Mql4LanguageServer
                 var version = Assembly.GetExecutingAssembly().GetName().Version;
 
                 Console.WriteLine($"MQL4 Language Server v{version?.Major}.{version?.Minor}.{version?.Build}");
-                Console.WriteLine($"Build Date: {buildDate:yyyy-MM-dd HH:mm:ss}");
+                Console.WriteLine($"Build Date: {buildDateStr}");
                 return 0;
             }
 
@@ -52,7 +51,7 @@ namespace Mql4LanguageServer
             {
                 Log.Information("=================================================");
                 Log.Information("Starting MQL4 Language Server");
-                Log.Information($"Build Date: {buildDate:yyyy-MM-dd HH:mm:ss}");
+                Log.Information($"Build Date: {buildDateStr}");
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
                 Log.Information("=================================================");
 

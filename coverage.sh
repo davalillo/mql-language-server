@@ -37,7 +37,7 @@ echo ""
 
 # Run tests with coverage (JSON format)
 echo "🧪 Running tests with coverage analysis..."
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
     --target "dotnet" \
     --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
     --format json \
@@ -48,7 +48,7 @@ echo ""
 
 # Generate OpenCover format
 echo "📊 Generating OpenCover report..."
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
     --target "dotnet" \
     --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
     --format opencover \

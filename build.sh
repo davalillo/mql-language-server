@@ -13,12 +13,19 @@ cd src/
 echo "🧹 Cleaning previous builds..."
 dotnet clean --configuration Release > /dev/null 2>&1 || true
 rm -rf bin/Release/net10.0/publish 2>/dev/null || true
+
+# Clean ANTLR generated files to ensure fresh parser generation
+echo "🧹 Cleaning ANTLR generated files..."
+rm -rf Parser/Generated/*.cs 2>/dev/null || true
+rm -rf Parser/Generated/*.interp 2>/dev/null || true
+rm -rf Parser/Generated/*.tokens 2>/dev/null || true
+rm -rf Parser/Generated/*.g4 2>/dev/null || true
 echo "✅ Clean complete"
 echo ""
 
 # Build first (this generates ANTLR files)
 echo "🔨 Building project (generating ANTLR parser)..."
-dotnet build --configuration Release --no-restore
+dotnet build --configuration Release
 echo "✅ Build complete - ANTLR parser generated"
 echo ""
 
