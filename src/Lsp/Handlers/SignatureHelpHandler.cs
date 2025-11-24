@@ -18,7 +18,7 @@ namespace Mql4LanguageServer.Lsp.Handlers;
 /// Provides signature help (parameter hints) for functions
 /// Shows function signatures with parameter information as user types
 /// </summary>
-public class SignatureHelpHandler : ISignatureHelpHandler
+public class SignatureHelpHandler : IRequestHandler<SignatureHelpParams, SignatureHelp?>
 {
     private readonly ILogger<SignatureHelpHandler> _logger;
 
