@@ -123,6 +123,18 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.globalConstructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitGlobalConstructorDeclaration([NotNull] Mql4GrammarParser.GlobalConstructorDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.globalDestructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitGlobalDestructorDeclaration([NotNull] Mql4GrammarParser.GlobalDestructorDeclarationContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

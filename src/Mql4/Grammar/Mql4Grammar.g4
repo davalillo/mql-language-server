@@ -176,6 +176,8 @@ translationUnit
     | structDeclaration
     | enumDeclaration
     | functionDeclaration
+    | globalConstructorDeclaration
+    | globalDestructorDeclaration
     | variableDeclarationStatement
     | semicolon
     ;
@@ -243,7 +245,17 @@ arrayInitializer
 
 // --- Functions ---
 functionDeclaration
-    : templateDefinition? modifiers? type modifiers? IDENTIFIER LPAREN parameterList? RPAREN modifiers? (block | SEMICOLON)
+    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | SEMICOLON)
+    ;
+
+// Constructor outside of class: Crypter::Crypter() { }
+globalConstructorDeclaration
+    : modifiers? qualifiedName LPAREN parameterList? RPAREN (initializationList)? (block | SEMICOLON)
+    ;
+
+// Destructor outside of class: Crypter::~Crypter() { }
+globalDestructorDeclaration
+    : modifiers? qualifiedName SCOPE BIT_NOT IDENTIFIER LPAREN RPAREN (block | SEMICOLON)
     ;
 
 templateDefinition

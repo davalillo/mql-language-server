@@ -1337,4 +1337,273 @@ public class AdvancedFeaturesTests
     }
 
     #endregion
+
+    #region Global Constructors and Destructors
+
+    [Fact]
+    public void ParseGlobalConstructor_WithScopeResolution_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class Crypter
+            {
+            public:
+                Crypter();
+            };
+
+            Crypter::Crypter()
+            {
+                // Constructor implementation
+            }
+
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnTick function is extracted
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseGlobalDestructor_WithScopeResolution_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class Crypter
+            {
+            public:
+                ~Crypter();
+            };
+
+            Crypter::~Crypter()
+            {
+                // Destructor implementation
+            }
+
+            void OnInit() { return 0; }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnInit function is extracted
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+    }
+
+    [Fact]
+    public void ParseGlobalMethod_WithQualifiedName_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class Crypter
+            {
+            public:
+                string EnCrypt(string text);
+            };
+
+            string Crypter::EnCrypt(string text)
+            {
+                return text;
+            }
+
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnTick function is extracted
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseMultipleGlobalMethods_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class DataProcessor
+            {
+            public:
+                DataProcessor();
+                ~DataProcessor();
+                void Process();
+                int Calculate(int value);
+            };
+
+            DataProcessor::DataProcessor() { }
+            DataProcessor::~DataProcessor() { }
+            void DataProcessor::Process() { }
+            int DataProcessor::Calculate(int value) { return value * 2; }
+
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnTick function is extracted
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseGlobalMethod_WithReturnTypeAndParameters_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class MathUtils
+            {
+            public:
+                static double Add(double a, double b);
+                static int Multiply(int x, int y);
+            };
+
+            double MathUtils::Add(double a, double b)
+            {
+                return a + b;
+            }
+
+            int MathUtils::Multiply(int x, int y)
+            {
+                return x * y;
+            }
+
+            void OnInit() { return 0; }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnInit function is extracted
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+    }
+
+    [Fact]
+    public void ParseNestedNamespaceQualifiedName_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            namespace Trading {
+                namespace Crypto {
+                    class Encoder {
+                    public:
+                        string Encode(string data);
+                    };
+
+                    string Encoder::Encode(string data) {
+                        return data;
+                    }
+                }
+            }
+
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnTick function is extracted
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseComplexRealWorldClassWithGlobalMethods_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #property copyright ""Test""
+            #property version ""1.0""
+
+            class TradeManager
+            {
+            private:
+                int magic;
+
+            public:
+                TradeManager();
+                ~TradeManager();
+                bool OpenOrder(int type, double lots, double price);
+                void CloseAll();
+            };
+
+            TradeManager::TradeManager()
+            {
+                magic = 12345;
+            }
+
+            TradeManager::~TradeManager()
+            {
+                CloseAll();
+            }
+
+            bool TradeManager::OpenOrder(int type, double lots, double price)
+            {
+                return true;
+            }
+
+            void TradeManager::CloseAll()
+            {
+                // Close all orders
+            }
+
+            int OnInit()
+            {
+                TradeManager* tm = new TradeManager();
+                return 0;
+            }
+
+            void OnTick()
+            {
+                TradeManager* tm = new TradeManager();
+                tm.OpenOrder(OP_BUY, 0.1, Ask);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify functions are extracted
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    #endregion
 }

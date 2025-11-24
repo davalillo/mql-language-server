@@ -182,6 +182,26 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.globalConstructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterGlobalConstructorDeclaration([NotNull] Mql4GrammarParser.GlobalConstructorDeclarationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.globalConstructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitGlobalConstructorDeclaration([NotNull] Mql4GrammarParser.GlobalConstructorDeclarationContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.globalDestructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterGlobalDestructorDeclaration([NotNull] Mql4GrammarParser.GlobalDestructorDeclarationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.globalDestructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitGlobalDestructorDeclaration([NotNull] Mql4GrammarParser.GlobalDestructorDeclarationContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

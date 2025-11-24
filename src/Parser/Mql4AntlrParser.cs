@@ -397,12 +397,13 @@ namespace Mql4LanguageServer.Parser
 
         public override Mql4Symbol? VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context)
         {
-            // Get function name
-            var nameToken = context.IDENTIFIER();
-            if (nameToken != null)
+            // Get function name (now uses qualifiedName to support Class::Method syntax)
+            var name = context.qualifiedName()?.GetText();
+            if (!string.IsNullOrEmpty(name))
             {
-                var name = nameToken.GetText();
-                var range = CreateRangeFromToken(nameToken.Symbol);
+                // Get the last token from qualifiedName for position info
+                var lastToken = context.qualifiedName().IDENTIFIER(context.qualifiedName().IDENTIFIER().Length - 1);
+                var range = CreateRangeFromToken(lastToken.Symbol);
 
                 var symbol = new Mql4Symbol
                 {
