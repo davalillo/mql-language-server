@@ -4,7 +4,7 @@
 
 ### Language & Runtime
 - **C# 12**: Primary programming language
-- **.NET 8.0**: Target framework
+- **.NET 10.0**: Target framework
   - LTS (Long Term Support)
   - Modern .NET with improved performance
   - Cross-platform support
