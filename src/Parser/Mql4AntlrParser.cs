@@ -59,7 +59,7 @@ namespace Mql4LanguageServer.Parser
                 var tree = parser.compilationUnit();
 
                 // Create visitor to extract symbols
-                var visitor = new Mql4SymbolVisitor();
+                var visitor = new Mql4SymbolVisitor(filePath);
                 visitor.Visit(tree);
 
                 // Extract symbols and includes from visitor
@@ -395,6 +395,13 @@ namespace Mql4LanguageServer.Parser
         public List<Mql4Symbol> Symbols { get; } = new List<Mql4Symbol>();
         public List<string> Includes { get; } = new List<string>();
 
+        private readonly string _filePath;
+
+        public Mql4SymbolVisitor(string filePath)
+        {
+            _filePath = filePath ?? string.Empty;
+        }
+
         public override Mql4Symbol? VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context)
         {
             // Get function name (now uses qualifiedName to support Class::Method syntax)
@@ -412,6 +419,7 @@ namespace Mql4LanguageServer.Parser
                     Range = range,
                     Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = range,
+                    FilePath = _filePath
                 };
 
                 Symbols.Add(symbol);
@@ -480,7 +488,8 @@ namespace Mql4LanguageServer.Parser
                         Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
                         Range = range,
                         SelectionRange = range,
-                        Detail = detail
+                        Detail = detail,
+                        FilePath = _filePath
                     };
 
                     Symbols.Add(symbol);
@@ -553,15 +562,4 @@ namespace Mql4LanguageServer.Parser
         }
 
         private LspRange CreateRangeFromContext(ParserRuleContext context)
-        {
-            var start = context.Start;
-            var stop = context.Stop ?? start;
-
-            return new LspRange
-            (
-                new LspPosition(start.Line - 1, start.Column), // Convert to 0-based
-                new LspPosition(stop.Line - 1, stop.Column + stop.Text.Length)
-            );
-        }
-    }
 }
