@@ -1,0 +1,32 @@
+{
+  "Environment": {
+    "PowerMode": "PluggedIn",
+    "OS": "Debian GNU/Linux 13 (trixie) X64",
+    "DotnetVersion": "10.0.0",
+    "ProcessorCount": 32,
+    "MachineName": "flanagan",
+    "Timestamp": "2025-11-24T20:57:26.9298879Z"
+  },
+  "Parsing": {
+    "Median": 74.477,
+    "Average": 73.17547999999998,
+    "Min": 66.6212,
+    "Max": 79.7639,
+    "Samples": 20
+  },
+  "SymbolCount": {
+    "Median": 1937,
+    "Average": 1937,
+    "Min": 1937,
+    "Max": 1937,
+    "Samples": 20
+  },
+  "CompletionCount": {
+    "Median": 1679,
+    "Average": 1679,
+    "Min": 1679,
+    "Max": 1679,
+    "Samples": 20
+  },
+  "CommitHash": "c6efab9"
+}

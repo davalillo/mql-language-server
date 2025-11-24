@@ -4,6 +4,9 @@ obj/
 dist/
 publish/
 
+# ANTLR Generated Files
+src/Parser/Generated/
+
 # Visual Studio
 .vs/
 .vscode/

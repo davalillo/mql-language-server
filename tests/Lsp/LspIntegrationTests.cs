@@ -31,6 +31,7 @@ public class LspIntegrationTests
 
         // Act
         services.AddSingleton<Mql4AntlrParser>();
+        services.AddSingleton<OpenDocumentStore>();
         services.AddSingleton<DocumentSymbolHandler>();
         services.AddSingleton<DefinitionHandler>();
         services.AddSingleton<ReferencesHandler>();
@@ -143,9 +144,10 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object);
+        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -157,7 +159,8 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
         var parser = new Mql4AntlrParser();
-        var handler = new DocumentSymbolHandler(mockLogger.Object, parser);
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var handler = new DocumentSymbolHandler(mockLogger.Object, parser, mockDocumentStore.Object);
 
         // Create a temporary test file
         var testFile = Path.Combine(Path.GetTempPath(), $"test-{Guid.NewGuid():N}.mq4");
@@ -209,7 +212,8 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
-        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object);
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
 
         // Create request with non-existent file
         var documentUri = new Uri("file:///non/existent/file.mq4");
@@ -231,9 +235,10 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<DefinitionHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new DefinitionHandler(mockLogger.Object, mockParser.Object);
+        var handler = new DefinitionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -245,9 +250,10 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<CompletionHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new CompletionHandler(mockLogger.Object, mockParser.Object);
+        var handler = new CompletionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -259,9 +265,10 @@ public class LspIntegrationTests
         // Arrange
         var mockLogger = new Mock<ILogger<HoverHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
+        var mockDocumentStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new HoverHandler(mockLogger.Object, mockParser.Object);
+        var handler = new HoverHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
+using Mql4LanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -23,11 +24,13 @@ public class DefinitionHandler : IDefinitionHandler
 {
     private readonly ILogger<DefinitionHandler> _logger;
     private readonly Mql4AntlrParser _parser;
+    private readonly OpenDocumentStore _documentStore;
 
-    public DefinitionHandler(ILogger<DefinitionHandler> logger, Mql4AntlrParser parser)
+    public DefinitionHandler(ILogger<DefinitionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
     }
 
     public async Task<LocationOrLocationLinks?> Handle(DefinitionParams request, CancellationToken cancellationToken)
@@ -46,9 +49,23 @@ public class DefinitionHandler : IDefinitionHandler
                 return null;
             }
 
-            // Parse the file
+            // Read content for symbol search
             var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-            var mql4File = _parser.ParseFile(content, filePath);
+
+            // Convert DocumentUri to System.Uri for the document store
+            var uri = documentUri.ToUri();
+
+            Mql4File? mql4File = null;
+
+            // Try to get the document from cache first
+            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            {
+                _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
+
+                // Parse the file and cache it
+                mql4File = _parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mql4File);
+            }
 
             // Convert LSP Position (0-based) to parser position (1-based)
             var line = request.Position.Line + 1;

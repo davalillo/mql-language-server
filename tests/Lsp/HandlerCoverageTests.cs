@@ -4,6 +4,7 @@ using Moq;
 using Mql4LanguageServer.Lsp.Handlers;
 using Mql4LanguageServer.Parser;
 using Mql4LanguageServer.Models;
+using Mql4LanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
@@ -23,6 +24,7 @@ public class HandlerCoverageTests
     private readonly Mock<ILogger<DefinitionHandler>> _mockDefinitionLogger;
     private readonly Mock<ILogger<HoverHandler>> _mockHoverLogger;
     private readonly Mock<ILogger<ReferencesHandler>> _mockReferencesLogger;
+    private readonly Mock<OpenDocumentStore> _mockDocumentStore;
     private readonly Mql4AntlrParser _parser;
 
     public HandlerCoverageTests()
@@ -31,6 +33,7 @@ public class HandlerCoverageTests
         _mockDefinitionLogger = new Mock<ILogger<DefinitionHandler>>();
         _mockHoverLogger = new Mock<ILogger<HoverHandler>>();
         _mockReferencesLogger = new Mock<ILogger<ReferencesHandler>>();
+        _mockDocumentStore = new Mock<OpenDocumentStore>();
         _parser = new Mql4AntlrParser();
     }
 
@@ -40,7 +43,7 @@ public class HandlerCoverageTests
     public void CompletionHandler_CanBeConstructed()
     {
         // Act
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -50,7 +53,7 @@ public class HandlerCoverageTests
     public void CompletionHandler_GetRegistrationOptions_ReturnsNotNull()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Act & Assert - just verify the method exists and can be called
         // We can't test the actual return without the proper parameters
@@ -62,7 +65,7 @@ public class HandlerCoverageTests
     public void CompletionHandler_ParseMql4Code_ShouldExtractSymbols()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void OnInit() {
                 int magic = 12345;
@@ -81,7 +84,7 @@ public class HandlerCoverageTests
     public void CompletionHandler_WithOrderSend_ShouldRecognizeBuiltin()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = "OrderSend(Ask, OP_BUY, 0.1, Ask, 3);";
 
         // Act
@@ -100,7 +103,7 @@ public class HandlerCoverageTests
     public void DefinitionHandler_CanBeConstructed()
     {
         // Act
-        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser);
+        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -110,7 +113,7 @@ public class HandlerCoverageTests
     public void DefinitionHandler_ParseFunctionDefinition_ShouldExtractSymbol()
     {
         // Arrange
-        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser);
+        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void MyFunction() {
                 int x = 10;
@@ -133,7 +136,7 @@ public class HandlerCoverageTests
     public void HoverHandler_CanBeConstructed()
     {
         // Act
-        var handler = new HoverHandler(_mockHoverLogger.Object, _parser);
+        var handler = new HoverHandler(_mockHoverLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -143,7 +146,7 @@ public class HandlerCoverageTests
     public void HoverHandler_ParseBuiltinFunction_ShouldRecognizeIt()
     {
         // Arrange
-        var handler = new HoverHandler(_mockHoverLogger.Object, _parser);
+        var handler = new HoverHandler(_mockHoverLogger.Object, _parser, _mockDocumentStore.Object);
         var code = "Ask = Bid + Point;";
 
         // Act
@@ -162,7 +165,7 @@ public class HandlerCoverageTests
     public void ReferencesHandler_CanBeConstructed()
     {
         // Act
-        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser);
+        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Assert
         Assert.NotNull(handler);
@@ -172,7 +175,7 @@ public class HandlerCoverageTests
     public void ReferencesHandler_ParseVariableUsage_ShouldExtract()
     {
         // Arrange
-        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser);
+        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             int MyVar = 10;
             void Test() {
@@ -197,7 +200,7 @@ public class HandlerCoverageTests
     public void Handler_ParseExpertAdvisor_ShouldExtractEventHandlers()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             int OnInit() {
                 return INIT_SUCCEEDED;
@@ -227,7 +230,7 @@ public class HandlerCoverageTests
     public void Handler_ParseIndicator_ShouldExtractOnCalculate()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             #property indicator_buffers 2
             double UpperBuffer[];
@@ -262,7 +265,7 @@ public class HandlerCoverageTests
     public void Handler_ParseTradingFunctions_ShouldRecognizeBuiltins()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void CheckPositions() {
                 int total = PositionsTotal();
@@ -287,7 +290,7 @@ public class HandlerCoverageTests
     public void Handler_ParseIndicatorFunctions_ShouldRecognizeBuiltins()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             int handleMA;
             int handleRSI;
@@ -311,7 +314,7 @@ public class HandlerCoverageTests
     public void Handler_ParseStringFunctions_ShouldRecognizeBuiltins()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void ProcessString() {
                 string text = ""Hello World"";
@@ -333,7 +336,7 @@ public class HandlerCoverageTests
     public void Handler_ParseArrayFunctions_ShouldRecognizeBuiltins()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void ProcessArray() {
                 double prices[100];
@@ -355,7 +358,7 @@ public class HandlerCoverageTests
     public void Handler_ParseTimeFunctions_ShouldRecognizeBuiltins()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void CheckTime() {
                 datetime now = TimeCurrent();
@@ -381,7 +384,7 @@ public class HandlerCoverageTests
     public void Handler_WithEmptyCode_ShouldReturnEmptySymbols()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Act
         var file = _parser.ParseFile("", "test.mq4");
@@ -395,7 +398,7 @@ public class HandlerCoverageTests
     public void Handler_WithNullCode_ShouldHandleGracefully()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Act
         var file = _parser.ParseFile(null!, "test.mq4");
@@ -409,7 +412,7 @@ public class HandlerCoverageTests
     public void Handler_WithOnlyWhitespace_ShouldReturnEmpty()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
 
         // Act
         var file = _parser.ParseFile("   \n\n   \t\t   ", "test.mq4");
@@ -423,7 +426,7 @@ public class HandlerCoverageTests
     public void Handler_WithNestedFunctionCalls_ShouldExtractOuterFunction()
     {
         // Arrange
-        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser);
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, _mockDocumentStore.Object);
         var code = @"
             void OnTick() {
                 double result = MathMax(MathAbs(Ask - Bid), Point);
