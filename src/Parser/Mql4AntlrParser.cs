@@ -101,6 +101,108 @@ namespace Mql4LanguageServer.Parser
         }
 
         /// <summary>
+        /// Parse an MQL4 file and all its included files (.mqh)
+        /// Resolves includes recursively and returns combined symbols
+        /// </summary>
+        /// <param name="filePath">Path to the main MQL4 file</param>
+        /// <returns>Parsed Mql4File with symbols from main file and all includes</returns>
+        public Mql4File ParseFileWithIncludes(string filePath)
+        {
+            return ParseFileWithIncludes(filePath, new HashSet<string>());
+        }
+
+        /// <summary>
+        /// Parse an MQL4 file and all its included files (recursive)
+        /// </summary>
+        /// <param name="filePath">Path to the MQL4 file</param>
+        /// <param name="processedFiles">Set of already processed files to avoid circular dependencies</param>
+        /// <returns>Parsed Mql4File with symbols from main file and all includes</returns>
+        private Mql4File ParseFileWithIncludes(string filePath, HashSet<string> processedFiles)
+        {
+            // Check if file exists
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"MQL4 file not found: {filePath}");
+            }
+
+            // Avoid circular dependencies
+            var canonicalPath = Path.GetFullPath(filePath);
+            if (processedFiles.Contains(canonicalPath))
+            {
+                // Return empty file for circular include
+                return new Mql4File { FilePath = filePath, Symbols = new List<Mql4Symbol>(), Includes = new List<string>() };
+            }
+
+            // Add current file to processed set
+            processedFiles.Add(canonicalPath);
+
+            // Parse the main file
+            var mainFile = ParseFileFromPath(filePath);
+            var allSymbols = new List<Mql4Symbol>(mainFile.Symbols);
+
+            // Parse all included files recursively
+            foreach (var include in mainFile.Includes)
+            {
+                // Extract include path (simple parsing for now)
+                var includePath = ExtractIncludePath(include);
+                if (!string.IsNullOrEmpty(includePath))
+                {
+                    // Resolve relative paths
+                    var includeFullPath = ResolveIncludePath(filePath, includePath);
+                    if (File.Exists(includeFullPath))
+                    {
+                        // Parse included file and merge symbols
+                        var includedFile = ParseFileWithIncludes(includeFullPath, processedFiles);
+                        allSymbols.AddRange(includedFile.Symbols);
+                    }
+                }
+            }
+
+            // Return combined file
+            return new Mql4File
+            {
+                FilePath = filePath,
+                Symbols = allSymbols,
+                Includes = mainFile.Includes
+            };
+        }
+
+        /// <summary>
+        /// Extract include path from #include directive
+        /// </summary>
+        /// <param name="includeDirective">Full include directive (e.g., #include "file.mqh")</param>
+        /// <returns>Included file path</returns>
+        private string ExtractIncludePath(string includeDirective)
+        {
+            // Simple parsing: extract content between quotes
+            var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
+            if (match.Success)
+            {
+                return match.Groups[1].Value;
+            }
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Resolve include path relative to the including file
+        /// </summary>
+        /// <param name="includingFile">Path to the file that includes</param>
+        /// <param name="includePath">Included file path</param>
+        /// <returns>Full path to included file</returns>
+        private string ResolveIncludePath(string includingFile, string includePath)
+        {
+            // If include path is absolute, use as-is
+            if (Path.IsPathRooted(includePath))
+            {
+                return includePath;
+            }
+
+            // Otherwise, resolve relative to the including file's directory
+            var includingDir = Path.GetDirectoryName(includingFile);
+            return Path.Combine(includingDir, includePath);
+        }
+
+        /// <summary>
         /// Find a symbol at a specific position in the file
         /// </summary>
         /// <param name="line">Line number (1-based)</param>
