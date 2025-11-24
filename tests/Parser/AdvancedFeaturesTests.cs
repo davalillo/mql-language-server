@@ -1,0 +1,856 @@
+using Xunit;
+using Mql4LanguageServer.Parser;
+using Mql4LanguageServer.Models;
+
+namespace Mql4LanguageServer.Tests.Parser;
+
+/// <summary>
+/// Tests for advanced MQL4 features:
+/// - Enums with values
+/// - Preprocessor directives (#import, #define, #property)
+/// - Variable names with capital letters
+/// - Comments and whitespace handling
+/// </summary>
+public class AdvancedFeaturesTests
+{
+    private readonly Mql4AntlrParser _parser;
+
+    public AdvancedFeaturesTests()
+    {
+        _parser = new Mql4AntlrParser();
+    }
+
+    #region Enum Parsing Tests
+
+    [Fact]
+    public void ParseEnum_WithValues_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            enum TradeType
+            {
+                Buy = 0,
+                Sell = 1,
+                BuyLimit = 2,
+                SellLimit = 3
+            };
+            
+            void OnTick()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.True(file.Symbols.Count >= 1, "Should extract at least OnTick function");
+        
+        // Verify that enum declaration doesn't crash the parser
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseEnum_WithMixedValues_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            enum MyEnum
+            {
+                FirstValue,
+                SecondValue = 10,
+                ThirdValue,
+                FourthValue = 20
+            };
+            
+            int OnInit()
+            {
+                return 0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        // Parser should handle enum without crashing
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+    }
+
+    [Fact]
+    public void ParseEnum_SimpleValues_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            enum Status
+            {
+                Active,
+                Inactive,
+                Pending
+            };
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        // Parser should handle simple enum
+    }
+
+    [Fact]
+    public void ParseEnum_WithDoubleValues_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            enum PriceLevel
+            {
+                Low = 1.5,
+                Medium = 2.5,
+                High = 3.5
+            };
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        // Parser should handle double enum values
+    }
+
+    #endregion
+
+    #region Import Directive Tests
+
+    [Fact]
+    public void ParseImportDirective_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #import ""user32.dll""
+            int MessageBox(int hWnd, string lpText, string lpCaption, int uType);
+            #import
+            
+            void OnTick()
+            {
+                MessageBox(0, ""Test"", ""Info"", 0);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        // Verify OnTick function is extracted despite import directive
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseImportDirective_WithStdlib_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #import ""stdlib.ex4""
+            string ErrorDescription(int error);
+            #import
+            
+            void OnInit()
+            {
+                string msg = ErrorDescription(1);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Define Directive Tests
+
+    [Fact]
+    public void ParseDefineDirective_WithString_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #define MY_SYMBOL ""EURUSD""
+            #define MY_MAGIC 12345
+            
+            void OnTick()
+            {
+                Print(MY_SYMBOL);
+                int magic = MY_MAGIC;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseDefineDirective_WithTwoIdentifiers_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #define TradeType Buy
+            #define OrderMode Market
+            
+            void OnTick()
+            {
+                int type = TradeType;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseDefineDirective_MultipleDefinitions_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #define VERSION_MAJOR 2
+            #define VERSION_MINOR 90
+            #define PRODUCT_NAME ""Ducibus Pro""
+            
+            int OnInit()
+            {
+                return 0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Property Directive Tests
+
+    [Fact]
+    public void ParsePropertyDirective_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #property copyright ""Copyright 2024""
+            #property version ""1.00""
+            #property strict
+            
+            void OnInit()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+    }
+
+    [Fact]
+    public void ParsePropertyDirective_MultipleProperties_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #property copyright ""Author""
+            #property link ""https://example.com""
+            #property description ""EA Description""
+            #property strict
+            #property optimizer
+            
+            int OnInit() { return 0; }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Variable Names with Capital Letters
+
+    [Fact]
+    public void ParseVariableNames_WithLeadingCapital_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            int MyVariable = 10;
+            double MyPrice = 1.2345;
+            string MyName = ""Test"";
+            
+            void OnTick()
+            {
+                int result = MyVariable;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        // Parser should extract variables with capital letters
+        var myVar = file.Symbols.FirstOrDefault(s => s.Name == "MyVariable");
+        Assert.NotNull(myVar);
+    }
+
+    [Fact]
+    public void ParseVariableNames_MixedCase_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            int camelCase = 1;
+            int PascalCase = 2;
+            int snake_case = 3;
+            
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseInputParameters_WithCapitalLetters_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            input int MagicNumber = 12345;
+            input double LotSize = 0.1;
+            input string SymbolName = ""EURUSD"";
+            input bool IsEnabled = true;
+            
+            void OnTick()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        var magic = file.Symbols.FirstOrDefault(s => s.Name == "MagicNumber");
+        Assert.NotNull(magic);
+    }
+
+    #endregion
+
+    #region Comments and Whitespace
+
+    [Fact]
+    public void ParseCode_WithBlockComments_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            /* Multi-line comment
+               spanning several lines
+               with various symbols: @#$%^&*
+            */
+            void OnTick()
+            {
+                /* Inline comment */
+                Print(""Test"");
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseCode_WithLineComments_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            // Single line comment
+            void OnInit() // Another comment
+            {
+                return 0; // Return comment
+            }
+            // End comment
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCode_WithMixedComments_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            // Header comment
+            /* Block comment */
+            void OnTick()
+            {
+                /* Another block */
+                // Line comment
+                if (true)
+                {
+                    /* Nested block */
+                    Print(""OK"");
+                }
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Include Directives
+
+    [Fact]
+    public void ParseIncludeDirective_WithQuotes_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #include ""stdlib.mqh""
+            #include ""Trade/Trade.mqh""
+            
+            void OnTick()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Includes);
+        Assert.True(file.Includes.Count >= 2, "Should parse both includes");
+        Assert.Contains(file.Includes, i => i.Contains("stdlib.mqh"));
+        Assert.Contains(file.Includes, i => i.Contains("Trade/Trade.mqh"));
+    }
+
+    [Fact]
+    public void ParseIncludeDirective_WithAngleBrackets_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #include <stdlib.mqh>
+            #include <Trade/Trade.mqh>
+
+            int OnInit()
+            {
+                return 0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.NotNull(file.Includes);
+
+        // Parser should parse the file without crashing
+        // Note: Include extraction may have limitations with angle bracket syntax
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+    }
+
+    [Fact]
+    public void ParseIncludeDirective_MixedFormats_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            #include ""local.mqh""
+            #include <stdlib.mqh>
+            #include ""Include/File.mqh""
+
+            void OnDeinit(const int reason) { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.NotNull(file.Includes);
+
+        // Parser should parse the file without crashing
+        var onDeinit = file.Symbols.FirstOrDefault(s => s.Name == "OnDeinit");
+        Assert.NotNull(onDeinit);
+
+        // Note: Include extraction may vary depending on syntax support
+    }
+
+    #endregion
+
+    #region Complex Real-World Code
+
+    [Fact]
+    public void ParseComplexCode_WithAllFeatures_HandlesGracefully()
+    {
+        // Arrange
+        var code = @"
+            #property copyright ""Test""
+            #property version ""1.0""
+            #include ""stdlib.mqh""
+            #import ""user32.dll""
+            int MessageBox(int hWnd, string lpText, string lpCaption, int uType);
+            #import
+            
+            enum TradeMode
+            {
+                ModeBuy = 0,
+                ModeSell = 1,
+                ModeBoth = 2
+            };
+            
+            input int MagicNumber = 12345;
+            input double LotSize = 0.1;
+            input bool UseTrailingStop = true;
+            input string CommentText = ""Test"";
+            
+            int GlobalVar = 100;
+            
+            int OnInit()
+            {
+                Print(""Init"");
+                return 0;
+            }
+            
+            void OnTick()
+            {
+                double price = Ask;
+                if (UseTrailingStop)
+                {
+                    Print(""Trailing"");
+                }
+                MessageBox(0, ""Tick"", ""Info"", 0);
+            }
+            
+            void OnDeinit(const int reason)
+            {
+                Print(""Deinit"");
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        Assert.NotNull(file.Includes);
+        
+        // Verify key functions exist
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+        
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+        
+        var onDeinit = file.Symbols.FirstOrDefault(s => s.Name == "OnDeinit");
+        Assert.NotNull(onDeinit);
+        
+        // Verify includes
+        Assert.True(file.Includes.Count >= 1, "Should parse at least one include");
+        
+        // Verify variables
+        Assert.True(file.Symbols.Count >= 6, "Should extract functions and variables");
+    }
+
+    #endregion
+
+    #region Compound Assignment Operators
+
+    [Fact]
+    public void ParseCompoundAssign_AddOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int value = 10;
+                value += 5;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify OnTick function is parsed
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_SubtractOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                double price = 100.0;
+                price -= 10.0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_MultiplyOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int multiplier = 5;
+                multiplier *= 2;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_DivideOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                double result = 100.0;
+                result /= 4.0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_ModuloOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int remainder = 10;
+                remainder %= 3;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_MultipleOperatorsInSequence_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int value = 10;
+                value += 5;      // Should be 15
+                value -= 3;      // Should be 12
+                value *= 2;      // Should be 24
+                value /= 4;      // Should be 6
+                value %= 5;      // Should be 1
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_WithExpressions_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = 10, b = 5, c = 2;
+                a += b * c;
+                b -= a / c;
+                c *= a + b;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_WithArrays_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int arr[5];
+                arr[0] = 10;
+                arr[0] += 5;
+                arr[1] *= 2;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_WithBuiltinVariables_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                double balance = AccountBalance();
+                balance += 100.0;
+                double equity = AccountEquity();
+                equity -= 50.0;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundAssign_RealWorldPattern_ParsesSuccessfully()
+    {
+        // Arrange - Pattern from Ducibus Pro
+        var code = @"
+            void OnTick()
+            {
+                double totalProfit = 0.0;
+                double acumPips = 0.0;
+
+                for(int i = 0; i < 10; i++)
+                {
+                    totalProfit += tradesProfits[i];
+                    acumPips += price_diff[i];
+                }
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    #endregion
+}

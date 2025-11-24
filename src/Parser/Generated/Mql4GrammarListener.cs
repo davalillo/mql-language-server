@@ -62,6 +62,36 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -191,6 +221,26 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterEnumDeclaration([NotNull] Mql4GrammarParser.EnumDeclarationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitEnumDeclaration([NotNull] Mql4GrammarParser.EnumDeclarationContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.enumMember"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.enumMember"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
 	/// </summary>
