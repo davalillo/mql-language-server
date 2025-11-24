@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Mql4.Builtins;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -43,19 +44,19 @@ public class HoverHandler : IHoverHandler
     public async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
     {
         var correlationId = Guid.NewGuid().ToString("N")[..8];
-        _logger.LogDebug("[{CorrelationId}] Processing hover request for: {DocumentUri} at position {Line}:{Character}",
-            correlationId, request.TextDocument.Uri, request.Position.Line, request.Position.Character);
+        _logger.LogDebug("[{CorrelationId}] Processing hover request at position {Line}:{Character}",
+            correlationId, request.Position.Line, request.Position.Character);
 
         try
         {
-            var documentUri = request.TextDocument.Uri;
-
             // Validate request parameters
-            if (documentUri == null)
+            if (request.TextDocument == null || request.TextDocument.Uri == null!)
             {
                 _logger.LogWarning("[{CorrelationId}] Invalid request: documentUri is null", correlationId);
                 return null;
             }
+
+            var documentUri = request.TextDocument.Uri;
 
             // Get file path from URI
             var filePath = documentUri.GetFileSystemPath();

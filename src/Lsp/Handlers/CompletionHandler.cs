@@ -109,7 +109,7 @@ public class CompletionHandler : ICompletionHandler
             completions.AddRange(GetSymbolCompletions(mql4File));
 
             // Group and sort completions
-            var groupedCompletions = GroupCompletionsByType(completions);
+            var groupedCompletions = GroupCompletionsByType(completions).ToList();
             var sortedCompletions = SortCompletionsByRelevance(groupedCompletions, context);
 
             _logger.LogDebug(Constants.LogMessages.ReturningCompletions, sortedCompletions.Count);
@@ -205,7 +205,7 @@ public class CompletionHandler : ICompletionHandler
 
         // Add function declarations
         completions.AddRange(mql4File.Symbols
-            .Where(s => s.Kind == LspSymbolKind.Function)
+            .Where(s => s.Kind == (SymbolKind)Mql4SymbolKind.Function)
             .Select(s => new CompletionItem
             {
                 Label = s.Name,
@@ -229,7 +229,11 @@ public class CompletionHandler : ICompletionHandler
                 Label = "if statement",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "if (${1:condition})\n{\n\t${2:// code}\n}",
-                Documentation = new MarkedString("mql4", "if-else statement")
+                Documentation = new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```mql4\n$1\n```"
+                }
             });
         }
 
@@ -241,7 +245,11 @@ public class CompletionHandler : ICompletionHandler
                 Label = "for loop",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "for (int ${1:i} = 0; ${1} < ${2:count}; ${1}++)\n{\n\t${3:// code}\n}",
-                Documentation = new MarkedString("mql4", "for loop statement")
+                Documentation = new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```mql4\n$1\n```"
+                }
             });
         }
 
@@ -253,7 +261,11 @@ public class CompletionHandler : ICompletionHandler
                 Label = "while loop",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "while (${1:condition})\n{\n\t${2:// code}\n}",
-                Documentation = new MarkedString("mql4", "while loop statement")
+                Documentation = new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```mql4\n$1\n```"
+                }
             });
         }
 
@@ -265,7 +277,11 @@ public class CompletionHandler : ICompletionHandler
                 Label = "OnInit function",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "int OnInit()\n{\n\t${1:// initialization code}\n\treturn(INIT_SUCCEEDED);\n}",
-                Documentation = new MarkedString("mql4", "Initialize EA or indicator")
+                Documentation = new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```mql4\n$1\n```"
+                }
             });
 
             snippets.Add(new CompletionItem
@@ -273,7 +289,11 @@ public class CompletionHandler : ICompletionHandler
                 Label = "OnTick function",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "void OnTick()\n{\n\t${1:// trading logic}\n}",
-                Documentation = new MarkedString("mql4", "Called on each price change")
+                Documentation = new MarkupContent
+                {
+                    Kind = MarkupKind.Markdown,
+                    Value = $"```mql4\n$1\n```"
+                }
             });
         }
 
