@@ -73,6 +73,42 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -228,6 +264,30 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterEnumDeclaration([NotNull] Mql4GrammarParser.EnumDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitEnumDeclaration([NotNull] Mql4GrammarParser.EnumDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.enumMember"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.enumMember"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
 	/// <para>The default implementation does nothing.</para>

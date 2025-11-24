@@ -411,21 +411,50 @@ namespace Mql4LanguageServer.Parser
             return base.VisitVariableDeclaration(context);
         }
 
+        public override Mql4Symbol? VisitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context)
+        {
+            // Extract import library name
+            var importBlock = context.importBlock();
+            if (importBlock != null)
+            {
+                var stringNode = importBlock.STRING();
+                if (stringNode != null)
+                {
+                    var libraryName = stringNode.GetText();
+                    // Add library to includes for tracking (optional)
+                    // Could also extract function declarations from importBlock.importDeclaration()
+                }
+            }
+
+            return base.VisitImportDirective(context);
+        }
+
         public override Mql4Symbol? VisitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context)
         {
             // Extract include path - handle both "file" and <file> formats
             string includePath = "";
 
-            if (context.STRING() != null)
+            // Rule: DIRECTIVE_INCLUDE STRING | DIRECTIVE_INCLUDE LT IDENTIFIER (DOT IDENTIFIER)* GT
+            // Check which alternative was matched
+            if (context.ChildCount == 2)
             {
                 // Format: #include "file.mqh"
-                includePath = context.STRING().GetText();
+                var stringNode = context.STRING();
+                if (stringNode != null)
+                {
+                    includePath = stringNode.GetText();
+                }
             }
-            else if (context.LT() != null && context.IDENTIFIER() != null && context.GT() != null)
+            else if (context.ChildCount >= 4)
             {
-                // Format: #include <file.mqh>
-                var identifier = context.IDENTIFIER().GetText();
-                includePath = $"<{identifier}>";
+                // Format: #include <file.mqh> or #include <path/file.mqh>
+                // Extract identifiers (there may be multiple separated by dots)
+                var identifiers = context.IDENTIFIER();
+                if (identifiers != null && identifiers.Length > 0)
+                {
+                    var identifierPath = string.Join(".", identifiers.Select(id => id.GetText()));
+                    includePath = $"<{identifierPath}>";
+                }
             }
 
             if (!string.IsNullOrEmpty(includePath))
