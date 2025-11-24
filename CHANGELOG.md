@@ -1,3 +1,25 @@
+## [1.4.0] - 2025-11-24
+
+### Added
+- feat(tests): Implement real-world MQL4 parser tests with 10 new test methods
+- feat(parser): Support out-of-class method definitions with :: operator
+- feat(parser): Complete implementation of hybrid ANTLR4 grammar with channels
+- feat(parser): Implementar gramática híbrida ANTLR4 corregida con canales
+- feat(parser): Implementar gramática híbrida ANTLR con canales
+- feat(tests): Add real-world test fixtures (Botlidator, Optimator, Ducibus Pro)
+
+### Fixed
+- fix(parser): Permitir trailing comma en enums
+- fix(parser): Corregir errores críticos de indexación en gramática ANTLR MQL4
+- fix(parser): Regenerar archivos ANTLR con gramática actualizada
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 343/343 Passed (100% success rate)
+- Compatibility: 100% - no breaking changes detected
+- Parser: ANTLR grammar significantly enhanced with hybrid channel-based parsing
+- Test Coverage: Added comprehensive real-world file parsing tests
+
 ## [1.3.1] - 2025-11-23
 
 ### Fixed
