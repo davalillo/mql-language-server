@@ -304,7 +304,7 @@ constructorInitializer
 
 // --- Enums ---
 enumDeclaration
-    : K_ENUM IDENTIFIER LBRACE enumMember (COMMA enumMember)* RBRACE SEMICOLON
+    : K_ENUM IDENTIFIER LBRACE enumMember (COMMA enumMember)* COMMA? RBRACE SEMICOLON
     ;
 
 enumMember

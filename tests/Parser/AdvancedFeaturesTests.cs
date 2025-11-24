@@ -126,6 +126,36 @@ public class AdvancedFeaturesTests
         // Parser should handle double enum values
     }
 
+    [Fact]
+    public void ParseEnum_WithTrailingComma_ParsesSuccessfully()
+    {
+        // Arrange - Enum with trailing comma (common in C#/Java for easy modification)
+        var code = @"
+            enum intOpcionesModo
+            {
+                Modo_Gladiador = 0, //Modo Gladiador
+                Modo_Elite = 1, //Modo Élite
+                Modo_Centurion = 2, //Modo Centurión
+                Modo_Minerva = 3, //Modo Minerva
+            };
+
+            void OnTick()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+
+        // Verify that enum with trailing comma doesn't crash the parser
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
     #endregion
 
     #region Import Directive Tests
