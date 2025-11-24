@@ -62,6 +62,76 @@ public interface IMql4GrammarListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.propertyDirective"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
