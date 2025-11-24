@@ -38,7 +38,7 @@ public class CompletionHandler : ICompletionHandler
     {
         return new CompletionRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = Constants.FilePatterns[0] }, new TextDocumentFilter { Pattern = Constants.FilePatterns[1] } }
         };
     }
 
@@ -47,8 +47,8 @@ public class CompletionHandler : ICompletionHandler
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing completion request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug(Constants.LogMessages.ProcessingRequest,
+                "completion", documentUri, request.Position.Line, request.Position.Character);
 
             // Convert DocumentUri to System.Uri for the document store
             var uri = documentUri.ToUri();
@@ -56,13 +56,13 @@ public class CompletionHandler : ICompletionHandler
             // Try to get the document from cache first
             if (!_documentStore.TryGetValue(uri, out var mql4File) || mql4File == null)
             {
-                _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
+                _logger.LogDebug(Constants.LogMessages.DocumentNotInCache, documentUri);
 
                 // Get file path from URI
                 var filePath = documentUri.GetFileSystemPath();
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                 {
-                    _logger.LogWarning("File not found: {FilePath}", filePath);
+                    _logger.LogWarning(Constants.LogMessages.FileNotFound, filePath);
                     return new CompletionList(Array.Empty<CompletionItem>(), false);
                 }
 
@@ -112,13 +112,13 @@ public class CompletionHandler : ICompletionHandler
             var groupedCompletions = GroupCompletionsByType(completions);
             var sortedCompletions = SortCompletionsByRelevance(groupedCompletions, context);
 
-            _logger.LogDebug("Returning {CompletionCount} contextual completion items", sortedCompletions.Count);
+            _logger.LogDebug(Constants.LogMessages.ReturningCompletions, sortedCompletions.Count);
 
             return new CompletionList(sortedCompletions.ToArray(), true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing completion request for {Uri}", request.TextDocument.Uri);
+            _logger.LogError(ex, Constants.Errors.HandlerError, "CompletionHandler", request.TextDocument.Uri, ex.Message);
             return new CompletionList(Array.Empty<CompletionItem>(), false);
         }
     }
