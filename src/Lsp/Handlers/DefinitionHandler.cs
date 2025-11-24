@@ -26,7 +26,7 @@ public class DefinitionHandler : IDefinitionHandler
     private readonly Mql4AntlrParser _parser;
     private readonly OpenDocumentStore _documentStore;
 
-    public DefinitionHandler(ILogger<DefinitionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+    public DefinitionHandler(ILogger<DefinitionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore, GlobalSymbolIndex globalSymbolIndex)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -80,17 +80,76 @@ public class DefinitionHandler : IDefinitionHandler
                 return null;
             }
 
-            // Return location of symbol definition
-            var location = new Location
+            // Use GlobalSymbolIndex to find definitions across all files
+            var allDefinitions = GlobalSymbolIndex.Instance.FindSymbol(symbol.Name);
+
+            // Filter for actual definitions (not just occurrences)
+            // Look for symbols with the same name and matching file
+            Location? definitionLocation = null;
+
+            foreach (var defLocation in allDefinitions)
             {
-                Uri = documentUri,
-                Range = symbol.Range
-            };
+                if (!File.Exists(defLocation.FilePath))
+                {
+                    continue;
+                }
+
+                // Read the file to verify this is a definition (not just a reference)
+                try
+                {
+                    var defContent = await File.ReadAllTextAsync(defLocation.FilePath, cancellationToken);
+                    var lines = defContent.Split('\n');
+                    var defLine = defLocation.Symbol.Range.Start.Line;
+                    var defChar = defLocation.Symbol.Range.Start.Character;
+
+                    // Check if this position contains a symbol declaration
+                    // Simple heuristic: if the position is at the start of an identifier
+                    // and the next characters form the symbol name
+                    if (defLine >= 0 && defLine < lines.Length &&
+                        defChar >= 0 && defChar < lines[defLine].Length)
+                    {
+                        var lineText = lines[defLine];
+                        var remainingText = lineText.Substring(defChar);
+
+                        // Check if this looks like a declaration
+                        // (simple check: identifier followed by space, (, or {)
+                        var match = System.Text.RegularExpressions.Regex.Match(
+                            remainingText,
+                            @"^\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b\s*[(\{]"
+                        );
+
+                        if (match.Success)
+                        {
+                            // This is likely a definition
+                            definitionLocation = new Location
+                            {
+                                Uri = DocumentUri.File(defLocation.FilePath),
+                                Range = defLocation.Symbol.Range
+                            };
+                            break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error reading file for definition: {FilePath}", defLocation.FilePath);
+                }
+            }
+
+            // If no cross-file definition found, return the original symbol's location
+            if (definitionLocation == null)
+            {
+                definitionLocation = new Location
+                {
+                    Uri = documentUri,
+                    Range = symbol.Range
+                };
+            }
 
             _logger.LogDebug("Found definition for symbol '{SymbolName}' at {Range}",
-                symbol.Name, symbol.Range);
+                symbol.Name, definitionLocation.Range);
 
-            return new LocationOrLocationLinks(location);
+            return new LocationOrLocationLinks(definitionLocation);
         }
         catch (Exception ex)
         {
