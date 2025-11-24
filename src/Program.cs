@@ -70,6 +70,9 @@ namespace Mql4LanguageServer
                             // Register document store for tracking open files
                             services.AddSingleton<OpenDocumentStore>();
 
+                            // Register global symbol index for cross-file tracking
+                            services.AddSingleton<GlobalSymbolIndex>();
+
                             // Register all handlers
                             services.AddSingleton<DocumentSymbolHandler>();
                             services.AddSingleton<DefinitionHandler>();
