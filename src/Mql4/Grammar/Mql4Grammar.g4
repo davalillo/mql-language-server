@@ -46,6 +46,13 @@ K_FALSE    : 'false';
 
 // Directives
 DIRECTIVE_INCLUDE  : '#include';
+DIRECTIVE_DEFINE   : '#define';
+DIRECTIVE_IFDEF    : '#ifdef';
+DIRECTIVE_IFNDEF   : '#ifndef';
+DIRECTIVE_IF       : '#if';
+DIRECTIVE_ELSE     : '#else';
+DIRECTIVE_ENDIF    : '#endif';
+DIRECTIVE_UNDEF    : '#undef';
 DIRECTIVE_PROPERTY : '#property';
 
 // Operators
@@ -79,6 +86,7 @@ COMMA   : ',';
 DOT     : '.';
 COLON   : ':';
 QUESTION: '?';
+AMPERSAND: '&';
 
 // === Parser Rules ===
 compilationUnit
@@ -87,11 +95,46 @@ compilationUnit
 
 directive
     : includeDirective
+    | defineDirective
+    | ifDirective
+    | ifdefDirective
+    | ifndefDirective
+    | elseDirective
+    | endifDirective
+    | undefDirective
     | propertyDirective
     ;
 
 includeDirective
     : DIRECTIVE_INCLUDE (STRING | LT IDENTIFIER GT)
+    ;
+
+defineDirective
+    : DIRECTIVE_DEFINE IDENTIFIER (STRING | INTEGER | DOUBLE | HEX)?
+    ;
+
+ifDirective
+    : DIRECTIVE_IF expression
+    ;
+
+ifdefDirective
+    : DIRECTIVE_IFDEF IDENTIFIER
+    ;
+
+ifndefDirective
+    : DIRECTIVE_IFNDEF IDENTIFIER
+    ;
+
+elseDirective
+    : DIRECTIVE_ELSE
+    ;
+
+endifDirective
+    : DIRECTIVE_ENDIF
+    ;
+
+undefDirective
+    : DIRECTIVE_UNDEF IDENTIFIER
     ;
 
 propertyDirective
@@ -116,7 +159,7 @@ parameter
     ;
 
 variableDeclaration
-    : storageModifier? dataType IDENTIFIER (LBRACKET RBRACKET)? (ASSIGN (expression | arrayInitialization))? SEMICOLON
+    : storageModifier? dataType IDENTIFIER (LBRACKET RBRACKET | LBRACKET INTEGER RBRACKET | LBRACKET AMPERSAND INTEGER RBRACKET)? (ASSIGN (expression | arrayInitialization))? SEMICOLON
     ;
 
 storageModifier
