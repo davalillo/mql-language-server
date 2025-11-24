@@ -73,14 +73,14 @@ public class CompletionHandler : ICompletionHandler
             }
 
             // Analyze context for contextual completion
-            var filePath = documentUri.GetFileSystemPath();
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            var filePathForContext = documentUri.GetFileSystemPath();
+            if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
             {
                 return new CompletionList(Array.Empty<CompletionItem>(), false);
             }
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-            var context = AnalyzeCompletionContext(content, request.Position.Line + 1, request.Position.Character + 1);
+            var fileContent = await File.ReadAllTextAsync(filePathForContext, cancellationToken);
+            var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
 
             var completions = new List<CompletionItem>();
 
@@ -387,7 +387,6 @@ public class CompletionHandler : ICompletionHandler
 
         return score;
     }
-}
 
     private IEnumerable<CompletionItem> GetKeywordCompletions()
     {

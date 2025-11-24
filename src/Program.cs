@@ -79,7 +79,7 @@ namespace Mql4LanguageServer
                             services.AddSingleton<ReferencesHandler>();
                             services.AddSingleton<CompletionHandler>();
                             services.AddSingleton<HoverHandler>();
-                            services.AddSingleton<SignatureHelpHandler>();
+                            // services.AddSingleton<SignatureHelpHandler>(); // TODO: Fix interface compatibility
                             services.AddSingleton<DidOpenTextDocumentHandler>();
                             services.AddSingleton<DidCloseTextDocumentHandler>();
                             services.AddSingleton<DidChangeTextDocumentHandler>();
@@ -93,7 +93,7 @@ namespace Mql4LanguageServer
                         .WithHandler<ReferencesHandler>()
                         .WithHandler<CompletionHandler>()
                         .WithHandler<HoverHandler>()
-                        .WithHandler<SignatureHelpHandler>()
+                        // .WithHandler<SignatureHelpHandler>() // TODO: Fix interface compatibility
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>();
@@ -106,7 +106,7 @@ namespace Mql4LanguageServer
                 Log.Information("  - ReferencesHandler (Find All References)");
                 Log.Information("  - CompletionHandler (Auto-completion)");
                 Log.Information("  - HoverHandler (Symbol Information)");
-                Log.Information("  - SignatureHelpHandler (Parameter Hints)");
+                // Log.Information("  - SignatureHelpHandler (Parameter Hints)"); // TODO: Fix interface compatibility
                 Log.Information("  - TextDocumentSync Handlers (Open/Close/Change)");
 
                 Log.Information("About to call server.Initialize()...");
