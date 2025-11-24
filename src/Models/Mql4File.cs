@@ -26,4 +26,9 @@ public class Mql4File
     /// Included files
     /// </summary>
     public List<string> Includes { get; set; } = new();
+
+    /// <summary>
+    /// Preprocessor macros (extracted via token scanning)
+    /// </summary>
+    public List<string> Macros { get; set; } = new();
 }

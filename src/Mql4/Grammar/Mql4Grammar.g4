@@ -5,9 +5,9 @@ grammar Mql4Grammar;
 // ======================================================
 
 // --- Channels ---
-// Channel 0: DEFAULT (Parser lo ve - Includes, Properties, Código)
-// Channel 1: PREPROCESSOR (Parser lo ignora - Defines, Ifdefs) -> Útil para LSP via TokenStream
-// Channel 2: COMMENTS (Parser lo ignora - Highlighting)
+// Channel 0: DEFAULT (Parser sees this)
+// Channel 1: PREPROCESSOR (Parser ignores, LSP can read)
+// Channel 2: COMMENTS (Parser ignores, LSP uses for highlighting)
 
 // --- Comments ---
 COMMENT_BLOCK : '/*' .*? '*/' -> channel(2);
@@ -16,16 +16,13 @@ COMMENT_LINE  : '//' ~[\r\n]* -> channel(2);
 // --- Whitespace ---
 WS            : [ \t\r\n\u000C]+ -> skip;
 
-// --- Preprocessor Hybrid Strategy ---
-
-// GRUPO A: Directivas Estructurales (Visibles para el Parser)
-// Se mantienen aquí para que tus Visitors de C# sigan detectando includes/imports.
+// --- Preprocessor (Hybrid Strategy) ---
+// Structural directives kept in parser for "Go to Definition"
 PRE_INCLUDE : '#include' ~[\r\n]*;
 PRE_PROPERTY: '#property' ~[\r\n]*;
 PRE_IMPORT  : '#import' ~[\r\n]*;
 
-// GRUPO B: Directivas Lógicas (Ocultas al Parser -> Canal 1)
-// Se ocultan para evitar que macros complejas rompan la sintaxis de funciones/clases.
+// Logical/Macro directives hidden from parser to prevent breakage
 PRE_DEFINE  : '#define' ~[\r\n]* -> channel(1);
 PRE_IFDEF   : '#ifdef' ~[\r\n]* -> channel(1);
 PRE_IFNDEF  : '#ifndef' ~[\r\n]* -> channel(1);
@@ -87,7 +84,6 @@ K_TYPENAME  : 'typename';
 K_OPERATOR  : 'operator';
 
 K_ENUM      : 'enum';
-
 K_NEW       : 'new';
 K_DELETE    : 'delete';
 K_SIZEOF    : 'sizeof';
@@ -175,7 +171,7 @@ compilationUnit
     ;
 
 translationUnit
-    : directive                     // Mantenemos directivas visibles (includes)
+    : directive
     | classDeclaration
     | structDeclaration
     | enumDeclaration
@@ -188,7 +184,7 @@ semicolon
     : SEMICOLON
     ;
 
-// --- Preprocessor Directive Wrapper ---
+// --- Directive Wrapper ---
 directive
     : PRE_INCLUDE
     | PRE_PROPERTY
@@ -196,6 +192,7 @@ directive
     ;
 
 // --- Types ---
+// Supports "int", "const int", "int&", "List<T>"
 type
     : modifiers? baseType (LT type (COMMA type)* GT)? (BIT_AND)?
     ;
@@ -221,16 +218,18 @@ variableDeclarationStatement
     : variableDeclaration SEMICOLON
     ;
 
+// FIX: Allows "int static x" by allowing modifiers after type
 variableDeclaration
-    : modifiers? type variableDeclarator (COMMA variableDeclarator)*
+    : modifiers? type modifiers? variableDeclarator (COMMA variableDeclarator)*
     ;
 
 variableDeclarator
-    : IDENTIFIER arraySpecifier? (ASSIGN initializer)?
+    : IDENTIFIER arraySpecifier* (ASSIGN initializer)?
     ;
 
+// FIX: Supports [2][4]
 arraySpecifier
-    : LBRACKET expression? RBRACKET (LBRACKET expression? RBRACKET)*
+    : LBRACKET expression? RBRACKET
     ;
 
 initializer
@@ -244,7 +243,7 @@ arrayInitializer
 
 // --- Functions ---
 functionDeclaration
-    : templateDefinition? modifiers? type IDENTIFIER LPAREN parameterList? RPAREN (block | SEMICOLON)
+    : templateDefinition? modifiers? type modifiers? IDENTIFIER LPAREN parameterList? RPAREN modifiers? (block | SEMICOLON)
     ;
 
 templateDefinition
@@ -255,8 +254,9 @@ parameterList
     : parameter (COMMA parameter)*
     ;
 
+// FIX: Robust handling of reference '&'
 parameter
-    : modifiers? type BIT_AND? IDENTIFIER? arraySpecifier? (ASSIGN expression)?
+    : modifiers? type modifiers? BIT_AND? IDENTIFIER? arraySpecifier* (ASSIGN expression)?
     ;
 
 // --- Classes & Structs ---
@@ -278,7 +278,7 @@ classMember
     | destructorDeclaration
     | functionDeclaration
     | variableDeclarationStatement
-    | directive   // Permitimos #include dentro de clases (raro pero posible)
+    | directive
     | semicolon
     ;
 
@@ -326,7 +326,7 @@ statement
     | forStatement
     | switchStatement
     | flowControlStatement
-    | directive   // Permitimos #include dentro de funciones
+    | directive
     | semicolon
     ;
 

@@ -67,6 +67,10 @@ namespace Mql4LanguageServer.Parser
                 _parsedFile.Includes = visitor.Includes;
                 _parsedFile.FilePath = filePath;
 
+                // NEW: Extract macros using token scanning (Channel 1 - PREPROCESSOR)
+                // This is needed because #define, #ifdef, etc. are hidden from the parser
+                _parsedFile.Macros = ExtractMacros(tokenStream);
+
                 // Build index of symbols by name
                 BuildSymbolIndex();
 
@@ -303,6 +307,58 @@ namespace Mql4LanguageServer.Parser
             return true;
         }
 
+        /// <summary>
+        /// Extract macros from token stream using token scanning
+        /// #define, #ifdef, #ifndef, etc. are hidden in Channel 1 (PREPROCESSOR)
+        /// so they don't appear in the AST but are accessible via token stream
+        /// </summary>
+        /// <param name="tokenStream">Token stream with all tokens (including hidden channels)</param>
+        /// <returns>List of macro definitions</returns>
+        private List<string> ExtractMacros(CommonTokenStream tokenStream)
+        {
+            var macros = new List<string>();
+
+            // Fill buffer with all tokens (including those in hidden channels)
+            tokenStream.Fill();
+            var tokens = tokenStream.GetTokens();
+
+            foreach (var token in tokens)
+            {
+                // Channel 1 = PREPROCESSOR (hidden from parser)
+                if (token.Channel == 1)
+                {
+                    if (token.Type == Mql4GrammarLexer.PRE_DEFINE)
+                    {
+                        // Extract macro name from "#define MACRO_NAME value"
+                        var macroName = ParseMacroName(token.Text);
+                        if (!string.IsNullOrEmpty(macroName))
+                        {
+                            macros.Add(macroName);
+                        }
+                    }
+                    // Could also track #ifdef, #ifndef for conditional compilation
+                    // but for now we just extract #define macros
+                }
+            }
+
+            return macros;
+        }
+
+        /// <summary>
+        /// Parse macro name from define directive text
+        /// Example: "#define MY_MACRO 10" -> "MY_MACRO"
+        /// </summary>
+        /// <param name="defineText">Full text of the #define directive</param>
+        /// <returns>Macro name or empty string if parsing fails</returns>
+        private string ParseMacroName(string defineText)
+        {
+            // Simple parsing: remove "#define", trim, and take first word
+            var parts = defineText.Replace("#define", "").Trim()
+                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length > 0 ? parts[0] : "";
+        }
+
         private void BuildSymbolIndex()
         {
             _symbolsByName.Clear();
@@ -378,19 +434,32 @@ namespace Mql4LanguageServer.Parser
                     var range = CreateRangeFromToken(nameToken.Symbol);
 
                     // Check for modifiers (input, extern, static, etc.)
-                    string modifier = "";
-                    if (context.modifiers() != null)
+                    // NEW GRAMMAR: modifiers? type modifiers? (modifiers can appear before AND after type)
+                    var modifierTokens = new List<string>();
+
+                    // Check first modifiers (before type)
+                    if (context.modifiers(0) != null)
                     {
-                        var modifiersContext = context.modifiers();
-                        // Count modifiers to build detail string
-                        var modifierTokens = new List<string>();
+                        var modifiersContext = context.modifiers(0);
                         if (modifiersContext.K_INPUT() != null) modifierTokens.Add("input");
                         if (modifiersContext.K_EXTERN() != null) modifierTokens.Add("extern");
                         if (modifiersContext.K_STATIC() != null) modifierTokens.Add("static");
                         if (modifiersContext.K_CONST() != null) modifierTokens.Add("const");
                         if (modifiersContext.K_SINPUT() != null) modifierTokens.Add("sinput");
-                        modifier = string.Join(" ", modifierTokens);
                     }
+
+                    // Check second modifiers (after type) - NEW!
+                    if (context.modifiers(1) != null)
+                    {
+                        var modifiersContext = context.modifiers(1);
+                        if (modifiersContext.K_INPUT() != null) modifierTokens.Add("input");
+                        if (modifiersContext.K_EXTERN() != null) modifierTokens.Add("extern");
+                        if (modifiersContext.K_STATIC() != null) modifierTokens.Add("static");
+                        if (modifiersContext.K_CONST() != null) modifierTokens.Add("const");
+                        if (modifiersContext.K_SINPUT() != null) modifierTokens.Add("sinput");
+                    }
+
+                    string modifier = string.Join(" ", modifierTokens);
 
                     // Build detail with modifiers and type
                     string detail;
