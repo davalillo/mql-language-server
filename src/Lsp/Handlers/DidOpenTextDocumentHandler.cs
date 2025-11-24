@@ -28,7 +28,8 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
     public DidOpenTextDocumentHandler(
         ILogger<DidOpenTextDocumentHandler> logger,
         Mql4AntlrParser parser,
-        OpenDocumentStore openFiles)
+        OpenDocumentStore openFiles,
+        GlobalSymbolIndex globalSymbolIndex)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -59,6 +60,23 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
 
                 _openFiles.AddOrUpdate(documentUri, mql4File);
 
+                // Register file and its symbols in GlobalSymbolIndex for cross-file navigation
+                GlobalSymbolIndex.Instance.AddFile(filePath, mql4File.Symbols);
+
+                // Register dependencies (includes)
+                foreach (var include in mql4File.Includes)
+                {
+                    var includePath = ExtractIncludePath(include);
+                    if (!string.IsNullOrEmpty(includePath))
+                    {
+                        var includeFullPath = ResolveIncludePath(filePath, includePath);
+                        if (File.Exists(includeFullPath))
+                        {
+                            GlobalSymbolIndex.Instance.AddDependency(filePath, includeFullPath);
+                        }
+                    }
+                }
+
                 _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", mql4File.Symbols.Count);
             }
         }
@@ -68,5 +86,40 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
         }
 
         return Task.FromResult(Unit.Value);
+    }
+
+    /// <summary>
+    /// Extract include path from #include directive
+    /// </summary>
+    /// <param name="includeDirective">Full include directive (e.g., #include "file.mqh")</param>
+    /// <returns>Included file path</returns>
+    private string ExtractIncludePath(string includeDirective)
+    {
+        // Simple parsing: extract content between quotes
+        var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
+        if (match.Success)
+        {
+            return match.Groups[1].Value;
+        }
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Resolve include path relative to the including file
+    /// </summary>
+    /// <param name="includingFile">Path to the file that includes</param>
+    /// <param name="includePath">Included file path</param>
+    /// <returns>Full path to included file</returns>
+    private string ResolveIncludePath(string includingFile, string includePath)
+    {
+        // If include path is absolute, use as-is
+        if (Path.IsPathRooted(includePath))
+        {
+            return includePath;
+        }
+
+        // Otherwise, resolve relative to the including file's directory
+        var includingDir = Path.GetDirectoryName(includingFile);
+        return Path.Combine(includingDir, includePath);
     }
 }
