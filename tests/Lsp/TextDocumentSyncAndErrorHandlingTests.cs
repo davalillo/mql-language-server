@@ -34,7 +34,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -76,7 +76,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var content = @"void OnInit()
@@ -112,7 +112,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -137,7 +137,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///empty.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -164,7 +164,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mqh");
         var content = "#define MYCONSTANT 100";
@@ -327,7 +327,7 @@ public class TextDocumentSyncAndErrorHandlingTests
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
         var mockStore = new Mock<OpenDocumentStore>();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
 
         // Act
         var options = handler.GetRegistrationOptions(
@@ -401,7 +401,8 @@ public class TextDocumentSyncAndErrorHandlingTests
         var openHandler = new DidOpenTextDocumentHandler(
             Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
-            store
+            store,
+            GlobalSymbolIndex.Instance
         );
 
         var documentUri = new Uri("file:///workflow.mq4");
@@ -445,7 +446,8 @@ void OnTick()
         var openHandler = new DidOpenTextDocumentHandler(
             Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
-            store
+            store,
+            GlobalSymbolIndex.Instance
         );
 
         // Act: Open multiple documents
@@ -485,7 +487,8 @@ void OnTick()
         var openHandler = new DidOpenTextDocumentHandler(
             Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
-            store
+            store,
+            GlobalSymbolIndex.Instance
         );
         var changeHandler = new DidChangeTextDocumentHandler(
             Mock.Of<ILogger<DidChangeTextDocumentHandler>>(),
@@ -543,7 +546,8 @@ void OnTick()
         var openHandler = new DidOpenTextDocumentHandler(
             Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
-            store
+            store,
+            GlobalSymbolIndex.Instance
         );
         var closeHandler = new DidCloseTextDocumentHandler(
             Mock.Of<ILogger<DidCloseTextDocumentHandler>>(),
@@ -587,7 +591,7 @@ void OnTick()
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///error.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -689,7 +693,7 @@ void OnTick()
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var didOpenParams = new DidOpenTextDocumentParams
         {
@@ -743,7 +747,7 @@ void OnTick()
         var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var largeContent = new string('a', 100000); // 100KB of text
         var didOpenParams = new DidOpenTextDocumentParams

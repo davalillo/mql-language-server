@@ -103,7 +103,7 @@ public class HandlerCoverageTests
     public void DefinitionHandler_CanBeConstructed()
     {
         // Act
-        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object);
+        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -113,7 +113,7 @@ public class HandlerCoverageTests
     public void DefinitionHandler_ParseFunctionDefinition_ShouldExtractSymbol()
     {
         // Arrange
-        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object);
+        var handler = new DefinitionHandler(_mockDefinitionLogger.Object, _parser, _mockDocumentStore.Object, GlobalSymbolIndex.Instance);
         var code = @"
             void MyFunction() {
                 int x = 10;
@@ -165,7 +165,7 @@ public class HandlerCoverageTests
     public void ReferencesHandler_CanBeConstructed()
     {
         // Act
-        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object);
+        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -175,7 +175,7 @@ public class HandlerCoverageTests
     public void ReferencesHandler_ParseVariableUsage_ShouldExtract()
     {
         // Arrange
-        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object);
+        var handler = new ReferencesHandler(_mockReferencesLogger.Object, _parser, _mockDocumentStore.Object, GlobalSymbolIndex.Instance);
         var code = @"
             int MyVar = 10;
             void Test() {

@@ -32,6 +32,7 @@ public class LspIntegrationTests
         // Act
         services.AddSingleton<Mql4AntlrParser>();
         services.AddSingleton<OpenDocumentStore>();
+        services.AddSingleton<GlobalSymbolIndex>(_ => GlobalSymbolIndex.Instance);
         services.AddSingleton<DocumentSymbolHandler>();
         services.AddSingleton<DefinitionHandler>();
         services.AddSingleton<ReferencesHandler>();
@@ -238,7 +239,7 @@ public class LspIntegrationTests
         var mockDocumentStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new DefinitionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
+        var handler = new DefinitionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
