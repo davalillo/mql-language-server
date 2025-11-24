@@ -49,6 +49,30 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitCompilationUnit([NotNull] Mql4GrammarParser.CompilationUnitContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.translationUnit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTranslationUnit([NotNull] Mql4GrammarParser.TranslationUnitContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.translationUnit"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTranslationUnit([NotNull] Mql4GrammarParser.TranslationUnitContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.semicolon"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterSemicolon([NotNull] Mql4GrammarParser.SemicolonContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.semicolon"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitSemicolon([NotNull] Mql4GrammarParser.SemicolonContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.directive"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -61,161 +85,125 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitDirective([NotNull] Mql4GrammarParser.DirectiveContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.includeDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.type"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context) { }
+	public virtual void EnterType([NotNull] Mql4GrammarParser.TypeContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.includeDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.type"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context) { }
+	public virtual void ExitType([NotNull] Mql4GrammarParser.TypeContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.baseType"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context) { }
+	public virtual void EnterBaseType([NotNull] Mql4GrammarParser.BaseTypeContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.baseType"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context) { }
+	public virtual void ExitBaseType([NotNull] Mql4GrammarParser.BaseTypeContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.modifiers"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context) { }
+	public virtual void EnterModifiers([NotNull] Mql4GrammarParser.ModifiersContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.modifiers"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context) { }
+	public virtual void ExitModifiers([NotNull] Mql4GrammarParser.ModifiersContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.qualifiedName"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context) { }
+	public virtual void EnterQualifiedName([NotNull] Mql4GrammarParser.QualifiedNameContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.qualifiedName"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context) { }
+	public virtual void ExitQualifiedName([NotNull] Mql4GrammarParser.QualifiedNameContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarationStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context) { }
+	public virtual void EnterVariableDeclarationStatement([NotNull] Mql4GrammarParser.VariableDeclarationStatementContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarationStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context) { }
+	public virtual void ExitVariableDeclarationStatement([NotNull] Mql4GrammarParser.VariableDeclarationStatementContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context) { }
+	public virtual void EnterVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context) { }
+	public virtual void ExitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarator"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context) { }
+	public virtual void EnterVariableDeclarator([NotNull] Mql4GrammarParser.VariableDeclaratorContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarator"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context) { }
+	public virtual void ExitVariableDeclarator([NotNull] Mql4GrammarParser.VariableDeclaratorContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.arraySpecifier"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context) { }
+	public virtual void EnterArraySpecifier([NotNull] Mql4GrammarParser.ArraySpecifierContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.arraySpecifier"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context) { }
+	public virtual void ExitArraySpecifier([NotNull] Mql4GrammarParser.ArraySpecifierContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.initializer"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context) { }
+	public virtual void EnterInitializer([NotNull] Mql4GrammarParser.InitializerContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.initializer"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context) { }
+	public virtual void ExitInitializer([NotNull] Mql4GrammarParser.InitializerContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.arrayInitializer"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context) { }
+	public virtual void EnterArrayInitializer([NotNull] Mql4GrammarParser.ArrayInitializerContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitializer"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.propertyDirective"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPropertyDirective([NotNull] Mql4GrammarParser.PropertyDirectiveContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.propertyDirective"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPropertyDirective([NotNull] Mql4GrammarParser.PropertyDirectiveContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.globalDeclaration"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterGlobalDeclaration([NotNull] Mql4GrammarParser.GlobalDeclarationContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.globalDeclaration"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitGlobalDeclaration([NotNull] Mql4GrammarParser.GlobalDeclarationContext context) { }
+	public virtual void ExitArrayInitializer([NotNull] Mql4GrammarParser.ArrayInitializerContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.functionDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -228,6 +216,18 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTemplateDefinition([NotNull] Mql4GrammarParser.TemplateDefinitionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTemplateDefinition([NotNull] Mql4GrammarParser.TemplateDefinitionContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.parameterList"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -253,17 +253,113 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitParameter([NotNull] Mql4GrammarParser.ParameterContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.classDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context) { }
+	public virtual void EnterClassDeclaration([NotNull] Mql4GrammarParser.ClassDeclarationContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.classDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context) { }
+	public virtual void ExitClassDeclaration([NotNull] Mql4GrammarParser.ClassDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.structDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStructDeclaration([NotNull] Mql4GrammarParser.StructDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.structDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStructDeclaration([NotNull] Mql4GrammarParser.StructDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.classBody"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterClassBody([NotNull] Mql4GrammarParser.ClassBodyContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.classBody"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitClassBody([NotNull] Mql4GrammarParser.ClassBodyContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.classMember"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterClassMember([NotNull] Mql4GrammarParser.ClassMemberContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.classMember"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitClassMember([NotNull] Mql4GrammarParser.ClassMemberContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.accessModifier"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterAccessModifier([NotNull] Mql4GrammarParser.AccessModifierContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.accessModifier"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitAccessModifier([NotNull] Mql4GrammarParser.AccessModifierContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.constructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterConstructorDeclaration([NotNull] Mql4GrammarParser.ConstructorDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.constructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitConstructorDeclaration([NotNull] Mql4GrammarParser.ConstructorDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.destructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterDestructorDeclaration([NotNull] Mql4GrammarParser.DestructorDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.destructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitDestructorDeclaration([NotNull] Mql4GrammarParser.DestructorDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.initializationList"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterInitializationList([NotNull] Mql4GrammarParser.InitializationListContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.initializationList"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitInitializationList([NotNull] Mql4GrammarParser.InitializationListContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.constructorInitializer"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterConstructorInitializer([NotNull] Mql4GrammarParser.ConstructorInitializerContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.constructorInitializer"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitConstructorInitializer([NotNull] Mql4GrammarParser.ConstructorInitializerContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -289,42 +385,6 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterDataType([NotNull] Mql4GrammarParser.DataTypeContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitDataType([NotNull] Mql4GrammarParser.DataTypeContext context) { }
-	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.block"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -348,18 +408,6 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStatement([NotNull] Mql4GrammarParser.StatementContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.expressionStatement"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -397,6 +445,18 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitWhileStatement([NotNull] Mql4GrammarParser.WhileStatementContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.doWhileStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterDoWhileStatement([NotNull] Mql4GrammarParser.DoWhileStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.doWhileStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitDoWhileStatement([NotNull] Mql4GrammarParser.DoWhileStatementContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.forStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -409,17 +469,17 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitForStatement([NotNull] Mql4GrammarParser.ForStatementContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.returnStatement"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.forInit"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterReturnStatement([NotNull] Mql4GrammarParser.ReturnStatementContext context) { }
+	public virtual void EnterForInit([NotNull] Mql4GrammarParser.ForInitContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.returnStatement"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.forInit"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitReturnStatement([NotNull] Mql4GrammarParser.ReturnStatementContext context) { }
+	public virtual void ExitForInit([NotNull] Mql4GrammarParser.ForInitContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.switchStatement"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -433,125 +493,363 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitSwitchStatement([NotNull] Mql4GrammarParser.SwitchStatementContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.switchBlock"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context) { }
+	public virtual void EnterSwitchBlock([NotNull] Mql4GrammarParser.SwitchBlockContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.switchBlock"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context) { }
+	public virtual void ExitSwitchBlock([NotNull] Mql4GrammarParser.SwitchBlockContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.expression"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.flowControlStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterExpression([NotNull] Mql4GrammarParser.ExpressionContext context) { }
+	public virtual void EnterFlowControlStatement([NotNull] Mql4GrammarParser.FlowControlStatementContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.expression"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.flowControlStatement"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitExpression([NotNull] Mql4GrammarParser.ExpressionContext context) { }
+	public virtual void ExitFlowControlStatement([NotNull] Mql4GrammarParser.FlowControlStatementContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.logicalOrExpression"/>.
+	/// Enter a parse tree produced by the <c>newExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterLogicalOrExpression([NotNull] Mql4GrammarParser.LogicalOrExpressionContext context) { }
+	public virtual void EnterNewExpr([NotNull] Mql4GrammarParser.NewExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.logicalOrExpression"/>.
+	/// Exit a parse tree produced by the <c>newExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitLogicalOrExpression([NotNull] Mql4GrammarParser.LogicalOrExpressionContext context) { }
+	public virtual void ExitNewExpr([NotNull] Mql4GrammarParser.NewExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.logicalAndExpression"/>.
+	/// Enter a parse tree produced by the <c>assignmentExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterLogicalAndExpression([NotNull] Mql4GrammarParser.LogicalAndExpressionContext context) { }
+	public virtual void EnterAssignmentExpr([NotNull] Mql4GrammarParser.AssignmentExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.logicalAndExpression"/>.
+	/// Exit a parse tree produced by the <c>assignmentExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitLogicalAndExpression([NotNull] Mql4GrammarParser.LogicalAndExpressionContext context) { }
+	public virtual void ExitAssignmentExpr([NotNull] Mql4GrammarParser.AssignmentExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.equalityExpression"/>.
+	/// Enter a parse tree produced by the <c>addSubExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterEqualityExpression([NotNull] Mql4GrammarParser.EqualityExpressionContext context) { }
+	public virtual void EnterAddSubExpr([NotNull] Mql4GrammarParser.AddSubExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.equalityExpression"/>.
+	/// Exit a parse tree produced by the <c>addSubExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitEqualityExpression([NotNull] Mql4GrammarParser.EqualityExpressionContext context) { }
+	public virtual void ExitAddSubExpr([NotNull] Mql4GrammarParser.AddSubExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.relationalExpression"/>.
+	/// Enter a parse tree produced by the <c>castExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterRelationalExpression([NotNull] Mql4GrammarParser.RelationalExpressionContext context) { }
+	public virtual void EnterCastExpr([NotNull] Mql4GrammarParser.CastExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.relationalExpression"/>.
+	/// Exit a parse tree produced by the <c>castExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitRelationalExpression([NotNull] Mql4GrammarParser.RelationalExpressionContext context) { }
+	public virtual void ExitCastExpr([NotNull] Mql4GrammarParser.CastExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.additiveExpression"/>.
+	/// Enter a parse tree produced by the <c>logAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAdditiveExpression([NotNull] Mql4GrammarParser.AdditiveExpressionContext context) { }
+	public virtual void EnterLogAndExpr([NotNull] Mql4GrammarParser.LogAndExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.additiveExpression"/>.
+	/// Exit a parse tree produced by the <c>logAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAdditiveExpression([NotNull] Mql4GrammarParser.AdditiveExpressionContext context) { }
+	public virtual void ExitLogAndExpr([NotNull] Mql4GrammarParser.LogAndExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.multiplicativeExpression"/>.
+	/// Enter a parse tree produced by the <c>logOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterMultiplicativeExpression([NotNull] Mql4GrammarParser.MultiplicativeExpressionContext context) { }
+	public virtual void EnterLogOrExpr([NotNull] Mql4GrammarParser.LogOrExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.multiplicativeExpression"/>.
+	/// Exit a parse tree produced by the <c>logOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitMultiplicativeExpression([NotNull] Mql4GrammarParser.MultiplicativeExpressionContext context) { }
+	public virtual void ExitLogOrExpr([NotNull] Mql4GrammarParser.LogOrExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.unaryExpression"/>.
+	/// Enter a parse tree produced by the <c>deleteExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterUnaryExpression([NotNull] Mql4GrammarParser.UnaryExpressionContext context) { }
+	public virtual void EnterDeleteExpr([NotNull] Mql4GrammarParser.DeleteExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.unaryExpression"/>.
+	/// Exit a parse tree produced by the <c>deleteExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitUnaryExpression([NotNull] Mql4GrammarParser.UnaryExpressionContext context) { }
+	public virtual void ExitDeleteExpr([NotNull] Mql4GrammarParser.DeleteExprContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.postfixExpression"/>.
+	/// Enter a parse tree produced by the <c>atomExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPostfixExpression([NotNull] Mql4GrammarParser.PostfixExpressionContext context) { }
+	public virtual void EnterAtomExpr([NotNull] Mql4GrammarParser.AtomExprContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.postfixExpression"/>.
+	/// Exit a parse tree produced by the <c>atomExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPostfixExpression([NotNull] Mql4GrammarParser.PostfixExpressionContext context) { }
+	public virtual void ExitAtomExpr([NotNull] Mql4GrammarParser.AtomExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>bitShiftExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBitShiftExpr([NotNull] Mql4GrammarParser.BitShiftExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>bitShiftExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBitShiftExpr([NotNull] Mql4GrammarParser.BitShiftExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>arrayIndexExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterArrayIndexExpr([NotNull] Mql4GrammarParser.ArrayIndexExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>arrayIndexExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitArrayIndexExpr([NotNull] Mql4GrammarParser.ArrayIndexExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>relationalExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterRelationalExpr([NotNull] Mql4GrammarParser.RelationalExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>relationalExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitRelationalExpr([NotNull] Mql4GrammarParser.RelationalExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>bitXorExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBitXorExpr([NotNull] Mql4GrammarParser.BitXorExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>bitXorExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBitXorExpr([NotNull] Mql4GrammarParser.BitXorExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>prefixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPrefixExpr([NotNull] Mql4GrammarParser.PrefixExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>prefixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPrefixExpr([NotNull] Mql4GrammarParser.PrefixExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>sizeofExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterSizeofExpr([NotNull] Mql4GrammarParser.SizeofExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>sizeofExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitSizeofExpr([NotNull] Mql4GrammarParser.SizeofExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>bitOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBitOrExpr([NotNull] Mql4GrammarParser.BitOrExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>bitOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBitOrExpr([NotNull] Mql4GrammarParser.BitOrExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>unaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterUnaryExpr([NotNull] Mql4GrammarParser.UnaryExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>unaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitUnaryExpr([NotNull] Mql4GrammarParser.UnaryExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>ternaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTernaryExpr([NotNull] Mql4GrammarParser.TernaryExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>ternaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTernaryExpr([NotNull] Mql4GrammarParser.TernaryExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>functionCallExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFunctionCallExpr([NotNull] Mql4GrammarParser.FunctionCallExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>functionCallExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFunctionCallExpr([NotNull] Mql4GrammarParser.FunctionCallExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>memberAccessExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterMemberAccessExpr([NotNull] Mql4GrammarParser.MemberAccessExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>memberAccessExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitMemberAccessExpr([NotNull] Mql4GrammarParser.MemberAccessExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>postfixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPostfixExpr([NotNull] Mql4GrammarParser.PostfixExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>postfixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPostfixExpr([NotNull] Mql4GrammarParser.PostfixExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>bitAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterBitAndExpr([NotNull] Mql4GrammarParser.BitAndExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>bitAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitBitAndExpr([NotNull] Mql4GrammarParser.BitAndExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>mulDivExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterMulDivExpr([NotNull] Mql4GrammarParser.MulDivExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>mulDivExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitMulDivExpr([NotNull] Mql4GrammarParser.MulDivExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>equalityExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterEqualityExpr([NotNull] Mql4GrammarParser.EqualityExprContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>equalityExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitEqualityExpr([NotNull] Mql4GrammarParser.EqualityExprContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.argumentList"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -565,29 +863,17 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgumentList([NotNull] Mql4GrammarParser.ArgumentListContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.assignmentOp"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void EnterAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context) { }
+	public virtual void EnterAssignmentOp([NotNull] Mql4GrammarParser.AssignmentOpContext context) { }
 	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.assignmentOp"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	public virtual void ExitAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context) { }
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context) { }
+	public virtual void ExitAssignmentOp([NotNull] Mql4GrammarParser.AssignmentOpContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.literal"/>.
 	/// <para>The default implementation does nothing.</para>
