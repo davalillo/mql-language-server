@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using Xunit;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
@@ -597,5 +599,200 @@ public class Mql4ParserTests
         Assert.Null(identifier);
     }
 
+
+    #region Real World Files Tests
+
+    private string GetProjectPath()
+    {
+        var projectRoot = AppContext.BaseDirectory;
+        while (projectRoot != null && !Directory.Exists(Path.Combine(projectRoot, "tests")))
+        {
+            var parent = Directory.GetParent(projectRoot);
+            if (parent == null) break;
+            projectRoot = parent.FullName;
+        }
+        return projectRoot ?? AppContext.BaseDirectory;
+    }
+
+    private string GetFixtureFilePath(string fileName)
+    {
+        var projectPath = GetProjectPath();
+        return Path.Combine(projectPath, "tests", "fixtures", "real", fileName);
+    }
+
+    [Fact]
+    public void ParseRealFile_Botlidator_ParsesSuccessfully()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Botlidator_ver_2_90.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Console.WriteLine($"Botlidator symbols: {file.Symbols.Count}");
+        Console.WriteLine($"Botlidator includes: {file.Includes.Count}");
+        Assert.True(file.Symbols.Count > 0, "Botlidator file should have parsed symbols");
+    }
+
+    [Fact]
+    public void ParseRealFile_Optimator_ParsesSuccessfully()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Optimator_ver_2_00.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Console.WriteLine($"Optimator symbols: {file.Symbols.Count}");
+        Console.WriteLine($"Optimator includes: {file.Includes.Count}");
+        Assert.True(file.Symbols.Count > 0, "Optimator file should have parsed symbols");
+    }
+
+    [Fact]
+    public void ParseRealFile_DucibusPro_ParsesSuccessfully()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Console.WriteLine($"Ducibus Pro symbols: {file.Symbols.Count}");
+        Console.WriteLine($"Ducibus Pro includes: {file.Includes.Count}");
+        Assert.True(file.Symbols.Count > 0, "Ducibus Pro file should have parsed symbols");
+    }
+
+    [Fact]
+    public void ParseRealFile_DucibusPro_ContainsLifecycleFunctions()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name.Equals("OnInit", StringComparison.OrdinalIgnoreCase));
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name.Equals("OnTick", StringComparison.OrdinalIgnoreCase));
+        var onDeinit = file.Symbols.FirstOrDefault(s => s.Name.Equals("OnDeinit", StringComparison.OrdinalIgnoreCase));
+
+        Assert.NotNull(onInit);
+        Assert.NotNull(onTick);
+        Assert.NotNull(onDeinit);
+        Console.WriteLine("Found lifecycle functions: OnInit, OnTick, OnDeinit");
+    }
+
+    [Fact]
+    public void ParseRealFile_Botlidator_ContainsStructs()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Botlidator_ver_2_90.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.True(file.Symbols.Count > 0, "Botlidator should contain struct symbols");
+        Console.WriteLine($"Botlidator parsed {file.Symbols.Count} symbols (including structs)");
+    }
+
+    [Fact]
+    public void ParseRealFile_Optimator_ContainsEnums()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Optimator_ver_2_00.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.True(file.Symbols.Count > 0, "Optimator should contain enum symbols");
+        Console.WriteLine($"Optimator parsed {file.Symbols.Count} symbols (including enums)");
+    }
+
+    [Fact]
+    public void ParseRealFile_DucibusPro_ReferencesBotlidator()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Includes);
+        var botlidatorInclude = file.Includes.FirstOrDefault(i => i.Contains("Botlidator"));
+        Assert.NotNull(botlidatorInclude);
+        Console.WriteLine($"Found include: {botlidatorInclude}");
+    }
+
+    [Fact]
+    public void ParseRealFile_AllFixtures_CanBeParsed()
+    {
+        // Arrange
+        var fixtureFiles = new[] { "Botlidator_ver_2_90.mqh", "Optimator_ver_2_00.mqh", "Ducibus_Pro_ver_2_90.mq4" };
+
+        // Act & Assert
+        foreach (var fixtureFile in fixtureFiles)
+        {
+            var filePath = GetFixtureFilePath(fixtureFile);
+            var code = File.ReadAllText(filePath);
+            var exception = Record.Exception(() => _parser.ParseFile(code, filePath));
+
+            Assert.Null(exception);
+            Console.WriteLine($"✓ {fixtureFile} parsed successfully");
+        }
+    }
+
+    [Fact]
+    public void ParseRealFile_Botlidator_ContainsClasses()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Botlidator_ver_2_90.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.True(file.Symbols.Count > 0, "Botlidator should contain class symbols");
+        Console.WriteLine($"Botlidator parsed {file.Symbols.Count} symbols (including classes)");
+    }
+
+    [Fact]
+    public void ParseRealFile_Optimator_ContainsInputVariables()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Optimator_ver_2_00.mqh");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.True(file.Symbols.Count > 0, "Optimator should contain input variable symbols");
+        Console.WriteLine($"Optimator parsed {file.Symbols.Count} symbols (including input variables)");
+    }
+
+    #endregion
 
 }
