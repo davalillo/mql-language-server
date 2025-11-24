@@ -27,7 +27,7 @@ public class ReferencesHandler : IReferencesHandler
     private readonly Mql4AntlrParser _parser;
     private readonly OpenDocumentStore _documentStore;
 
-    public ReferencesHandler(ILogger<ReferencesHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+    public ReferencesHandler(ILogger<ReferencesHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore, GlobalSymbolIndex globalSymbolIndex)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
@@ -89,33 +89,51 @@ public class ReferencesHandler : IReferencesHandler
                 return null;
             }
 
-            // TODO: Implement cross-file reference search
-            // For now, return only references in the same file
+            // Use GlobalSymbolIndex for cross-file reference search
+            var allReferences = GlobalSymbolIndex.Instance.FindAllReferences(symbol.Name);
             var references = new List<Location>();
 
-            // Search in current file using regex to avoid false positives
-            var lines = content.Split('\n');
-            for (int i = 0; i < lines.Length; i++)
+            foreach (var refLocation in allReferences)
             {
-                var currentLine = lines[i];
-
-                // Use regex to find identifier matches (not inside strings or comments)
-                var matches = System.Text.RegularExpressions.Regex.Matches(
-                    currentLine,
-                    @"\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b"
-                );
-
-                foreach (System.Text.RegularExpressions.Match match in matches)
+                if (!File.Exists(refLocation.FilePath))
                 {
-                    // Convert 0-based line to LSP 0-based position
-                    references.Add(new Location
+                    continue;
+                }
+
+                try
+                {
+                    // Read the file to get content for position calculation
+                    var refContent = await File.ReadAllTextAsync(refLocation.FilePath, cancellationToken);
+                    var refLines = refContent.Split('\n');
+
+                    // Find all occurrences in this file
+                    for (int i = 0; i < refLines.Length; i++)
                     {
-                        Uri = documentUri,
-                        Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index),
-                            new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index + match.Length)
-                        )
-                    });
+                        var currentLine = refLines[i];
+
+                        // Use regex to find identifier matches
+                        var matches = System.Text.RegularExpressions.Regex.Matches(
+                            currentLine,
+                            @"\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b"
+                        );
+
+                        foreach (System.Text.RegularExpressions.Match match in matches)
+                        {
+                            // Create Location for each match
+                            references.Add(new Location
+                            {
+                                Uri = DocumentUri.File(refLocation.FilePath),
+                                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                                    new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index),
+                                    new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index + match.Length)
+                                )
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error reading file for references: {FilePath}", refLocation.FilePath);
                 }
             }
 
