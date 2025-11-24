@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Mql4.Builtins;
 using Mql4LanguageServer.Parser;
+using Mql4LanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -24,11 +25,13 @@ public class CompletionHandler : ICompletionHandler
 {
     private readonly ILogger<CompletionHandler> _logger;
     private readonly Mql4AntlrParser _parser;
+    private readonly OpenDocumentStore _documentStore;
 
-    public CompletionHandler(ILogger<CompletionHandler> logger, Mql4AntlrParser parser)
+    public CompletionHandler(ILogger<CompletionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
     }
 
     public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
@@ -47,17 +50,27 @@ public class CompletionHandler : ICompletionHandler
             _logger.LogDebug("Processing completion request for: {DocumentUri} at position {Line}:{Character}",
                 documentUri, request.Position.Line, request.Position.Character);
 
-            // Get file path from URI
-            var filePath = documentUri.GetFileSystemPath();
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            {
-                _logger.LogWarning("File not found: {FilePath}", filePath);
-                return new CompletionList(Array.Empty<CompletionItem>(), false);
-            }
+            // Convert DocumentUri to System.Uri for the document store
+            var uri = documentUri.ToUri();
 
-            // Parse the file
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-            var mql4File = _parser.ParseFile(content, filePath);
+            // Try to get the document from cache first
+            if (!_documentStore.TryGetValue(uri, out var mql4File) || mql4File == null)
+            {
+                _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
+
+                // Get file path from URI
+                var filePath = documentUri.GetFileSystemPath();
+                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                {
+                    _logger.LogWarning("File not found: {FilePath}", filePath);
+                    return new CompletionList(Array.Empty<CompletionItem>(), false);
+                }
+
+                // Parse the file and cache it
+                var content = await File.ReadAllTextAsync(filePath, cancellationToken);
+                mql4File = _parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mql4File);
+            }
 
             var completions = new List<CompletionItem>();
 
