@@ -51,6 +51,48 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.propertyDirective"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

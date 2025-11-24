@@ -42,33 +42,38 @@ public partial class Mql4GrammarParser : Parser {
 		K_DATETIME=15, K_COLOR=16, K_STATIC=17, K_EXTERN=18, K_IF=19, K_ELSE=20, 
 		K_WHILE=21, K_FOR=22, K_DO=23, K_SWITCH=24, K_CASE=25, K_DEFAULT=26, K_BREAK=27, 
 		K_CONTINUE=28, K_RETURN=29, K_INPUT=30, K_TRUE=31, K_FALSE=32, DIRECTIVE_INCLUDE=33, 
-		DIRECTIVE_PROPERTY=34, ASSIGN=35, ADD=36, SUB=37, MUL=38, DIV=39, MOD=40, 
-		INC=41, DEC=42, EQ=43, NEQ=44, LT=45, LTE=46, GT=47, GTE=48, K_AND=49, 
-		K_OR=50, K_NOT=51, LPAREN=52, RPAREN=53, LBRACE=54, RBRACE=55, LBRACKET=56, 
-		RBRACKET=57, SEMICOLON=58, COMMA=59, DOT=60, COLON=61, QUESTION=62;
+		DIRECTIVE_DEFINE=34, DIRECTIVE_IFDEF=35, DIRECTIVE_IFNDEF=36, DIRECTIVE_IF=37, 
+		DIRECTIVE_ELSE=38, DIRECTIVE_ENDIF=39, DIRECTIVE_UNDEF=40, DIRECTIVE_PROPERTY=41, 
+		ASSIGN=42, ADD=43, SUB=44, MUL=45, DIV=46, MOD=47, INC=48, DEC=49, EQ=50, 
+		NEQ=51, LT=52, LTE=53, GT=54, GTE=55, K_AND=56, K_OR=57, K_NOT=58, LPAREN=59, 
+		RPAREN=60, LBRACE=61, RBRACE=62, LBRACKET=63, RBRACKET=64, SEMICOLON=65, 
+		COMMA=66, DOT=67, COLON=68, QUESTION=69, AMPERSAND=70;
 	public const int
 		RULE_compilationUnit = 0, RULE_directive = 1, RULE_includeDirective = 2, 
-		RULE_propertyDirective = 3, RULE_globalDeclaration = 4, RULE_functionDeclaration = 5, 
-		RULE_parameterList = 6, RULE_parameter = 7, RULE_variableDeclaration = 8, 
-		RULE_storageModifier = 9, RULE_arrayInitialization = 10, RULE_dataType = 11, 
-		RULE_block = 12, RULE_statement = 13, RULE_assignmentStatement = 14, RULE_expressionStatement = 15, 
-		RULE_ifStatement = 16, RULE_whileStatement = 17, RULE_forStatement = 18, 
-		RULE_returnStatement = 19, RULE_switchStatement = 20, RULE_caseClause = 21, 
-		RULE_expression = 22, RULE_logicalOrExpression = 23, RULE_logicalAndExpression = 24, 
-		RULE_equalityExpression = 25, RULE_relationalExpression = 26, RULE_additiveExpression = 27, 
-		RULE_multiplicativeExpression = 28, RULE_unaryExpression = 29, RULE_postfixExpression = 30, 
-		RULE_argumentList = 31, RULE_assignmentExpression = 32, RULE_primaryExpression = 33, 
-		RULE_literal = 34;
+		RULE_defineDirective = 3, RULE_ifDirective = 4, RULE_ifdefDirective = 5, 
+		RULE_ifndefDirective = 6, RULE_elseDirective = 7, RULE_endifDirective = 8, 
+		RULE_undefDirective = 9, RULE_propertyDirective = 10, RULE_globalDeclaration = 11, 
+		RULE_functionDeclaration = 12, RULE_parameterList = 13, RULE_parameter = 14, 
+		RULE_variableDeclaration = 15, RULE_storageModifier = 16, RULE_arrayInitialization = 17, 
+		RULE_dataType = 18, RULE_block = 19, RULE_statement = 20, RULE_assignmentStatement = 21, 
+		RULE_expressionStatement = 22, RULE_ifStatement = 23, RULE_whileStatement = 24, 
+		RULE_forStatement = 25, RULE_returnStatement = 26, RULE_switchStatement = 27, 
+		RULE_caseClause = 28, RULE_expression = 29, RULE_logicalOrExpression = 30, 
+		RULE_logicalAndExpression = 31, RULE_equalityExpression = 32, RULE_relationalExpression = 33, 
+		RULE_additiveExpression = 34, RULE_multiplicativeExpression = 35, RULE_unaryExpression = 36, 
+		RULE_postfixExpression = 37, RULE_argumentList = 38, RULE_assignmentExpression = 39, 
+		RULE_primaryExpression = 40, RULE_literal = 41;
 	public static readonly string[] ruleNames = {
-		"compilationUnit", "directive", "includeDirective", "propertyDirective", 
-		"globalDeclaration", "functionDeclaration", "parameterList", "parameter", 
-		"variableDeclaration", "storageModifier", "arrayInitialization", "dataType", 
-		"block", "statement", "assignmentStatement", "expressionStatement", "ifStatement", 
-		"whileStatement", "forStatement", "returnStatement", "switchStatement", 
-		"caseClause", "expression", "logicalOrExpression", "logicalAndExpression", 
-		"equalityExpression", "relationalExpression", "additiveExpression", "multiplicativeExpression", 
-		"unaryExpression", "postfixExpression", "argumentList", "assignmentExpression", 
-		"primaryExpression", "literal"
+		"compilationUnit", "directive", "includeDirective", "defineDirective", 
+		"ifDirective", "ifdefDirective", "ifndefDirective", "elseDirective", "endifDirective", 
+		"undefDirective", "propertyDirective", "globalDeclaration", "functionDeclaration", 
+		"parameterList", "parameter", "variableDeclaration", "storageModifier", 
+		"arrayInitialization", "dataType", "block", "statement", "assignmentStatement", 
+		"expressionStatement", "ifStatement", "whileStatement", "forStatement", 
+		"returnStatement", "switchStatement", "caseClause", "expression", "logicalOrExpression", 
+		"logicalAndExpression", "equalityExpression", "relationalExpression", 
+		"additiveExpression", "multiplicativeExpression", "unaryExpression", "postfixExpression", 
+		"argumentList", "assignmentExpression", "primaryExpression", "literal"
 	};
 
 	private static readonly string[] _LiteralNames = {
@@ -76,9 +81,11 @@ public partial class Mql4GrammarParser : Parser {
 		"'string'", "'bool'", "'void'", "'datetime'", "'color'", "'static'", "'extern'", 
 		"'if'", "'else'", "'while'", "'for'", "'do'", "'switch'", "'case'", "'default'", 
 		"'break'", "'continue'", "'return'", "'input'", "'true'", "'false'", "'#include'", 
-		"'#property'", "'='", "'+'", "'-'", "'*'", "'/'", "'%'", "'++'", "'--'", 
-		"'=='", "'!='", "'<'", "'<='", "'>'", "'>='", "'&&'", "'||'", "'!'", "'('", 
-		"')'", "'{'", "'}'", "'['", "']'", "';'", "','", "'.'", "':'", "'?'"
+		"'#define'", "'#ifdef'", "'#ifndef'", "'#if'", "'#else'", "'#endif'", 
+		"'#undef'", "'#property'", "'='", "'+'", "'-'", "'*'", "'/'", "'%'", "'++'", 
+		"'--'", "'=='", "'!='", "'<'", "'<='", "'>'", "'>='", "'&&'", "'||'", 
+		"'!'", "'('", "')'", "'{'", "'}'", "'['", "']'", "';'", "','", "'.'", 
+		"':'", "'?'", "'&'"
 	};
 	private static readonly string[] _SymbolicNames = {
 		null, "COMMENT_BLOCK", "COMMENT_LINE", "WS", "INTEGER", "DOUBLE", "HEX", 
@@ -86,10 +93,12 @@ public partial class Mql4GrammarParser : Parser {
 		"K_VOID", "K_DATETIME", "K_COLOR", "K_STATIC", "K_EXTERN", "K_IF", "K_ELSE", 
 		"K_WHILE", "K_FOR", "K_DO", "K_SWITCH", "K_CASE", "K_DEFAULT", "K_BREAK", 
 		"K_CONTINUE", "K_RETURN", "K_INPUT", "K_TRUE", "K_FALSE", "DIRECTIVE_INCLUDE", 
-		"DIRECTIVE_PROPERTY", "ASSIGN", "ADD", "SUB", "MUL", "DIV", "MOD", "INC", 
-		"DEC", "EQ", "NEQ", "LT", "LTE", "GT", "GTE", "K_AND", "K_OR", "K_NOT", 
-		"LPAREN", "RPAREN", "LBRACE", "RBRACE", "LBRACKET", "RBRACKET", "SEMICOLON", 
-		"COMMA", "DOT", "COLON", "QUESTION"
+		"DIRECTIVE_DEFINE", "DIRECTIVE_IFDEF", "DIRECTIVE_IFNDEF", "DIRECTIVE_IF", 
+		"DIRECTIVE_ELSE", "DIRECTIVE_ENDIF", "DIRECTIVE_UNDEF", "DIRECTIVE_PROPERTY", 
+		"ASSIGN", "ADD", "SUB", "MUL", "DIV", "MOD", "INC", "DEC", "EQ", "NEQ", 
+		"LT", "LTE", "GT", "GTE", "K_AND", "K_OR", "K_NOT", "LPAREN", "RPAREN", 
+		"LBRACE", "RBRACE", "LBRACKET", "RBRACKET", "SEMICOLON", "COMMA", "DOT", 
+		"COLON", "QUESTION", "AMPERSAND"
 	};
 	public static readonly IVocabulary DefaultVocabulary = new Vocabulary(_LiteralNames, _SymbolicNames);
 
@@ -168,35 +177,35 @@ public partial class Mql4GrammarParser : Parser {
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 73;
+			State = 87;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			while (_la==DIRECTIVE_INCLUDE || _la==DIRECTIVE_PROPERTY) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 4389456576512L) != 0)) {
 				{
 				{
-				State = 70;
+				State = 84;
 				directive();
 				}
 				}
-				State = 75;
+				State = 89;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
-			State = 79;
+			State = 93;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 1074265600L) != 0)) {
 				{
 				{
-				State = 76;
+				State = 90;
 				globalDeclaration();
 				}
 				}
-				State = 81;
+				State = 95;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
-			State = 82;
+			State = 96;
 			Match(Eof);
 			}
 		}
@@ -214,6 +223,27 @@ public partial class Mql4GrammarParser : Parser {
 	public partial class DirectiveContext : ParserRuleContext {
 		[System.Diagnostics.DebuggerNonUserCode] public IncludeDirectiveContext includeDirective() {
 			return GetRuleContext<IncludeDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public DefineDirectiveContext defineDirective() {
+			return GetRuleContext<DefineDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public IfDirectiveContext ifDirective() {
+			return GetRuleContext<IfDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public IfdefDirectiveContext ifdefDirective() {
+			return GetRuleContext<IfdefDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public IfndefDirectiveContext ifndefDirective() {
+			return GetRuleContext<IfndefDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public ElseDirectiveContext elseDirective() {
+			return GetRuleContext<ElseDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public EndifDirectiveContext endifDirective() {
+			return GetRuleContext<EndifDirectiveContext>(0);
+		}
+		[System.Diagnostics.DebuggerNonUserCode] public UndefDirectiveContext undefDirective() {
+			return GetRuleContext<UndefDirectiveContext>(0);
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public PropertyDirectiveContext propertyDirective() {
 			return GetRuleContext<PropertyDirectiveContext>(0);
@@ -246,20 +276,69 @@ public partial class Mql4GrammarParser : Parser {
 		DirectiveContext _localctx = new DirectiveContext(Context, State);
 		EnterRule(_localctx, 2, RULE_directive);
 		try {
-			State = 86;
+			State = 107;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case DIRECTIVE_INCLUDE:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 84;
+				State = 98;
 				includeDirective();
 				}
 				break;
-			case DIRECTIVE_PROPERTY:
+			case DIRECTIVE_DEFINE:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 85;
+				State = 99;
+				defineDirective();
+				}
+				break;
+			case DIRECTIVE_IF:
+				EnterOuterAlt(_localctx, 3);
+				{
+				State = 100;
+				ifDirective();
+				}
+				break;
+			case DIRECTIVE_IFDEF:
+				EnterOuterAlt(_localctx, 4);
+				{
+				State = 101;
+				ifdefDirective();
+				}
+				break;
+			case DIRECTIVE_IFNDEF:
+				EnterOuterAlt(_localctx, 5);
+				{
+				State = 102;
+				ifndefDirective();
+				}
+				break;
+			case DIRECTIVE_ELSE:
+				EnterOuterAlt(_localctx, 6);
+				{
+				State = 103;
+				elseDirective();
+				}
+				break;
+			case DIRECTIVE_ENDIF:
+				EnterOuterAlt(_localctx, 7);
+				{
+				State = 104;
+				endifDirective();
+				}
+				break;
+			case DIRECTIVE_UNDEF:
+				EnterOuterAlt(_localctx, 8);
+				{
+				State = 105;
+				undefDirective();
+				}
+				break;
+			case DIRECTIVE_PROPERTY:
+				EnterOuterAlt(_localctx, 9);
+				{
+				State = 106;
 				propertyDirective();
 				}
 				break;
@@ -314,30 +393,398 @@ public partial class Mql4GrammarParser : Parser {
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 88;
+			State = 109;
 			Match(DIRECTIVE_INCLUDE);
-			State = 93;
+			State = 114;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case STRING:
 				{
-				State = 89;
+				State = 110;
 				Match(STRING);
 				}
 				break;
 			case LT:
 				{
-				State = 90;
+				State = 111;
 				Match(LT);
-				State = 91;
+				State = 112;
 				Match(IDENTIFIER);
-				State = 92;
+				State = 113;
 				Match(GT);
 				}
 				break;
 			default:
 				throw new NoViableAltException(this);
 			}
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class DefineDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_DEFINE() { return GetToken(Mql4GrammarParser.DIRECTIVE_DEFINE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(Mql4GrammarParser.IDENTIFIER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode STRING() { return GetToken(Mql4GrammarParser.STRING, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INTEGER() { return GetToken(Mql4GrammarParser.INTEGER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DOUBLE() { return GetToken(Mql4GrammarParser.DOUBLE, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode HEX() { return GetToken(Mql4GrammarParser.HEX, 0); }
+		public DefineDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_defineDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterDefineDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitDefineDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitDefineDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public DefineDirectiveContext defineDirective() {
+		DefineDirectiveContext _localctx = new DefineDirectiveContext(Context, State);
+		EnterRule(_localctx, 6, RULE_defineDirective);
+		int _la;
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 116;
+			Match(DIRECTIVE_DEFINE);
+			State = 117;
+			Match(IDENTIFIER);
+			State = 119;
+			ErrorHandler.Sync(this);
+			_la = TokenStream.LA(1);
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 240L) != 0)) {
+				{
+				State = 118;
+				_la = TokenStream.LA(1);
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 240L) != 0)) ) {
+				ErrorHandler.RecoverInline(this);
+				}
+				else {
+					ErrorHandler.ReportMatch(this);
+				    Consume();
+				}
+				}
+			}
+
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class IfDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_IF() { return GetToken(Mql4GrammarParser.DIRECTIVE_IF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ExpressionContext expression() {
+			return GetRuleContext<ExpressionContext>(0);
+		}
+		public IfDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_ifDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterIfDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitIfDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitIfDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public IfDirectiveContext ifDirective() {
+		IfDirectiveContext _localctx = new IfDirectiveContext(Context, State);
+		EnterRule(_localctx, 8, RULE_ifDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 121;
+			Match(DIRECTIVE_IF);
+			State = 122;
+			expression();
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class IfdefDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_IFDEF() { return GetToken(Mql4GrammarParser.DIRECTIVE_IFDEF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(Mql4GrammarParser.IDENTIFIER, 0); }
+		public IfdefDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_ifdefDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterIfdefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitIfdefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitIfdefDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public IfdefDirectiveContext ifdefDirective() {
+		IfdefDirectiveContext _localctx = new IfdefDirectiveContext(Context, State);
+		EnterRule(_localctx, 10, RULE_ifdefDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 124;
+			Match(DIRECTIVE_IFDEF);
+			State = 125;
+			Match(IDENTIFIER);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class IfndefDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_IFNDEF() { return GetToken(Mql4GrammarParser.DIRECTIVE_IFNDEF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(Mql4GrammarParser.IDENTIFIER, 0); }
+		public IfndefDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_ifndefDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterIfndefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitIfndefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitIfndefDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public IfndefDirectiveContext ifndefDirective() {
+		IfndefDirectiveContext _localctx = new IfndefDirectiveContext(Context, State);
+		EnterRule(_localctx, 12, RULE_ifndefDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 127;
+			Match(DIRECTIVE_IFNDEF);
+			State = 128;
+			Match(IDENTIFIER);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class ElseDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_ELSE() { return GetToken(Mql4GrammarParser.DIRECTIVE_ELSE, 0); }
+		public ElseDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_elseDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterElseDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitElseDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitElseDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public ElseDirectiveContext elseDirective() {
+		ElseDirectiveContext _localctx = new ElseDirectiveContext(Context, State);
+		EnterRule(_localctx, 14, RULE_elseDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 130;
+			Match(DIRECTIVE_ELSE);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class EndifDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_ENDIF() { return GetToken(Mql4GrammarParser.DIRECTIVE_ENDIF, 0); }
+		public EndifDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_endifDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterEndifDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitEndifDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitEndifDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public EndifDirectiveContext endifDirective() {
+		EndifDirectiveContext _localctx = new EndifDirectiveContext(Context, State);
+		EnterRule(_localctx, 16, RULE_endifDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 132;
+			Match(DIRECTIVE_ENDIF);
+			}
+		}
+		catch (RecognitionException re) {
+			_localctx.exception = re;
+			ErrorHandler.ReportError(this, re);
+			ErrorHandler.Recover(this, re);
+		}
+		finally {
+			ExitRule();
+		}
+		return _localctx;
+	}
+
+	public partial class UndefDirectiveContext : ParserRuleContext {
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode DIRECTIVE_UNDEF() { return GetToken(Mql4GrammarParser.DIRECTIVE_UNDEF, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode IDENTIFIER() { return GetToken(Mql4GrammarParser.IDENTIFIER, 0); }
+		public UndefDirectiveContext(ParserRuleContext parent, int invokingState)
+			: base(parent, invokingState)
+		{
+		}
+		public override int RuleIndex { get { return RULE_undefDirective; } }
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void EnterRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.EnterUndefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override void ExitRule(IParseTreeListener listener) {
+			IMql4GrammarListener typedListener = listener as IMql4GrammarListener;
+			if (typedListener != null) typedListener.ExitUndefDirective(this);
+		}
+		[System.Diagnostics.DebuggerNonUserCode]
+		public override TResult Accept<TResult>(IParseTreeVisitor<TResult> visitor) {
+			IMql4GrammarVisitor<TResult> typedVisitor = visitor as IMql4GrammarVisitor<TResult>;
+			if (typedVisitor != null) return typedVisitor.VisitUndefDirective(this);
+			else return visitor.VisitChildren(this);
+		}
+	}
+
+	[RuleVersion(0)]
+	public UndefDirectiveContext undefDirective() {
+		UndefDirectiveContext _localctx = new UndefDirectiveContext(Context, State);
+		EnterRule(_localctx, 18, RULE_undefDirective);
+		try {
+			EnterOuterAlt(_localctx, 1);
+			{
+			State = 134;
+			Match(DIRECTIVE_UNDEF);
+			State = 135;
+			Match(IDENTIFIER);
 			}
 		}
 		catch (RecognitionException re) {
@@ -382,21 +829,21 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public PropertyDirectiveContext propertyDirective() {
 		PropertyDirectiveContext _localctx = new PropertyDirectiveContext(Context, State);
-		EnterRule(_localctx, 6, RULE_propertyDirective);
+		EnterRule(_localctx, 20, RULE_propertyDirective);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 95;
+			State = 137;
 			Match(DIRECTIVE_PROPERTY);
-			State = 96;
+			State = 138;
 			Match(IDENTIFIER);
-			State = 98;
+			State = 140;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==INTEGER || _la==STRING) {
 				{
-				State = 97;
+				State = 139;
 				_la = TokenStream.LA(1);
 				if ( !(_la==INTEGER || _la==STRING) ) {
 				ErrorHandler.RecoverInline(this);
@@ -454,22 +901,22 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public GlobalDeclarationContext globalDeclaration() {
 		GlobalDeclarationContext _localctx = new GlobalDeclarationContext(Context, State);
-		EnterRule(_localctx, 8, RULE_globalDeclaration);
+		EnterRule(_localctx, 22, RULE_globalDeclaration);
 		try {
-			State = 102;
+			State = 144;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,5,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,6,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 100;
+				State = 142;
 				functionDeclaration();
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 101;
+				State = 143;
 				variableDeclaration();
 				}
 				break;
@@ -525,30 +972,30 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public FunctionDeclarationContext functionDeclaration() {
 		FunctionDeclarationContext _localctx = new FunctionDeclarationContext(Context, State);
-		EnterRule(_localctx, 10, RULE_functionDeclaration);
+		EnterRule(_localctx, 24, RULE_functionDeclaration);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 104;
+			State = 146;
 			dataType();
-			State = 105;
+			State = 147;
 			Match(IDENTIFIER);
-			State = 106;
+			State = 148;
 			Match(LPAREN);
-			State = 108;
+			State = 150;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 130560L) != 0)) {
 				{
-				State = 107;
+				State = 149;
 				parameterList();
 				}
 			}
 
-			State = 110;
+			State = 152;
 			Match(RPAREN);
-			State = 111;
+			State = 153;
 			block();
 			}
 		}
@@ -600,26 +1047,26 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ParameterListContext parameterList() {
 		ParameterListContext _localctx = new ParameterListContext(Context, State);
-		EnterRule(_localctx, 12, RULE_parameterList);
+		EnterRule(_localctx, 26, RULE_parameterList);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 113;
+			State = 155;
 			parameter();
-			State = 118;
+			State = 160;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
 				{
-				State = 114;
+				State = 156;
 				Match(COMMA);
-				State = 115;
+				State = 157;
 				parameter();
 				}
 				}
-				State = 120;
+				State = 162;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -667,19 +1114,19 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ParameterContext parameter() {
 		ParameterContext _localctx = new ParameterContext(Context, State);
-		EnterRule(_localctx, 14, RULE_parameter);
+		EnterRule(_localctx, 28, RULE_parameter);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 121;
+			State = 163;
 			dataType();
-			State = 123;
+			State = 165;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==IDENTIFIER) {
 				{
-				State = 122;
+				State = 164;
 				Match(IDENTIFIER);
 				}
 			}
@@ -708,6 +1155,8 @@ public partial class Mql4GrammarParser : Parser {
 		}
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode LBRACKET() { return GetToken(Mql4GrammarParser.LBRACKET, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode RBRACKET() { return GetToken(Mql4GrammarParser.RBRACKET, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode INTEGER() { return GetToken(Mql4GrammarParser.INTEGER, 0); }
+		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode AMPERSAND() { return GetToken(Mql4GrammarParser.AMPERSAND, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ITerminalNode ASSIGN() { return GetToken(Mql4GrammarParser.ASSIGN, 0); }
 		[System.Diagnostics.DebuggerNonUserCode] public ExpressionContext expression() {
 			return GetRuleContext<ExpressionContext>(0);
@@ -741,45 +1190,67 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public VariableDeclarationContext variableDeclaration() {
 		VariableDeclarationContext _localctx = new VariableDeclarationContext(Context, State);
-		EnterRule(_localctx, 16, RULE_variableDeclaration);
+		EnterRule(_localctx, 30, RULE_variableDeclaration);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 126;
+			State = 168;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 1074135040L) != 0)) {
 				{
-				State = 125;
+				State = 167;
 				storageModifier();
 				}
 			}
 
-			State = 128;
+			State = 170;
 			dataType();
-			State = 129;
+			State = 171;
 			Match(IDENTIFIER);
-			State = 132;
+			State = 181;
 			ErrorHandler.Sync(this);
-			_la = TokenStream.LA(1);
-			if (_la==LBRACKET) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,11,Context) ) {
+			case 1:
 				{
-				State = 130;
+				State = 172;
 				Match(LBRACKET);
-				State = 131;
+				State = 173;
 				Match(RBRACKET);
 				}
+				break;
+			case 2:
+				{
+				State = 174;
+				Match(LBRACKET);
+				State = 175;
+				Match(INTEGER);
+				State = 176;
+				Match(RBRACKET);
+				}
+				break;
+			case 3:
+				{
+				State = 177;
+				Match(LBRACKET);
+				State = 178;
+				Match(AMPERSAND);
+				State = 179;
+				Match(INTEGER);
+				State = 180;
+				Match(RBRACKET);
+				}
+				break;
 			}
-
-			State = 139;
+			State = 188;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			if (_la==ASSIGN) {
 				{
-				State = 134;
+				State = 183;
 				Match(ASSIGN);
-				State = 137;
+				State = 186;
 				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case INTEGER:
@@ -795,13 +1266,13 @@ public partial class Mql4GrammarParser : Parser {
 				case K_NOT:
 				case LPAREN:
 					{
-					State = 135;
+					State = 184;
 					expression();
 					}
 					break;
 				case LBRACE:
 					{
-					State = 136;
+					State = 185;
 					arrayInitialization();
 					}
 					break;
@@ -811,7 +1282,7 @@ public partial class Mql4GrammarParser : Parser {
 				}
 			}
 
-			State = 141;
+			State = 190;
 			Match(SEMICOLON);
 			}
 		}
@@ -856,12 +1327,12 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public StorageModifierContext storageModifier() {
 		StorageModifierContext _localctx = new StorageModifierContext(Context, State);
-		EnterRule(_localctx, 18, RULE_storageModifier);
+		EnterRule(_localctx, 32, RULE_storageModifier);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 143;
+			State = 192;
 			_la = TokenStream.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 1074135040L) != 0)) ) {
 			ErrorHandler.RecoverInline(this);
@@ -922,40 +1393,40 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ArrayInitializationContext arrayInitialization() {
 		ArrayInitializationContext _localctx = new ArrayInitializationContext(Context, State);
-		EnterRule(_localctx, 20, RULE_arrayInitialization);
+		EnterRule(_localctx, 34, RULE_arrayInitialization);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 145;
+			State = 194;
 			Match(LBRACE);
-			State = 154;
+			State = 203;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6762002953274352L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865535559827719152L) != 0)) {
 				{
-				State = 146;
+				State = 195;
 				expression();
-				State = 151;
+				State = 200;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==COMMA) {
 					{
 					{
-					State = 147;
+					State = 196;
 					Match(COMMA);
-					State = 148;
+					State = 197;
 					expression();
 					}
 					}
-					State = 153;
+					State = 202;
 					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
 				}
 			}
 
-			State = 156;
+			State = 205;
 			Match(RBRACE);
 			}
 		}
@@ -1012,79 +1483,79 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public DataTypeContext dataType() {
 		DataTypeContext _localctx = new DataTypeContext(Context, State);
-		EnterRule(_localctx, 22, RULE_dataType);
+		EnterRule(_localctx, 36, RULE_dataType);
 		int _la;
 		try {
-			State = 173;
+			State = 222;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case K_INT:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 158;
+				State = 207;
 				Match(K_INT);
 				}
 				break;
 			case K_DOUBLE:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 159;
+				State = 208;
 				Match(K_DOUBLE);
 				}
 				break;
 			case K_STRING:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 160;
+				State = 209;
 				Match(K_STRING);
 				}
 				break;
 			case K_BOOL:
 				EnterOuterAlt(_localctx, 4);
 				{
-				State = 161;
+				State = 210;
 				Match(K_BOOL);
 				}
 				break;
 			case K_VOID:
 				EnterOuterAlt(_localctx, 5);
 				{
-				State = 162;
+				State = 211;
 				Match(K_VOID);
 				}
 				break;
 			case K_DATETIME:
 				EnterOuterAlt(_localctx, 6);
 				{
-				State = 163;
+				State = 212;
 				Match(K_DATETIME);
 				}
 				break;
 			case K_COLOR:
 				EnterOuterAlt(_localctx, 7);
 				{
-				State = 164;
+				State = 213;
 				Match(K_COLOR);
 				}
 				break;
 			case IDENTIFIER:
 				EnterOuterAlt(_localctx, 8);
 				{
-				State = 165;
+				State = 214;
 				Match(IDENTIFIER);
-				State = 170;
+				State = 219;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				while (_la==DOT) {
 					{
 					{
-					State = 166;
+					State = 215;
 					Match(DOT);
-					State = 167;
+					State = 216;
 					Match(IDENTIFIER);
 					}
 					}
-					State = 172;
+					State = 221;
 					ErrorHandler.Sync(this);
 					_la = TokenStream.LA(1);
 				}
@@ -1140,28 +1611,28 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public BlockContext block() {
 		BlockContext _localctx = new BlockContext(Context, State);
-		EnterRule(_localctx, 24, RULE_block);
+		EnterRule(_localctx, 38, RULE_block);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 175;
+			State = 224;
 			Match(LBRACE);
-			State = 179;
+			State = 228;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 313006779249197040L) != 0)) {
+			while (((((_la - 4)) & ~0x3f) == 0 && ((1L << (_la - 4)) & 2504054169880952831L) != 0)) {
 				{
 				{
-				State = 176;
+				State = 225;
 				statement();
 				}
 				}
-				State = 181;
+				State = 230;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
-			State = 182;
+			State = 231;
 			Match(RBRACE);
 			}
 		}
@@ -1230,71 +1701,71 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public StatementContext statement() {
 		StatementContext _localctx = new StatementContext(Context, State);
-		EnterRule(_localctx, 26, RULE_statement);
+		EnterRule(_localctx, 40, RULE_statement);
 		try {
-			State = 193;
+			State = 242;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,18,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,19,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 184;
+				State = 233;
 				block();
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 185;
+				State = 234;
 				variableDeclaration();
 				}
 				break;
 			case 3:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 186;
+				State = 235;
 				assignmentStatement();
 				}
 				break;
 			case 4:
 				EnterOuterAlt(_localctx, 4);
 				{
-				State = 187;
+				State = 236;
 				expressionStatement();
 				}
 				break;
 			case 5:
 				EnterOuterAlt(_localctx, 5);
 				{
-				State = 188;
+				State = 237;
 				ifStatement();
 				}
 				break;
 			case 6:
 				EnterOuterAlt(_localctx, 6);
 				{
-				State = 189;
+				State = 238;
 				whileStatement();
 				}
 				break;
 			case 7:
 				EnterOuterAlt(_localctx, 7);
 				{
-				State = 190;
+				State = 239;
 				forStatement();
 				}
 				break;
 			case 8:
 				EnterOuterAlt(_localctx, 8);
 				{
-				State = 191;
+				State = 240;
 				switchStatement();
 				}
 				break;
 			case 9:
 				EnterOuterAlt(_localctx, 9);
 				{
-				State = 192;
+				State = 241;
 				returnStatement();
 				}
 				break;
@@ -1353,53 +1824,53 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public AssignmentStatementContext assignmentStatement() {
 		AssignmentStatementContext _localctx = new AssignmentStatementContext(Context, State);
-		EnterRule(_localctx, 28, RULE_assignmentStatement);
+		EnterRule(_localctx, 42, RULE_assignmentStatement);
 		int _la;
 		try {
-			State = 213;
+			State = 262;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,20,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,21,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 195;
+				State = 244;
 				Match(IDENTIFIER);
-				State = 200;
+				State = 249;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==LBRACKET) {
 					{
-					State = 196;
+					State = 245;
 					Match(LBRACKET);
-					State = 197;
+					State = 246;
 					expression();
-					State = 198;
+					State = 247;
 					Match(RBRACKET);
 					}
 				}
 
-				State = 202;
+				State = 251;
 				Match(ASSIGN);
-				State = 203;
+				State = 252;
 				expression();
-				State = 204;
+				State = 253;
 				Match(SEMICOLON);
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 206;
+				State = 255;
 				primaryExpression();
-				State = 207;
+				State = 256;
 				Match(DOT);
-				State = 208;
+				State = 257;
 				Match(IDENTIFIER);
-				State = 209;
+				State = 258;
 				Match(ASSIGN);
-				State = 210;
+				State = 259;
 				expression();
-				State = 211;
+				State = 260;
 				Match(SEMICOLON);
 				}
 				break;
@@ -1447,22 +1918,22 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ExpressionStatementContext expressionStatement() {
 		ExpressionStatementContext _localctx = new ExpressionStatementContext(Context, State);
-		EnterRule(_localctx, 30, RULE_expressionStatement);
+		EnterRule(_localctx, 44, RULE_expressionStatement);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 216;
+			State = 265;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6762002953274352L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865535559827719152L) != 0)) {
 				{
-				State = 215;
+				State = 264;
 				expression();
 				}
 			}
 
-			State = 218;
+			State = 267;
 			Match(SEMICOLON);
 			}
 		}
@@ -1517,28 +1988,28 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public IfStatementContext ifStatement() {
 		IfStatementContext _localctx = new IfStatementContext(Context, State);
-		EnterRule(_localctx, 32, RULE_ifStatement);
+		EnterRule(_localctx, 46, RULE_ifStatement);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 220;
+			State = 269;
 			Match(K_IF);
-			State = 221;
+			State = 270;
 			Match(LPAREN);
-			State = 222;
+			State = 271;
 			expression();
-			State = 223;
+			State = 272;
 			Match(RPAREN);
-			State = 224;
+			State = 273;
 			statement();
-			State = 227;
+			State = 276;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,22,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,23,Context) ) {
 			case 1:
 				{
-				State = 225;
+				State = 274;
 				Match(K_ELSE);
-				State = 226;
+				State = 275;
 				statement();
 				}
 				break;
@@ -1592,19 +2063,19 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public WhileStatementContext whileStatement() {
 		WhileStatementContext _localctx = new WhileStatementContext(Context, State);
-		EnterRule(_localctx, 34, RULE_whileStatement);
+		EnterRule(_localctx, 48, RULE_whileStatement);
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 229;
+			State = 278;
 			Match(K_WHILE);
-			State = 230;
+			State = 279;
 			Match(LPAREN);
-			State = 231;
+			State = 280;
 			expression();
-			State = 232;
+			State = 281;
 			Match(RPAREN);
-			State = 233;
+			State = 282;
 			statement();
 			}
 		}
@@ -1671,70 +2142,70 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ForStatementContext forStatement() {
 		ForStatementContext _localctx = new ForStatementContext(Context, State);
-		EnterRule(_localctx, 36, RULE_forStatement);
+		EnterRule(_localctx, 50, RULE_forStatement);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 235;
+			State = 284;
 			Match(K_FOR);
-			State = 236;
+			State = 285;
 			Match(LPAREN);
-			State = 240;
+			State = 289;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,23,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,24,Context) ) {
 			case 1:
 				{
-				State = 237;
+				State = 286;
 				variableDeclaration();
 				}
 				break;
 			case 2:
 				{
-				State = 238;
+				State = 287;
 				assignmentStatement();
 				}
 				break;
 			case 3:
 				{
-				State = 239;
+				State = 288;
 				expression();
 				}
 				break;
 			}
-			State = 242;
+			State = 291;
 			Match(SEMICOLON);
-			State = 244;
+			State = 293;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6762002953274352L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865535559827719152L) != 0)) {
 				{
-				State = 243;
+				State = 292;
 				expression();
 				}
 			}
 
-			State = 246;
+			State = 295;
 			Match(SEMICOLON);
-			State = 249;
+			State = 298;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,25,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,26,Context) ) {
 			case 1:
 				{
-				State = 247;
+				State = 296;
 				assignmentExpression();
 				}
 				break;
 			case 2:
 				{
-				State = 248;
+				State = 297;
 				expression();
 				}
 				break;
 			}
-			State = 251;
+			State = 300;
 			Match(RPAREN);
-			State = 252;
+			State = 301;
 			statement();
 			}
 		}
@@ -1781,24 +2252,24 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ReturnStatementContext returnStatement() {
 		ReturnStatementContext _localctx = new ReturnStatementContext(Context, State);
-		EnterRule(_localctx, 38, RULE_returnStatement);
+		EnterRule(_localctx, 52, RULE_returnStatement);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 254;
+			State = 303;
 			Match(K_RETURN);
-			State = 256;
+			State = 305;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6762002953274352L) != 0)) {
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865535559827719152L) != 0)) {
 				{
-				State = 255;
+				State = 304;
 				expression();
 				}
 			}
 
-			State = 258;
+			State = 307;
 			Match(SEMICOLON);
 			}
 		}
@@ -1854,36 +2325,36 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public SwitchStatementContext switchStatement() {
 		SwitchStatementContext _localctx = new SwitchStatementContext(Context, State);
-		EnterRule(_localctx, 40, RULE_switchStatement);
+		EnterRule(_localctx, 54, RULE_switchStatement);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 260;
+			State = 309;
 			Match(K_SWITCH);
-			State = 261;
+			State = 310;
 			Match(LPAREN);
-			State = 262;
+			State = 311;
 			expression();
-			State = 263;
+			State = 312;
 			Match(RPAREN);
-			State = 264;
+			State = 313;
 			Match(LBRACE);
-			State = 268;
+			State = 317;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==K_CASE || _la==K_DEFAULT) {
 				{
 				{
-				State = 265;
+				State = 314;
 				caseClause();
 				}
 				}
-				State = 270;
+				State = 319;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
-			State = 271;
+			State = 320;
 			Match(RBRACE);
 			}
 		}
@@ -1937,44 +2408,44 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public CaseClauseContext caseClause() {
 		CaseClauseContext _localctx = new CaseClauseContext(Context, State);
-		EnterRule(_localctx, 42, RULE_caseClause);
+		EnterRule(_localctx, 56, RULE_caseClause);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 276;
+			State = 325;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case K_CASE:
 				{
-				State = 273;
+				State = 322;
 				Match(K_CASE);
-				State = 274;
+				State = 323;
 				expression();
 				}
 				break;
 			case K_DEFAULT:
 				{
-				State = 275;
+				State = 324;
 				Match(K_DEFAULT);
 				}
 				break;
 			default:
 				throw new NoViableAltException(this);
 			}
-			State = 278;
+			State = 327;
 			Match(COLON);
-			State = 282;
+			State = 331;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 313006779249197040L) != 0)) {
+			while (((((_la - 4)) & ~0x3f) == 0 && ((1L << (_la - 4)) & 2504054169880952831L) != 0)) {
 				{
 				{
-				State = 279;
+				State = 328;
 				statement();
 				}
 				}
-				State = 284;
+				State = 333;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2024,22 +2495,22 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ExpressionContext expression() {
 		ExpressionContext _localctx = new ExpressionContext(Context, State);
-		EnterRule(_localctx, 44, RULE_expression);
+		EnterRule(_localctx, 58, RULE_expression);
 		try {
-			State = 287;
+			State = 336;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,30,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,31,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 285;
+				State = 334;
 				assignmentExpression();
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 286;
+				State = 335;
 				logicalOrExpression();
 				}
 				break;
@@ -2093,26 +2564,26 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public LogicalOrExpressionContext logicalOrExpression() {
 		LogicalOrExpressionContext _localctx = new LogicalOrExpressionContext(Context, State);
-		EnterRule(_localctx, 46, RULE_logicalOrExpression);
+		EnterRule(_localctx, 60, RULE_logicalOrExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 289;
+			State = 338;
 			logicalAndExpression();
-			State = 294;
+			State = 343;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==K_OR) {
 				{
 				{
-				State = 290;
+				State = 339;
 				Match(K_OR);
-				State = 291;
+				State = 340;
 				logicalAndExpression();
 				}
 				}
-				State = 296;
+				State = 345;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2166,26 +2637,26 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public LogicalAndExpressionContext logicalAndExpression() {
 		LogicalAndExpressionContext _localctx = new LogicalAndExpressionContext(Context, State);
-		EnterRule(_localctx, 48, RULE_logicalAndExpression);
+		EnterRule(_localctx, 62, RULE_logicalAndExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 297;
+			State = 346;
 			equalityExpression();
-			State = 302;
+			State = 351;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==K_AND) {
 				{
 				{
-				State = 298;
+				State = 347;
 				Match(K_AND);
-				State = 299;
+				State = 348;
 				equalityExpression();
 				}
 				}
-				State = 304;
+				State = 353;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2243,34 +2714,34 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public EqualityExpressionContext equalityExpression() {
 		EqualityExpressionContext _localctx = new EqualityExpressionContext(Context, State);
-		EnterRule(_localctx, 50, RULE_equalityExpression);
+		EnterRule(_localctx, 64, RULE_equalityExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 305;
+			State = 354;
 			relationalExpression();
-			State = 312;
+			State = 361;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==EQ || _la==NEQ) {
 				{
-				State = 310;
+				State = 359;
 				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case EQ:
 					{
-					State = 306;
+					State = 355;
 					Match(EQ);
-					State = 307;
+					State = 356;
 					relationalExpression();
 					}
 					break;
 				case NEQ:
 					{
-					State = 308;
+					State = 357;
 					Match(NEQ);
-					State = 309;
+					State = 358;
 					relationalExpression();
 					}
 					break;
@@ -2278,7 +2749,7 @@ public partial class Mql4GrammarParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				State = 314;
+				State = 363;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2344,50 +2815,50 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public RelationalExpressionContext relationalExpression() {
 		RelationalExpressionContext _localctx = new RelationalExpressionContext(Context, State);
-		EnterRule(_localctx, 52, RULE_relationalExpression);
+		EnterRule(_localctx, 66, RULE_relationalExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 315;
+			State = 364;
 			additiveExpression();
-			State = 326;
+			State = 375;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 527765581332480L) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 67553994410557440L) != 0)) {
 				{
-				State = 324;
+				State = 373;
 				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case LT:
 					{
-					State = 316;
+					State = 365;
 					Match(LT);
-					State = 317;
+					State = 366;
 					additiveExpression();
 					}
 					break;
 				case LTE:
 					{
-					State = 318;
+					State = 367;
 					Match(LTE);
-					State = 319;
+					State = 368;
 					additiveExpression();
 					}
 					break;
 				case GT:
 					{
-					State = 320;
+					State = 369;
 					Match(GT);
-					State = 321;
+					State = 370;
 					additiveExpression();
 					}
 					break;
 				case GTE:
 					{
-					State = 322;
+					State = 371;
 					Match(GTE);
-					State = 323;
+					State = 372;
 					additiveExpression();
 					}
 					break;
@@ -2395,7 +2866,7 @@ public partial class Mql4GrammarParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				State = 328;
+				State = 377;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2453,34 +2924,34 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public AdditiveExpressionContext additiveExpression() {
 		AdditiveExpressionContext _localctx = new AdditiveExpressionContext(Context, State);
-		EnterRule(_localctx, 54, RULE_additiveExpression);
+		EnterRule(_localctx, 68, RULE_additiveExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 329;
+			State = 378;
 			multiplicativeExpression();
-			State = 336;
+			State = 385;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==ADD || _la==SUB) {
 				{
-				State = 334;
+				State = 383;
 				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case ADD:
 					{
-					State = 330;
+					State = 379;
 					Match(ADD);
-					State = 331;
+					State = 380;
 					multiplicativeExpression();
 					}
 					break;
 				case SUB:
 					{
-					State = 332;
+					State = 381;
 					Match(SUB);
-					State = 333;
+					State = 382;
 					multiplicativeExpression();
 					}
 					break;
@@ -2488,7 +2959,7 @@ public partial class Mql4GrammarParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				State = 338;
+				State = 387;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2550,42 +3021,42 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public MultiplicativeExpressionContext multiplicativeExpression() {
 		MultiplicativeExpressionContext _localctx = new MultiplicativeExpressionContext(Context, State);
-		EnterRule(_localctx, 56, RULE_multiplicativeExpression);
+		EnterRule(_localctx, 70, RULE_multiplicativeExpression);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 339;
+			State = 388;
 			unaryExpression();
-			State = 348;
+			State = 397;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 1924145348608L) != 0)) {
+			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & 246290604621824L) != 0)) {
 				{
-				State = 346;
+				State = 395;
 				ErrorHandler.Sync(this);
 				switch (TokenStream.LA(1)) {
 				case MUL:
 					{
-					State = 340;
+					State = 389;
 					Match(MUL);
-					State = 341;
+					State = 390;
 					unaryExpression();
 					}
 					break;
 				case DIV:
 					{
-					State = 342;
+					State = 391;
 					Match(DIV);
-					State = 343;
+					State = 392;
 					unaryExpression();
 					}
 					break;
 				case MOD:
 					{
-					State = 344;
+					State = 393;
 					Match(MOD);
-					State = 345;
+					State = 394;
 					unaryExpression();
 					}
 					break;
@@ -2593,7 +3064,7 @@ public partial class Mql4GrammarParser : Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				State = 350;
+				State = 399;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2646,35 +3117,35 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public UnaryExpressionContext unaryExpression() {
 		UnaryExpressionContext _localctx = new UnaryExpressionContext(Context, State);
-		EnterRule(_localctx, 58, RULE_unaryExpression);
+		EnterRule(_localctx, 72, RULE_unaryExpression);
 		try {
-			State = 358;
+			State = 407;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case K_NOT:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 351;
+				State = 400;
 				Match(K_NOT);
-				State = 352;
+				State = 401;
 				unaryExpression();
 				}
 				break;
 			case INC:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 353;
+				State = 402;
 				Match(INC);
-				State = 354;
+				State = 403;
 				unaryExpression();
 				}
 				break;
 			case DEC:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 355;
+				State = 404;
 				Match(DEC);
-				State = 356;
+				State = 405;
 				unaryExpression();
 				}
 				break;
@@ -2689,7 +3160,7 @@ public partial class Mql4GrammarParser : Parser {
 			case LPAREN:
 				EnterOuterAlt(_localctx, 4);
 				{
-				State = 357;
+				State = 406;
 				postfixExpression(0);
 				}
 				break;
@@ -2762,41 +3233,41 @@ public partial class Mql4GrammarParser : Parser {
 		int _parentState = State;
 		PostfixExpressionContext _localctx = new PostfixExpressionContext(Context, _parentState);
 		PostfixExpressionContext _prevctx = _localctx;
-		int _startState = 60;
-		EnterRecursionRule(_localctx, 60, RULE_postfixExpression, _p);
+		int _startState = 74;
+		EnterRecursionRule(_localctx, 74, RULE_postfixExpression, _p);
 		int _la;
 		try {
 			int _alt;
 			EnterOuterAlt(_localctx, 1);
 			{
 			{
-			State = 361;
+			State = 410;
 			primaryExpression();
 			}
 			Context.Stop = TokenStream.LT(-1);
-			State = 383;
+			State = 432;
 			ErrorHandler.Sync(this);
-			_alt = Interpreter.AdaptivePredict(TokenStream,44,Context);
+			_alt = Interpreter.AdaptivePredict(TokenStream,45,Context);
 			while ( _alt!=2 && _alt!=global::Antlr4.Runtime.Atn.ATN.INVALID_ALT_NUMBER ) {
 				if ( _alt==1 ) {
 					if ( ParseListeners!=null )
 						TriggerExitRuleEvent();
 					_prevctx = _localctx;
 					{
-					State = 381;
+					State = 430;
 					ErrorHandler.Sync(this);
-					switch ( Interpreter.AdaptivePredict(TokenStream,43,Context) ) {
+					switch ( Interpreter.AdaptivePredict(TokenStream,44,Context) ) {
 					case 1:
 						{
 						_localctx = new PostfixExpressionContext(_parentctx, _parentState);
 						PushNewRecursionContext(_localctx, _startState, RULE_postfixExpression);
-						State = 363;
+						State = 412;
 						if (!(Precpred(Context, 5))) throw new FailedPredicateException(this, "Precpred(Context, 5)");
-						State = 364;
+						State = 413;
 						Match(LBRACKET);
-						State = 365;
+						State = 414;
 						expression();
-						State = 366;
+						State = 415;
 						Match(RBRACKET);
 						}
 						break;
@@ -2804,21 +3275,21 @@ public partial class Mql4GrammarParser : Parser {
 						{
 						_localctx = new PostfixExpressionContext(_parentctx, _parentState);
 						PushNewRecursionContext(_localctx, _startState, RULE_postfixExpression);
-						State = 368;
+						State = 417;
 						if (!(Precpred(Context, 4))) throw new FailedPredicateException(this, "Precpred(Context, 4)");
-						State = 369;
+						State = 418;
 						Match(LPAREN);
-						State = 371;
+						State = 420;
 						ErrorHandler.Sync(this);
 						_la = TokenStream.LA(1);
-						if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 6762002953274352L) != 0)) {
+						if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865535559827719152L) != 0)) {
 							{
-							State = 370;
+							State = 419;
 							argumentList();
 							}
 						}
 
-						State = 373;
+						State = 422;
 						Match(RPAREN);
 						}
 						break;
@@ -2826,11 +3297,11 @@ public partial class Mql4GrammarParser : Parser {
 						{
 						_localctx = new PostfixExpressionContext(_parentctx, _parentState);
 						PushNewRecursionContext(_localctx, _startState, RULE_postfixExpression);
-						State = 374;
+						State = 423;
 						if (!(Precpred(Context, 3))) throw new FailedPredicateException(this, "Precpred(Context, 3)");
-						State = 375;
+						State = 424;
 						Match(DOT);
-						State = 376;
+						State = 425;
 						Match(IDENTIFIER);
 						}
 						break;
@@ -2838,9 +3309,9 @@ public partial class Mql4GrammarParser : Parser {
 						{
 						_localctx = new PostfixExpressionContext(_parentctx, _parentState);
 						PushNewRecursionContext(_localctx, _startState, RULE_postfixExpression);
-						State = 377;
+						State = 426;
 						if (!(Precpred(Context, 2))) throw new FailedPredicateException(this, "Precpred(Context, 2)");
-						State = 378;
+						State = 427;
 						Match(INC);
 						}
 						break;
@@ -2848,18 +3319,18 @@ public partial class Mql4GrammarParser : Parser {
 						{
 						_localctx = new PostfixExpressionContext(_parentctx, _parentState);
 						PushNewRecursionContext(_localctx, _startState, RULE_postfixExpression);
-						State = 379;
+						State = 428;
 						if (!(Precpred(Context, 1))) throw new FailedPredicateException(this, "Precpred(Context, 1)");
-						State = 380;
+						State = 429;
 						Match(DEC);
 						}
 						break;
 					}
 					} 
 				}
-				State = 385;
+				State = 434;
 				ErrorHandler.Sync(this);
-				_alt = Interpreter.AdaptivePredict(TokenStream,44,Context);
+				_alt = Interpreter.AdaptivePredict(TokenStream,45,Context);
 			}
 			}
 		}
@@ -2911,26 +3382,26 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public ArgumentListContext argumentList() {
 		ArgumentListContext _localctx = new ArgumentListContext(Context, State);
-		EnterRule(_localctx, 62, RULE_argumentList);
+		EnterRule(_localctx, 76, RULE_argumentList);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 386;
+			State = 435;
 			expression();
-			State = 391;
+			State = 440;
 			ErrorHandler.Sync(this);
 			_la = TokenStream.LA(1);
 			while (_la==COMMA) {
 				{
 				{
-				State = 387;
+				State = 436;
 				Match(COMMA);
-				State = 388;
+				State = 437;
 				expression();
 				}
 				}
-				State = 393;
+				State = 442;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 			}
@@ -2987,45 +3458,45 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public AssignmentExpressionContext assignmentExpression() {
 		AssignmentExpressionContext _localctx = new AssignmentExpressionContext(Context, State);
-		EnterRule(_localctx, 64, RULE_assignmentExpression);
+		EnterRule(_localctx, 78, RULE_assignmentExpression);
 		int _la;
 		try {
-			State = 407;
+			State = 456;
 			ErrorHandler.Sync(this);
-			switch ( Interpreter.AdaptivePredict(TokenStream,47,Context) ) {
+			switch ( Interpreter.AdaptivePredict(TokenStream,48,Context) ) {
 			case 1:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 394;
+				State = 443;
 				Match(IDENTIFIER);
-				State = 399;
+				State = 448;
 				ErrorHandler.Sync(this);
 				_la = TokenStream.LA(1);
 				if (_la==LBRACKET) {
 					{
-					State = 395;
+					State = 444;
 					Match(LBRACKET);
-					State = 396;
+					State = 445;
 					expression();
-					State = 397;
+					State = 446;
 					Match(RBRACKET);
 					}
 				}
 
-				State = 401;
+				State = 450;
 				Match(ASSIGN);
-				State = 402;
+				State = 451;
 				expression();
 				}
 				break;
 			case 2:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 403;
+				State = 452;
 				postfixExpression(0);
-				State = 404;
+				State = 453;
 				Match(ASSIGN);
-				State = 405;
+				State = 454;
 				expression();
 				}
 				break;
@@ -3078,15 +3549,15 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public PrimaryExpressionContext primaryExpression() {
 		PrimaryExpressionContext _localctx = new PrimaryExpressionContext(Context, State);
-		EnterRule(_localctx, 66, RULE_primaryExpression);
+		EnterRule(_localctx, 80, RULE_primaryExpression);
 		try {
-			State = 415;
+			State = 464;
 			ErrorHandler.Sync(this);
 			switch (TokenStream.LA(1)) {
 			case IDENTIFIER:
 				EnterOuterAlt(_localctx, 1);
 				{
-				State = 409;
+				State = 458;
 				Match(IDENTIFIER);
 				}
 				break;
@@ -3099,18 +3570,18 @@ public partial class Mql4GrammarParser : Parser {
 			case K_FALSE:
 				EnterOuterAlt(_localctx, 2);
 				{
-				State = 410;
+				State = 459;
 				literal();
 				}
 				break;
 			case LPAREN:
 				EnterOuterAlt(_localctx, 3);
 				{
-				State = 411;
+				State = 460;
 				Match(LPAREN);
-				State = 412;
+				State = 461;
 				expression();
-				State = 413;
+				State = 462;
 				Match(RPAREN);
 				}
 				break;
@@ -3163,12 +3634,12 @@ public partial class Mql4GrammarParser : Parser {
 	[RuleVersion(0)]
 	public LiteralContext literal() {
 		LiteralContext _localctx = new LiteralContext(Context, State);
-		EnterRule(_localctx, 68, RULE_literal);
+		EnterRule(_localctx, 82, RULE_literal);
 		int _la;
 		try {
 			EnterOuterAlt(_localctx, 1);
 			{
-			State = 417;
+			State = 466;
 			_la = TokenStream.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 6442451440L) != 0)) ) {
 			ErrorHandler.RecoverInline(this);
@@ -3192,7 +3663,7 @@ public partial class Mql4GrammarParser : Parser {
 
 	public override bool Sempred(RuleContext _localctx, int ruleIndex, int predIndex) {
 		switch (ruleIndex) {
-		case 30: return postfixExpression_sempred((PostfixExpressionContext)_localctx, predIndex);
+		case 37: return postfixExpression_sempred((PostfixExpressionContext)_localctx, predIndex);
 		}
 		return true;
 	}
@@ -3208,148 +3679,165 @@ public partial class Mql4GrammarParser : Parser {
 	}
 
 	private static int[] _serializedATN = {
-		4,1,62,420,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,7,
+		4,1,70,469,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,6,2,7,
 		7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,2,14,7,14,
 		2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,7,20,2,21,7,21,
 		2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,2,27,7,27,2,28,7,28,
-		2,29,7,29,2,30,7,30,2,31,7,31,2,32,7,32,2,33,7,33,2,34,7,34,1,0,5,0,72,
-		8,0,10,0,12,0,75,9,0,1,0,5,0,78,8,0,10,0,12,0,81,9,0,1,0,1,0,1,1,1,1,3,
-		1,87,8,1,1,2,1,2,1,2,1,2,1,2,3,2,94,8,2,1,3,1,3,1,3,3,3,99,8,3,1,4,1,4,
-		3,4,103,8,4,1,5,1,5,1,5,1,5,3,5,109,8,5,1,5,1,5,1,5,1,6,1,6,1,6,5,6,117,
-		8,6,10,6,12,6,120,9,6,1,7,1,7,3,7,124,8,7,1,8,3,8,127,8,8,1,8,1,8,1,8,
-		1,8,3,8,133,8,8,1,8,1,8,1,8,3,8,138,8,8,3,8,140,8,8,1,8,1,8,1,9,1,9,1,
-		10,1,10,1,10,1,10,5,10,150,8,10,10,10,12,10,153,9,10,3,10,155,8,10,1,10,
-		1,10,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,1,11,5,11,169,8,11,10,
-		11,12,11,172,9,11,3,11,174,8,11,1,12,1,12,5,12,178,8,12,10,12,12,12,181,
-		9,12,1,12,1,12,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,1,13,3,13,194,8,
-		13,1,14,1,14,1,14,1,14,1,14,3,14,201,8,14,1,14,1,14,1,14,1,14,1,14,1,14,
-		1,14,1,14,1,14,1,14,1,14,3,14,214,8,14,1,15,3,15,217,8,15,1,15,1,15,1,
-		16,1,16,1,16,1,16,1,16,1,16,1,16,3,16,228,8,16,1,17,1,17,1,17,1,17,1,17,
-		1,17,1,18,1,18,1,18,1,18,1,18,3,18,241,8,18,1,18,1,18,3,18,245,8,18,1,
-		18,1,18,1,18,3,18,250,8,18,1,18,1,18,1,18,1,19,1,19,3,19,257,8,19,1,19,
-		1,19,1,20,1,20,1,20,1,20,1,20,1,20,5,20,267,8,20,10,20,12,20,270,9,20,
-		1,20,1,20,1,21,1,21,1,21,3,21,277,8,21,1,21,1,21,5,21,281,8,21,10,21,12,
-		21,284,9,21,1,22,1,22,3,22,288,8,22,1,23,1,23,1,23,5,23,293,8,23,10,23,
-		12,23,296,9,23,1,24,1,24,1,24,5,24,301,8,24,10,24,12,24,304,9,24,1,25,
-		1,25,1,25,1,25,1,25,5,25,311,8,25,10,25,12,25,314,9,25,1,26,1,26,1,26,
-		1,26,1,26,1,26,1,26,1,26,1,26,5,26,325,8,26,10,26,12,26,328,9,26,1,27,
-		1,27,1,27,1,27,1,27,5,27,335,8,27,10,27,12,27,338,9,27,1,28,1,28,1,28,
-		1,28,1,28,1,28,1,28,5,28,347,8,28,10,28,12,28,350,9,28,1,29,1,29,1,29,
-		1,29,1,29,1,29,1,29,3,29,359,8,29,1,30,1,30,1,30,1,30,1,30,1,30,1,30,1,
-		30,1,30,1,30,1,30,3,30,372,8,30,1,30,1,30,1,30,1,30,1,30,1,30,1,30,1,30,
-		5,30,382,8,30,10,30,12,30,385,9,30,1,31,1,31,1,31,5,31,390,8,31,10,31,
-		12,31,393,9,31,1,32,1,32,1,32,1,32,1,32,3,32,400,8,32,1,32,1,32,1,32,1,
-		32,1,32,1,32,3,32,408,8,32,1,33,1,33,1,33,1,33,1,33,1,33,3,33,416,8,33,
-		1,34,1,34,1,34,0,1,60,35,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,
-		34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,0,3,2,0,4,4,7,7,
-		2,0,17,18,30,30,2,0,4,8,31,32,458,0,73,1,0,0,0,2,86,1,0,0,0,4,88,1,0,0,
-		0,6,95,1,0,0,0,8,102,1,0,0,0,10,104,1,0,0,0,12,113,1,0,0,0,14,121,1,0,
-		0,0,16,126,1,0,0,0,18,143,1,0,0,0,20,145,1,0,0,0,22,173,1,0,0,0,24,175,
-		1,0,0,0,26,193,1,0,0,0,28,213,1,0,0,0,30,216,1,0,0,0,32,220,1,0,0,0,34,
-		229,1,0,0,0,36,235,1,0,0,0,38,254,1,0,0,0,40,260,1,0,0,0,42,276,1,0,0,
-		0,44,287,1,0,0,0,46,289,1,0,0,0,48,297,1,0,0,0,50,305,1,0,0,0,52,315,1,
-		0,0,0,54,329,1,0,0,0,56,339,1,0,0,0,58,358,1,0,0,0,60,360,1,0,0,0,62,386,
-		1,0,0,0,64,407,1,0,0,0,66,415,1,0,0,0,68,417,1,0,0,0,70,72,3,2,1,0,71,
-		70,1,0,0,0,72,75,1,0,0,0,73,71,1,0,0,0,73,74,1,0,0,0,74,79,1,0,0,0,75,
-		73,1,0,0,0,76,78,3,8,4,0,77,76,1,0,0,0,78,81,1,0,0,0,79,77,1,0,0,0,79,
-		80,1,0,0,0,80,82,1,0,0,0,81,79,1,0,0,0,82,83,5,0,0,1,83,1,1,0,0,0,84,87,
-		3,4,2,0,85,87,3,6,3,0,86,84,1,0,0,0,86,85,1,0,0,0,87,3,1,0,0,0,88,93,5,
-		33,0,0,89,94,5,7,0,0,90,91,5,45,0,0,91,92,5,9,0,0,92,94,5,47,0,0,93,89,
-		1,0,0,0,93,90,1,0,0,0,94,5,1,0,0,0,95,96,5,34,0,0,96,98,5,9,0,0,97,99,
-		7,0,0,0,98,97,1,0,0,0,98,99,1,0,0,0,99,7,1,0,0,0,100,103,3,10,5,0,101,
-		103,3,16,8,0,102,100,1,0,0,0,102,101,1,0,0,0,103,9,1,0,0,0,104,105,3,22,
-		11,0,105,106,5,9,0,0,106,108,5,52,0,0,107,109,3,12,6,0,108,107,1,0,0,0,
-		108,109,1,0,0,0,109,110,1,0,0,0,110,111,5,53,0,0,111,112,3,24,12,0,112,
-		11,1,0,0,0,113,118,3,14,7,0,114,115,5,59,0,0,115,117,3,14,7,0,116,114,
-		1,0,0,0,117,120,1,0,0,0,118,116,1,0,0,0,118,119,1,0,0,0,119,13,1,0,0,0,
-		120,118,1,0,0,0,121,123,3,22,11,0,122,124,5,9,0,0,123,122,1,0,0,0,123,
-		124,1,0,0,0,124,15,1,0,0,0,125,127,3,18,9,0,126,125,1,0,0,0,126,127,1,
-		0,0,0,127,128,1,0,0,0,128,129,3,22,11,0,129,132,5,9,0,0,130,131,5,56,0,
-		0,131,133,5,57,0,0,132,130,1,0,0,0,132,133,1,0,0,0,133,139,1,0,0,0,134,
-		137,5,35,0,0,135,138,3,44,22,0,136,138,3,20,10,0,137,135,1,0,0,0,137,136,
-		1,0,0,0,138,140,1,0,0,0,139,134,1,0,0,0,139,140,1,0,0,0,140,141,1,0,0,
-		0,141,142,5,58,0,0,142,17,1,0,0,0,143,144,7,1,0,0,144,19,1,0,0,0,145,154,
-		5,54,0,0,146,151,3,44,22,0,147,148,5,59,0,0,148,150,3,44,22,0,149,147,
-		1,0,0,0,150,153,1,0,0,0,151,149,1,0,0,0,151,152,1,0,0,0,152,155,1,0,0,
-		0,153,151,1,0,0,0,154,146,1,0,0,0,154,155,1,0,0,0,155,156,1,0,0,0,156,
-		157,5,55,0,0,157,21,1,0,0,0,158,174,5,10,0,0,159,174,5,11,0,0,160,174,
-		5,12,0,0,161,174,5,13,0,0,162,174,5,14,0,0,163,174,5,15,0,0,164,174,5,
-		16,0,0,165,170,5,9,0,0,166,167,5,60,0,0,167,169,5,9,0,0,168,166,1,0,0,
-		0,169,172,1,0,0,0,170,168,1,0,0,0,170,171,1,0,0,0,171,174,1,0,0,0,172,
-		170,1,0,0,0,173,158,1,0,0,0,173,159,1,0,0,0,173,160,1,0,0,0,173,161,1,
-		0,0,0,173,162,1,0,0,0,173,163,1,0,0,0,173,164,1,0,0,0,173,165,1,0,0,0,
-		174,23,1,0,0,0,175,179,5,54,0,0,176,178,3,26,13,0,177,176,1,0,0,0,178,
-		181,1,0,0,0,179,177,1,0,0,0,179,180,1,0,0,0,180,182,1,0,0,0,181,179,1,
-		0,0,0,182,183,5,55,0,0,183,25,1,0,0,0,184,194,3,24,12,0,185,194,3,16,8,
-		0,186,194,3,28,14,0,187,194,3,30,15,0,188,194,3,32,16,0,189,194,3,34,17,
-		0,190,194,3,36,18,0,191,194,3,40,20,0,192,194,3,38,19,0,193,184,1,0,0,
-		0,193,185,1,0,0,0,193,186,1,0,0,0,193,187,1,0,0,0,193,188,1,0,0,0,193,
-		189,1,0,0,0,193,190,1,0,0,0,193,191,1,0,0,0,193,192,1,0,0,0,194,27,1,0,
-		0,0,195,200,5,9,0,0,196,197,5,56,0,0,197,198,3,44,22,0,198,199,5,57,0,
-		0,199,201,1,0,0,0,200,196,1,0,0,0,200,201,1,0,0,0,201,202,1,0,0,0,202,
-		203,5,35,0,0,203,204,3,44,22,0,204,205,5,58,0,0,205,214,1,0,0,0,206,207,
-		3,66,33,0,207,208,5,60,0,0,208,209,5,9,0,0,209,210,5,35,0,0,210,211,3,
-		44,22,0,211,212,5,58,0,0,212,214,1,0,0,0,213,195,1,0,0,0,213,206,1,0,0,
-		0,214,29,1,0,0,0,215,217,3,44,22,0,216,215,1,0,0,0,216,217,1,0,0,0,217,
-		218,1,0,0,0,218,219,5,58,0,0,219,31,1,0,0,0,220,221,5,19,0,0,221,222,5,
-		52,0,0,222,223,3,44,22,0,223,224,5,53,0,0,224,227,3,26,13,0,225,226,5,
-		20,0,0,226,228,3,26,13,0,227,225,1,0,0,0,227,228,1,0,0,0,228,33,1,0,0,
-		0,229,230,5,21,0,0,230,231,5,52,0,0,231,232,3,44,22,0,232,233,5,53,0,0,
-		233,234,3,26,13,0,234,35,1,0,0,0,235,236,5,22,0,0,236,240,5,52,0,0,237,
-		241,3,16,8,0,238,241,3,28,14,0,239,241,3,44,22,0,240,237,1,0,0,0,240,238,
-		1,0,0,0,240,239,1,0,0,0,240,241,1,0,0,0,241,242,1,0,0,0,242,244,5,58,0,
-		0,243,245,3,44,22,0,244,243,1,0,0,0,244,245,1,0,0,0,245,246,1,0,0,0,246,
-		249,5,58,0,0,247,250,3,64,32,0,248,250,3,44,22,0,249,247,1,0,0,0,249,248,
-		1,0,0,0,249,250,1,0,0,0,250,251,1,0,0,0,251,252,5,53,0,0,252,253,3,26,
-		13,0,253,37,1,0,0,0,254,256,5,29,0,0,255,257,3,44,22,0,256,255,1,0,0,0,
-		256,257,1,0,0,0,257,258,1,0,0,0,258,259,5,58,0,0,259,39,1,0,0,0,260,261,
-		5,24,0,0,261,262,5,52,0,0,262,263,3,44,22,0,263,264,5,53,0,0,264,268,5,
-		54,0,0,265,267,3,42,21,0,266,265,1,0,0,0,267,270,1,0,0,0,268,266,1,0,0,
-		0,268,269,1,0,0,0,269,271,1,0,0,0,270,268,1,0,0,0,271,272,5,55,0,0,272,
-		41,1,0,0,0,273,274,5,25,0,0,274,277,3,44,22,0,275,277,5,26,0,0,276,273,
-		1,0,0,0,276,275,1,0,0,0,277,278,1,0,0,0,278,282,5,61,0,0,279,281,3,26,
-		13,0,280,279,1,0,0,0,281,284,1,0,0,0,282,280,1,0,0,0,282,283,1,0,0,0,283,
-		43,1,0,0,0,284,282,1,0,0,0,285,288,3,64,32,0,286,288,3,46,23,0,287,285,
-		1,0,0,0,287,286,1,0,0,0,288,45,1,0,0,0,289,294,3,48,24,0,290,291,5,50,
-		0,0,291,293,3,48,24,0,292,290,1,0,0,0,293,296,1,0,0,0,294,292,1,0,0,0,
-		294,295,1,0,0,0,295,47,1,0,0,0,296,294,1,0,0,0,297,302,3,50,25,0,298,299,
-		5,49,0,0,299,301,3,50,25,0,300,298,1,0,0,0,301,304,1,0,0,0,302,300,1,0,
-		0,0,302,303,1,0,0,0,303,49,1,0,0,0,304,302,1,0,0,0,305,312,3,52,26,0,306,
-		307,5,43,0,0,307,311,3,52,26,0,308,309,5,44,0,0,309,311,3,52,26,0,310,
-		306,1,0,0,0,310,308,1,0,0,0,311,314,1,0,0,0,312,310,1,0,0,0,312,313,1,
-		0,0,0,313,51,1,0,0,0,314,312,1,0,0,0,315,326,3,54,27,0,316,317,5,45,0,
-		0,317,325,3,54,27,0,318,319,5,46,0,0,319,325,3,54,27,0,320,321,5,47,0,
-		0,321,325,3,54,27,0,322,323,5,48,0,0,323,325,3,54,27,0,324,316,1,0,0,0,
-		324,318,1,0,0,0,324,320,1,0,0,0,324,322,1,0,0,0,325,328,1,0,0,0,326,324,
-		1,0,0,0,326,327,1,0,0,0,327,53,1,0,0,0,328,326,1,0,0,0,329,336,3,56,28,
-		0,330,331,5,36,0,0,331,335,3,56,28,0,332,333,5,37,0,0,333,335,3,56,28,
-		0,334,330,1,0,0,0,334,332,1,0,0,0,335,338,1,0,0,0,336,334,1,0,0,0,336,
-		337,1,0,0,0,337,55,1,0,0,0,338,336,1,0,0,0,339,348,3,58,29,0,340,341,5,
-		38,0,0,341,347,3,58,29,0,342,343,5,39,0,0,343,347,3,58,29,0,344,345,5,
-		40,0,0,345,347,3,58,29,0,346,340,1,0,0,0,346,342,1,0,0,0,346,344,1,0,0,
-		0,347,350,1,0,0,0,348,346,1,0,0,0,348,349,1,0,0,0,349,57,1,0,0,0,350,348,
-		1,0,0,0,351,352,5,51,0,0,352,359,3,58,29,0,353,354,5,41,0,0,354,359,3,
-		58,29,0,355,356,5,42,0,0,356,359,3,58,29,0,357,359,3,60,30,0,358,351,1,
-		0,0,0,358,353,1,0,0,0,358,355,1,0,0,0,358,357,1,0,0,0,359,59,1,0,0,0,360,
-		361,6,30,-1,0,361,362,3,66,33,0,362,383,1,0,0,0,363,364,10,5,0,0,364,365,
-		5,56,0,0,365,366,3,44,22,0,366,367,5,57,0,0,367,382,1,0,0,0,368,369,10,
-		4,0,0,369,371,5,52,0,0,370,372,3,62,31,0,371,370,1,0,0,0,371,372,1,0,0,
-		0,372,373,1,0,0,0,373,382,5,53,0,0,374,375,10,3,0,0,375,376,5,60,0,0,376,
-		382,5,9,0,0,377,378,10,2,0,0,378,382,5,41,0,0,379,380,10,1,0,0,380,382,
-		5,42,0,0,381,363,1,0,0,0,381,368,1,0,0,0,381,374,1,0,0,0,381,377,1,0,0,
-		0,381,379,1,0,0,0,382,385,1,0,0,0,383,381,1,0,0,0,383,384,1,0,0,0,384,
-		61,1,0,0,0,385,383,1,0,0,0,386,391,3,44,22,0,387,388,5,59,0,0,388,390,
-		3,44,22,0,389,387,1,0,0,0,390,393,1,0,0,0,391,389,1,0,0,0,391,392,1,0,
-		0,0,392,63,1,0,0,0,393,391,1,0,0,0,394,399,5,9,0,0,395,396,5,56,0,0,396,
-		397,3,44,22,0,397,398,5,57,0,0,398,400,1,0,0,0,399,395,1,0,0,0,399,400,
-		1,0,0,0,400,401,1,0,0,0,401,402,5,35,0,0,402,408,3,44,22,0,403,404,3,60,
-		30,0,404,405,5,35,0,0,405,406,3,44,22,0,406,408,1,0,0,0,407,394,1,0,0,
-		0,407,403,1,0,0,0,408,65,1,0,0,0,409,416,5,9,0,0,410,416,3,68,34,0,411,
-		412,5,52,0,0,412,413,3,44,22,0,413,414,5,53,0,0,414,416,1,0,0,0,415,409,
-		1,0,0,0,415,410,1,0,0,0,415,411,1,0,0,0,416,67,1,0,0,0,417,418,7,2,0,0,
-		418,69,1,0,0,0,49,73,79,86,93,98,102,108,118,123,126,132,137,139,151,154,
-		170,173,179,193,200,213,216,227,240,244,249,256,268,276,282,287,294,302,
-		310,312,324,326,334,336,346,348,358,371,381,383,391,399,407,415
+		2,29,7,29,2,30,7,30,2,31,7,31,2,32,7,32,2,33,7,33,2,34,7,34,2,35,7,35,
+		2,36,7,36,2,37,7,37,2,38,7,38,2,39,7,39,2,40,7,40,2,41,7,41,1,0,5,0,86,
+		8,0,10,0,12,0,89,9,0,1,0,5,0,92,8,0,10,0,12,0,95,9,0,1,0,1,0,1,1,1,1,1,
+		1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,108,8,1,1,2,1,2,1,2,1,2,1,2,3,2,115,8,2,
+		1,3,1,3,1,3,3,3,120,8,3,1,4,1,4,1,4,1,5,1,5,1,5,1,6,1,6,1,6,1,7,1,7,1,
+		8,1,8,1,9,1,9,1,9,1,10,1,10,1,10,3,10,141,8,10,1,11,1,11,3,11,145,8,11,
+		1,12,1,12,1,12,1,12,3,12,151,8,12,1,12,1,12,1,12,1,13,1,13,1,13,5,13,159,
+		8,13,10,13,12,13,162,9,13,1,14,1,14,3,14,166,8,14,1,15,3,15,169,8,15,1,
+		15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,1,15,3,15,182,8,15,1,15,
+		1,15,1,15,3,15,187,8,15,3,15,189,8,15,1,15,1,15,1,16,1,16,1,17,1,17,1,
+		17,1,17,5,17,199,8,17,10,17,12,17,202,9,17,3,17,204,8,17,1,17,1,17,1,18,
+		1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,1,18,5,18,218,8,18,10,18,12,18,
+		221,9,18,3,18,223,8,18,1,19,1,19,5,19,227,8,19,10,19,12,19,230,9,19,1,
+		19,1,19,1,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,1,20,3,20,243,8,20,1,21,
+		1,21,1,21,1,21,1,21,3,21,250,8,21,1,21,1,21,1,21,1,21,1,21,1,21,1,21,1,
+		21,1,21,1,21,1,21,3,21,263,8,21,1,22,3,22,266,8,22,1,22,1,22,1,23,1,23,
+		1,23,1,23,1,23,1,23,1,23,3,23,277,8,23,1,24,1,24,1,24,1,24,1,24,1,24,1,
+		25,1,25,1,25,1,25,1,25,3,25,290,8,25,1,25,1,25,3,25,294,8,25,1,25,1,25,
+		1,25,3,25,299,8,25,1,25,1,25,1,25,1,26,1,26,3,26,306,8,26,1,26,1,26,1,
+		27,1,27,1,27,1,27,1,27,1,27,5,27,316,8,27,10,27,12,27,319,9,27,1,27,1,
+		27,1,28,1,28,1,28,3,28,326,8,28,1,28,1,28,5,28,330,8,28,10,28,12,28,333,
+		9,28,1,29,1,29,3,29,337,8,29,1,30,1,30,1,30,5,30,342,8,30,10,30,12,30,
+		345,9,30,1,31,1,31,1,31,5,31,350,8,31,10,31,12,31,353,9,31,1,32,1,32,1,
+		32,1,32,1,32,5,32,360,8,32,10,32,12,32,363,9,32,1,33,1,33,1,33,1,33,1,
+		33,1,33,1,33,1,33,1,33,5,33,374,8,33,10,33,12,33,377,9,33,1,34,1,34,1,
+		34,1,34,1,34,5,34,384,8,34,10,34,12,34,387,9,34,1,35,1,35,1,35,1,35,1,
+		35,1,35,1,35,5,35,396,8,35,10,35,12,35,399,9,35,1,36,1,36,1,36,1,36,1,
+		36,1,36,1,36,3,36,408,8,36,1,37,1,37,1,37,1,37,1,37,1,37,1,37,1,37,1,37,
+		1,37,1,37,3,37,421,8,37,1,37,1,37,1,37,1,37,1,37,1,37,1,37,1,37,5,37,431,
+		8,37,10,37,12,37,434,9,37,1,38,1,38,1,38,5,38,439,8,38,10,38,12,38,442,
+		9,38,1,39,1,39,1,39,1,39,1,39,3,39,449,8,39,1,39,1,39,1,39,1,39,1,39,1,
+		39,3,39,457,8,39,1,40,1,40,1,40,1,40,1,40,1,40,3,40,465,8,40,1,41,1,41,
+		1,41,0,1,74,42,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,
+		40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70,72,74,76,78,80,82,0,4,
+		1,0,4,7,2,0,4,4,7,7,2,0,17,18,30,30,2,0,4,8,31,32,510,0,87,1,0,0,0,2,107,
+		1,0,0,0,4,109,1,0,0,0,6,116,1,0,0,0,8,121,1,0,0,0,10,124,1,0,0,0,12,127,
+		1,0,0,0,14,130,1,0,0,0,16,132,1,0,0,0,18,134,1,0,0,0,20,137,1,0,0,0,22,
+		144,1,0,0,0,24,146,1,0,0,0,26,155,1,0,0,0,28,163,1,0,0,0,30,168,1,0,0,
+		0,32,192,1,0,0,0,34,194,1,0,0,0,36,222,1,0,0,0,38,224,1,0,0,0,40,242,1,
+		0,0,0,42,262,1,0,0,0,44,265,1,0,0,0,46,269,1,0,0,0,48,278,1,0,0,0,50,284,
+		1,0,0,0,52,303,1,0,0,0,54,309,1,0,0,0,56,325,1,0,0,0,58,336,1,0,0,0,60,
+		338,1,0,0,0,62,346,1,0,0,0,64,354,1,0,0,0,66,364,1,0,0,0,68,378,1,0,0,
+		0,70,388,1,0,0,0,72,407,1,0,0,0,74,409,1,0,0,0,76,435,1,0,0,0,78,456,1,
+		0,0,0,80,464,1,0,0,0,82,466,1,0,0,0,84,86,3,2,1,0,85,84,1,0,0,0,86,89,
+		1,0,0,0,87,85,1,0,0,0,87,88,1,0,0,0,88,93,1,0,0,0,89,87,1,0,0,0,90,92,
+		3,22,11,0,91,90,1,0,0,0,92,95,1,0,0,0,93,91,1,0,0,0,93,94,1,0,0,0,94,96,
+		1,0,0,0,95,93,1,0,0,0,96,97,5,0,0,1,97,1,1,0,0,0,98,108,3,4,2,0,99,108,
+		3,6,3,0,100,108,3,8,4,0,101,108,3,10,5,0,102,108,3,12,6,0,103,108,3,14,
+		7,0,104,108,3,16,8,0,105,108,3,18,9,0,106,108,3,20,10,0,107,98,1,0,0,0,
+		107,99,1,0,0,0,107,100,1,0,0,0,107,101,1,0,0,0,107,102,1,0,0,0,107,103,
+		1,0,0,0,107,104,1,0,0,0,107,105,1,0,0,0,107,106,1,0,0,0,108,3,1,0,0,0,
+		109,114,5,33,0,0,110,115,5,7,0,0,111,112,5,52,0,0,112,113,5,9,0,0,113,
+		115,5,54,0,0,114,110,1,0,0,0,114,111,1,0,0,0,115,5,1,0,0,0,116,117,5,34,
+		0,0,117,119,5,9,0,0,118,120,7,0,0,0,119,118,1,0,0,0,119,120,1,0,0,0,120,
+		7,1,0,0,0,121,122,5,37,0,0,122,123,3,58,29,0,123,9,1,0,0,0,124,125,5,35,
+		0,0,125,126,5,9,0,0,126,11,1,0,0,0,127,128,5,36,0,0,128,129,5,9,0,0,129,
+		13,1,0,0,0,130,131,5,38,0,0,131,15,1,0,0,0,132,133,5,39,0,0,133,17,1,0,
+		0,0,134,135,5,40,0,0,135,136,5,9,0,0,136,19,1,0,0,0,137,138,5,41,0,0,138,
+		140,5,9,0,0,139,141,7,1,0,0,140,139,1,0,0,0,140,141,1,0,0,0,141,21,1,0,
+		0,0,142,145,3,24,12,0,143,145,3,30,15,0,144,142,1,0,0,0,144,143,1,0,0,
+		0,145,23,1,0,0,0,146,147,3,36,18,0,147,148,5,9,0,0,148,150,5,59,0,0,149,
+		151,3,26,13,0,150,149,1,0,0,0,150,151,1,0,0,0,151,152,1,0,0,0,152,153,
+		5,60,0,0,153,154,3,38,19,0,154,25,1,0,0,0,155,160,3,28,14,0,156,157,5,
+		66,0,0,157,159,3,28,14,0,158,156,1,0,0,0,159,162,1,0,0,0,160,158,1,0,0,
+		0,160,161,1,0,0,0,161,27,1,0,0,0,162,160,1,0,0,0,163,165,3,36,18,0,164,
+		166,5,9,0,0,165,164,1,0,0,0,165,166,1,0,0,0,166,29,1,0,0,0,167,169,3,32,
+		16,0,168,167,1,0,0,0,168,169,1,0,0,0,169,170,1,0,0,0,170,171,3,36,18,0,
+		171,181,5,9,0,0,172,173,5,63,0,0,173,182,5,64,0,0,174,175,5,63,0,0,175,
+		176,5,4,0,0,176,182,5,64,0,0,177,178,5,63,0,0,178,179,5,70,0,0,179,180,
+		5,4,0,0,180,182,5,64,0,0,181,172,1,0,0,0,181,174,1,0,0,0,181,177,1,0,0,
+		0,181,182,1,0,0,0,182,188,1,0,0,0,183,186,5,42,0,0,184,187,3,58,29,0,185,
+		187,3,34,17,0,186,184,1,0,0,0,186,185,1,0,0,0,187,189,1,0,0,0,188,183,
+		1,0,0,0,188,189,1,0,0,0,189,190,1,0,0,0,190,191,5,65,0,0,191,31,1,0,0,
+		0,192,193,7,2,0,0,193,33,1,0,0,0,194,203,5,61,0,0,195,200,3,58,29,0,196,
+		197,5,66,0,0,197,199,3,58,29,0,198,196,1,0,0,0,199,202,1,0,0,0,200,198,
+		1,0,0,0,200,201,1,0,0,0,201,204,1,0,0,0,202,200,1,0,0,0,203,195,1,0,0,
+		0,203,204,1,0,0,0,204,205,1,0,0,0,205,206,5,62,0,0,206,35,1,0,0,0,207,
+		223,5,10,0,0,208,223,5,11,0,0,209,223,5,12,0,0,210,223,5,13,0,0,211,223,
+		5,14,0,0,212,223,5,15,0,0,213,223,5,16,0,0,214,219,5,9,0,0,215,216,5,67,
+		0,0,216,218,5,9,0,0,217,215,1,0,0,0,218,221,1,0,0,0,219,217,1,0,0,0,219,
+		220,1,0,0,0,220,223,1,0,0,0,221,219,1,0,0,0,222,207,1,0,0,0,222,208,1,
+		0,0,0,222,209,1,0,0,0,222,210,1,0,0,0,222,211,1,0,0,0,222,212,1,0,0,0,
+		222,213,1,0,0,0,222,214,1,0,0,0,223,37,1,0,0,0,224,228,5,61,0,0,225,227,
+		3,40,20,0,226,225,1,0,0,0,227,230,1,0,0,0,228,226,1,0,0,0,228,229,1,0,
+		0,0,229,231,1,0,0,0,230,228,1,0,0,0,231,232,5,62,0,0,232,39,1,0,0,0,233,
+		243,3,38,19,0,234,243,3,30,15,0,235,243,3,42,21,0,236,243,3,44,22,0,237,
+		243,3,46,23,0,238,243,3,48,24,0,239,243,3,50,25,0,240,243,3,54,27,0,241,
+		243,3,52,26,0,242,233,1,0,0,0,242,234,1,0,0,0,242,235,1,0,0,0,242,236,
+		1,0,0,0,242,237,1,0,0,0,242,238,1,0,0,0,242,239,1,0,0,0,242,240,1,0,0,
+		0,242,241,1,0,0,0,243,41,1,0,0,0,244,249,5,9,0,0,245,246,5,63,0,0,246,
+		247,3,58,29,0,247,248,5,64,0,0,248,250,1,0,0,0,249,245,1,0,0,0,249,250,
+		1,0,0,0,250,251,1,0,0,0,251,252,5,42,0,0,252,253,3,58,29,0,253,254,5,65,
+		0,0,254,263,1,0,0,0,255,256,3,80,40,0,256,257,5,67,0,0,257,258,5,9,0,0,
+		258,259,5,42,0,0,259,260,3,58,29,0,260,261,5,65,0,0,261,263,1,0,0,0,262,
+		244,1,0,0,0,262,255,1,0,0,0,263,43,1,0,0,0,264,266,3,58,29,0,265,264,1,
+		0,0,0,265,266,1,0,0,0,266,267,1,0,0,0,267,268,5,65,0,0,268,45,1,0,0,0,
+		269,270,5,19,0,0,270,271,5,59,0,0,271,272,3,58,29,0,272,273,5,60,0,0,273,
+		276,3,40,20,0,274,275,5,20,0,0,275,277,3,40,20,0,276,274,1,0,0,0,276,277,
+		1,0,0,0,277,47,1,0,0,0,278,279,5,21,0,0,279,280,5,59,0,0,280,281,3,58,
+		29,0,281,282,5,60,0,0,282,283,3,40,20,0,283,49,1,0,0,0,284,285,5,22,0,
+		0,285,289,5,59,0,0,286,290,3,30,15,0,287,290,3,42,21,0,288,290,3,58,29,
+		0,289,286,1,0,0,0,289,287,1,0,0,0,289,288,1,0,0,0,289,290,1,0,0,0,290,
+		291,1,0,0,0,291,293,5,65,0,0,292,294,3,58,29,0,293,292,1,0,0,0,293,294,
+		1,0,0,0,294,295,1,0,0,0,295,298,5,65,0,0,296,299,3,78,39,0,297,299,3,58,
+		29,0,298,296,1,0,0,0,298,297,1,0,0,0,298,299,1,0,0,0,299,300,1,0,0,0,300,
+		301,5,60,0,0,301,302,3,40,20,0,302,51,1,0,0,0,303,305,5,29,0,0,304,306,
+		3,58,29,0,305,304,1,0,0,0,305,306,1,0,0,0,306,307,1,0,0,0,307,308,5,65,
+		0,0,308,53,1,0,0,0,309,310,5,24,0,0,310,311,5,59,0,0,311,312,3,58,29,0,
+		312,313,5,60,0,0,313,317,5,61,0,0,314,316,3,56,28,0,315,314,1,0,0,0,316,
+		319,1,0,0,0,317,315,1,0,0,0,317,318,1,0,0,0,318,320,1,0,0,0,319,317,1,
+		0,0,0,320,321,5,62,0,0,321,55,1,0,0,0,322,323,5,25,0,0,323,326,3,58,29,
+		0,324,326,5,26,0,0,325,322,1,0,0,0,325,324,1,0,0,0,326,327,1,0,0,0,327,
+		331,5,68,0,0,328,330,3,40,20,0,329,328,1,0,0,0,330,333,1,0,0,0,331,329,
+		1,0,0,0,331,332,1,0,0,0,332,57,1,0,0,0,333,331,1,0,0,0,334,337,3,78,39,
+		0,335,337,3,60,30,0,336,334,1,0,0,0,336,335,1,0,0,0,337,59,1,0,0,0,338,
+		343,3,62,31,0,339,340,5,57,0,0,340,342,3,62,31,0,341,339,1,0,0,0,342,345,
+		1,0,0,0,343,341,1,0,0,0,343,344,1,0,0,0,344,61,1,0,0,0,345,343,1,0,0,0,
+		346,351,3,64,32,0,347,348,5,56,0,0,348,350,3,64,32,0,349,347,1,0,0,0,350,
+		353,1,0,0,0,351,349,1,0,0,0,351,352,1,0,0,0,352,63,1,0,0,0,353,351,1,0,
+		0,0,354,361,3,66,33,0,355,356,5,50,0,0,356,360,3,66,33,0,357,358,5,51,
+		0,0,358,360,3,66,33,0,359,355,1,0,0,0,359,357,1,0,0,0,360,363,1,0,0,0,
+		361,359,1,0,0,0,361,362,1,0,0,0,362,65,1,0,0,0,363,361,1,0,0,0,364,375,
+		3,68,34,0,365,366,5,52,0,0,366,374,3,68,34,0,367,368,5,53,0,0,368,374,
+		3,68,34,0,369,370,5,54,0,0,370,374,3,68,34,0,371,372,5,55,0,0,372,374,
+		3,68,34,0,373,365,1,0,0,0,373,367,1,0,0,0,373,369,1,0,0,0,373,371,1,0,
+		0,0,374,377,1,0,0,0,375,373,1,0,0,0,375,376,1,0,0,0,376,67,1,0,0,0,377,
+		375,1,0,0,0,378,385,3,70,35,0,379,380,5,43,0,0,380,384,3,70,35,0,381,382,
+		5,44,0,0,382,384,3,70,35,0,383,379,1,0,0,0,383,381,1,0,0,0,384,387,1,0,
+		0,0,385,383,1,0,0,0,385,386,1,0,0,0,386,69,1,0,0,0,387,385,1,0,0,0,388,
+		397,3,72,36,0,389,390,5,45,0,0,390,396,3,72,36,0,391,392,5,46,0,0,392,
+		396,3,72,36,0,393,394,5,47,0,0,394,396,3,72,36,0,395,389,1,0,0,0,395,391,
+		1,0,0,0,395,393,1,0,0,0,396,399,1,0,0,0,397,395,1,0,0,0,397,398,1,0,0,
+		0,398,71,1,0,0,0,399,397,1,0,0,0,400,401,5,58,0,0,401,408,3,72,36,0,402,
+		403,5,48,0,0,403,408,3,72,36,0,404,405,5,49,0,0,405,408,3,72,36,0,406,
+		408,3,74,37,0,407,400,1,0,0,0,407,402,1,0,0,0,407,404,1,0,0,0,407,406,
+		1,0,0,0,408,73,1,0,0,0,409,410,6,37,-1,0,410,411,3,80,40,0,411,432,1,0,
+		0,0,412,413,10,5,0,0,413,414,5,63,0,0,414,415,3,58,29,0,415,416,5,64,0,
+		0,416,431,1,0,0,0,417,418,10,4,0,0,418,420,5,59,0,0,419,421,3,76,38,0,
+		420,419,1,0,0,0,420,421,1,0,0,0,421,422,1,0,0,0,422,431,5,60,0,0,423,424,
+		10,3,0,0,424,425,5,67,0,0,425,431,5,9,0,0,426,427,10,2,0,0,427,431,5,48,
+		0,0,428,429,10,1,0,0,429,431,5,49,0,0,430,412,1,0,0,0,430,417,1,0,0,0,
+		430,423,1,0,0,0,430,426,1,0,0,0,430,428,1,0,0,0,431,434,1,0,0,0,432,430,
+		1,0,0,0,432,433,1,0,0,0,433,75,1,0,0,0,434,432,1,0,0,0,435,440,3,58,29,
+		0,436,437,5,66,0,0,437,439,3,58,29,0,438,436,1,0,0,0,439,442,1,0,0,0,440,
+		438,1,0,0,0,440,441,1,0,0,0,441,77,1,0,0,0,442,440,1,0,0,0,443,448,5,9,
+		0,0,444,445,5,63,0,0,445,446,3,58,29,0,446,447,5,64,0,0,447,449,1,0,0,
+		0,448,444,1,0,0,0,448,449,1,0,0,0,449,450,1,0,0,0,450,451,5,42,0,0,451,
+		457,3,58,29,0,452,453,3,74,37,0,453,454,5,42,0,0,454,455,3,58,29,0,455,
+		457,1,0,0,0,456,443,1,0,0,0,456,452,1,0,0,0,457,79,1,0,0,0,458,465,5,9,
+		0,0,459,465,3,82,41,0,460,461,5,59,0,0,461,462,3,58,29,0,462,463,5,60,
+		0,0,463,465,1,0,0,0,464,458,1,0,0,0,464,459,1,0,0,0,464,460,1,0,0,0,465,
+		81,1,0,0,0,466,467,7,3,0,0,467,83,1,0,0,0,50,87,93,107,114,119,140,144,
+		150,160,165,168,181,186,188,200,203,219,222,228,242,249,262,265,276,289,
+		293,298,305,317,325,331,336,343,351,359,361,373,375,383,385,395,397,407,
+		420,430,432,440,448,456,464
 	};
 
 	public static readonly ATN _ATN =
