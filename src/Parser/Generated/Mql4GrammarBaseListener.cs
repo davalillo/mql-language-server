@@ -217,6 +217,30 @@ public partial class Mql4GrammarBaseListener : IMql4GrammarListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.globalConstructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterGlobalConstructorDeclaration([NotNull] Mql4GrammarParser.GlobalConstructorDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.globalConstructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitGlobalConstructorDeclaration([NotNull] Mql4GrammarParser.GlobalConstructorDeclarationContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.globalDestructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterGlobalDestructorDeclaration([NotNull] Mql4GrammarParser.GlobalDestructorDeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="Mql4GrammarParser.globalDestructorDeclaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitGlobalDestructorDeclaration([NotNull] Mql4GrammarParser.GlobalDestructorDeclarationContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
