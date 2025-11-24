@@ -39,95 +39,95 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitCompilationUnit([NotNull] Mql4GrammarParser.CompilationUnitContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.translationUnit"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTranslationUnit([NotNull] Mql4GrammarParser.TranslationUnitContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.semicolon"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSemicolon([NotNull] Mql4GrammarParser.SemicolonContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.directive"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitDirective([NotNull] Mql4GrammarParser.DirectiveContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.includeDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.type"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context);
+	Result VisitType([NotNull] Mql4GrammarParser.TypeContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.importDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.baseType"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context);
+	Result VisitBaseType([NotNull] Mql4GrammarParser.BaseTypeContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.importBlock"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.modifiers"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitImportBlock([NotNull] Mql4GrammarParser.ImportBlockContext context);
+	Result VisitModifiers([NotNull] Mql4GrammarParser.ModifiersContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.importDeclaration"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.qualifiedName"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitImportDeclaration([NotNull] Mql4GrammarParser.ImportDeclarationContext context);
+	Result VisitQualifiedName([NotNull] Mql4GrammarParser.QualifiedNameContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.defineDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarationStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitDefineDirective([NotNull] Mql4GrammarParser.DefineDirectiveContext context);
+	Result VisitVariableDeclarationStatement([NotNull] Mql4GrammarParser.VariableDeclarationStatementContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIfDirective([NotNull] Mql4GrammarParser.IfDirectiveContext context);
+	Result VisitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifdefDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclarator"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIfdefDirective([NotNull] Mql4GrammarParser.IfdefDirectiveContext context);
+	Result VisitVariableDeclarator([NotNull] Mql4GrammarParser.VariableDeclaratorContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.ifndefDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.arraySpecifier"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitIfndefDirective([NotNull] Mql4GrammarParser.IfndefDirectiveContext context);
+	Result VisitArraySpecifier([NotNull] Mql4GrammarParser.ArraySpecifierContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.elseDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.initializer"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitElseDirective([NotNull] Mql4GrammarParser.ElseDirectiveContext context);
+	Result VisitInitializer([NotNull] Mql4GrammarParser.InitializerContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.endifDirective"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitializer"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitEndifDirective([NotNull] Mql4GrammarParser.EndifDirectiveContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.undefDirective"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitUndefDirective([NotNull] Mql4GrammarParser.UndefDirectiveContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.propertyDirective"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitPropertyDirective([NotNull] Mql4GrammarParser.PropertyDirectiveContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.globalDeclaration"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitGlobalDeclaration([NotNull] Mql4GrammarParser.GlobalDeclarationContext context);
+	Result VisitArrayInitializer([NotNull] Mql4GrammarParser.ArrayInitializerContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.functionDeclaration"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.templateDefinition"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTemplateDefinition([NotNull] Mql4GrammarParser.TemplateDefinitionContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.parameterList"/>.
 	/// </summary>
@@ -141,11 +141,59 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitParameter([NotNull] Mql4GrammarParser.ParameterContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.variableDeclaration"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.classDeclaration"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context);
+	Result VisitClassDeclaration([NotNull] Mql4GrammarParser.ClassDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.structDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStructDeclaration([NotNull] Mql4GrammarParser.StructDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.classBody"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitClassBody([NotNull] Mql4GrammarParser.ClassBodyContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.classMember"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitClassMember([NotNull] Mql4GrammarParser.ClassMemberContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.accessModifier"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAccessModifier([NotNull] Mql4GrammarParser.AccessModifierContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.constructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitConstructorDeclaration([NotNull] Mql4GrammarParser.ConstructorDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.destructorDeclaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDestructorDeclaration([NotNull] Mql4GrammarParser.DestructorDeclarationContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.initializationList"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitInitializationList([NotNull] Mql4GrammarParser.InitializationListContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.constructorInitializer"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitConstructorInitializer([NotNull] Mql4GrammarParser.ConstructorInitializerContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.enumDeclaration"/>.
 	/// </summary>
@@ -159,24 +207,6 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitEnumMember([NotNull] Mql4GrammarParser.EnumMemberContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.storageModifier"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitStorageModifier([NotNull] Mql4GrammarParser.StorageModifierContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.arrayInitialization"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitArrayInitialization([NotNull] Mql4GrammarParser.ArrayInitializationContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.dataType"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitDataType([NotNull] Mql4GrammarParser.DataTypeContext context);
-	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.block"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -188,12 +218,6 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitStatement([NotNull] Mql4GrammarParser.StatementContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.assignmentStatement"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitAssignmentStatement([NotNull] Mql4GrammarParser.AssignmentStatementContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.expressionStatement"/>.
 	/// </summary>
@@ -213,17 +237,23 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitWhileStatement([NotNull] Mql4GrammarParser.WhileStatementContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.doWhileStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDoWhileStatement([NotNull] Mql4GrammarParser.DoWhileStatementContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.forStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitForStatement([NotNull] Mql4GrammarParser.ForStatementContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.returnStatement"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.forInit"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitReturnStatement([NotNull] Mql4GrammarParser.ReturnStatementContext context);
+	Result VisitForInit([NotNull] Mql4GrammarParser.ForInitContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.switchStatement"/>.
 	/// </summary>
@@ -231,65 +261,184 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitSwitchStatement([NotNull] Mql4GrammarParser.SwitchStatementContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.caseClause"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.switchBlock"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitCaseClause([NotNull] Mql4GrammarParser.CaseClauseContext context);
+	Result VisitSwitchBlock([NotNull] Mql4GrammarParser.SwitchBlockContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.expression"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.flowControlStatement"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitExpression([NotNull] Mql4GrammarParser.ExpressionContext context);
+	Result VisitFlowControlStatement([NotNull] Mql4GrammarParser.FlowControlStatementContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.logicalOrExpression"/>.
+	/// Visit a parse tree produced by the <c>newExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitLogicalOrExpression([NotNull] Mql4GrammarParser.LogicalOrExpressionContext context);
+	Result VisitNewExpr([NotNull] Mql4GrammarParser.NewExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.logicalAndExpression"/>.
+	/// Visit a parse tree produced by the <c>assignmentExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitLogicalAndExpression([NotNull] Mql4GrammarParser.LogicalAndExpressionContext context);
+	Result VisitAssignmentExpr([NotNull] Mql4GrammarParser.AssignmentExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.equalityExpression"/>.
+	/// Visit a parse tree produced by the <c>addSubExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitEqualityExpression([NotNull] Mql4GrammarParser.EqualityExpressionContext context);
+	Result VisitAddSubExpr([NotNull] Mql4GrammarParser.AddSubExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.relationalExpression"/>.
+	/// Visit a parse tree produced by the <c>castExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitRelationalExpression([NotNull] Mql4GrammarParser.RelationalExpressionContext context);
+	Result VisitCastExpr([NotNull] Mql4GrammarParser.CastExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.additiveExpression"/>.
+	/// Visit a parse tree produced by the <c>logAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitAdditiveExpression([NotNull] Mql4GrammarParser.AdditiveExpressionContext context);
+	Result VisitLogAndExpr([NotNull] Mql4GrammarParser.LogAndExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.multiplicativeExpression"/>.
+	/// Visit a parse tree produced by the <c>logOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitMultiplicativeExpression([NotNull] Mql4GrammarParser.MultiplicativeExpressionContext context);
+	Result VisitLogOrExpr([NotNull] Mql4GrammarParser.LogOrExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.unaryExpression"/>.
+	/// Visit a parse tree produced by the <c>deleteExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitUnaryExpression([NotNull] Mql4GrammarParser.UnaryExpressionContext context);
+	Result VisitDeleteExpr([NotNull] Mql4GrammarParser.DeleteExprContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.postfixExpression"/>.
+	/// Visit a parse tree produced by the <c>atomExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitPostfixExpression([NotNull] Mql4GrammarParser.PostfixExpressionContext context);
+	Result VisitAtomExpr([NotNull] Mql4GrammarParser.AtomExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>bitShiftExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBitShiftExpr([NotNull] Mql4GrammarParser.BitShiftExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>arrayIndexExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitArrayIndexExpr([NotNull] Mql4GrammarParser.ArrayIndexExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>relationalExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitRelationalExpr([NotNull] Mql4GrammarParser.RelationalExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>bitXorExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBitXorExpr([NotNull] Mql4GrammarParser.BitXorExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>prefixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPrefixExpr([NotNull] Mql4GrammarParser.PrefixExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>sizeofExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSizeofExpr([NotNull] Mql4GrammarParser.SizeofExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>bitOrExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBitOrExpr([NotNull] Mql4GrammarParser.BitOrExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>unaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitUnaryExpr([NotNull] Mql4GrammarParser.UnaryExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>ternaryExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTernaryExpr([NotNull] Mql4GrammarParser.TernaryExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>functionCallExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFunctionCallExpr([NotNull] Mql4GrammarParser.FunctionCallExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>memberAccessExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMemberAccessExpr([NotNull] Mql4GrammarParser.MemberAccessExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>postfixExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPostfixExpr([NotNull] Mql4GrammarParser.PostfixExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>bitAndExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitBitAndExpr([NotNull] Mql4GrammarParser.BitAndExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>mulDivExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMulDivExpr([NotNull] Mql4GrammarParser.MulDivExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>equalityExpr</c>
+	/// labeled alternative in <see cref="Mql4GrammarParser.expression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitEqualityExpr([NotNull] Mql4GrammarParser.EqualityExprContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.argumentList"/>.
 	/// </summary>
@@ -297,17 +446,11 @@ public interface IMql4GrammarVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitArgumentList([NotNull] Mql4GrammarParser.ArgumentListContext context);
 	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.assignmentExpression"/>.
+	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.assignmentOp"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitAssignmentExpression([NotNull] Mql4GrammarParser.AssignmentExpressionContext context);
-	/// <summary>
-	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.primaryExpression"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitPrimaryExpression([NotNull] Mql4GrammarParser.PrimaryExpressionContext context);
+	Result VisitAssignmentOp([NotNull] Mql4GrammarParser.AssignmentOpContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="Mql4GrammarParser.literal"/>.
 	/// </summary>

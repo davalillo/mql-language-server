@@ -1,175 +1,255 @@
 grammar Mql4Grammar;
 
-// === Comments ===
-COMMENT_BLOCK : '/*' .*? '*/' -> skip;
-COMMENT_LINE  : '//' ~[\r\n]* -> skip;
-WS            : [ \t\r\n]+ -> skip;
+// ======================================================
+// LEXER RULES
+// ======================================================
 
-// === Numbers ===
-INTEGER : [0-9]+;
-DOUBLE  : [0-9]+ '.' [0-9]+;
-HEX     : '0' [xX] [0-9a-fA-F]+;
+// --- Channels ---
+// Channel 0: DEFAULT (Parser lo ve - Includes, Properties, Código)
+// Channel 1: PREPROCESSOR (Parser lo ignora - Defines, Ifdefs) -> Útil para LSP via TokenStream
+// Channel 2: COMMENTS (Parser lo ignora - Highlighting)
 
-// === Strings ===
-STRING : '"' (ESC | ~["\\])* '"';
-CHAR   : '\'' (ESC | ~['\\]) '\'';
+// --- Comments ---
+COMMENT_BLOCK : '/*' .*? '*/' -> channel(2);
+COMMENT_LINE  : '//' ~[\r\n]* -> channel(2);
 
-fragment ESC : '\\' [abfnrtv\\'"0];
+// --- Whitespace ---
+WS            : [ \t\r\n\u000C]+ -> skip;
 
-// === Identifiers and Keywords ===
-IDENTIFIER : [a-zA-Z_] [a-zA-Z0-9_]*;
+// --- Preprocessor Hybrid Strategy ---
 
-// Keywords
-K_INT      : 'int';
-K_DOUBLE   : 'double';
-K_STRING   : 'string';
-K_BOOL     : 'bool';
-K_VOID     : 'void';
-K_DATETIME : 'datetime';
-K_COLOR    : 'color';
-K_STATIC   : 'static';
-K_EXTERN   : 'extern';
-K_IF       : 'if';
-K_ELSE     : 'else';
-K_WHILE    : 'while';
-K_FOR      : 'for';
-K_DO       : 'do';
-K_SWITCH   : 'switch';
-K_CASE     : 'case';
-K_DEFAULT  : 'default';
-K_BREAK    : 'break';
-K_CONTINUE : 'continue';
-K_RETURN   : 'return';
-K_INPUT    : 'input';
-K_ENUM     : 'enum';
-K_TRUE     : 'true';
-K_FALSE    : 'false';
+// GRUPO A: Directivas Estructurales (Visibles para el Parser)
+// Se mantienen aquí para que tus Visitors de C# sigan detectando includes/imports.
+PRE_INCLUDE : '#include' ~[\r\n]*;
+PRE_PROPERTY: '#property' ~[\r\n]*;
+PRE_IMPORT  : '#import' ~[\r\n]*;
 
-// Directives
-DIRECTIVE_INCLUDE  : '#include';
-DIRECTIVE_IMPORT   : '#import';
-DIRECTIVE_DEFINE   : '#define';
-DIRECTIVE_IFDEF    : '#ifdef';
-DIRECTIVE_IFNDEF   : '#ifndef';
-DIRECTIVE_IF       : '#if';
-DIRECTIVE_ELSE     : '#else';
-DIRECTIVE_ENDIF    : '#endif';
-DIRECTIVE_UNDEF    : '#undef';
-DIRECTIVE_PROPERTY : '#property';
+// GRUPO B: Directivas Lógicas (Ocultas al Parser -> Canal 1)
+// Se ocultan para evitar que macros complejas rompan la sintaxis de funciones/clases.
+PRE_DEFINE  : '#define' ~[\r\n]* -> channel(1);
+PRE_IFDEF   : '#ifdef' ~[\r\n]* -> channel(1);
+PRE_IFNDEF  : '#ifndef' ~[\r\n]* -> channel(1);
+PRE_ELSE    : '#else' ~[\r\n]* -> channel(1);
+PRE_ENDIF   : '#endif' ~[\r\n]* -> channel(1);
+PRE_UNDEF   : '#undef' ~[\r\n]* -> channel(1);
 
-// Operators
-ASSIGN : '=';
-ASSIGN_ADD : '+=';
-ASSIGN_SUB : '-=';
-ASSIGN_MUL : '*=';
-ASSIGN_DIV : '/=';
-ASSIGN_MOD : '%=';
-ADD    : '+';
-SUB    : '-';
-MUL    : '*';
-DIV    : '/';
-MOD    : '%';
-INC    : '++';
-DEC    : '--';
-EQ     : '==';
-NEQ    : '!=';
-LT     : '<';
-LTE    : '<=';
-GT     : '>';
-GTE    : '>=';
-K_AND  : '&&';
-K_OR   : '||';
-K_NOT  : '!';
+// --- MQL4 Specific Literals ---
+LITERAL_DATE  : 'D\'' ~[']* '\'';
+LITERAL_COLOR : 'C\'' ~[']* '\'';
 
-// Punctuation
-LPAREN  : '(';
-RPAREN  : ')';
-LBRACE  : '{';
-RBRACE  : '}';
-LBRACKET: '[';
-RBRACKET: ']';
-SEMICOLON: ';';
-COMMA   : ',';
-DOT     : '.';
-COLON   : ':';
-QUESTION: '?';
-AMPERSAND: '&';
+// --- Numbers ---
+HEX           : '0' [xX] [0-9a-fA-F]+;
+DOUBLE        : [0-9]+ '.' [0-9]* EXP?
+              | '.' [0-9]+ EXP?
+              | [0-9]+ EXP
+              ;
+INTEGER       : [0-9]+;
 
-// === Parser Rules ===
+fragment EXP  : [Ee] [+-]? [0-9]+;
+
+// --- Strings & Chars ---
+STRING        : '"' (ESC | ~["\\])* '"';
+CHAR          : '\'' (ESC | ~['\\]) '\'';
+fragment ESC  : '\\' [abfnrtv\\'"0?];
+
+// --- Keywords ---
+K_INT       : 'int';
+K_DOUBLE    : 'double';
+K_STRING    : 'string';
+K_BOOL      : 'bool';
+K_VOID      : 'void';
+K_DATETIME  : 'datetime';
+K_COLOR     : 'color';
+K_CHAR      : 'char';
+K_UCHAR     : 'uchar';
+K_SHORT     : 'short';
+K_USHORT    : 'ushort';
+K_UINT      : 'uint';
+K_LONG      : 'long';
+K_ULONG     : 'ulong';
+K_FLOAT     : 'float';
+
+K_STATIC    : 'static';
+K_EXTERN    : 'extern';
+K_INPUT     : 'input';
+K_SINPUT    : 'sinput';
+K_CONST     : 'const';
+K_VIRTUAL   : 'virtual';
+K_OVERRIDE  : 'override';
+
+K_CLASS     : 'class';
+K_STRUCT    : 'struct';
+K_PUBLIC    : 'public';
+K_PRIVATE   : 'private';
+K_PROTECTED : 'protected';
+K_TEMPLATE  : 'template';
+K_TYPENAME  : 'typename';
+K_OPERATOR  : 'operator';
+
+K_ENUM      : 'enum';
+
+K_NEW       : 'new';
+K_DELETE    : 'delete';
+K_SIZEOF    : 'sizeof';
+
+K_IF        : 'if';
+K_ELSE      : 'else';
+K_WHILE     : 'while';
+K_FOR       : 'for';
+K_DO        : 'do';
+K_SWITCH    : 'switch';
+K_CASE      : 'case';
+K_DEFAULT   : 'default';
+K_BREAK     : 'break';
+K_CONTINUE  : 'continue';
+K_RETURN    : 'return';
+
+K_TRUE      : 'true';
+K_FALSE     : 'false';
+K_NULL      : 'NULL';
+
+// --- Operators ---
+SCOPE       : '::';
+ASSIGN      : '=';
+ASSIGN_ADD  : '+=';
+ASSIGN_SUB  : '-=';
+ASSIGN_MUL  : '*=';
+ASSIGN_DIV  : '/=';
+ASSIGN_MOD  : '%=';
+ASSIGN_AND  : '&=';
+ASSIGN_OR   : '|=';
+ASSIGN_XOR  : '^=';
+ASSIGN_LSH  : '<<=';
+ASSIGN_RSH  : '>>=';
+
+ARROW       : '->';
+INC         : '++';
+DEC         : '--';
+ADD         : '+';
+SUB         : '-';
+MUL         : '*';
+DIV         : '/';
+MOD         : '%';
+
+EQ          : '==';
+NEQ         : '!=';
+LTE         : '<=';
+GTE         : '>=';
+LT          : '<';
+GT          : '>';
+
+LOG_AND     : '&&';
+LOG_OR      : '||';
+LOG_NOT     : '!';
+
+BIT_AND     : '&';
+BIT_OR      : '|';
+BIT_XOR     : '^';
+BIT_NOT     : '~';
+SHIFT_L     : '<<';
+SHIFT_R     : '>>';
+
+QUESTION    : '?';
+COLON       : ':';
+SEMICOLON   : ';';
+COMMA       : ',';
+DOT         : '.';
+AMPERSAND   : '&';
+
+LPAREN      : '(';
+RPAREN      : ')';
+LBRACE      : '{';
+RBRACE      : '}';
+LBRACKET    : '[';
+RBRACKET    : ']';
+
+// --- Identifiers ---
+IDENTIFIER  : [a-zA-Z_] [a-zA-Z0-9_]*;
+
+
+// ======================================================
+// PARSER RULES
+// ======================================================
+
 compilationUnit
-    : directive* globalDeclaration* EOF
+    : translationUnit* EOF
     ;
 
-directive
-    : includeDirective
-    | importDirective
-    | defineDirective
-    | ifDirective
-    | ifdefDirective
-    | ifndefDirective
-    | elseDirective
-    | endifDirective
-    | undefDirective
-    | propertyDirective
-    ;
-
-includeDirective
-    : DIRECTIVE_INCLUDE STRING
-    | DIRECTIVE_INCLUDE LT IDENTIFIER (DOT IDENTIFIER)* GT
-    ;
-
-importDirective
-    : DIRECTIVE_IMPORT importBlock
-    ;
-
-importBlock
-    : STRING importDeclaration* DIRECTIVE_IMPORT
-    ;
-
-importDeclaration
-    : dataType IDENTIFIER LPAREN parameterList? RPAREN SEMICOLON
-    ;
-
-defineDirective
-    : DIRECTIVE_DEFINE IDENTIFIER IDENTIFIER? (INTEGER | DOUBLE | STRING)?
-    ;
-
-ifDirective
-    : DIRECTIVE_IF expression
-    ;
-
-ifdefDirective
-    : DIRECTIVE_IFDEF IDENTIFIER
-    ;
-
-ifndefDirective
-    : DIRECTIVE_IFNDEF IDENTIFIER
-    ;
-
-elseDirective
-    : DIRECTIVE_ELSE
-    ;
-
-endifDirective
-    : DIRECTIVE_ENDIF
-    ;
-
-undefDirective
-    : DIRECTIVE_UNDEF IDENTIFIER
-    ;
-
-propertyDirective
-    : DIRECTIVE_PROPERTY IDENTIFIER (STRING | INTEGER)?
-    ;
-
-globalDeclaration
-    : functionDeclaration
-    | variableDeclaration
+translationUnit
+    : directive                     // Mantenemos directivas visibles (includes)
+    | classDeclaration
+    | structDeclaration
     | enumDeclaration
+    | functionDeclaration
+    | variableDeclarationStatement
+    | semicolon
     ;
 
+semicolon
+    : SEMICOLON
+    ;
+
+// --- Preprocessor Directive Wrapper ---
+directive
+    : PRE_INCLUDE
+    | PRE_PROPERTY
+    | PRE_IMPORT
+    ;
+
+// --- Types ---
+type
+    : modifiers? baseType (LT type (COMMA type)* GT)? (AMPERSAND)?
+    ;
+
+baseType
+    : K_INT | K_DOUBLE | K_STRING | K_BOOL | K_VOID
+    | K_DATETIME | K_COLOR
+    | K_CHAR | K_UCHAR | K_SHORT | K_USHORT | K_UINT | K_LONG | K_ULONG | K_FLOAT
+    | qualifiedName
+    ;
+
+modifiers
+    : (K_CONST | K_STATIC | K_INPUT | K_SINPUT | K_EXTERN | K_VIRTUAL)+
+    ;
+
+qualifiedName
+    : (SCOPE)? IDENTIFIER (SCOPE IDENTIFIER)*
+    ;
+
+// --- Declarations ---
+
+variableDeclarationStatement
+    : variableDeclaration SEMICOLON
+    ;
+
+variableDeclaration
+    : modifiers? type variableDeclarator (COMMA variableDeclarator)*
+    ;
+
+variableDeclarator
+    : IDENTIFIER arraySpecifier? (ASSIGN initializer)?
+    ;
+
+arraySpecifier
+    : LBRACKET expression? RBRACKET (LBRACKET expression? RBRACKET)*
+    ;
+
+initializer
+    : expression
+    | arrayInitializer
+    ;
+
+arrayInitializer
+    : LBRACE (initializer (COMMA initializer)*)? COMMA? RBRACE
+    ;
+
+// --- Functions ---
 functionDeclaration
-    : dataType IDENTIFIER LPAREN parameterList? RPAREN block
+    : templateDefinition? modifiers? type IDENTIFIER LPAREN parameterList? RPAREN (block | SEMICOLON)
+    ;
+
+templateDefinition
+    : K_TEMPLATE LT (K_TYPENAME | K_CLASS | type) IDENTIFIER GT
     ;
 
 parameterList
@@ -177,54 +257,80 @@ parameterList
     ;
 
 parameter
-    : dataType IDENTIFIER?
+    : modifiers? type AMPERSAND? IDENTIFIER? arraySpecifier? (ASSIGN expression)?
     ;
 
-variableDeclaration
-    : storageModifier? dataType IDENTIFIER (LBRACKET RBRACKET | LBRACKET INTEGER RBRACKET | LBRACKET AMPERSAND INTEGER RBRACKET)? (ASSIGN (expression | arrayInitialization))? SEMICOLON
+// --- Classes & Structs ---
+classDeclaration
+    : K_CLASS IDENTIFIER (COLON accessModifier qualifiedName)? LBRACE classBody RBRACE SEMICOLON
     ;
 
+structDeclaration
+    : K_STRUCT IDENTIFIER LBRACE classBody RBRACE SEMICOLON
+    ;
+
+classBody
+    : classMember*
+    ;
+
+classMember
+    : accessModifier COLON
+    | constructorDeclaration
+    | destructorDeclaration
+    | functionDeclaration
+    | variableDeclarationStatement
+    | directive   // Permitimos #include dentro de clases (raro pero posible)
+    | semicolon
+    ;
+
+accessModifier
+    : K_PUBLIC | K_PRIVATE | K_PROTECTED
+    ;
+
+constructorDeclaration
+    : IDENTIFIER LPAREN parameterList? RPAREN (initializationList)? (block | SEMICOLON)
+    ;
+
+destructorDeclaration
+    : BIT_NOT IDENTIFIER LPAREN RPAREN (block | SEMICOLON)
+    ;
+
+initializationList
+    : COLON constructorInitializer (COMMA constructorInitializer)*
+    ;
+
+constructorInitializer
+    : IDENTIFIER LPAREN expression? RPAREN
+    ;
+
+// --- Enums ---
 enumDeclaration
     : K_ENUM IDENTIFIER LBRACE enumMember (COMMA enumMember)* RBRACE SEMICOLON
     ;
 
 enumMember
-    : IDENTIFIER (ASSIGN (INTEGER | DOUBLE))?
+    : IDENTIFIER (ASSIGN expression)?
     ;
 
-storageModifier
-    : K_INPUT | K_EXTERN | K_STATIC
-    ;
-
-arrayInitialization
-    : LBRACE (expression (COMMA expression)*)? RBRACE
-    ;
-
-dataType
-    : K_INT | K_DOUBLE | K_STRING | K_BOOL | K_VOID | K_DATETIME | K_COLOR
-    | IDENTIFIER (DOT IDENTIFIER)*  // Support complex types like MqlTradeRequest
-    ;
-
+// --- Statements ---
 block
     : LBRACE statement* RBRACE
     ;
 
 statement
     : block
-    | variableDeclaration
-    | assignmentStatement
+    | variableDeclarationStatement
     | expressionStatement
     | ifStatement
     | whileStatement
+    | doWhileStatement
     | forStatement
     | switchStatement
-    | returnStatement
+    | flowControlStatement
+    | directive   // Permitimos #include dentro de funciones
+    | semicolon
     ;
 
-assignmentStatement
-    : IDENTIFIER (LBRACKET expression RBRACKET)? ASSIGN expression SEMICOLON
-    | primaryExpression DOT IDENTIFIER ASSIGN expression SEMICOLON
-    ;
 expressionStatement
     : expression? SEMICOLON
     ;
@@ -237,83 +343,84 @@ whileStatement
     : K_WHILE LPAREN expression RPAREN statement
     ;
 
-forStatement
-    : K_FOR LPAREN (variableDeclaration | assignmentStatement | expression)? SEMICOLON expression? SEMICOLON (assignmentExpression | expression)? RPAREN statement
+doWhileStatement
+    : K_DO statement K_WHILE LPAREN expression RPAREN SEMICOLON
     ;
 
-returnStatement
-    : K_RETURN expression? SEMICOLON
+forStatement
+    : K_FOR LPAREN forInit expression? SEMICOLON expression? RPAREN statement
+    ;
+
+forInit
+    : variableDeclaration SEMICOLON
+    | expression? SEMICOLON
     ;
 
 switchStatement
-    : K_SWITCH LPAREN expression RPAREN LBRACE caseClause* RBRACE
+    : K_SWITCH LPAREN expression RPAREN LBRACE switchBlock* RBRACE
     ;
 
-caseClause
-    : (K_CASE expression | K_CASE INTEGER | K_DEFAULT) COLON statement*
+switchBlock
+    : (K_CASE expression | K_DEFAULT) COLON statement*
     ;
 
+flowControlStatement
+    : K_BREAK SEMICOLON
+    | K_CONTINUE SEMICOLON
+    | K_RETURN expression? SEMICOLON
+    ;
+
+// --- Expressions ---
 expression
-    : assignmentExpression
-    | logicalOrExpression
+    : primaryExpression                                     # atomExpr
+    | expression (DOT | ARROW) IDENTIFIER                   # memberAccessExpr
+    | expression LBRACKET expression RBRACKET               # arrayIndexExpr
+    | expression LPAREN argumentList? RPAREN                # functionCallExpr
+    | expression (INC | DEC)                                # postfixExpr
+    | (INC | DEC) expression                                # prefixExpr
+    | (ADD | SUB | BIT_NOT | LOG_NOT) expression            # unaryExpr
+    | LPAREN type RPAREN expression                         # castExpr
+    | K_SIZEOF LPAREN (type | expression) RPAREN            # sizeofExpr
+    | K_NEW type (LPAREN argumentList? RPAREN)?             # newExpr
+    | K_DELETE expression                                   # deleteExpr
+    | expression (MUL | DIV | MOD) expression               # mulDivExpr
+    | expression (ADD | SUB) expression                     # addSubExpr
+    | expression (SHIFT_L | SHIFT_R) expression             # bitShiftExpr
+    | expression (LT | LTE | GT | GTE) expression           # relationalExpr
+    | expression (EQ | NEQ) expression                      # equalityExpr
+    | expression BIT_AND expression                         # bitAndExpr
+    | expression BIT_XOR expression                         # bitXorExpr
+    | expression BIT_OR expression                          # bitOrExpr
+    | expression LOG_AND expression                         # logAndExpr
+    | expression LOG_OR expression                          # logOrExpr
+    | <assoc=right> expression QUESTION expression COLON expression # ternaryExpr
+    | <assoc=right> expression assignmentOp expression      # assignmentExpr
     ;
 
-logicalOrExpression
-    : logicalAndExpression (K_OR logicalAndExpression)*
-    ;
-
-logicalAndExpression
-    : equalityExpression (K_AND equalityExpression)*
-    ;
-
-equalityExpression
-    : relationalExpression (EQ relationalExpression | NEQ relationalExpression)*
-    ;
-
-relationalExpression
-    : additiveExpression (LT additiveExpression | LTE additiveExpression | GT additiveExpression | GTE additiveExpression)*
-    ;
-
-additiveExpression
-    : multiplicativeExpression (ADD multiplicativeExpression | SUB multiplicativeExpression)*
-    ;
-
-multiplicativeExpression
-    : unaryExpression (MUL unaryExpression | DIV unaryExpression | MOD unaryExpression)*
-    ;
-
-unaryExpression
-    : K_NOT unaryExpression
-    | INC unaryExpression
-    | DEC unaryExpression
-    | SUB unaryExpression
-    | postfixExpression
-    ;
-
-postfixExpression
-    : primaryExpression
-    | postfixExpression LBRACKET expression RBRACKET
-    | postfixExpression LPAREN argumentList? RPAREN
-    | postfixExpression DOT IDENTIFIER
-    | postfixExpression INC
-    | postfixExpression DEC
+primaryExpression
+    : literal
+    | qualifiedName
+    | LPAREN expression RPAREN
     ;
 
 argumentList
     : expression (COMMA expression)*
     ;
 
-assignmentExpression
-    : IDENTIFIER (LBRACKET expression RBRACKET)? (ASSIGN | ASSIGN_ADD | ASSIGN_SUB | ASSIGN_MUL | ASSIGN_DIV | ASSIGN_MOD) expression
-    | postfixExpression ASSIGN expression
-    ;
-
-primaryExpression
-    : IDENTIFIER
-    | literal
-    | LPAREN expression RPAREN
+assignmentOp
+    : ASSIGN | ASSIGN_ADD | ASSIGN_SUB | ASSIGN_MUL | ASSIGN_DIV | ASSIGN_MOD
+    | ASSIGN_AND | ASSIGN_OR | ASSIGN_XOR | ASSIGN_LSH | ASSIGN_RSH
     ;
 
 literal
-    : INTEGER | DOUBLE | HEX | STRING | CHAR | K_TRUE | K_FALSE
+    : INTEGER
+    | DOUBLE
+    | HEX
+    | STRING
+    | CHAR
+    | LITERAL_DATE
+    | LITERAL_COLOR
+    | K_TRUE
+    | K_FALSE
+    | K_NULL
     ;

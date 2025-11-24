@@ -853,4 +853,458 @@ public class AdvancedFeaturesTests
     }
 
     #endregion
+
+    #region MQL4-Specific Literals
+
+    [Fact]
+    public void ParseLiteralDate_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            datetime startDate = D'2023.01.01 00:00';
+            void OnTick()
+            {
+                Print(startDate);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+    }
+
+    [Fact]
+    public void ParseLiteralColor_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            color bgColor = C'128,128,128';
+            void OnTick()
+            {
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Extended Types
+
+    [Fact]
+    public void ParseExtendedTypes_CharAndUChar_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            char c = 'A';
+            uchar uc = 255;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseExtendedTypes_ShortAndUShort_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            short s = -32768;
+            ushort us = 65535;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseExtendedTypes_IntAndLongVariants_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            uint ui = 4000000000;
+            ulong ul = 18446744073709551615UL;
+            long l = -9223372036854775808;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseExtendedTypes_Float_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            float f = 3.14159;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Extended Modifiers
+
+    [Fact]
+    public void ParseModifier_Const_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            const int MAX_VALUE = 100;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseModifier_SInput_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            sinput string ExpertName = ""MyEA"";
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseMultipleModifiers_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            static const int global_const = 42;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Bitwise Operators
+
+    [Fact]
+    public void ParseBitwiseOperators_AndOrXor_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = 5 & 3;
+                int b = 5 | 3;
+                int c = 5 ^ 3;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseBitwiseOperators_ShiftLeftRight_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = 5 << 2;
+                int b = 20 >> 2;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseBitwiseOperators_Not_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = ~5;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseCompoundBitwiseAssignment_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = 5;
+                a &= 3;
+                a |= 2;
+                a ^= 1;
+                a <<= 2;
+                a >>= 1;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Classes and Structs
+
+    [Fact]
+    public void ParseClassDeclaration_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            class MyClass
+            {
+            public:
+                int value;
+                void method() { }
+            };
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseStructDeclaration_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            struct MyStruct
+            {
+                int x;
+                int y;
+            };
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Advanced Expressions
+
+    [Fact]
+    public void ParseNewOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int* p = new int(5);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseDeleteOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int* p = new int(5);
+                delete p;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseSizeofOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int size = sizeof(int);
+                size = sizeof(double);
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseTernaryOperator_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            void OnTick()
+            {
+                int a = (5 > 3) ? 10 : 5;
+            }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Qualified Names
+
+    [Fact]
+    public void ParseQualifiedName_ScopeResolution_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            namespace::type variable;
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
+
+    #region Array Specifiers
+
+    [Fact]
+    public void ParseArraySpecifier_MultiDimensional_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            int matrix[5][10];
+            int arr[3];
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    [Fact]
+    public void ParseArraySpecifier_WithSizeExpression_ParsesSuccessfully()
+    {
+        // Arrange
+        var code = @"
+            int size = 10;
+            int arr[size];
+            void OnTick() { }
+        ";
+
+        // Act
+        var file = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        Assert.NotNull(file);
+        Assert.NotNull(file.Symbols);
+    }
+
+    #endregion
 }

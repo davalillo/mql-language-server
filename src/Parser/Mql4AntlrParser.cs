@@ -353,7 +353,7 @@ namespace Mql4LanguageServer.Parser
                     Name = name,
                     Kind = (LspSymbolKind)Mql4SymbolKind.Function,
                     Range = range,
-                    Detail = $"Function returning {context.dataType().GetText()}",
+                    Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = range,
                 };
 
@@ -365,104 +365,112 @@ namespace Mql4LanguageServer.Parser
 
         public override Mql4Symbol? VisitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context)
         {
-            // Get variable name
-            var nameToken = context.IDENTIFIER();
-            if (nameToken != null)
+            // Get variable name from variableDeclarator (new grammar structure)
+            // Note: variableDeclarator() returns an array because there can be multiple declarators
+            var declarators = context.variableDeclarator();
+            if (declarators != null && declarators.Length > 0)
             {
-                var name = nameToken.GetText();
-                var range = CreateRangeFromToken(nameToken.Symbol);
-
-                // Check for storage modifier directly in the context
-                string modifier = "";
-                if (context.storageModifier() != null)
+                var firstDeclarator = declarators[0];
+                var nameToken = firstDeclarator.IDENTIFIER();
+                if (nameToken != null)
                 {
-                    var storageModContext = context.storageModifier();
-                    if (storageModContext.K_INPUT() != null)
-                        modifier = "input";
-                    else if (storageModContext.K_EXTERN() != null)
-                        modifier = "extern";
-                    else if (storageModContext.K_STATIC() != null)
-                        modifier = "static";
+                    var name = nameToken.GetText();
+                    var range = CreateRangeFromToken(nameToken.Symbol);
+
+                    // Check for modifiers (input, extern, static, etc.)
+                    string modifier = "";
+                    if (context.modifiers() != null)
+                    {
+                        var modifiersContext = context.modifiers();
+                        // Count modifiers to build detail string
+                        var modifierTokens = new List<string>();
+                        if (modifiersContext.K_INPUT() != null) modifierTokens.Add("input");
+                        if (modifiersContext.K_EXTERN() != null) modifierTokens.Add("extern");
+                        if (modifiersContext.K_STATIC() != null) modifierTokens.Add("static");
+                        if (modifiersContext.K_CONST() != null) modifierTokens.Add("const");
+                        if (modifiersContext.K_SINPUT() != null) modifierTokens.Add("sinput");
+                        modifier = string.Join(" ", modifierTokens);
+                    }
+
+                    // Build detail with modifiers and type
+                    string detail;
+                    var typeText = context.type().GetText();
+                    if (!string.IsNullOrEmpty(modifier))
+                    {
+                        detail = $"{modifier} {typeText} {name}";
+                    }
+                    else
+                    {
+                        detail = $"{typeText} {name}";
+                    }
+
+                    var symbol = new Mql4Symbol
+                    {
+                        Name = name,
+                        Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
+                        Range = range,
+                        SelectionRange = range,
+                        Detail = detail
+                    };
+
+                    Symbols.Add(symbol);
                 }
-
-                // Build detail with storage modifier if present
-                string detail;
-                if (!string.IsNullOrEmpty(modifier))
-                {
-                    detail = $"{modifier} {context.dataType().GetText()} {name}";
-                }
-                else
-                {
-                    detail = $"{context.dataType().GetText()} {name}";
-                }
-
-                var symbol = new Mql4Symbol
-                {
-                    Name = name,
-                    Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
-                    Range = range,
-                    SelectionRange = range,
-                    Detail = detail
-                };
-
-                Symbols.Add(symbol);
             }
 
             return base.VisitVariableDeclaration(context);
         }
 
-        public override Mql4Symbol? VisitImportDirective([NotNull] Mql4GrammarParser.ImportDirectiveContext context)
+        public override Mql4Symbol? VisitDirective([NotNull] Mql4GrammarParser.DirectiveContext context)
         {
-            // Extract import library name
-            var importBlock = context.importBlock();
-            if (importBlock != null)
+            // Handle PRE_INCLUDE, PRE_PROPERTY, PRE_IMPORT tokens
+            // These tokens contain the full directive text (e.g., "#include \"file.mqh\"")
+
+            if (context.PRE_INCLUDE() != null)
             {
-                var stringNode = importBlock.STRING();
-                if (stringNode != null)
+                // Extract include path from token text
+                var tokenText = context.PRE_INCLUDE().GetText(); // e.g., "#include \"file.mqh\""
+                var includePath = ExtractIncludePath(tokenText);
+                if (!string.IsNullOrEmpty(includePath))
                 {
-                    var libraryName = stringNode.GetText();
-                    // Add library to includes for tracking (optional)
-                    // Could also extract function declarations from importBlock.importDeclaration()
+                    Includes.Add(includePath);
                 }
             }
+            else if (context.PRE_IMPORT() != null)
+            {
+                // Extract import library name from token text
+                var tokenText = context.PRE_IMPORT().GetText(); // e.g., "#import \"library.dll\""
+                // Could also track imports if needed for LSP features
+            }
+            else if (context.PRE_PROPERTY() != null)
+            {
+                // Extract property from token text
+                var tokenText = context.PRE_PROPERTY().GetText(); // e.g., "#property copyright \"Author\""
+                // Could track properties if needed for LSP features
+            }
 
-            return base.VisitImportDirective(context);
+            return base.VisitDirective(context);
         }
 
-        public override Mql4Symbol? VisitIncludeDirective([NotNull] Mql4GrammarParser.IncludeDirectiveContext context)
+        private string? ExtractIncludePath(string tokenText)
         {
-            // Extract include path - handle both "file" and <file> formats
-            string includePath = "";
+            // Token format: #include "file.mqh" or #include <file.mqh>
+            // or: #include <path/file.mqh>
 
-            // Rule: DIRECTIVE_INCLUDE STRING | DIRECTIVE_INCLUDE LT IDENTIFIER (DOT IDENTIFIER)* GT
-            // Check which alternative was matched
-            if (context.ChildCount == 2)
+            // Try to match quoted format: #include "file.mqh"
+            var match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+""([^""]+)""");
+            if (match.Success)
             {
-                // Format: #include "file.mqh"
-                var stringNode = context.STRING();
-                if (stringNode != null)
-                {
-                    includePath = stringNode.GetText();
-                }
-            }
-            else if (context.ChildCount >= 4)
-            {
-                // Format: #include <file.mqh> or #include <path/file.mqh>
-                // Extract identifiers (there may be multiple separated by dots)
-                var identifiers = context.IDENTIFIER();
-                if (identifiers != null && identifiers.Length > 0)
-                {
-                    var identifierPath = string.Join(".", identifiers.Select(id => id.GetText()));
-                    includePath = $"<{identifierPath}>";
-                }
+                return match.Groups[1].Value;
             }
 
-            if (!string.IsNullOrEmpty(includePath))
+            // Try to match angle bracket format: #include <file.mqh>
+            match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+<([^>]+)>");
+            if (match.Success)
             {
-                Includes.Add(includePath);
+                return $"<{match.Groups[1].Value}>";
             }
 
-            return base.VisitIncludeDirective(context);
+            return null;
         }
 
         private LspRange CreateRangeFromToken(IToken token)
