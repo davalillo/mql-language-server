@@ -154,7 +154,6 @@ COLON       : ':';
 SEMICOLON   : ';';
 COMMA       : ',';
 DOT         : '.';
-AMPERSAND   : '&';
 
 LPAREN      : '(';
 RPAREN      : ')';
@@ -198,7 +197,7 @@ directive
 
 // --- Types ---
 type
-    : modifiers? baseType (LT type (COMMA type)* GT)? (AMPERSAND)?
+    : modifiers? baseType (LT type (COMMA type)* GT)? (BIT_AND)?
     ;
 
 baseType
@@ -257,7 +256,7 @@ parameterList
     ;
 
 parameter
-    : modifiers? type AMPERSAND? IDENTIFIER? arraySpecifier? (ASSIGN expression)?
+    : modifiers? type BIT_AND? IDENTIFIER? arraySpecifier? (ASSIGN expression)?
     ;
 
 // --- Classes & Structs ---
