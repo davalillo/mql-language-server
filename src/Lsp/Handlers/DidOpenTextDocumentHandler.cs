@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -120,6 +122,8 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
 
         // Otherwise, resolve relative to the including file's directory
         var includingDir = Path.GetDirectoryName(includingFile);
-        return Path.Combine(includingDir, includePath);
+        return includingDir != null
+            ? Path.Combine(includingDir, includePath)
+            : includePath;
     }
 }

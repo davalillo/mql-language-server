@@ -199,7 +199,9 @@ namespace Mql4LanguageServer.Parser
 
             // Otherwise, resolve relative to the including file's directory
             var includingDir = Path.GetDirectoryName(includingFile);
-            return Path.Combine(includingDir, includePath);
+            return includingDir != null
+                ? Path.Combine(includingDir, includePath)
+                : includePath;
         }
 
         /// <summary>
@@ -664,4 +666,12 @@ namespace Mql4LanguageServer.Parser
         }
 
         private LspRange CreateRangeFromContext(ParserRuleContext context)
+        {
+            return new LspRange
+            (
+                new LspPosition(context.Start.Line - 1, context.Start.Column),
+                new LspPosition(context.Stop.Line - 1, context.Stop.Column + context.Stop.Text.Length)
+            );
+        }
+    }
 }
