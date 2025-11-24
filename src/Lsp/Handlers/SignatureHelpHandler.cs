@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -191,14 +192,22 @@ public class SignatureHelpHandler : IRequestHandler<SignatureHelpParams, Signatu
         var parameterInfos = parameters.Select((p, index) => new ParameterInformation
         {
             Label = p,
-            Documentation = new MarkedString("mql4", GetParameterDocumentation(functionName, p))
+            Documentation = new MarkupContent
+            {
+                Kind = MarkupKind.Markdown,
+                Value = $"```mql4\n{GetParameterDocumentation(functionName, p)}\n```"
+            }
         }).ToList();
 
         // Create signature information
         var signatureInfo = new SignatureInformation
         {
             Label = signature,
-            Documentation = new MarkedString("mql4", GetFunctionDocumentation(functionName)),
+            Documentation = new MarkupContent
+            {
+                Kind = MarkupKind.Markdown,
+                Value = $"```mql4\n{GetFunctionDocumentation(functionName)}\n```"
+            },
             Parameters = new Container<ParameterInformation>(parameterInfos)
         };
 
