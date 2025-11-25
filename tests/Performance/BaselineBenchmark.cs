@@ -183,9 +183,9 @@ public class BaselineBenchmark
             symbolCounts.Add(file.Symbols.Count);
 
             // Measure completion
-            var completions = _parser.GetCompletions(1, 1).ToList();
+            // Measure completion
+            var completions = _parser.GetCompletions(file, 1, 1).ToList();
             completionCounts.Add(completions.Count);
-
             // Force GC between iterations
             if (i < BenchmarkRuns - 1)
             {

@@ -208,7 +208,7 @@ public class PerformanceTests
         for (int i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
-            var result = _parser.FindSymbolAtPosition(position.Line, position.Character);
+            var result = _parser.FindSymbolAtPosition(file, position.Line, position.Character);
             sw.Stop();
 
             times.Add(sw.Elapsed.TotalMilliseconds);
@@ -248,7 +248,7 @@ public class PerformanceTests
         for (int i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
-            var symbol = _parser.FindSymbolAtPosition(position.Line, position.Character);
+            var symbol = _parser.FindSymbolAtPosition(file, position.Line, position.Character);
             if (symbol != null)
             {
                 // Simulate hover (would get signature in real implementation)
@@ -291,7 +291,7 @@ public class PerformanceTests
         for (int i = 0; i < iterations; i++)
         {
             var sw = Stopwatch.StartNew();
-            var completions = _parser.GetCompletions(position.Line, position.Character).ToList();
+            var completions = _parser.GetCompletions(file, position.Line, position.Character).ToList();
             sw.Stop();
 
             times.Add(sw.Elapsed.TotalMilliseconds);
@@ -340,8 +340,8 @@ public class PerformanceTests
             var file = _parser.ParseFile(_largeTestFileContent, _largeTestFilePath);
             if (file != null)
             {
-                var completions = _parser.GetCompletions(1, 1).ToList();
-                var symbol = _parser.FindSymbolAtPosition(0, 0);
+                var completions = _parser.GetCompletions(file, 1, 1).ToList();
+                var symbol = _parser.FindSymbolAtPosition(file, 0, 0);
             }
 
             sw.Stop();

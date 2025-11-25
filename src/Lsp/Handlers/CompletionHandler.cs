@@ -203,9 +203,10 @@ public class CompletionHandler : ICompletionHandler
     {
         var completions = new List<CompletionItem>();
 
-        // Add function declarations
+        // Add function declarations (exclude built-ins to avoid duplicates)
         completions.AddRange(mql4File.Symbols
             .Where(s => s.Kind == (SymbolKind)Mql4SymbolKind.Function)
+            .Where(s => !IsBuiltinCaseInsensitive(s.Name))
             .Select(s => new CompletionItem
             {
                 Label = s.Name,
@@ -458,13 +459,40 @@ public class CompletionHandler : ICompletionHandler
 
     private IEnumerable<CompletionItem> GetSymbolCompletions(Mql4File file)
     {
-        return file.Symbols.Select(symbol => new CompletionItem
+        // Get all symbols EXCEPT functions (functions are added by GetGlobalScopeCompletions)
+        // This prevents duplicates
+        return file.Symbols
+            .Where(symbol => symbol.Kind != (SymbolKind)Mql4SymbolKind.Function) // Exclude functions
+            .Where(symbol => !IsBuiltinCaseInsensitive(symbol.Name)) // Exclude built-ins (case-insensitive)
+            .Select(symbol => new CompletionItem
+            {
+                Label = symbol.Name,
+                Kind = GetCompletionItemKind(symbol.Kind),
+                InsertText = symbol.Name,
+                Detail = symbol.Detail
+            });
+    }
+
+    private bool IsBuiltinCaseInsensitive(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return false;
+
+        // Check built-in functions (case-insensitive)
+        foreach (var kvp in Mql4Builtins.BuiltInFunctions)
         {
-            Label = symbol.Name,
-            Kind = GetCompletionItemKind(symbol.Kind),
-            InsertText = symbol.Name,
-            Detail = symbol.Detail
-        });
+            if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        // Check built-in variables (case-insensitive)
+        foreach (var kvp in Mql4Builtins.BuiltInVariables)
+        {
+            if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     private CompletionItemKind GetCompletionItemKind(SymbolKind symbolKind)
