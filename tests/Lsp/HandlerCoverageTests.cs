@@ -18,7 +18,7 @@ namespace Mql4LanguageServer.Tests.Lsp;
 /// Tests para aumentar cobertura de LSP Handlers
 /// Enfoque en código que realmente se puede testear
 /// </summary>
-public class HandlerCoverageTests
+public class HandlerCoverageTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
 {
     private readonly Mock<ILogger<CompletionHandler>> _mockCompletionLogger;
     private readonly Mock<ILogger<DefinitionHandler>> _mockDefinitionLogger;
@@ -27,7 +27,7 @@ public class HandlerCoverageTests
     private readonly Mock<OpenDocumentStore> _mockDocumentStore;
     private readonly Mql4AntlrParser _parser;
 
-    public HandlerCoverageTests()
+    public HandlerCoverageTests(GlobalSymbolIndexCleanupFixture fixture)
     {
         _mockCompletionLogger = new Mock<ILogger<CompletionHandler>>();
         _mockDefinitionLogger = new Mock<ILogger<DefinitionHandler>>();
@@ -443,5 +443,7 @@ public class HandlerCoverageTests
         Assert.NotNull(onTick);
     }
 
+
     #endregion
+
 }
