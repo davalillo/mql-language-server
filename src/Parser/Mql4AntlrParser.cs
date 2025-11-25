@@ -20,13 +20,9 @@ namespace Mql4LanguageServer.Parser
     /// </summary>
     public class Mql4AntlrParser
     {
-        private readonly Mql4File _parsedFile;
-        private readonly Dictionary<string, List<Mql4Symbol>> _symbolsByName;
-
         public Mql4AntlrParser()
         {
-            _parsedFile = new Mql4File();
-            _symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+            // No state - parser is now stateless and thread-safe
         }
 
         /// <summary>
@@ -37,6 +33,10 @@ namespace Mql4LanguageServer.Parser
         /// <returns>Parsed Mql4File with symbols</returns>
         public Mql4File ParseFile(string content, string filePath = "unknown")
         {
+            // Create local instances - no shared state
+            var parsedFile = new Mql4File();
+            var symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+
             try
             {
                 // Create input stream from content
@@ -63,24 +63,24 @@ namespace Mql4LanguageServer.Parser
                 visitor.Visit(tree);
 
                 // Extract symbols and includes from visitor
-                _parsedFile.Symbols = visitor.Symbols;
-                _parsedFile.Includes = visitor.Includes;
-                _parsedFile.FilePath = filePath;
+                parsedFile.Symbols = visitor.Symbols;
+                parsedFile.Includes = visitor.Includes;
+                parsedFile.FilePath = filePath;
 
                 // NEW: Extract macros using token scanning (Channel 1 - PREPROCESSOR)
                 // This is needed because #define, #ifdef, etc. are hidden from the parser
-                _parsedFile.Macros = ExtractMacros(tokenStream);
+                parsedFile.Macros = ExtractMacros(tokenStream);
 
                 // Build index of symbols by name
-                BuildSymbolIndex();
+                BuildSymbolIndex(parsedFile, symbolsByName);
 
-                return _parsedFile;
+                return parsedFile;
             }
             catch (Exception ex)
             {
                 // Log error but continue - return file with any symbols found before error
                 Console.WriteLine($"Error parsing MQL4 file: {ex.Message}");
-                return _parsedFile;
+                return parsedFile;
             }
         }
 
@@ -207,17 +207,18 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Find a symbol at a specific position in the file
         /// </summary>
+        /// <param name="file">Parsed Mql4File to search in</param>
         /// <param name="line">Line number (1-based)</param>
         /// <param name="column">Column number (1-based)</param>
         /// <returns>Symbol at position, or null if not found</returns>
-        public Mql4Symbol? FindSymbolAtPosition(int line, int column)
+        public Mql4Symbol? FindSymbolAtPosition(Mql4File file, int line, int column)
         {
             // Convert from 1-based (LSP) to 0-based (internal)
             var searchLine = line - 1;
             var searchColumn = column - 1;
 
             // First, check if position is within a symbol's range (for clicking on declarations)
-            foreach (var symbol in _parsedFile.Symbols)
+            foreach (var symbol in file.Symbols)
             {
                 if (IsPositionInRange(searchLine, searchColumn, symbol.Range))
                 {
@@ -231,11 +232,12 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Find a symbol definition by extracting the identifier at position and looking it up
         /// </summary>
+        /// <param name="file">Parsed Mql4File to search in</param>
         /// <param name="content">File content</param>
         /// <param name="line">Line number (1-based)</param>
         /// <param name="column">Column number (1-based)</param>
         /// <returns>Symbol definition at position, or null if not found</returns>
-        public Mql4Symbol? FindSymbolDefinition(string content, int line, int column)
+        public Mql4Symbol? FindSymbolDefinition(Mql4File file, string content, int line, int column)
         {
             // Convert from 1-based to 0-based
             var searchLine = line - 1;
@@ -266,7 +268,7 @@ namespace Mql4LanguageServer.Parser
             }
 
             // Look up the identifier in defined symbols
-            var symbols = FindSymbolsByName(identifier);
+            var symbols = FindSymbolsByName(file, identifier);
             if (symbols.Any())
             {
                 // Return the first matching symbol (could be improved to handle overloads)
@@ -330,11 +332,16 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Find all symbols matching a name pattern
         /// </summary>
+        /// <param name="file">Parsed Mql4File to search in</param>
         /// <param name="name">Name pattern (case-insensitive)</param>
         /// <returns>List of matching symbols</returns>
-        public IEnumerable<Mql4Symbol> FindSymbolsByName(string name)
+        public IEnumerable<Mql4Symbol> FindSymbolsByName(Mql4File file, string name)
         {
-            if (_symbolsByName.TryGetValue(name, out var symbols))
+            // Build a temporary index for this lookup
+            var tempIndex = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+            BuildSymbolIndex(file, tempIndex);
+
+            if (tempIndex.TryGetValue(name, out var symbols))
             {
                 return symbols;
             }
@@ -345,19 +352,21 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Get all symbols in the file
         /// </summary>
+        /// <param name="file">Parsed Mql4File</param>
         /// <returns>All symbols</returns>
-        public IEnumerable<Mql4Symbol> GetAllSymbols()
+        public IEnumerable<Mql4Symbol> GetAllSymbols(Mql4File file)
         {
-            return _parsedFile.Symbols;
+            return file.Symbols;
         }
 
         /// <summary>
         /// Get all include directives
         /// </summary>
+        /// <param name="file">Parsed Mql4File</param>
         /// <returns>All includes</returns>
-        public IEnumerable<string> GetIncludes()
+        public IEnumerable<string> GetIncludes(Mql4File file)
         {
-            return _parsedFile.Includes;
+            return file.Includes;
         }
 
         /// <summary>
@@ -374,10 +383,11 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Get completion suggestions at a position
         /// </summary>
+        /// <param name="file">Parsed Mql4File</param>
         /// <param name="line">Line number</param>
         /// <param name="column">Column number</param>
         /// <returns>List of completion items</returns>
-        public IEnumerable<string> GetCompletions(int line, int column)
+        public IEnumerable<string> GetCompletions(Mql4File file, int line, int column)
         {
             var completions = new List<string>();
 
@@ -387,11 +397,44 @@ namespace Mql4LanguageServer.Parser
             // Add builtin variables
             completions.AddRange(Mql4Builtins.BuiltInVariables.Keys);
 
-            // Add local symbols
-            completions.AddRange(_parsedFile.Symbols.Select(s => s.Name));
+            // Add local symbols (excluding built-ins to avoid duplicates)
+            var builtinNames = new HashSet<string>(Mql4Builtins.BuiltInFunctions.Keys.Concat(Mql4Builtins.BuiltInVariables.Keys),
+                StringComparer.OrdinalIgnoreCase);
+            completions.AddRange(file.Symbols.Select(s => s.Name).Where(name => !builtinNames.Contains(name)));
 
             // Remove duplicates and return
-            return completions.Distinct().OrderBy(c => c);
+            return completions.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(c => c);
+        }
+
+        // Legacy overloads for backward compatibility with tests
+        public IEnumerable<string> GetCompletions(int line, int column)
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
+        }
+
+        public Mql4Symbol? FindSymbolAtPosition(int line, int column)
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
+        }
+
+        public IEnumerable<Mql4Symbol> FindSymbolsByName(string name)
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
+        }
+
+        public IEnumerable<Mql4Symbol> GetAllSymbols()
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
+        }
+
+        public IEnumerable<string> GetIncludes()
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
+        }
+
+        public Mql4Symbol? FindSymbolDefinition(string content, int line, int column)
+        {
+            throw new NotSupportedException("This overload is deprecated. Parse the file first and pass it as the first parameter.");
         }
 
         private bool IsPositionInRange(int line, int column, LspRange range)
@@ -463,16 +506,16 @@ namespace Mql4LanguageServer.Parser
             return parts.Length > 0 ? parts[0] : "";
         }
 
-        private void BuildSymbolIndex()
+        private void BuildSymbolIndex(Mql4File file, Dictionary<string, List<Mql4Symbol>> symbolsByName)
         {
-            _symbolsByName.Clear();
+            symbolsByName.Clear();
 
-            foreach (var symbol in _parsedFile.Symbols)
+            foreach (var symbol in file.Symbols)
             {
-                if (!_symbolsByName.TryGetValue(symbol.Name, out var list))
+                if (!symbolsByName.TryGetValue(symbol.Name, out var list))
                 {
                     list = new List<Mql4Symbol>();
-                    _symbolsByName[symbol.Name] = list;
+                    symbolsByName[symbol.Name] = list;
                 }
 
                 list.Add(symbol);
@@ -492,7 +535,7 @@ namespace Mql4LanguageServer.Parser
     }
 
     /// <summary>
-    /// ANTLR Visitor to extract MQL4 symbols from the parse tree
+    /// MQL4 Symbol Visitor - Extracts symbols from ANTLR parse tree
     /// </summary>
     public class Mql4SymbolVisitor : Mql4GrammarBaseVisitor<Mql4Symbol?>
     {
