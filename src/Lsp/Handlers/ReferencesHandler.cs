@@ -82,7 +82,7 @@ public class ReferencesHandler : IReferencesHandler
             var character = request.Position.Character + 1;
 
             // Find symbol definition at position
-            var symbol = _parser.FindSymbolDefinition(content, line, character);
+            var symbol = _parser.FindSymbolDefinition(mql4File, content, line, character);
 
             if (symbol == null)
             {

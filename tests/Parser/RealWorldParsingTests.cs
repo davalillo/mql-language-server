@@ -265,9 +265,10 @@ public class RealWorldParsingTests
         {
             // Act - Test finding the symbol at its position
             var foundSymbol = _parser.FindSymbolAtPosition(
+                file,
                 onInit.Range.Start.Line + 1, // Convert to 1-based
                 onInit.Range.Start.Character + 1);
-            
+
             // Assert
             Assert.NotNull(foundSymbol);
             Assert.True(foundSymbol.Name.Equals("OnInit", StringComparison.OrdinalIgnoreCase));
@@ -294,9 +295,10 @@ public class RealWorldParsingTests
         {
             // Act - Test finding the symbol at its position
             var foundSymbol = _parser.FindSymbolAtPosition(
+                file,
                 onTick.Range.Start.Line + 1,
                 onTick.Range.Start.Character + 1);
-            
+
             // Assert
             Assert.NotNull(foundSymbol);
             Assert.True(foundSymbol.Name.Equals("OnTick", StringComparison.OrdinalIgnoreCase));
@@ -326,9 +328,10 @@ public class RealWorldParsingTests
         {
             // Act - Test finding the symbol at its position
             var foundSymbol = _parser.FindSymbolAtPosition(
+                file,
                 customFunc.Range.Start.Line + 1,
                 customFunc.Range.Start.Character + 1);
-            
+
             // Assert
             Assert.NotNull(foundSymbol);
             Assert.True(foundSymbol.Name.Equals(customFunc.Name, StringComparison.OrdinalIgnoreCase));
@@ -345,14 +348,15 @@ public class RealWorldParsingTests
     {
         // Arrange
         if (string.IsNullOrEmpty(_ducibusCode)) return;
-        
+        var file = _parser.ParseFile(_ducibusCode, _testFileName);
+
         // Act - Test finding specific functions by name
         var testCases = new[] { "OnInit", "OnTick", "OnDeinit", "SYROnTick" };
-        
+
         foreach (var funcName in testCases)
         {
-            var symbols = _parser.FindSymbolsByName(funcName);
-            
+            var symbols = _parser.FindSymbolsByName(file, funcName);
+
             // Assert
             Assert.NotNull(symbols);
             
@@ -411,7 +415,7 @@ public class RealWorldParsingTests
         var file = _parser.ParseFile(_ducibusCode, _testFileName);
         
         // Act
-        var completions = _parser.GetCompletions(1, 1).ToList();
+        var completions = _parser.GetCompletions(file, 1, 1).ToList();
         
         // Assert
         Assert.NotNull(completions);
@@ -440,7 +444,7 @@ public class RealWorldParsingTests
         var file = _parser.ParseFile(_ducibusCode, _testFileName);
         
         // Act
-        var completions = _parser.GetCompletions(1, 1).ToList();
+        var completions = _parser.GetCompletions(file, 1, 1).ToList();
         
         // Assert
         Assert.NotNull(completions);
@@ -464,17 +468,18 @@ public class RealWorldParsingTests
     {
         // Arrange
         if (string.IsNullOrEmpty(_ducibusCode)) return;
-        
+        var file = _parser.ParseFile(_ducibusCode, _testFileName);
+
         // Act
-        var completions = _parser.GetCompletions(1, 1).ToList();
-        
+        var completions = _parser.GetCompletions(file, 1, 1).ToList();
+
         // Assert - Check for duplicates
         var distinctCompletions = completions
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        
+
         Assert.Equal(completions.Count, distinctCompletions.Count);
-        
+
         _output.WriteLine($"No duplicates found in {completions.Count} completions");
     }
 
@@ -538,10 +543,11 @@ public class RealWorldParsingTests
     {
         // Arrange
         if (string.IsNullOrEmpty(_ducibusCode)) return;
-        
+        var file = _parser.ParseFile(_ducibusCode, _testFileName);
+
         // Act
-        var symbol = _parser.FindSymbolAtPosition(99999, 99999);
-        
+        var symbol = _parser.FindSymbolAtPosition(file, 99999, 99999);
+
         // Assert - Should return null for out-of-bounds positions
         Assert.Null(symbol);
         _output.WriteLine("✓ Out-of-bounds position returns null correctly");
@@ -552,10 +558,11 @@ public class RealWorldParsingTests
     {
         // Arrange
         if (string.IsNullOrEmpty(_ducibusCode)) return;
-        
+        var file = _parser.ParseFile(_ducibusCode, _testFileName);
+
         // Act
-        var symbols = _parser.FindSymbolsByName("NonExistentFunctionThatDoesNotExist");
-        
+        var symbols = _parser.FindSymbolsByName(file, "NonExistentFunctionThatDoesNotExist");
+
         // Assert
         Assert.NotNull(symbols);
         Assert.Empty(symbols);
