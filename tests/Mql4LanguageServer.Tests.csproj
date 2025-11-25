@@ -8,6 +8,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DisableParallelization>true</DisableParallelization>
   </PropertyGroup>
 
   <ItemGroup>

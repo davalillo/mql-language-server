@@ -46,6 +46,9 @@ public class CrossFileTests
     [Fact]
     public void GlobalSymbolIndex_CanStoreMultipleFiles()
     {
+        // Ensure clean state
+        _index.Clear();
+
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -87,6 +90,9 @@ public class CrossFileTests
     [Fact]
     public void GlobalSymbolIndex_FindSymbol_FindsAcrossMultipleFiles()
     {
+        // Ensure clean state
+        _index.Clear();
+
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -124,6 +130,9 @@ public class CrossFileTests
     [Fact]
     public void GlobalSymbolIndex_GetStatistics_ShowsCorrectStats()
     {
+        // Ensure clean state
+        _index.Clear();
+
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -161,6 +170,9 @@ public class CrossFileTests
     [Fact]
     public void GlobalSymbolIndex_RemoveFile_RemovesSymbolsAndUpdatesIndices()
     {
+        // Ensure clean state
+        _index.Clear();
+
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -503,6 +515,9 @@ void FunctionB()
     [Fact]
     public void RealWorldFiles_ExpertAdvisorAndIndicators_WorkTogether()
     {
+        // Ensure clean state
+        _index.Clear();
+
         // Arrange
         var expertAdvisorCode = @"
 #include <Include/CustomIndicators.mqh>
