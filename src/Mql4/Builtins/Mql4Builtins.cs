@@ -1,16 +1,17 @@
+using System;
 using System.Collections.Generic;
 
 namespace Mql4LanguageServer.Mql4.Builtins
 {
     /// <summary>
     /// MQL4 Built-in Functions and Variables
+    /// OPTIMIZATION: Lazy loading for improved startup performance
     /// </summary>
     public static class Mql4Builtins
     {
-        /// <summary>
-        /// Built-in MQL4 functions (name -> signature)
-        /// </summary>
-        public static readonly Dictionary<string, string> BuiltInFunctions = new()
+        // Lazy-initialized dictionaries for built-in functions and variables
+        // This defers initialization until first access, improving startup time
+        private static readonly Lazy<Dictionary<string, string>> LazyBuiltInFunctions = new(() => new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             // Initialization and Deinitialization
             { "OnInit", "int OnInit()" },
@@ -144,13 +145,11 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "GetLastError", "int GetLastError()" },
 
             // Constants and Enums
-            { "EnumToString", "string EnumToString(Enum value)" },
-        };
+            { "EnumToString", "string EnumToString(Enum value)" }
+        });
 
-        /// <summary>
-        /// Built-in MQL4 variables
-        /// </summary>
-        public static readonly Dictionary<string, string> BuiltInVariables = new()
+        // Lazy-initialized dictionary for built-in variables
+        private static readonly Lazy<Dictionary<string, string>> LazyBuiltInVariables = new(() => new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             // Price Variables
             { "Ask", "Current Ask price" },
@@ -226,7 +225,17 @@ namespace Mql4LanguageServer.Mql4.Builtins
             { "INIT_SUCCEEDED", "Initialization succeeded" },
             { "INIT_FAILED", "Initialization failed" },
             { "INIT_PARAMETERS_INCORRECT", "Initialization parameters incorrect" },
-        };
+        });
+
+        /// <summary>
+        /// OPTIMIZATION: Public accessor for BuiltInFunctions (lazy-loaded)
+        /// </summary>
+        public static Dictionary<string, string> BuiltInFunctions => LazyBuiltInFunctions.Value;
+
+        /// <summary>
+        /// OPTIMIZATION: Public accessor for BuiltInVariables (lazy-loaded)
+        /// </summary>
+        public static Dictionary<string, string> BuiltInVariables => LazyBuiltInVariables.Value;
 
         /// <summary>
         /// Check if a name is a built-in function
