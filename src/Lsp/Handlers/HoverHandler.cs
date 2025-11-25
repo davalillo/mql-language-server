@@ -129,7 +129,7 @@ public class HoverHandler : IHoverHandler
             Mql4Symbol? symbol;
             try
             {
-                symbol = _parser.FindSymbolAtPosition(line, character);
+                symbol = _parser.FindSymbolAtPosition(mql4File!, line, character);
             }
             catch (Exception ex)
             {

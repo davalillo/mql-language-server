@@ -124,9 +124,10 @@ public class LspIntegrationTests
     {
         // Arrange
         var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile("", "test.mq4");
 
         // Act
-        var completions = parser.GetCompletions(0, 1).ToList();
+        var completions = parser.GetCompletions(file, 0, 1).ToList();
 
         // Assert
         Assert.NotNull(completions);

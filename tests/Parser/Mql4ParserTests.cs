@@ -159,7 +159,7 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        var completions = _parser.GetCompletions(1, 1).ToList();
+        var completions = _parser.GetCompletions(file, 1, 1).ToList();
 
         // Assert
         Assert.NotNull(completions);
@@ -280,6 +280,7 @@ public class Mql4ParserTests
 
         // Test finding symbol at its position
         var foundSymbol = _parser.FindSymbolAtPosition(
+            file,
             myFunc.Range.Start.Line + 1, // Convert back to 1-based
             myFunc.Range.Start.Character + 1);
 
@@ -292,6 +293,7 @@ public class Mql4ParserTests
         Assert.NotNull(anotherFunc);
 
         var foundAnotherSymbol = _parser.FindSymbolAtPosition(
+            file,
             anotherFunc.Range.Start.Line + 1,
             anotherFunc.Range.Start.Character + 1);
 
@@ -299,7 +301,7 @@ public class Mql4ParserTests
         Assert.Equal("anotherFunction", foundAnotherSymbol.Name, ignoreCase: true);
 
         // Test finding symbol by name
-        var symbolsByName = _parser.FindSymbolsByName("myFunction");
+        var symbolsByName = _parser.FindSymbolsByName(file, "myFunction");
         Assert.NotNull(symbolsByName);
         Assert.Single(symbolsByName);
         Assert.Equal("myFunction", symbolsByName.First().Name, ignoreCase: true);
@@ -322,7 +324,7 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        var completions = _parser.GetCompletions(1, 1).ToList();
+        var completions = _parser.GetCompletions(file, 1, 1).ToList();
 
         // Assert
         Assert.NotNull(completions);
@@ -477,7 +479,7 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        var symbol = _parser.FindSymbolAtPosition(999, 999);
+        var symbol = _parser.FindSymbolAtPosition(file, 999, 999);
 
         // Assert
         Assert.Null(symbol);
@@ -491,7 +493,7 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        var symbols = _parser.FindSymbolsByName("NonExistent");
+        var symbols = _parser.FindSymbolsByName(file, "NonExistent");
 
         // Assert
         Assert.NotNull(symbols);
@@ -516,9 +518,9 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        
+
         // Find OnInit definition when called from OnTick
-        var symbol = _parser.FindSymbolDefinition(code, 4, 17);
+        var symbol = _parser.FindSymbolDefinition(file, code, 4, 17);
 
         // Assert
         Assert.NotNull(symbol);
@@ -540,9 +542,9 @@ public class Mql4ParserTests
 
         // Act
         var file = _parser.ParseFile(code, "test.mq4");
-        
+
         // Find myVar definition
-        var symbol = _parser.FindSymbolDefinition(code, 5, 17);
+        var symbol = _parser.FindSymbolDefinition(file, code, 5, 17);
 
         // Assert
         Assert.NotNull(symbol);
@@ -562,7 +564,8 @@ public class Mql4ParserTests
         ";
 
         // Act
-        var symbol = _parser.FindSymbolDefinition(code, 4, 17);
+        var file = _parser.ParseFile(code, "test.mq4");
+        var symbol = _parser.FindSymbolDefinition(file, code, 4, 17);
 
         // Assert
         Assert.Null(symbol);
@@ -575,7 +578,8 @@ public class Mql4ParserTests
         var code = @"void OnTick() { }";
 
         // Act
-        var symbol = _parser.FindSymbolDefinition(code, 999, 999);
+        var file = _parser.ParseFile(code, "test.mq4");
+        var symbol = _parser.FindSymbolDefinition(file, code, 999, 999);
 
         // Assert
         Assert.Null(symbol);
