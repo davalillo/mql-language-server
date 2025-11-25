@@ -2,6 +2,7 @@ using Xunit;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Tests.Lsp;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.IO;
 
@@ -10,12 +11,12 @@ namespace Mql4LanguageServer.Tests.CrossFile;
 /// <summary>
 /// Tests for cross-file functionality including GlobalSymbolIndex and cross-file navigation
 /// </summary>
-public class CrossFileTests
+public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
 {
     private readonly GlobalSymbolIndex _index;
     private readonly Mql4AntlrParser _parser;
 
-    public CrossFileTests()
+    public CrossFileTests(GlobalSymbolIndexCleanupFixture fixture)
     {
         _index = GlobalSymbolIndex.Instance;
         _parser = new Mql4AntlrParser();

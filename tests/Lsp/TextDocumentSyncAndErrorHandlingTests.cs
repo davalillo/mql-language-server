@@ -21,7 +21,7 @@ namespace Mql4LanguageServer.Tests.Lsp;
 /// <summary>
 /// Tests for Text Document Synchronization (DidOpen, DidChange, DidClose) and error handling
 /// </summary>
-public class TextDocumentSyncAndErrorHandlingTests
+public class TextDocumentSyncAndErrorHandlingTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
 {
     #region Text Document Sync Handler Tests
 
@@ -803,4 +803,12 @@ void OnTick()
     }
 
     #endregion
+
+    /// <summary>
+    /// Cleanup after all tests in this class to ensure GlobalSymbolIndex is clean for other test classes
+    /// </summary>
+    private static void ClassCleanup()
+    {
+        GlobalSymbolIndex.Instance.Clear();
+    }
 }
