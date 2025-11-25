@@ -113,6 +113,7 @@ public static class Constants
     {
         public const string ParserError = "Error parsing MQL4 file: {ErrorMessage}";
         public const string HandlerError = "Error processing {HandlerName} request for {Uri}: {ErrorMessage}";
+        public const string HandlerErrorWithCorrelationId = "Error processing {HandlerName} request for {Uri} [{CorrelationId}]: {ErrorMessage}";
         public const string FileReadError = "Error reading file: {FilePath} - {ErrorMessage}";
         public const string InvalidDocumentUri = "Invalid document URI: {Uri}";
     }

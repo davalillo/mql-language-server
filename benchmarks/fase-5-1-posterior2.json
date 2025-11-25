@@ -5,13 +5,13 @@
     "DotnetVersion": "10.0.0",
     "ProcessorCount": 32,
     "MachineName": "flanagan",
-    "Timestamp": "2025-11-25T11:17:19.8370372Z"
+    "Timestamp": "2025-11-25T11:54:12.9827523Z"
   },
   "Parsing": {
-    "Median": 101.79415,
-    "Average": 102.14644999999999,
-    "Min": 96.4204,
-    "Max": 113.0089,
+    "Median": 87.6266,
+    "Average": 87.185525,
+    "Min": 69.0791,
+    "Max": 93.5636,
     "Samples": 20
   },
   "SymbolCount": {
@@ -28,5 +28,5 @@
     "Max": 1676,
     "Samples": 20
   },
-  "CommitHash": "2fc1c04"
+  "CommitHash": "60d8bb9"
 }
