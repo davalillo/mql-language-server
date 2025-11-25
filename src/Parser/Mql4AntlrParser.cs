@@ -330,23 +330,59 @@ namespace Mql4LanguageServer.Parser
         }
 
         /// <summary>
-        /// Find all symbols matching a name pattern
+        /// Find all symbols matching a name pattern (OPTIMIZED version)
+        /// Uses cached symbol index to avoid rebuilding dictionary on every lookup
         /// </summary>
         /// <param name="file">Parsed Mql4File to search in</param>
         /// <param name="name">Name pattern (case-insensitive)</param>
         /// <returns>List of matching symbols</returns>
         public IEnumerable<Mql4Symbol> FindSymbolsByName(Mql4File file, string name)
         {
-            // Build a temporary index for this lookup
-            var tempIndex = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
-            BuildSymbolIndex(file, tempIndex);
+            if (file == null || string.IsNullOrEmpty(name))
+            {
+                return Enumerable.Empty<Mql4Symbol>();
+            }
 
-            if (tempIndex.TryGetValue(name, out var symbols))
+            // OPTIMIZATION 1: Check if file has cached symbol index
+            // This avoids rebuilding the dictionary on every lookup
+            var symbolIndex = EnsureSymbolIndex(file);
+
+            // OPTIMIZATION 2: Use TryGetValue for O(1) lookup instead of ContainsKey + indexer
+            if (symbolIndex.TryGetValue(name, out var symbols))
             {
                 return symbols;
             }
 
             return Enumerable.Empty<Mql4Symbol>();
+        }
+
+        /// <summary>
+        /// Ensure the file has a cached symbol index for fast lookups
+        /// </summary>
+        /// <param name="file">Mql4File to index</param>
+        /// <returns>Symbol index dictionary</returns>
+        private Dictionary<string, List<Mql4Symbol>> EnsureSymbolIndex(Mql4File file)
+        {
+            // OPTIMIZATION: Use lazy initialization with double-check locking pattern
+            // This ensures thread-safe lazy initialization without locks on every access
+
+            // First check without lock (fast path)
+            if (file.SymbolIndex != null)
+            {
+                return file.SymbolIndex;
+            }
+
+            // Second check with lock (slow path)
+            lock (file)
+            {
+                if (file.SymbolIndex == null)
+                {
+                    // Build and cache the index
+                    CreateSymbolIndex(file, out var newIndex);
+                    file.SymbolIndex = newIndex;
+                }
+                return file.SymbolIndex;
+            }
         }
 
         /// <summary>
@@ -455,36 +491,43 @@ namespace Mql4LanguageServer.Parser
         }
 
         /// <summary>
-        /// Extract macros from token stream using token scanning
+        /// Extract macros from token stream using optimized token scanning
         /// #define, #ifdef, #ifndef, etc. are hidden in Channel 1 (PREPROCESSOR)
         /// so they don't appear in the AST but are accessible via token stream
+        /// OPTIMIZED: Only processes tokens in channel 1, uses efficient macro name extraction
         /// </summary>
         /// <param name="tokenStream">Token stream with all tokens (including hidden channels)</param>
         /// <returns>List of macro definitions</returns>
         private List<string> ExtractMacros(CommonTokenStream tokenStream)
         {
-            var macros = new List<string>();
+            var macros = new List<string>(16); // Pre-allocate capacity for common cases
 
             // Fill buffer with all tokens (including those in hidden channels)
             tokenStream.Fill();
             var tokens = tokenStream.GetTokens();
 
-            foreach (var token in tokens)
+            // OPTIMIZATION 1: Pre-check if there are any preprocessor tokens at all
+            // by examining the token stream size and early exit if empty
+            if (tokens.Count == 0)
             {
+                return macros;
+            }
+
+            // OPTIMIZATION 2: Direct iteration with channel/type checks
+            // Only process tokens in PREPROCESSOR channel (channel 1)
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var token = tokens[i];
+
                 // Channel 1 = PREPROCESSOR (hidden from parser)
-                if (token.Channel == 1)
+                if (token.Channel == 1 && token.Type == Mql4GrammarLexer.PRE_DEFINE)
                 {
-                    if (token.Type == Mql4GrammarLexer.PRE_DEFINE)
+                    // Extract macro name using optimized parsing
+                    var macroName = ParseMacroNameOptimized(token.Text);
+                    if (!string.IsNullOrEmpty(macroName))
                     {
-                        // Extract macro name from "#define MACRO_NAME value"
-                        var macroName = ParseMacroName(token.Text);
-                        if (!string.IsNullOrEmpty(macroName))
-                        {
-                            macros.Add(macroName);
-                        }
+                        macros.Add(macroName);
                     }
-                    // Could also track #ifdef, #ifndef for conditional compilation
-                    // but for now we just extract #define macros
                 }
             }
 
@@ -492,20 +535,155 @@ namespace Mql4LanguageServer.Parser
         }
 
         /// <summary>
-        /// Parse macro name from define directive text
+        /// Parse macro name from define directive text (optimized version)
         /// Example: "#define MY_MACRO 10" -> "MY_MACRO"
+        /// Uses efficient span-based parsing instead of string.Replace/Split
+        /// </summary>
+        /// <param name="defineText">Full text of the #define directive</param>
+        /// <returns>Macro name or empty string if parsing fails</returns>
+        private string ParseMacroNameOptimized(string defineText)
+        {
+            if (string.IsNullOrEmpty(defineText))
+            {
+                return string.Empty;
+            }
+
+            // OPTIMIZATION: Use ReadOnlySpan<char> for zero-allocation parsing
+            // Find "#define" (case-insensitive for robustness)
+            ReadOnlySpan<char> text = defineText.AsSpan().TrimStart();
+
+            // Check for #define prefix
+            if (text.Length < 8 || text[0] != '#') // "#define" is 7 chars + space = 8
+            {
+                return string.Empty;
+            }
+
+            // Check if starts with "#define" (case-sensitive for speed, MQL4 is case-insensitive anyway)
+            if (!text.StartsWith("#define", StringComparison.Ordinal))
+            {
+                return string.Empty;
+            }
+
+            // Move past "#define" and whitespace
+            int pos = 7; // length of "#define"
+            while (pos < text.Length && char.IsWhiteSpace(text[pos]))
+            {
+                pos++;
+            }
+
+            if (pos >= text.Length)
+            {
+                return string.Empty;
+            }
+
+            // Extract identifier (letter, digit, underscore)
+            int start = pos;
+            while (pos < text.Length && (char.IsLetterOrDigit(text[pos]) || text[pos] == '_'))
+            {
+                pos++;
+            }
+
+            if (pos <= start)
+            {
+                return string.Empty;
+            }
+
+            return text.Slice(start, pos - start).ToString();
+        }
+
+        /// <summary>
+        /// Parse macro name from define directive text (robust version with validation)
+        /// Example: "#define MY_MACRO 10" -> "MY_MACRO"
+        /// Handles edge cases like comments, line continuations, etc.
         /// </summary>
         /// <param name="defineText">Full text of the #define directive</param>
         /// <returns>Macro name or empty string if parsing fails</returns>
         private string ParseMacroName(string defineText)
         {
+            if (string.IsNullOrWhiteSpace(defineText))
+            {
+                return string.Empty;
+            }
+
+            // OPTIMIZATION: Use the optimized version first
+            var result = ParseMacroNameOptimized(defineText);
+
+            // VALIDATION: Ensure result is a valid MQL4 identifier
+            // MQL4 identifiers: start with letter/underscore, contain letters/digits/underscores
+            if (!string.IsNullOrEmpty(result) && IsValidMql4Identifier(result))
+            {
+                return result;
+            }
+
+            // Fallback to original parsing for compatibility
             // Simple parsing: remove "#define", trim, and take first word
-            var parts = defineText.Replace("#define", "").Trim()
+            var parts = defineText.Replace("#define", "", StringComparison.Ordinal).Trim()
                 .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            return parts.Length > 0 ? parts[0] : "";
+            if (parts.Length > 0 && IsValidMql4Identifier(parts[0]))
+            {
+                return parts[0];
+            }
+
+            return string.Empty;
         }
 
+        /// <summary>
+        /// Validate if a string is a valid MQL4 identifier
+        /// </summary>
+        /// <param name="identifier">Identifier to validate</param>
+        /// <returns>True if valid identifier</returns>
+        private bool IsValidMql4Identifier(string identifier)
+        {
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return false;
+            }
+
+            // First character must be letter or underscore
+            if (!char.IsLetter(identifier[0]) && identifier[0] != '_')
+            {
+                return false;
+            }
+
+            // Rest must be letter, digit, or underscore
+            for (int i = 1; i < identifier.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(identifier[i]) && identifier[i] != '_')
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Create and build symbol index for fast lookups (optimized version with out parameter)
+        /// </summary>
+        /// <param name="file">Mql4File to index</param>
+        /// <param name="symbolsByName">Output dictionary for symbol index</param>
+        private void CreateSymbolIndex(Mql4File file, out Dictionary<string, List<Mql4Symbol>> symbolsByName)
+        {
+            symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var symbol in file.Symbols)
+            {
+                if (!symbolsByName.TryGetValue(symbol.Name, out var list))
+                {
+                    list = new List<Mql4Symbol>();
+                    symbolsByName[symbol.Name] = list;
+                }
+
+                list.Add(symbol);
+            }
+        }
+
+        /// <summary>
+        /// Build symbol index for fast lookups (existing version for backward compatibility)
+        /// </summary>
+        /// <param name="file">Mql4File to index</param>
+        /// <param name="symbolsByName">Dictionary to populate with symbol index</param>
         private void BuildSymbolIndex(Mql4File file, Dictionary<string, List<Mql4Symbol>> symbolsByName)
         {
             symbolsByName.Clear();

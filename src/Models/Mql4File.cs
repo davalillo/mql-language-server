@@ -31,4 +31,10 @@ public class Mql4File
     /// Preprocessor macros (extracted via token scanning)
     /// </summary>
     public List<string> Macros { get; set; } = new();
+
+    /// <summary>
+    /// OPTIMIZATION: Cached symbol index for fast lookups by name
+    /// Built lazily on first access and reused for subsequent lookups
+    /// </summary>
+    public Dictionary<string, List<Mql4Symbol>>? SymbolIndex { get; set; }
 }

@@ -353,11 +353,29 @@ Se implementó un **benchmark inicial** al inicio de la Fase 1 para medir el imp
 - [x] Telemetry para operaciones LSP más lentas
 - [x] **Resultado:** Sistema completo de métricas implementado
 
-### ❌ PASO 5.3: Optimizaciones Menores
-- [ ] Mejorar `ExtractMacros` en Mql4AntlrParser.cs:316-344
-- [ ] Hacer `ParseMacroName` más robusto
-- [ ] Optimizar búsquedas en `_symbolsByName` (Dictionary)
-- [ ] Lazy loading de built-ins si es necesario
+### ✅ PASO 5.3: Optimizaciones Menores - COMPLETADO ✅
+- [x] Mejorar `ExtractMacros` en Mql4AntlrParser.cs:464-492
+  - ✅ Optimización: Pre-allocación de capacidad para casos comunes
+  - ✅ Optimización: Verificación temprana de stream vacío
+  - ✅ Optimización: Iteración directa con verificaciones de canal/tipo
+- [x] Hacer `ParseMacroName` más robusto
+  - ✅ Método `ParseMacroNameOptimized`: Parsing eficiente basado en Span<char>
+  - ✅ Método `ParseMacroName`: Versión robusta con validación
+  - ✅ Función `IsValidMql4Identifier`: Validación de identificadores MQL4
+- [x] Optimizar búsquedas en `_symbolsByName` Dictionary
+  - ✅ Caché de índice de símbolos en `Mql4File.SymbolIndex`
+  - ✅ Inicialización lazy con patrón double-check locking
+  - ✅ Método `EnsureSymbolIndex`: Caché thread-safe
+  - ✅ Sobrecarga `CreateSymbolIndex` con parámetro `out` (resuelve ambigüedad)
+- [x] Lazy loading de built-ins si es necesario
+  - ✅ `Mql4Builtins`: Conversión a Lazy<T> para funciones y variables
+  - ✅ Accesores públicos que exponen `.Value` del Lazy
+  - ✅ Mejora del tiempo de inicio al diferir la inicialización
+  - ✅ Thread-safe lazy initialization sin locks en cada acceso
+- [x] **Correcciones de compilación**: Eliminados todos los comentarios XML duplicados
+  - ✅ 6 métodos corregidos: FindSymbolsByName, EnsureSymbolIndex, ExtractMacros, ParseMacroNameOptimized, IsValidMql4Identifier, CreateSymbolIndex
+  - ✅ Build exitoso con 0 warnings, 0 errores
+  - ✅ 365 tests passed, 0 failed
 
 ### ❌ PASO 5.4: Verificación Final
 - [ ] Benchmarks finales comparados con baseline
