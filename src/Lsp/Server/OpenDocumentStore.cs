@@ -10,6 +10,7 @@ namespace Mql4LanguageServer.Lsp.Server;
 public class OpenDocumentStore
 {
     private readonly Dictionary<Uri, Mql4File> _openFiles = new();
+    private readonly MetricsCollector _metrics = MetricsCollector.Instance;
 
     /// <summary>
     /// Add or update a document in the store
@@ -40,7 +41,19 @@ public class OpenDocumentStore
     {
         lock (_openFiles)
         {
-            return _openFiles.TryGetValue(uri, out file);
+            var found = _openFiles.TryGetValue(uri, out file);
+            
+            // Record cache hit or miss
+            if (found && file != null)
+            {
+                _metrics.RecordCacheHit();
+            }
+            else
+            {
+                _metrics.RecordCacheMiss();
+            }
+            
+            return found;
         }
     }
 
@@ -53,5 +66,13 @@ public class OpenDocumentStore
         {
             _openFiles.Clear();
         }
+    }
+
+    /// <summary>
+    /// Get cache statistics
+    /// </summary>
+    public (long hits, long misses, double hitRate) GetCacheStats()
+    {
+        return (_metrics.GetSnapshot().CacheHits, _metrics.GetSnapshot().CacheMisses, _metrics.GetSnapshot().CacheHitRate);
     }
 }

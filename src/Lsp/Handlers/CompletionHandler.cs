@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Mql4.Builtins;
 using Mql4LanguageServer.Parser;
+using System.Diagnostics;
 using Mql4LanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -44,6 +45,9 @@ public class CompletionHandler : ICompletionHandler
 
     public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
     {
+        var metrics = new PerformanceMonitor(MetricsCollector.Instance, _logger);
+        using var operation = metrics.MonitorOperation("Completion", request.TextDocument.Uri.ToString());
+
         try
         {
             var documentUri = request.TextDocument.Uri;
@@ -66,10 +70,24 @@ public class CompletionHandler : ICompletionHandler
                     return new CompletionList(Array.Empty<CompletionItem>(), false);
                 }
 
-                // Parse the file and cache it
+                // Parse the file and cache it with timing
+                var parseStopwatch = Stopwatch.StartNew();
                 var content = await File.ReadAllTextAsync(filePath, cancellationToken);
                 mql4File = _parser.ParseFile(content, filePath);
+                parseStopwatch.Stop();
+
+                // Record parsing metrics
+                metrics.RecordParsingTime(filePath, parseStopwatch.Elapsed, mql4File.Symbols.Count, fromCache: false);
                 _documentStore.AddOrUpdate(uri, mql4File);
+            }
+            else
+            {
+                // Record cache hit metrics
+                var filePath = documentUri.GetFileSystemPath();
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    metrics.RecordParsingTime(filePath, TimeSpan.Zero, mql4File.Symbols.Count, fromCache: true);
+                }
             }
 
             // Analyze context for contextual completion
@@ -118,7 +136,8 @@ public class CompletionHandler : ICompletionHandler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, Constants.Errors.HandlerError, "CompletionHandler", request.TextDocument.Uri, ex.Message);
+            var correlationId = CorrelationIdProvider.Instance.GetCorrelationId() ?? "unknown";
+            _logger.LogError(ex, Constants.Errors.HandlerErrorWithCorrelationId, "CompletionHandler", request.TextDocument.Uri, correlationId, ex.Message);
             return new CompletionList(Array.Empty<CompletionItem>(), false);
         }
     }

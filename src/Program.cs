@@ -43,7 +43,7 @@ namespace Mql4LanguageServer
                 .MinimumLevel.Information()
                 .WriteTo.Console(
                     standardErrorFromLevel: Serilog.Events.LogEventLevel.Information,
-                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File("mql4-lsp-server.log", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
@@ -72,6 +72,9 @@ namespace Mql4LanguageServer
 
                             // Register global symbol index for cross-file tracking
                             services.AddSingleton<GlobalSymbolIndex>();
+
+                            // Register metrics collector for performance tracking
+                            services.AddSingleton<MetricsCollector>();
 
                             // Register all handlers
                             services.AddSingleton<DocumentSymbolHandler>();
@@ -144,6 +147,10 @@ namespace Mql4LanguageServer
 
                 // Wait for the server to shutdown when the client disconnects
                 await Task.Delay(Timeout.Infinite, CancellationToken.None);
+
+                // Log metrics summary before shutdown
+                var metrics = MetricsCollector.Instance.GetSummaryReport();
+                Log.Information("\n{MetricsSummary}", metrics);
 
                 Log.Information("MQL4 Language Server shutting down...");
 
