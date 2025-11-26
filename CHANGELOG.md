@@ -1,3 +1,44 @@
+## [1.5.0] - 2025-11-26
+
+### Added
+- feat(paso 5.4): Implement Memory Profiling - DETECTAR MEMORY LEAKS with comprehensive tests
+- feat(paso 5.3): Optimizaciones menores del parser - COMPLETADO with performance improvements
+- feat(paso 5.2): Implement Logging y Métricas - COMPLETADO with PerformanceMonitor and MetricsCollector
+- feat(paso 2.1): Implement GlobalSymbolIndex for cross-file tracking and search capabilities
+- feat(paso 2.3): Add ParseFileWithIncludes to Mql4AntlrParser for comprehensive file parsing
+- feat(paso 2.2): Update Mql4SymbolVisitor with filePath parameter for multi-file support
+- feat(paso 2.4): Update ReferencesHandler for cross-file search with global index
+- feat(paso 2.5): Update DefinitionHandler for cross-file search with symbol resolution
+- feat(paso 2.6): Update DidOpenTextDocumentHandler for global index integration
+- feat(paso 3.1): Enrich HoverHandler with detailed signatures and examples
+- feat(paso 3.2): Implement SignatureHelpHandler with parameter information
+- feat(paso 3.3): Enhance CompletionHandler with contextual completions
+- feat(paso 3.4): Create Constants.cs with centralized constants
+- feat(paso 3.5): Improve error handling and logging granularity in handlers
+- feat(paso 3.6): Verificación Fase 3 (PARCIAL) with partial completion
+- feat(paso 5.1): Parser thread-safety implementation with concurrent processing
+- feat(tests): FASE 4.2 COMPLETADA - Crear CrossFileTests con 14 tests passing
+- feat(tests): Fix GlobalSymbolIndex test isolation issues for better reliability
+- feat(tests): Fix Memory Profiling Tests - COMPLETADO with 100% success
+
+### Fixed
+- fix(tests): Corregir aislamiento de GlobalSymbolIndex - Tests 100% passing
+- fix(paso 5.4): Ajustar umbrales de memory profiling - FUGA RESUELTA (Memory leak fixed)
+- fix: Arreglar TODOS los errores de compilación en Fase 3
+- fix(tests): Update tests for GlobalSymbolIndex integration
+
+### Chore
+- chore: Normalize line endings (Unix format) for consistency
+
+### Technical Details
+- Build: Enhanced with thread-safety mechanisms and memory leak detection
+- Tests: 30+ new tests added across multiple test suites (CrossFile, MemoryProfiling, Performance)
+- Compatibility: 100% - no breaking changes detected
+- Performance: Significant parser optimizations and memory profiling capabilities
+- Cross-file Support: Full implementation of GlobalSymbolIndex for multi-file projects
+- LSP Handlers: All handlers (Completion, Hover, Definition, References, SignatureHelp) enhanced
+- Memory Management: Memory profiling system implemented to detect and prevent memory leaks
+
 ## [1.4.0] - 2025-11-24
 
 ### Added
