@@ -799,4 +799,128 @@ public class Mql4ParserTests
 
     #endregion
 
+    #region FunctionFullRange Tests
+
+    [Fact]
+    public void ParseFunction_FullRangeIsAccurate()
+    {
+        // Arrange
+        var code = @"
+int OnInit()
+{
+    int x = 1;
+    return INIT_SUCCEEDED;
+}
+
+double NormalizeTPSell(double precio, double tp)
+{
+    double buffer = (precio - tp);
+    return(NormalizeDouble(tp, Digits));
+}
+";
+
+        // Act
+        var result = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        var onInit = result.Symbols.First(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+        Assert.NotNull(onInit.FullRange);
+        Assert.True(onInit.FullRange.End.Line > onInit.Range.Start.Line,
+            "FullRange should span multiple lines for function with body");
+
+        var normalizeTp = result.Symbols.First(s => s.Name == "NormalizeTPSell");
+        Assert.NotNull(normalizeTp);
+        Assert.NotNull(normalizeTp.FullRange);
+        Assert.True(normalizeTp.FullRange.End.Line > normalizeTp.Range.Start.Line,
+            "FullRange should span multiple lines for function with body");
+    }
+
+    [Fact]
+    public void ParseFunction_FullRangeEndsAtClosingBrace()
+    {
+        // Arrange - Function with body ending on specific line
+        var code = @"int SimpleFunc() { return 0; }";
+
+        // Act
+        var result = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        var simpleFunc = result.Symbols.First(s => s.Name == "SimpleFunc");
+        Assert.NotNull(simpleFunc);
+        Assert.NotNull(simpleFunc.FullRange);
+        // Should end at the closing brace position
+        Assert.True(simpleFunc.FullRange.End.Line >= 0);
+    }
+
+    [Fact]
+    public void ParseFunction_FullRangeMultipleFunctions()
+    {
+        // Arrange
+        var code = @"
+void Func1() { int a; }
+void Func2() { int b; }
+void Func3() { int c; }
+";
+
+        // Act
+        var result = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        var func1 = result.Symbols.First(s => s.Name == "Func1");
+        var func2 = result.Symbols.First(s => s.Name == "Func2");
+        var func3 = result.Symbols.First(s => s.Name == "Func3");
+
+        Assert.NotNull(func1);
+        Assert.NotNull(func2);
+        Assert.NotNull(func3);
+
+        // Each function should have a full range that spans beyond just the name
+        Assert.True(func1.FullRange.End.Line >= func1.Range.Start.Line);
+        Assert.True(func2.FullRange.End.Line >= func2.Range.Start.Line);
+        Assert.True(func3.FullRange.End.Line >= func3.Range.Start.Line);
+
+        // Functions should have distinct ranges
+        Assert.True(func1.FullRange.End.Line < func2.Range.Start.Line ||
+                    func2.FullRange.End.Line < func3.Range.Start.Line,
+            "Functions should have non-overlapping ranges");
+    }
+
+    [Fact]
+    public void ParseFunction_RangeAndFullRangeAreDifferent()
+    {
+        // Arrange
+        var code = @"
+int MultiLineFunction()
+{
+    // Multiple lines of code
+    int x = 1;
+    int y = 2;
+    int z = 3;
+    return x + y + z;
+}
+";
+
+        // Act
+        var result = _parser.ParseFile(code, "test.mq4");
+
+        // Assert
+        var func = result.Symbols.First(s => s.Name == "MultiLineFunction");
+        Assert.NotNull(func);
+
+        // Range should be just the function name
+        var rangeStart = func.Range.Start.Line;
+        var rangeEnd = func.Range.End.Line;
+
+        // FullRange should include the body
+        var fullRangeStart = func.FullRange.Start.Line;
+        var fullRangeEnd = func.FullRange.End.Line;
+
+        // FullRange should span more lines than just the name
+        Assert.True(fullRangeEnd > rangeEnd,
+            $"FullRange.End ({fullRangeEnd}) should be greater than Range.End ({rangeEnd})");
+    }
+
+    #endregion
+
 }
