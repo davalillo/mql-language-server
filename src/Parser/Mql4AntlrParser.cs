@@ -744,6 +744,7 @@ namespace Mql4LanguageServer.Parser
                     Range = range,
                     Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = range,
+                    FullRange = CreateFullFunctionRange(context),
                     FilePath = _filePath
                 };
 
@@ -891,6 +892,35 @@ namespace Mql4LanguageServer.Parser
             return new LspRange
             (
                 new LspPosition(context.Start.Line - 1, context.Start.Column),
+                new LspPosition(context.Stop.Line - 1, context.Stop.Column + context.Stop.Text.Length)
+            );
+        }
+
+        /// <summary>
+        /// Calculate the full range of a function including its body.
+        /// Uses the block's RBRACE token to ensure accurate end position.
+        /// </summary>
+        private LspRange CreateFullFunctionRange(Mql4GrammarParser.FunctionDeclarationContext context)
+        {
+            // Start from the first token of the function
+            var startLine = context.Start.Line - 1;
+            var startColumn = context.Start.Column;
+
+            // Find the end position - prefer RBRACE from block if available
+            var blockContext = context.block();
+            if (blockContext != null && blockContext.RBRACE() != null)
+            {
+                // Use the RBRACE token as the end marker
+                var rbrace = blockContext.RBRACE().Symbol;
+                return new LspRange(
+                    new LspPosition(startLine, startColumn),
+                    new LspPosition(rbrace.Line - 1, rbrace.Column + rbrace.Text.Length)
+                );
+            }
+
+            // Fallback: use context.Stop (may not include full body)
+            return new LspRange(
+                new LspPosition(startLine, startColumn),
                 new LspPosition(context.Stop.Line - 1, context.Stop.Column + context.Stop.Text.Length)
             );
         }
