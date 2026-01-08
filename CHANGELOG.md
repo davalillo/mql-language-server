@@ -1,3 +1,18 @@
+## [1.5.1] - 2026-01-08
+
+### Fixed
+- fix: Corregir rangos de funciones en el parser LSP (FullRange calculation)
+  - El bug causaba que todos los `end_line` fueran iguales a `start_line`
+  - Añadir método `CreateFullFunctionRange()` usando token RBRACE
+  - 4 nuevos tests de verificación para rangos de funciones
+
+### Tests
+- Añadir tests: `ParseFunction_FullRangeIsAccurate`
+- Añadir tests: `ParseFunction_FullRangeEndsAtClosingBrace`
+- Añadir tests: `ParseFunction_FullRangeMultipleFunctions`
+- Añadir tests: `ParseFunction_RangeAndFullRangeAreDifferent`
+- Todos los 370 tests pasan
+
 ## [1.5.0] - 2025-11-26
 
 ### Added
