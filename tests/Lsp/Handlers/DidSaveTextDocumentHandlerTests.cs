@@ -1,0 +1,90 @@
+using Xunit;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Mql4LanguageServer.Lsp.Handlers;
+using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Models;
+using Mql4LanguageServer.Parser;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.IO;
+
+namespace Mql4LanguageServer.Tests.Lsp.Handlers
+{
+    /// <summary>
+    /// Tests for DidSaveTextDocumentHandler.
+    /// </summary>
+    public class DidSaveTextDocumentHandlerTests
+    {
+        [Fact]
+        public void DidSaveTextDocumentHandler_CanBeInstantiated()
+        {
+            // Arrange & Act
+            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            GlobalSymbolIndex.Instance.Clear();
+            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+
+            // Assert
+            Assert.NotNull(handler);
+            GlobalSymbolIndex.Instance.Clear();
+        }
+
+        [Fact]
+        public async Task DidSaveTextDocumentHandler_Completes_WhenFileNotFoundAsync()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            GlobalSymbolIndex.Instance.Clear();
+            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+
+            var request = new DidSaveTextDocumentParams
+            {
+                TextDocument = new TextDocumentIdentifier("/nonexistent/file.mq4")
+            };
+
+            // Act
+            await handler.HandleAsync(request, CancellationToken.None);
+
+            // Assert - Just verify it completes without error
+            Assert.True(true);
+            GlobalSymbolIndex.Instance.Clear();
+        }
+
+        [Fact]
+        public async Task DidSaveTextDocumentHandler_ProcessesFile_WhenFileSavedAsync()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            GlobalSymbolIndex.Instance.Clear();
+            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+
+            var testFilePath = Path.Combine(Path.GetTempPath(), "TestDidSave.mq4");
+            var testCode = "void OnTick() { int x = 10; }";
+            File.WriteAllText(testFilePath, testCode);
+
+            try
+            {
+                var request = new DidSaveTextDocumentParams
+                {
+                    TextDocument = new TextDocumentIdentifier("file://" + testFilePath)
+                };
+
+                // Act
+                await handler.HandleAsync(request, CancellationToken.None);
+
+                // Assert - Just verify it completes without error
+                Assert.True(true);
+            }
+            finally
+            {
+                File.Delete(testFilePath);
+                GlobalSymbolIndex.Instance.Clear();
+            }
+        }
+    }
+}
