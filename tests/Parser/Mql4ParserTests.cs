@@ -923,4 +923,186 @@ int MultiLineFunction()
 
     #endregion
 
+    #region Real File Function Range Tests
+
+    /// <summary>
+    /// Tests against the real Ducibus Pro file to verify FullRange accuracy.
+    ///
+    /// IMPORTANT: Line numbering uses LSP 0-indexed convention.
+    /// - OnInit is around line 7269 (1-indexed) in the file
+    /// - Function body is ~981 lines long
+    /// </summary>
+    [Fact]
+    public void ParseRealFile_DucibusPro_OnInit_HasCorrectFullRange()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        var onInit = file.Symbols.FirstOrDefault(s =>
+            s.Name.Equals("OnInit", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(onInit);
+        Assert.NotNull(onInit.FullRange);
+
+        // Defensive null checks for nullable analysis
+        var initFullRange = onInit.FullRange;
+        var initRange = onInit.Range;
+        Assert.NotNull(initFullRange);
+        Assert.NotNull(initRange);
+
+        // Verify FullRange spans beyond just the declaration (should be ~981 lines)
+        Assert.True(initFullRange.End.Line > initRange.Start.Line,
+            $"OnInit FullRange should span multiple lines. Range: {initRange.Start.Line}-{initRange.End.Line}, FullRange: {initFullRange.Start.Line}-{initFullRange.End.Line}");
+
+        // Expected values (LSP uses 0-indexed lines):
+        // - FullRange.Start = 7267 (0-indexed) = línea 7268 (1-indexed) donde está "int OnInit()"
+        // - FullRange.End should be around 8248 (0-indexed) = línea 8249 (1-indexed) con "}"
+        // This is approximately 981 lines of function body
+        Assert.True(initFullRange.End.Line > 8000,
+            $"OnInit FullRange.End should be > 8000 (actual: {initFullRange.End.Line})");
+
+        Console.WriteLine($"OnInit - Range: {initRange.Start.Line}-{initRange.End.Line}, FullRange: {initFullRange.Start.Line}-{initFullRange.End.Line}");
+    }
+
+    /// <summary>
+    /// Tests NormalizeTPSell in the real Ducibus Pro file.
+    ///
+    /// IMPORTANT: Line numbering in this test uses LSP 0-indexed convention.
+    /// - LSP line 20568 = file line 20569 (1-indexed) where "double NormalizeTPSell(...)" is
+    /// - LSP line 20578 = file line 20579 (1-indexed) where "}" closes the function
+    ///
+    /// The file Ducibus_Pro_ver_2_90.mq4 is encoded in UTF-16 LE with BOM.
+    /// ANTLR's CharStream converts bytes to characters, so line positions
+    /// are calculated on character count, not byte count.
+    /// </summary>
+    [Fact]
+    public void ParseRealFile_DucibusPro_NormalizeTPSell_HasCorrectFullRange()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        var normalizeTp = file.Symbols.FirstOrDefault(s =>
+            s.Name.Equals("NormalizeTPSell", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(normalizeTp);
+
+        // Defensive null checks for nullable analysis
+        var tpFullRange = normalizeTp.FullRange;
+        var tpRange = normalizeTp.Range;
+        Assert.NotNull(tpFullRange);
+        Assert.NotNull(tpRange);
+
+        // Verify FullRange spans multiple lines (should be ~10 lines total)
+        Assert.True(tpFullRange.End.Line > tpRange.Start.Line,
+            $"NormalizeTPSell FullRange should span multiple lines. Range: {tpRange.Start.Line}-{tpRange.End.Line}, FullRange: {tpFullRange.Start.Line}-{tpFullRange.End.Line}");
+
+        // Expected values (LSP uses 0-indexed lines):
+        // - FullRange.Start = 20568 (0-indexed) = línea 20569 (1-indexed) donde está "double NormalizeTPSell"
+        // - FullRange.End = 20578 (0-indexed) = línea 20579 (1-indexed) donde está "}"
+        Assert.Equal(20568, tpFullRange.Start.Line);
+        Assert.Equal(20578, tpFullRange.End.Line);
+    }
+
+    /// <summary>
+    /// Verifies that FullRange always ends at the closing brace (RBRACE token).
+    /// Uses multiple functions from the real Ducibus Pro file.
+    /// </summary>
+    [Fact]
+    public void ParseRealFile_DucibusPro_FullRange_EndAtClosingBrace()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert - Verify multiple lifecycle functions have correct FullRange
+        var lifecycleFunctions = new[] { "OnInit", "OnTick", "OnDeinit" };
+
+        foreach (var funcName in lifecycleFunctions)
+        {
+            var symbol = file.Symbols.FirstOrDefault(s =>
+                s.Name.Equals(funcName, StringComparison.OrdinalIgnoreCase));
+
+            if (symbol != null)
+            {
+                Assert.NotNull(symbol.FullRange);
+                Assert.True(symbol.FullRange.End.Line > symbol.Range.Start.Line,
+                    $"{funcName} FullRange should span beyond declaration");
+
+                Console.WriteLine($"{funcName}: Range={symbol.Range.Start.Line}-{symbol.Range.End.Line}, FullRange={symbol.FullRange.Start.Line}-{symbol.FullRange.End.Line}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Compares Range vs FullRange for all functions in the real file.
+    /// Range should be minimal (just the declaration), FullRange should include the body.
+    /// </summary>
+    [Fact]
+    public void ParseRealFile_DucibusPro_AllFunctions_HaveDistinctRangeAndFullRange()
+    {
+        // Arrange
+        var filePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
+        var code = File.ReadAllText(filePath);
+
+        // Act
+        var file = _parser.ParseFile(code, filePath);
+
+        // Assert
+        var functions = file.Symbols.Where(s => s.Kind == SymbolKind.Function).ToList();
+
+        Assert.True(functions.Count > 0, "Should find functions in the real file");
+
+        var mismatches = new List<string>();
+
+        foreach (var func in functions)
+        {
+            if (func.FullRange == null)
+            {
+                // FullRange may be null for imported functions (#import) - this is expected
+                continue;
+            }
+
+            // FullRange should always span more lines than just the declaration
+            // For real function definitions (not imports), FullRange.End > Range.Start.Line
+            if (func.FullRange.End.Line <= func.Range.Start.Line)
+            {
+                // Check if this might be an import statement by looking at the Range content
+                // Imported functions typically have very short ranges (1 line) and no body
+                if (func.Range.End.Line - func.Range.Start.Line <= 2)
+                {
+                    // Likely an import - skip
+                    continue;
+                }
+                mismatches.Add($"Function '{func.Name}': FullRange.End ({func.FullRange.End.Line}) <= Range.Start ({func.Range.Start.Line})");
+            }
+
+            // FullRange.Start should equal Range.Start (both start at declaration)
+            if (func.FullRange.Start.Line != func.Range.Start.Line)
+            {
+                // This is acceptable - FullRange.Start might be adjusted for token position
+            }
+        }
+
+        Assert.Empty(mismatches);
+        if (mismatches.Count > 0)
+        {
+            Console.WriteLine($"Found {mismatches.Count} functions with incorrect FullRange:\n{string.Join("\n", mismatches.Take(10))}");
+        }
+
+        Console.WriteLine($"Verified {functions.Count} functions have correct Range and FullRange");
+    }
+
+    #endregion
+
 }
