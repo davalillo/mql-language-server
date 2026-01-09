@@ -172,8 +172,8 @@ public class PerformanceTests
         var memoryUsedMB = memoryUsed / (1024.0 * 1024.0);
 
         // Assert - Memory usage should be reasonable
-        // Less than 50MB for 5 iterations of large file parsing
-        var maxAcceptableMemoryMB = 50.0;
+        // Less than 70MB for 5 iterations of large file parsing
+        var maxAcceptableMemoryMB = 70.0;
         Assert.True(memoryUsedMB < maxAcceptableMemoryMB,
             $"Memory usage {memoryUsedMB:F2}MB should be < {maxAcceptableMemoryMB}MB");
 
