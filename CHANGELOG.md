@@ -1,3 +1,39 @@
+## [1.6.0] - 2026-01-09
+
+### Added
+- feat: Implementar soporte LSP 3.17 - Fases 1-4
+  - Navigation handlers: Declaration, TypeDefinition, Implementation, DocumentHighlight
+  - Editing handlers: Rename, DocumentFormatting, RangeFormatting, OnTypeFormatting
+  - Code Action handlers: CodeActionHandler, CodeActionResolveHandler
+  - Server capabilities: Mql4ServerCapabilities con document selector
+  - 130+ nuevos tests para coverage de handlers
+
+- feat: Implementar Fase 5 - SignatureHelp, SelectionRange, FoldingRange handlers
+  - SignatureHelpHandler: Información de parámetros de funciones
+  - SelectionRangeHandler: Rangos de selección para editores
+  - FoldingRangeHandler: Regiones de código colapsables
+  - Tests unitarios para cada handler
+
+- feat: Añadir handlers simplificados para compatibilidad OmniSharp v0.19.9
+  - SemanticTokensHandler: Tokens semánticos para highlighting
+  - DidSaveTextDocumentHandler: Manejo de eventos de guardado
+  - InlayHintHandler: Sugerencias inlay (container vacío)
+  - MonikerHandler: Símbolos moniker para linking
+  - 12 nuevos tests
+
+### Fixed
+- fix: Corregir rangos degenerados en DocumentSymbol para funciones
+  - Range ahora incluye cuerpo completo (línea 31 a 1832)
+  - SelectionRange solo incluye la declaración
+  - Eliminado FullRange redundante del modelo Mql4Symbol
+  - 5 tests actualizados
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 417/417 Passed (100% success rate)
+- Compatibility: 100% - no breaking changes detected
+- LSP Handlers: 15+ handlers implementados
+
 ## [1.5.1] - 2026-01-08
 
 ### Fixed
