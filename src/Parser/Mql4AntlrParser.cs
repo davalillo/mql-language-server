@@ -735,16 +735,16 @@ namespace Mql4LanguageServer.Parser
             {
                 // Get the last token from qualifiedName for position info
                 var lastToken = context.qualifiedName().IDENTIFIER(context.qualifiedName().IDENTIFIER().Length - 1);
-                var range = CreateRangeFromToken(lastToken.Symbol);
+                var selectionRange = CreateRangeFromToken(lastToken.Symbol);
+                var fullRange = CreateFullFunctionRange(context, lastToken.Symbol);
 
                 var symbol = new Mql4Symbol
                 {
                     Name = name,
                     Kind = (LspSymbolKind)Mql4SymbolKind.Function,
-                    Range = range,
+                    Range = fullRange,  // Range = full range (declaration + body) per LSP spec
                     Detail = $"Function returning {context.type().GetText()}",
-                    SelectionRange = range,
-                    FullRange = CreateFullFunctionRange(context, lastToken.Symbol),
+                    SelectionRange = selectionRange,  // SelectionRange = only the declaration name
                     FilePath = _filePath
                 };
 

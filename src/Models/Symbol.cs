@@ -19,19 +19,14 @@ public class Mql4Symbol
     public SymbolKind Kind { get; set; }
 
     /// <summary>
-    /// Range within the document
+    /// Range within the document (full symbol including body for functions)
     /// </summary>
     public Range Range { get; set; } = new();
 
     /// <summary>
-    /// Selection range (usually same as Range)
+    /// Selection range (just the declaration name)
     /// </summary>
     public Range SelectionRange { get; set; } = new();
-
-    /// <summary>
-    /// Full range including body
-    /// </summary>
-    public Range FullRange { get; set; } = new();
 
     /// <summary>
     /// Detailed description
