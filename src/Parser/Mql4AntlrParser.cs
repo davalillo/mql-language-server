@@ -744,7 +744,7 @@ namespace Mql4LanguageServer.Parser
                     Range = range,
                     Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = range,
-                    FullRange = CreateFullFunctionRange(context),
+                    FullRange = CreateFullFunctionRange(context, lastToken.Symbol),
                     FilePath = _filePath
                 };
 
@@ -899,12 +899,13 @@ namespace Mql4LanguageServer.Parser
         /// <summary>
         /// Calculate the full range of a function including its body.
         /// Uses the block's RBRACE token to ensure accurate end position.
+        /// ANTLR uses 1-indexed lines, LSP uses 0-indexed, so we subtract 1.
         /// </summary>
-        private LspRange CreateFullFunctionRange(Mql4GrammarParser.FunctionDeclarationContext context)
+        private LspRange CreateFullFunctionRange(Mql4GrammarParser.FunctionDeclarationContext context, IToken nameToken)
         {
-            // Start from the first token of the function
-            var startLine = context.Start.Line - 1;
-            var startColumn = context.Start.Column;
+            // Start from the function name token (not the return type)
+            var startLine = nameToken.Line - 1;
+            var startColumn = nameToken.Column;
 
             // Find the end position - prefer RBRACE from block if available
             var blockContext = context.block();
