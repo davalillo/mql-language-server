@@ -80,7 +80,7 @@ read_only: false
 excluded_tools:
 - read_file          # Deja que use get_symbols_overview en su lugar
 - list_dir           # Prioriza search_for_pattern o find_symbol
-- execute_shell_command  # Deshabilita bash directo; usa onboarding para builds
+# - execute_shell_command  # Deshabilita bash directo; usa onboarding para builds
 # - create_text_file
 # - delete_lines
 

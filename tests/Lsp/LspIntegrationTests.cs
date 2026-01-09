@@ -18,8 +18,23 @@ namespace Mql4LanguageServer.Tests.Lsp;
 /// Integration tests for LSP Server
 /// Verifies handler registration and basic functionality
 /// </summary>
-public class LspIntegrationTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
+[Collection("GlobalSymbolIndex Tests")]
+public class LspIntegrationTests : IDisposable
 {
+    private readonly GlobalSymbolIndexCollectionFixture _fixture;
+
+    public LspIntegrationTests(GlobalSymbolIndexCollectionFixture fixture)
+    {
+        _fixture = fixture;
+        // State is already cleared by the fixture
+    }
+
+    public void Dispose()
+    {
+        // Clean up after each test
+        GlobalSymbolIndex.Instance.Clear();
+    }
+
     #region Handler Registration Tests
 
     [Fact]
