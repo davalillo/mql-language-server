@@ -21,8 +21,23 @@ namespace Mql4LanguageServer.Tests.Lsp;
 /// <summary>
 /// Tests for Text Document Synchronization (DidOpen, DidChange, DidClose) and error handling
 /// </summary>
-public class TextDocumentSyncAndErrorHandlingTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
+[Collection("GlobalSymbolIndex Tests")]
+public class TextDocumentSyncAndErrorHandlingTests : IDisposable
 {
+    private readonly GlobalSymbolIndexCollectionFixture _fixture;
+
+    public TextDocumentSyncAndErrorHandlingTests(GlobalSymbolIndexCollectionFixture fixture)
+    {
+        _fixture = fixture;
+        // State is already cleared by the fixture
+    }
+
+    public void Dispose()
+    {
+        // Clean up after each test
+        GlobalSymbolIndex.Instance.Clear();
+    }
+
     #region Text Document Sync Handler Tests
 
     [Fact]

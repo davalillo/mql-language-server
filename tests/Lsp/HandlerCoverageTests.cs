@@ -18,7 +18,8 @@ namespace Mql4LanguageServer.Tests.Lsp;
 /// Tests para aumentar cobertura de LSP Handlers
 /// Enfoque en código que realmente se puede testear
 /// </summary>
-public class HandlerCoverageTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
+[Collection("GlobalSymbolIndex Tests")]
+public class HandlerCoverageTests : IDisposable
 {
     private readonly Mock<ILogger<CompletionHandler>> _mockCompletionLogger;
     private readonly Mock<ILogger<DefinitionHandler>> _mockDefinitionLogger;
@@ -26,15 +27,23 @@ public class HandlerCoverageTests : IClassFixture<GlobalSymbolIndexCleanupFixtur
     private readonly Mock<ILogger<ReferencesHandler>> _mockReferencesLogger;
     private readonly Mock<OpenDocumentStore> _mockDocumentStore;
     private readonly Mql4AntlrParser _parser;
+    private readonly GlobalSymbolIndexCollectionFixture _fixture;
 
-    public HandlerCoverageTests(GlobalSymbolIndexCleanupFixture fixture)
+    public HandlerCoverageTests(GlobalSymbolIndexCollectionFixture fixture)
     {
+        _fixture = fixture;
         _mockCompletionLogger = new Mock<ILogger<CompletionHandler>>();
         _mockDefinitionLogger = new Mock<ILogger<DefinitionHandler>>();
         _mockHoverLogger = new Mock<ILogger<HoverHandler>>();
         _mockReferencesLogger = new Mock<ILogger<ReferencesHandler>>();
         _mockDocumentStore = new Mock<OpenDocumentStore>();
         _parser = new Mql4AntlrParser();
+    }
+
+    public void Dispose()
+    {
+        // Clean up after each test
+        GlobalSymbolIndex.Instance.Clear();
     }
 
     #region CompletionHandler Basic Tests

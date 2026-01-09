@@ -51,5 +51,14 @@ namespace Mql4LanguageServer.Lsp.Server
         {
             _openFiles?.Clear();
         }
+
+        /// <summary>
+        /// Gets the server capabilities to return during LSP initialization.
+        /// Called by the LSP framework during the initialize request.
+        /// </summary>
+        public object GetCapabilities()
+        {
+            return Mql4ServerCapabilities.GetCapabilities();
+        }
     }
 }

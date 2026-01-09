@@ -11,15 +11,24 @@ namespace Mql4LanguageServer.Tests.CrossFile;
 /// <summary>
 /// Tests for cross-file functionality including GlobalSymbolIndex and cross-file navigation
 /// </summary>
-public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
+[Collection("GlobalSymbolIndex Tests")]
+public class CrossFileTests : IDisposable
 {
     private readonly GlobalSymbolIndex _index;
     private readonly Mql4AntlrParser _parser;
+    private readonly GlobalSymbolIndexCollectionFixture _fixture;
 
-    public CrossFileTests(GlobalSymbolIndexCleanupFixture fixture)
+    public CrossFileTests(GlobalSymbolIndexCollectionFixture fixture)
     {
+        _fixture = fixture;
         _index = GlobalSymbolIndex.Instance;
         _parser = new Mql4AntlrParser();
+        // State is already cleared by the fixture
+    }
+
+    public void Dispose()
+    {
+        // Clean up after each test
         _index.Clear();
     }
 
@@ -47,9 +56,6 @@ public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
     [Fact]
     public void GlobalSymbolIndex_CanStoreMultipleFiles()
     {
-        // Ensure clean state
-        _index.Clear();
-
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -91,9 +97,6 @@ public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
     [Fact]
     public void GlobalSymbolIndex_FindSymbol_FindsAcrossMultipleFiles()
     {
-        // Ensure clean state
-        _index.Clear();
-
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -131,9 +134,6 @@ public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
     [Fact]
     public void GlobalSymbolIndex_GetStatistics_ShowsCorrectStats()
     {
-        // Ensure clean state
-        _index.Clear();
-
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -171,9 +171,6 @@ public class CrossFileTests : IClassFixture<GlobalSymbolIndexCleanupFixture>
     [Fact]
     public void GlobalSymbolIndex_RemoveFile_RemovesSymbolsAndUpdatesIndices()
     {
-        // Ensure clean state
-        _index.Clear();
-
         // Arrange
         var fileAPath = "fileA.mq4";
         var fileBPath = "fileB.mq4";
@@ -516,9 +513,6 @@ void FunctionB()
     [Fact]
     public void RealWorldFiles_ExpertAdvisorAndIndicators_WorkTogether()
     {
-        // Ensure clean state
-        _index.Clear();
-
         // Arrange
         var expertAdvisorCode = @"
 #include <Include/CustomIndicators.mqh>

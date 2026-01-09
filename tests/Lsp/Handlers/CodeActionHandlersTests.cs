@@ -1,0 +1,130 @@
+using Xunit;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Mql4LanguageServer.Lsp.Handlers;
+using Mql4LanguageServer.Lsp.Server;
+using Mql4LanguageServer.Parser;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace Mql4LanguageServer.Tests.Lsp.Handlers
+{
+    /// <summary>
+    /// Tests for code action handlers (CodeAction, CodeActionResolve).
+    /// </summary>
+    public class CodeActionHandlersTests
+    {
+        #region CodeActionHandlerTests
+
+        [Fact]
+        public void CodeActionHandler_CanBeInstantiated()
+        {
+            // Arrange & Act
+            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+            // Assert
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public async Task CodeActionHandler_ReturnsNull_WhenFileNotFoundAsync()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+            var request = new CodeActionParams
+            {
+                TextDocument = new TextDocumentIdentifier("/nonexistent/file.mq4"),
+                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(0, 0, 10, 0),
+                Context = new CodeActionContext
+                {
+                    Diagnostics = new[]
+                    {
+                        new Diagnostic
+                        {
+                            Message = "Test diagnostic",
+                            Severity = DiagnosticSeverity.Error,
+                            Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(0, 0, 0, 10)
+                        }
+                    }
+                }
+            };
+
+            // Act
+            var result = await handler.Handle(request, CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task CodeActionHandler_ReturnsNull_WhenFileNotFoundWithNoDiagnosticsAsync()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
+            var parserMock = new Mock<Mql4AntlrParser>();
+            var documentStore = new OpenDocumentStore();
+            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+            var request = new CodeActionParams
+            {
+                TextDocument = new TextDocumentIdentifier("/nonexistent/file.mq4"),
+                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(0, 0, 10, 0),
+                Context = new CodeActionContext
+                {
+                    Diagnostics = Array.Empty<Diagnostic>()
+                }
+            };
+
+            // Act
+            var result = await handler.Handle(request, CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        #endregion
+
+        #region CodeActionResolveHandlerTests
+
+        [Fact]
+        public void CodeActionResolveHandler_CanBeInstantiated()
+        {
+            // Arrange & Act
+            var loggerMock = new Mock<ILogger<CodeActionResolveHandler>>();
+            var handler = new CodeActionResolveHandler(loggerMock.Object);
+
+            // Assert
+            Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public async Task CodeActionResolveHandler_ReturnsActionAsIsAsync()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<CodeActionResolveHandler>>();
+            var handler = new CodeActionResolveHandler(loggerMock.Object);
+
+            var action = new CodeAction
+            {
+                Title = "Test Action",
+                Kind = CodeActionKind.QuickFix
+            };
+
+            // Act
+            var result = await handler.Handle(action, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Test Action", result.Title);
+            Assert.Equal(CodeActionKind.QuickFix, result.Kind);
+        }
+
+        #endregion
+    }
+}
