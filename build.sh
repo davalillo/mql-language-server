@@ -35,9 +35,9 @@ dotnet publish -c Release -r linux-x64 --self-contained true \
   -p:PublishSingleFile=true \
   -p:DebugType=None \
   -p:DebugSymbols=false \
-  -o ./bin/Release/net10.0/publish/linux-x64
-chmod +x ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server
-echo "✅ Linux x64 build complete: ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server"
+  -o ./bin/Release/net10.0/publish/mql4-lsp-server-linux-x64
+chmod +x ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server-linux-x64
+echo "✅ Linux x64 build complete: ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server-linux-x64"
 echo ""
 
 # Build for macOS x64
@@ -48,7 +48,7 @@ dotnet publish -c Release -r osx-x64 --self-contained true \
   -p:DebugSymbols=false \
   -o ./bin/Release/net10.0/publish/osx-x64
 chmod +x ./bin/Release/net10.0/publish/osx-x64/mql4-lsp-server
-echo "✅ macOS x64 build complete: ./bin/Release/net10.0/publish/osx-x64/mql4-lsp-server"
+echo "✅ macOS x64 build complete: ./bin/Release/net10.0/publish/osx-x64/mql4-lsp-server-osx-x64"
 echo ""
 
 echo "=================================================="

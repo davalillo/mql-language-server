@@ -1,3 +1,18 @@
+## [1.7.0] - 2026-01-10
+
+### Added
+- feat: Connect 15 LSP handlers and fix DidSaveTextDocumentHandler
+  - WorkspaceSymbolHandler: Search symbols across workspace files
+  - DiagnosticHandler: Report document diagnostics (typos, empty OnInit, underscore variables)
+  - Full handler registration in Program.cs for complete LSP feature set
+  - 12 new unit tests for workspace and diagnostic handlers
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: 429/429 Passed (100% success rate)
+- Compatibility: 100% - no breaking changes detected
+- LSP Handlers: All 17 handlers now connected and functional
+
 ## [1.6.0] - 2026-01-09
 
 ### Added
