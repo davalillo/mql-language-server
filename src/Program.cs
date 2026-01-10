@@ -82,10 +82,24 @@ namespace Mql4LanguageServer
                             services.AddSingleton<ReferencesHandler>();
                             services.AddSingleton<CompletionHandler>();
                             services.AddSingleton<HoverHandler>();
-                            // services.AddSingleton<SignatureHelpHandler>(); // TODO: Fix interface compatibility
+                            services.AddSingleton<RenameHandler>();
+                            services.AddSingleton<SignatureHelpHandler>();
+                            services.AddSingleton<FoldingRangeHandler>();
+                            services.AddSingleton<SelectionRangeHandler>();
+                            services.AddSingleton<DocumentHighlightHandler>();
+                            services.AddSingleton<DocumentFormattingHandler>();
+                            services.AddSingleton<RangeFormattingHandler>();
+                            services.AddSingleton<TypeDefinitionHandler>();
+                            services.AddSingleton<CodeActionHandler>();
+                            services.AddSingleton<CodeActionResolveHandler>();
                             services.AddSingleton<DidOpenTextDocumentHandler>();
                             services.AddSingleton<DidCloseTextDocumentHandler>();
                             services.AddSingleton<DidChangeTextDocumentHandler>();
+                            services.AddSingleton<DeclarationHandler>();
+                            services.AddSingleton<ImplementationHandler>();
+
+                            // Note: WorkspaceSymbolHandler, DiagnosticHandler, DidSaveTextDocumentHandler, 
+                            // SemanticTokensHandler, MonikerHandler, InlayHintHandler need interface updates
 
                             // Register LSP server
                             services.AddSingleton<Mql4LspServer>();
@@ -96,10 +110,21 @@ namespace Mql4LanguageServer
                         .WithHandler<ReferencesHandler>()
                         .WithHandler<CompletionHandler>()
                         .WithHandler<HoverHandler>()
-                        // .WithHandler<SignatureHelpHandler>() // TODO: Fix interface compatibility
+                        .WithHandler<RenameHandler>()
+                        .WithHandler<SignatureHelpHandler>()
+                        .WithHandler<FoldingRangeHandler>()
+                        .WithHandler<SelectionRangeHandler>()
+                        .WithHandler<DocumentHighlightHandler>()
+                        .WithHandler<DocumentFormattingHandler>()
+                        .WithHandler<RangeFormattingHandler>()
+                        .WithHandler<TypeDefinitionHandler>()
+                        .WithHandler<CodeActionHandler>()
+                        .WithHandler<CodeActionResolveHandler>()
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
-                        .WithHandler<DidChangeTextDocumentHandler>();
+                        .WithHandler<DidChangeTextDocumentHandler>()
+                        .WithHandler<DeclarationHandler>()
+                        .WithHandler<ImplementationHandler>();
                 });
 
                 Log.Information("Language Server created successfully");

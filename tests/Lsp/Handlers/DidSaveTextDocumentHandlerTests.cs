@@ -40,13 +40,16 @@ namespace Mql4LanguageServer.Tests.Lsp.Handlers
             GlobalSymbolIndex.Instance.Clear();
             var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
 
-            var request = new DidSaveTextDocumentParams
+            var request = new DidChangeTextDocumentParams
             {
-                TextDocument = new TextDocumentIdentifier("/nonexistent/file.mq4")
+                TextDocument = new OptionalVersionedTextDocumentIdentifier
+                {
+                    Uri = new Uri("/nonexistent/file.mq4")
+                }
             };
 
             // Act
-            await handler.HandleAsync(request, CancellationToken.None);
+            await handler.Handle(request, CancellationToken.None);
 
             // Assert - Just verify it completes without error
             Assert.True(true);
@@ -69,13 +72,16 @@ namespace Mql4LanguageServer.Tests.Lsp.Handlers
 
             try
             {
-                var request = new DidSaveTextDocumentParams
+                var request = new DidChangeTextDocumentParams
                 {
-                    TextDocument = new TextDocumentIdentifier("file://" + testFilePath)
+                    TextDocument = new OptionalVersionedTextDocumentIdentifier
+                    {
+                        Uri = new Uri("file://" + testFilePath)
+                    }
                 };
 
                 // Act
-                await handler.HandleAsync(request, CancellationToken.None);
+                await handler.Handle(request, CancellationToken.None);
 
                 // Assert - Just verify it completes without error
                 Assert.True(true);
