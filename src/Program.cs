@@ -12,6 +12,10 @@ using Mql4LanguageServer.Parser;
 using Serilog;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
+using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
 namespace Mql4LanguageServer
 {
@@ -64,6 +68,7 @@ namespace Mql4LanguageServer
                         .WithLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()))
                         .WithServices(services =>
                         {
+                            
                             // Register parser
                             services.AddSingleton<Mql4AntlrParser>();
 
@@ -77,7 +82,7 @@ namespace Mql4LanguageServer
                             services.AddSingleton<MetricsCollector>();
 
                             // Register all handlers
-                            services.AddSingleton<DocumentSymbolHandler>();
+                            services.AddSingleton<IDocumentSymbolHandler, DocumentSymbolHandler>();
                             services.AddSingleton<DefinitionHandler>();
                             services.AddSingleton<ReferencesHandler>();
                             services.AddSingleton<CompletionHandler>();
@@ -96,7 +101,10 @@ namespace Mql4LanguageServer
                             services.AddSingleton<DidCloseTextDocumentHandler>();
                             services.AddSingleton<DidChangeTextDocumentHandler>();
                             services.AddSingleton<DeclarationHandler>();
-                            services.AddSingleton<ImplementationHandler>();
+                            services.AddSingleton<IImplementationHandler, ImplementationHandler>();
+
+                            services.AddSingleton<DiagnosticHandler>();
+                            services.AddSingleton<WorkspaceSymbolHandler>();
 
                             // Note: WorkspaceSymbolHandler, DiagnosticHandler, DidSaveTextDocumentHandler, 
                             // SemanticTokensHandler, MonikerHandler, InlayHintHandler need interface updates
@@ -192,4 +200,5 @@ namespace Mql4LanguageServer
             }
         }
     }
+
 }
