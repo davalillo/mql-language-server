@@ -741,7 +741,7 @@ namespace Mql4LanguageServer.Parser
                 var symbol = new Mql4Symbol
                 {
                     Name = name,
-                    Kind = (LspSymbolKind)Mql4SymbolKind.Function,
+                    Kind = LspSymbolKind.Function,
                     Range = fullRange,  // Range = full range (declaration + body) per LSP spec
                     Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = selectionRange,  // SelectionRange = only the declaration name
@@ -811,7 +811,7 @@ namespace Mql4LanguageServer.Parser
                     var symbol = new Mql4Symbol
                     {
                         Name = name,
-                        Kind = (LspSymbolKind)Mql4SymbolKind.Variable,
+                        Kind = LspSymbolKind.Variable,
                         Range = range,
                         SelectionRange = range,
                         Detail = detail,
