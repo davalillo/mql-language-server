@@ -47,18 +47,10 @@ namespace Mql4LanguageServer.Lsp.Server
             _logger.LogInformation("Server ready to serve LSP requests for MQL4 files");
             _logger.LogInformation("Phase 3.6 Complete: All LSP Handlers implemented and registered via MediatR");
         }
+
         public void Dispose()
         {
             _openFiles?.Clear();
-        }
-
-        /// <summary>
-        /// Gets the server capabilities to return during LSP initialization.
-        /// Called by the LSP framework during the initialize request.
-        /// </summary>
-        public object GetCapabilities()
-        {
-            return Mql4ServerCapabilities.GetCapabilities();
         }
     }
 }
