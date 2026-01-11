@@ -132,7 +132,9 @@ namespace Mql4LanguageServer
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>()
                         .WithHandler<DeclarationHandler>()
-                        .WithHandler<ImplementationHandler>();
+                        .WithHandler<ImplementationHandler>()
+                        .WithHandler<WorkspaceSymbolHandler>()
+                        .WithHandler<DiagnosticHandler>();
                 });
 
                 Log.Information("Language Server created successfully");

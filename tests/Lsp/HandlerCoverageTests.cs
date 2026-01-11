@@ -104,6 +104,72 @@ public class HandlerCoverageTests : IDisposable
         Assert.NotNull(file.Symbols);
     }
 
+    [Fact]
+    public async Task CompletionHandler_Handle_ReturnsCompletionListAsync()
+    {
+        // Arrange - Need real document store for handler to work
+        var documentStore = new OpenDocumentStore();
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, documentStore);
+
+        var testFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"test_completion_{Guid.NewGuid():N}.mq4");
+        var content = "int OnInit() { return INIT_SUCCEEDED; }\n\nvoid OnTick() { double price = Ask; }";
+        await System.IO.File.WriteAllTextAsync(testFilePath, content);
+
+        try
+        {
+            // Parse and add to document store
+            var mql4File = _parser.ParseFile(content, testFilePath);
+            var documentUri = new Uri($"file://{testFilePath}");
+            documentStore.AddOrUpdate(documentUri, mql4File);
+
+            var request = new CompletionParams
+            {
+                TextDocument = new TextDocumentIdentifier(documentUri),
+                Position = new Position(3, 18) // Inside OnTick, after "Ask"
+            };
+
+            // Act
+            var result = await handler.Handle(request, CancellationToken.None);
+
+            // Assert - Verify LSP 3.17 CompletionList format
+            Assert.NotNull(result);
+            Assert.IsType<CompletionList>(result);
+            Assert.NotNull(result.Items);
+            Assert.False(result.IsIncomplete, "Completion results should be complete");
+            Assert.True(result.Items.Count() > 0, $"Expected completion items, got {result.Items.Count()}");
+        }
+        finally
+        {
+            if (System.IO.File.Exists(testFilePath))
+                System.IO.File.Delete(testFilePath);
+        }
+    }
+
+    [Fact]
+    public async Task CompletionHandler_Handle_ReturnsEmptyCompletionListAsync()
+    {
+        // Arrange - Handler with document store for non-existent file
+        var documentStore = new OpenDocumentStore();
+        var handler = new CompletionHandler(_mockCompletionLogger.Object, _parser, documentStore);
+
+        var documentUri = new Uri("file:///non_existent/path/file.mq4");
+        var request = new CompletionParams
+        {
+            TextDocument = new TextDocumentIdentifier(documentUri),
+            Position = new Position(0, 0)
+        };
+
+        // Act
+        var result = await handler.Handle(request, CancellationToken.None);
+
+        // Assert - Verify LSP 3.17 format with empty results
+        Assert.NotNull(result);
+        Assert.IsType<CompletionList>(result);
+        Assert.NotNull(result.Items);
+        Assert.False(result.IsIncomplete, "Empty results should indicate completion");
+        Assert.Empty(result.Items);
+    }
+
     #endregion
 
     #region DefinitionHandler Basic Tests

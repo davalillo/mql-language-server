@@ -35,8 +35,9 @@ dotnet publish -c Release -r linux-x64 --self-contained true \
   -p:PublishSingleFile=true \
   -p:DebugType=None \
   -p:DebugSymbols=false \
-  -o ./bin/Release/net10.0/publish/mql4-lsp-server-linux-x64
-chmod +x ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server-linux-x64
+  -o ./bin/Release/net10.0/publish/linux-x64
+chmod +x ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server
+mv ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server-linux-x64
 echo "✅ Linux x64 build complete: ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server-linux-x64"
 echo ""
 
