@@ -132,7 +132,8 @@ public class CompletionHandler : ICompletionHandler
 
             _logger.LogDebug(Constants.LogMessages.ReturningCompletions, sortedCompletions.Count);
 
-            return new CompletionList(sortedCompletions.ToArray(), true);
+            // Return CompletionList with items and isIncomplete=false (results are complete)
+            return new CompletionList(sortedCompletions.ToArray(), isIncomplete: false);
         }
         catch (Exception ex)
         {
