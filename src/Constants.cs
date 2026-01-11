@@ -73,16 +73,8 @@ public static class Constants
             public const string Text = "Text";
         }
 
-        /// <summary>
-        /// Symbol kinds
-        /// </summary>
-        public static class SymbolKinds
-        {
-            public const string Function = "Function";
-            public const string Variable = "Variable";
-            public const string Constant = "Constant";
-            public const string Keyword = "Keyword";
-        }
+        // SymbolKinds was removed - use OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind instead
+        // See: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind
     }
 
     /// <summary>

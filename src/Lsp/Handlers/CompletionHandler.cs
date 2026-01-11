@@ -225,7 +225,7 @@ public class CompletionHandler : ICompletionHandler
 
         // Add function declarations (exclude built-ins to avoid duplicates)
         completions.AddRange(mql4File.Symbols
-            .Where(s => s.Kind == (SymbolKind)Mql4SymbolKind.Function)
+            .Where(s => s.Kind == SymbolKind.Function)
             .Where(s => !IsBuiltinCaseInsensitive(s.Name))
             .Select(s => new CompletionItem
             {
@@ -482,7 +482,7 @@ public class CompletionHandler : ICompletionHandler
         // Get all symbols EXCEPT functions (functions are added by GetGlobalScopeCompletions)
         // This prevents duplicates
         return file.Symbols
-            .Where(symbol => symbol.Kind != (SymbolKind)Mql4SymbolKind.Function) // Exclude functions
+            .Where(symbol => symbol.Kind != SymbolKind.Function) // Exclude functions
             .Where(symbol => !IsBuiltinCaseInsensitive(symbol.Name)) // Exclude built-ins (case-insensitive)
             .Select(symbol => new CompletionItem
             {
