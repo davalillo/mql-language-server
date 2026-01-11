@@ -229,6 +229,20 @@ public class GlobalSymbolIndex
             DependencyCount = _fileDependencies.Sum(kvp => kvp.Value.Count)
         };
     }
+
+    /// <summary>
+    /// Get all symbols from all indexed files as (Uri, symbols) pairs
+    /// </summary>
+    public IEnumerable<(Uri Uri, List<Mql4Symbol> Symbols)> GetAllSymbols()
+    {
+        foreach (var kvp in _symbolsByFile)
+        {
+            if (Uri.TryCreate(kvp.Key, UriKind.Absolute, out var uri))
+            {
+                yield return (uri, kvp.Value);
+            }
+        }
+    }
 }
 
 /// <summary>
