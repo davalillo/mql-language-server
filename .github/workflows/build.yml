@@ -91,14 +91,41 @@ jobs:
     
           chmod +x bin/mql4-lsp-server-*  
 
-      - name: Generate SHA256SUMS.txt
+      - name: Generate CHECKSUMS.txt
         run: |
           cd bin
-          # Hash de los archivos ya renombrados
-          find . -type f -name "mql4-lsp-server-*" -exec sha256sum {} \; > SHA256SUMS.txt
+          # Generate checksums with header
+          echo "# SHA256 checksums for ${{ needs.get-effective-tag.outputs.effective_tag }}" > CHECKSUMS.txt
+          echo "# Generated: $(date -u '+%Y-%m-%d')" >> CHECKSUMS.txt
+          echo "" >> CHECKSUMS.txt
+          find . -type f -name "mql4-lsp-server-*" -exec sha256sum {} \; >> CHECKSUMS.txt
+          cat CHECKSUMS.txt
 
       - name: Pack NuGet
         run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release --no-build --output nupkg/
+
+      - name: Cleanup old artifacts BEFORE upload
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            // Keep only artifacts from current release
+            const keepVersions = ['${{ needs.get-effective-tag.outputs.effective_tag }}'];
+            for (const artifact of artifacts.data.artifacts) {
+              const shouldKeep = keepVersions.some(v => artifact.name.includes(v));
+              if (!shouldKeep && !artifact.expired) {
+                console.log(`Deleting: ${artifact.name}`);
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+              }
+            }
 
       - name: Upload artifacts
         if: ${{ !env.ACT && !github.event.act }}
@@ -108,50 +135,61 @@ jobs:
           path: |
             bin/
             nupkg/
-
-  release-public:
-    name: Release → Repo público
-    needs: [get-effective-tag, publish-binaries]
-    runs-on: ubuntu-latest
-    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
-    steps:
-      - name: Download binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: binaries-${{ needs.publish-binaries.outputs.tag }}
-          path: .
+          retention-days: 1  # Auto-delete after 1 day
 
       - name: Create/Update release público
-        uses: ncipollo/release-action@v1
+        uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.PUBLIC_RELEASES_TOKEN }}
-          repo: mql4-language-server-releases
-          owner: davalillo
-          tag: ${{ needs.publish-binaries.outputs.tag }}
-          name: "MQL4 Language Server ${{ needs.publish-binaries.outputs.tag }}"
+          repository: davalillo/mql4-language-server-releases
+          tag_name: ${{ needs.get-effective-tag.outputs.effective_tag }}
+          name: "MQL4 Language Server ${{ needs.get-effective-tag.outputs.effective_tag }}"
           body: |
-            Binaries y paquete NuGet para la versión ${{ needs.publish-binaries.outputs.tag }}.
-            
+            Binaries y paquete NuGet para la versión ${{ needs.get-effective-tag.outputs.effective_tag }}.
+
             ### Archivos disponibles:
             - **Windows:** `mql4-lsp-server-win-x64.exe`
             - **Linux:** `mql4-lsp-server-linux-x64`
             - **macOS (Intel):** `mql4-lsp-server-osx-x64`
             - **macOS (M1/M2/M3):** `mql4-lsp-server-osx-arm64`
-            
+            - **Checksums:** `CHECKSUMS.txt` (verifica integridad de archivos)
+
             _El código fuente adjunto abajo (Source code zip) solo contiene el README de este repositorio, el código real es privado._
-          
-          allowUpdates: true
-          replacesArtifacts: true
-          removeArtifacts: true
-          makeLatest: true   # Fuerza a que esta sea la "Latest" oficial
-          
-          # Aquí listamos los nuevos nombres
-          artifacts: |
+
+            ### Verificación de integridad:
+            ```bash
+            sha256sum -c CHECKSUMS.txt
+            ```
+          files: |
             bin/mql4-lsp-server-linux-x64
             bin/mql4-lsp-server-osx-x64
             bin/mql4-lsp-server-osx-arm64
             bin/mql4-lsp-server-win-x64.exe
-            bin/SHA256SUMS.txt
+            bin/CHECKSUMS.txt
             nupkg/*.nupkg
-          
-          prerelease: ${{ contains(needs.publish-binaries.outputs.tag, '-') }}
+          draft: false
+          prerelease: ${{ contains(needs.get-effective-tag.outputs.effective_tag, '-') }}
+          make_latest: true
+
+      - name: Cleanup old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            // Keep only artifacts from last 3 releases
+            const keepVersions = ['v1.7.0', 'v1.6.0', 'v1.5.0'];
+            for (const artifact of artifacts.data.artifacts) {
+              const shouldKeep = keepVersions.some(v => artifact.name.includes(v));
+              if (!shouldKeep && !artifact.expired) {
+                console.log(`Deleting artifact: ${artifact.name}`);
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+              }
+            }
