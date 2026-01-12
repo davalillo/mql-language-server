@@ -44,7 +44,7 @@ public class ServerCoverageTests
         var file = new Mql4File();
 
         // Act
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));
@@ -58,7 +58,7 @@ public class ServerCoverageTests
         var store = new OpenDocumentStore();
         var uri = new Uri("file:///test.mq4");
         var file = new Mql4File();
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Act
         var result = store.TryGetValue(uri, out var retrieved);
@@ -90,7 +90,7 @@ public class ServerCoverageTests
         var store = new OpenDocumentStore();
         var uri = new Uri("file:///test.mq4");
         var file = new Mql4File();
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Act
         store.Remove(uri);
@@ -115,9 +115,9 @@ public class ServerCoverageTests
     {
         // Arrange
         var store = new OpenDocumentStore();
-        store.AddOrUpdate(new Uri("file:///test1.mq4"), new Mql4File());
-        store.AddOrUpdate(new Uri("file:///test2.mq4"), new Mql4File());
-        store.AddOrUpdate(new Uri("file:///test3.mq4"), new Mql4File());
+        store.AddOrUpdate(new Uri("file:///test1.mq4"), new Mql4File(), "");
+        store.AddOrUpdate(new Uri("file:///test2.mq4"), new Mql4File(), "");
+        store.AddOrUpdate(new Uri("file:///test3.mq4"), new Mql4File(), "");
 
         // Act
         store.Clear();
@@ -146,7 +146,7 @@ public class ServerCoverageTests
 
         // Act
         var file = new Mql4AntlrParser().ParseFile(code, "test.mq4");
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));
@@ -164,11 +164,11 @@ public class ServerCoverageTests
         var parser = new Mql4AntlrParser();
 
         var file1 = parser.ParseFile("void Func1() {}", "test.mq4");
-        store.AddOrUpdate(uri, file1);
+        store.AddOrUpdate(uri, file1, "");
 
         // Act
         var file2 = parser.ParseFile("void Func2() {}", "test.mq4");
-        store.AddOrUpdate(uri, file2);
+        store.AddOrUpdate(uri, file2, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));
@@ -184,7 +184,7 @@ public class ServerCoverageTests
         var file = new Mql4AntlrParser().ParseFile("", "empty.mq4");
 
         // Act
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));
@@ -201,7 +201,7 @@ public class ServerCoverageTests
         var file = new Mql4AntlrParser().ParseFile(code, "test.mq4");
 
         // Act
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));
@@ -395,8 +395,8 @@ public class ServerCoverageTests
         // Act - Add
         var file1 = parser.ParseFile("void OnInit() {}", "file1.mq4");
         var file2 = parser.ParseFile("void OnTick() {}", "file2.mq4");
-        store.AddOrUpdate(uri1, file1);
-        store.AddOrUpdate(uri2, file2);
+        store.AddOrUpdate(uri1, file1, "");
+        store.AddOrUpdate(uri2, file2, "");
 
         // Assert - Verify stored
         Assert.True(store.TryGetValue(uri1, out var retrieved1));
@@ -404,7 +404,7 @@ public class ServerCoverageTests
 
         // Act - Update
         var updatedFile1 = parser.ParseFile("void OnInit() { Print(\"Updated\"); }", "file1.mq4");
-        store.AddOrUpdate(uri1, updatedFile1);
+        store.AddOrUpdate(uri1, updatedFile1, "");
 
         // Assert - Verify updated
         Assert.True(store.TryGetValue(uri1, out var updated1));
@@ -442,7 +442,7 @@ public class ServerCoverageTests
             var uri = new Uri($"file:///test{i}.mq4");
             var code = $"void Func{i}() {{}}";
             var file = parser.ParseFile(code, $"test{i}.mq4");
-            store.AddOrUpdate(uri, file);
+            store.AddOrUpdate(uri, file, "");
         }
 
         // Assert
@@ -468,7 +468,7 @@ public class ServerCoverageTests
 
         // Act
         var file = new Mql4AntlrParser().ParseFile(code, "large.mq4");
-        store.AddOrUpdate(uri, file);
+        store.AddOrUpdate(uri, file, "");
 
         // Assert
         Assert.True(store.TryGetValue(uri, out var retrieved));

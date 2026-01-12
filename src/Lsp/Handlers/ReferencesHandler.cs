@@ -76,7 +76,7 @@ public class ReferencesHandler : IReferencesHandler
 
                 // Parse the file and cache it
                 mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
             // Convert LSP Position (0-based) to parser position (1-based)

@@ -58,11 +58,12 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
 
             if (content != null)
             {
-                var filePath = documentUri.AbsolutePath ?? "unknown";
+                 var filePath = documentUri.AbsolutePath ?? "unknown";
                 var mql4File = _parser.ParseFile(content, filePath);
 
-                _openFiles.AddOrUpdate(documentUri, mql4File);
-
+                // CAMBIO: Ahora pasamos 3 argumentos (uri, modelo, texto)
+                _openFiles.AddOrUpdate(documentUri, mql4File, content); 
+                
                 // Register file and its symbols in GlobalSymbolIndex for cross-file navigation
                 GlobalSymbolIndex.Instance.AddFile(filePath, mql4File.Symbols);
 

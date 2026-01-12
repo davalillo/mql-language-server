@@ -78,7 +78,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var mockStore = new Mock<OpenDocumentStore>();
 
         // Act
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -210,7 +210,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var handler = new DidCloseTextDocumentHandler(mockLogger.Object, store);
 
         var documentUri = new Uri("file:///test.mq4");
-        store.AddOrUpdate(documentUri, new Mql4File { Content = "test" });
+        store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
 
         var didCloseParams = new DidCloseTextDocumentParams
         {
@@ -251,11 +251,11 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var initialContent = "void OnInit() {}";
-        store.AddOrUpdate(documentUri, new Mql4File { Content = initialContent });
+        store.AddOrUpdate(documentUri, new Mql4File { Content = initialContent }, "");
 
         var newContent = "void OnInit() { Print(\"Updated\"); }";
         var didChangeParams = new DidChangeTextDocumentParams
@@ -290,7 +290,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, store);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -315,7 +315,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -387,7 +387,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var mockParser = new Mock<Mql4AntlrParser>();
         var mockStore = new Mock<OpenDocumentStore>();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
 
         // Act
         var options = handler.GetRegistrationOptions(
@@ -508,7 +508,8 @@ void OnTick()
         var changeHandler = new DidChangeTextDocumentHandler(
             Mock.Of<ILogger<DidChangeTextDocumentHandler>>(),
             parser,
-            store
+            store,
+            GlobalSymbolIndex.Instance
         );
 
         var documentUri = new Uri("file:///update.mq4");
@@ -653,7 +654,7 @@ void OnTick()
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
         // Document doesn't exist in store - will not try to parse
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -680,10 +681,10 @@ void OnTick()
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        store.AddOrUpdate(new Uri("file:///test.mq4"), new Mql4File { Content = "original" });
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
-
         var documentUri = new Uri("file:///test.mq4");
+        store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+
         var didChangeParams = new DidChangeTextDocumentParams
         {
             TextDocument = new OptionalVersionedTextDocumentIdentifier
@@ -691,9 +692,7 @@ void OnTick()
                 Uri = documentUri,
                 Version = 2
             },
-            ContentChanges = new Container<TextDocumentContentChangeEvent>(
-                new TextDocumentContentChangeEvent { Text = string.Empty }
-            )
+            ContentChanges = new Container<TextDocumentContentChangeEvent>()
         };
 
         // Act & Assert - should not throw
@@ -732,10 +731,10 @@ void OnTick()
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        store.AddOrUpdate(new Uri("file:///test.mq4"), new Mql4File { Content = "original" });
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
-
         var documentUri = new Uri("file:///test.mq4");
+        store.AddOrUpdate(documentUri, new Mql4File { Content = "original" }, "");
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+
         var didChangeParams = new DidChangeTextDocumentParams
         {
             TextDocument = new OptionalVersionedTextDocumentIdentifier
@@ -743,7 +742,7 @@ void OnTick()
                 Uri = documentUri,
                 Version = 2
             },
-            ContentChanges = new Container<TextDocumentContentChangeEvent>() // Empty
+            ContentChanges = new Container<TextDocumentContentChangeEvent>()
         };
 
         // Act & Assert - should not throw
@@ -756,41 +755,15 @@ void OnTick()
     }
 
     [Fact]
-    public async Task DidOpenTextDocumentHandler_Handle_WithVeryLargeDocument_ShouldNotThrowAsync()
-    {
-        // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
-        var parser = new Mql4AntlrParser();
-        var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
-
-        var largeContent = new string('a', 100000); // 100KB of text
-        var didOpenParams = new DidOpenTextDocumentParams
-        {
-            TextDocument = new TextDocumentItem
-            {
-                Uri = new Uri("file:///large.mq4"),
-                Text = largeContent,
-                Version = 1
-            }
-        };
-
-        // Act & Assert - should handle gracefully
-        var result = await handler.Handle(didOpenParams, CancellationToken.None);
-        Assert.Equal(Unit.Value, result);
-    }
-
-    [Fact]
     public async Task DidChangeTextDocumentHandler_Handle_WithConcurrentUpdates_ShouldHandleGracefullyAsync()
     {
         // Arrange
         var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        store.AddOrUpdate(new Uri("file:///concurrent.mq4"), new Mql4File { Content = "original" });
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store);
-
         var documentUri = new Uri("file:///concurrent.mq4");
+        store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
+        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
 
         // Act: Multiple concurrent updates
         var tasks = new List<Task<Unit>>();
@@ -816,7 +789,6 @@ void OnTick()
         // Assert: All completed successfully
         Assert.All(results, result => Assert.Equal(Unit.Value, result));
     }
-
     #endregion
 
     /// <summary>

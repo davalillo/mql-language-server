@@ -81,7 +81,7 @@ public class CompletionHandler : ICompletionHandler
 
                 // Record parsing metrics
                 metrics.RecordParsingTime(filePath, parseStopwatch.Elapsed, mql4File.Symbols.Count, fromCache: false);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
             else
             {

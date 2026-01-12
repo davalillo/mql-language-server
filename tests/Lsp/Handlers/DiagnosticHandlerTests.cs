@@ -32,9 +32,9 @@ public class DiagnosticHandlerTests
     {
         // Arrange & Act
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -49,9 +49,9 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         // Use a non-existent file path
         var documentUri = DocumentUri.FromFileSystemPath("/nonexistent/file.mq4");
@@ -77,9 +77,11 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var parser = new Mql4AntlrParser();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -101,9 +103,11 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var parser = new Mql4AntlrParser();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -125,9 +129,11 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var parser = new Mql4AntlrParser();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -163,9 +169,12 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        
         var parser = new Mql4AntlrParser();
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         // Verify file exists before making request
         Assert.True(File.Exists(_testFilePath), $"Test file should exist at: {_testFilePath}");
@@ -197,7 +206,9 @@ public class DiagnosticHandlerTests
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         Assert.True(File.Exists(fileWithDiagnosticsPath), $"Test file should exist at: {fileWithDiagnosticsPath}");
@@ -224,7 +235,9 @@ public class DiagnosticHandlerTests
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -251,7 +264,9 @@ public class DiagnosticHandlerTests
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -277,7 +292,9 @@ public class DiagnosticHandlerTests
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -303,7 +320,9 @@ public class DiagnosticHandlerTests
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parser, documentStore);
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -335,9 +354,9 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         var capability = new DiagnosticClientCapabilities();
         var clientCapabilities = new ClientCapabilities();
@@ -360,9 +379,9 @@ public class DiagnosticHandlerTests
     {
         // Arrange & Act
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         // Assert
         Assert.IsAssignableFrom<IDocumentDiagnosticHandler>(handler);
@@ -373,9 +392,9 @@ public class DiagnosticHandlerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var serviceProviderMock = new Mock<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
 
         // Act
         var options = handler.GetRegistrationOptions(null!, null!);

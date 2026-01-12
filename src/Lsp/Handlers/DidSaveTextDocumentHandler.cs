@@ -63,7 +63,7 @@ public class DidSaveTextDocumentHandler : IDidChangeTextDocumentHandler
             var mql4File = _parser.ParseFile(content, filePath);
             var uri = request.TextDocument.Uri.ToUri();
 
-            _documentStore.AddOrUpdate(uri, mql4File);
+            _documentStore.AddOrUpdate(uri, mql4File, content);
             _globalSymbolIndex.AddFile(filePath, mql4File.Symbols);
 
             _logger.LogDebug("Processed document save for: {FilePath}", filePath);

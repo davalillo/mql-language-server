@@ -120,7 +120,7 @@ public class HandlerCoverageTests : IDisposable
             // Parse and add to document store
             var mql4File = _parser.ParseFile(content, testFilePath);
             var documentUri = new Uri($"file://{testFilePath}");
-            documentStore.AddOrUpdate(documentUri, mql4File);
+            documentStore.AddOrUpdate(documentUri, mql4File, content);
 
             var request = new CompletionParams
             {

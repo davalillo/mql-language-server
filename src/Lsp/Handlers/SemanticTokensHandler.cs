@@ -56,7 +56,7 @@ public class SemanticTokensHandler
             if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
             {
                 mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
             var tokens = new List<int>();
