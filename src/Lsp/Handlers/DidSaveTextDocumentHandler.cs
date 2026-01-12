@@ -33,10 +33,11 @@ public class DidSaveTextDocumentHandler : IDidChangeTextDocumentHandler
         OpenDocumentStore documentStore,
         GlobalSymbolIndex globalSymbolIndex)
     {
-        _logger = logger;
-        _parser = parser;
-        _documentStore = documentStore;
-        _globalSymbolIndex = globalSymbolIndex;
+        _globalSymbolIndex = globalSymbolIndex ?? throw new ArgumentNullException(nameof(globalSymbolIndex));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("DidSaveTextDocumentHandler initialized");
     }
 
     public TextDocumentChangeRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)

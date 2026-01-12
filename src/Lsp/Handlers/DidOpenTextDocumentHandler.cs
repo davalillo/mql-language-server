@@ -36,6 +36,7 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
+        _logger.LogInformation("DidOpenTextDocumentHandler initialized");
     }
 
     public TextDocumentOpenRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)

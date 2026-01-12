@@ -1,5 +1,6 @@
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using Mql4LanguageServer.Lsp.Handlers;
@@ -323,6 +324,65 @@ public class DiagnosticHandlerTests
         Assert.Contains(DiagnosticSeverity.Error, report.Items.Select(d => d.Severity));
         Assert.Contains(DiagnosticSeverity.Warning, report.Items.Select(d => d.Severity));
         Assert.Contains(DiagnosticSeverity.Hint, report.Items.Select(d => d.Severity));
+    }
+
+    #endregion
+
+    #region Capability Tests
+
+    [Fact]
+    public void GetRegistrationOptions_ReturnsValidDocumentSelector()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var parserMock = new Mock<Mql4AntlrParser>();
+        var documentStore = new OpenDocumentStore();
+        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+        var capability = new DiagnosticClientCapabilities();
+        var clientCapabilities = new ClientCapabilities();
+
+        // Act
+        var options = handler.GetRegistrationOptions(capability, clientCapabilities);
+
+        // Assert
+        Assert.NotNull(options);
+        Assert.NotNull(options.DocumentSelector);
+        Assert.NotEmpty(options.DocumentSelector);
+        // Verify document selector includes MQL4 patterns
+        var patterns = options.DocumentSelector.Select(f => f.Pattern).ToList();
+        Assert.Contains("**/*.mq4", patterns);
+        Assert.Contains("**/*.mqh", patterns);
+    }
+
+    [Fact]
+    public void Handler_ImplementsIDocumentDiagnosticHandler()
+    {
+        // Arrange & Act
+        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var parserMock = new Mock<Mql4AntlrParser>();
+        var documentStore = new OpenDocumentStore();
+        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+        // Assert
+        Assert.IsAssignableFrom<IDocumentDiagnosticHandler>(handler);
+    }
+
+    [Fact]
+    public void GetRegistrationOptions_NotNullForNullCapabilities()
+    {
+        // Arrange
+        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var parserMock = new Mock<Mql4AntlrParser>();
+        var documentStore = new OpenDocumentStore();
+        var handler = new DiagnosticHandler(loggerMock.Object, parserMock.Object, documentStore);
+
+        // Act
+        var options = handler.GetRegistrationOptions(null!, null!);
+
+        // Assert
+        Assert.NotNull(options);
+        Assert.NotNull(options.DocumentSelector);
     }
 
     #endregion

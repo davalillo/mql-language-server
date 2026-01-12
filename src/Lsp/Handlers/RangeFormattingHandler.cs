@@ -27,6 +27,8 @@ public class RangeFormattingHandler : IDocumentRangeFormattingHandler
     public RangeFormattingHandler(ILogger<RangeFormattingHandler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        _logger.LogInformation("RangeFormattingHandler initialized");
     }
 
     public Task<TextEditContainer> Handle(DocumentRangeFormattingParams request, CancellationToken cancellationToken)

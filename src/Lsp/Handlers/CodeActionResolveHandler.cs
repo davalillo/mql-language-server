@@ -30,6 +30,7 @@ public class CodeActionResolveHandler : ICodeActionResolveHandler
     public CodeActionResolveHandler(ILogger<CodeActionResolveHandler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("CodeActionResolveHandler initialized");
     }
 
     public Task<CodeAction> Handle(CodeAction data, CancellationToken cancellationToken)

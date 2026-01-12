@@ -27,6 +27,7 @@ public class DocumentFormattingHandler : IDocumentFormattingHandler
     public DocumentFormattingHandler(ILogger<DocumentFormattingHandler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("DocumentFormattingHandler initialized");
     }
 
     public Task<TextEditContainer?> Handle(DocumentFormattingParams request, CancellationToken cancellationToken)

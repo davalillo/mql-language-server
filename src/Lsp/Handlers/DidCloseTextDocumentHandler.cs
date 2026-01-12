@@ -29,6 +29,7 @@ public class DidCloseTextDocumentHandler : IDidCloseTextDocumentHandler
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
+        _logger.LogInformation("DidCloseTextDocumentHandler initialized");
     }
 
     public TextDocumentCloseRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)

@@ -26,8 +26,10 @@ public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
         ILogger<WorkspaceSymbolHandler> logger,
         GlobalSymbolIndex globalSymbolIndex)
     {
-        _logger = logger;
-        _globalSymbolIndex = globalSymbolIndex;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _globalSymbolIndex = globalSymbolIndex ?? throw new ArgumentNullException(nameof(globalSymbolIndex));
+
+        _logger.LogInformation("WorkspaceSymbolHandler initialized");
     }
 
     public WorkspaceSymbolRegistrationOptions GetRegistrationOptions(

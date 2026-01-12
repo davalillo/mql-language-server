@@ -30,9 +30,10 @@ public class DiagnosticHandler : IDocumentDiagnosticHandler
         Mql4AntlrParser parser,
         OpenDocumentStore documentStore)
     {
-        _logger = logger;
-        _parser = parser;
-        _documentStore = documentStore;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("DiagnosticHandler initialized");
     }
 
     public Task<RelatedDocumentDiagnosticReport> Handle(

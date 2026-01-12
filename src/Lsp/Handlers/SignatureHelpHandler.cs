@@ -34,6 +34,8 @@ public class SignatureHelpHandler : ISignatureHelpHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+
+        _logger.LogInformation("SignatureHelpHandler initialized");
     }
 
     public Task<SignatureHelp?> Handle(SignatureHelpParams request, CancellationToken cancellationToken)

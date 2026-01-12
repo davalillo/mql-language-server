@@ -31,6 +31,8 @@ public class HoverHandler : IHoverHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+
+        _logger.LogInformation("HoverHandler initialized");
     }
 
     public HoverRegistrationOptions GetRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
@@ -38,6 +40,7 @@ public class HoverHandler : IHoverHandler
         return new HoverRegistrationOptions
         {
             DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            //DocumentSelector = DocumentSelector.ForLanguage("mql4")
         };
     }
 
