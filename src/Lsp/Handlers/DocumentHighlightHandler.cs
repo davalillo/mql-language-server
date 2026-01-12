@@ -34,6 +34,7 @@ public class DocumentHighlightHandler : IDocumentHighlightHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("DocumentHighlightHandler initialized");
     }
 
     public async Task<DocumentHighlightContainer?> Handle(DocumentHighlightParams request, CancellationToken cancellationToken)

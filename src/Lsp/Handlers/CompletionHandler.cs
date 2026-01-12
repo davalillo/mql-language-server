@@ -27,19 +27,22 @@ public class CompletionHandler : ICompletionHandler
     private readonly ILogger<CompletionHandler> _logger;
     private readonly Mql4AntlrParser _parser;
     private readonly OpenDocumentStore _documentStore;
+    
 
     public CompletionHandler(ILogger<CompletionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("CompletionHandler initialized");
     }
 
     public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
     {
         return new CompletionRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = Constants.FilePatterns[0] }, new TextDocumentFilter { Pattern = Constants.FilePatterns[1] } }
+            DocumentSelector = new[] { new TextDocumentFilter { Pattern = Constants.FilePatterns[0] }, new TextDocumentFilter { Pattern = Constants.FilePatterns[1] } },
+            TriggerCharacters = new[] { ".", "(", ":", "_" }
         };
     }
 

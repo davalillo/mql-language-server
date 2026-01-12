@@ -34,6 +34,7 @@ public class ImplementationHandler : IImplementationHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("ImplementationHandler initialized");
     }
 
     public async Task<LocationOrLocationLinks?> Handle(ImplementationParams request, CancellationToken cancellationToken)

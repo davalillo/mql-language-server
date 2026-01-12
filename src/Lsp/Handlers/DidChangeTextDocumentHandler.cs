@@ -34,6 +34,7 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
+        _logger.LogInformation("DidChangeTextDocumentHandler initialized");
     }
 
     public TextDocumentChangeRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)

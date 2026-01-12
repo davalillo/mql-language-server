@@ -35,6 +35,7 @@ public class FoldingRangeHandler : IFoldingRangeHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("FoldingRangeHandler initialized");
     }
 
     public Task<Container<FoldingRange>?> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)

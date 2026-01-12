@@ -34,6 +34,8 @@ public class RenameHandler : IRenameHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+
+        _logger.LogInformation("RenameHandler initialized");
     }
 
     public async Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)

@@ -121,5 +121,6 @@ included_optional_tools:
 - read_file
 - replace_content
 - switch_modes
+- activate_project
 
 project_name: "mql4-language-server"

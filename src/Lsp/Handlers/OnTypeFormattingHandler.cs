@@ -27,6 +27,8 @@ public class OnTypeFormattingHandler : IDocumentOnTypeFormattingHandler
     public OnTypeFormattingHandler(ILogger<OnTypeFormattingHandler> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        _logger.LogInformation("OnTypeFormattingHandler initialized");
     }
 
     public Task<TextEditContainer?> Handle(DocumentOnTypeFormattingParams request, CancellationToken cancellationToken)

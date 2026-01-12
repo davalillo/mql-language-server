@@ -31,6 +31,7 @@ public class DefinitionHandler : IDefinitionHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _logger.LogInformation("DefinitionHandler initialized");
     }
 
     public async Task<LocationOrLocationLinks?> Handle(DefinitionParams request, CancellationToken cancellationToken)

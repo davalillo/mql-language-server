@@ -34,6 +34,8 @@ public class SelectionRangeHandler : ISelectionRangeHandler
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+
+        _logger.LogInformation("SelectionRangeHandler initialized");
     }
 
     public Task<Container<SelectionRange>?> Handle(SelectionRangeParams request, CancellationToken cancellationToken)

@@ -10,12 +10,14 @@ using Mql4LanguageServer.Lsp.Server;
 using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using Serilog;
-using OmniSharp.Extensions.LanguageServer.Protocol;
+
 using OmniSharp.Extensions.LanguageServer.Server;
+
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
-using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
 namespace Mql4LanguageServer
 {
@@ -30,13 +32,13 @@ namespace Mql4LanguageServer
         {
             // Get build date from BuildConstants (immutable, embedded at compile time)
             var buildDateStr = BuildConstants.BuildDate;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "unknown";
 
             // Check for --version flag first
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
             {
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
-
-                Console.WriteLine($"MQL4 Language Server v{version?.Major}.{version?.Minor}.{version?.Build}");
+                Console.WriteLine($"MQL4 Language Server {versionStr}");
                 Console.WriteLine($"Build Date: {buildDateStr}");
                 return 0;
             }
@@ -55,64 +57,34 @@ namespace Mql4LanguageServer
             {
                 Log.Information("=================================================");
                 Log.Information("Starting MQL4 Language Server");
+                Log.Information($"Version: {versionStr}");
                 Log.Information($"Build Date: {buildDateStr}");
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
                 Log.Information("=================================================");
 
-                // Create Language Server with stdio transport
-                var server = LanguageServer.Create(options =>
+                // CAMBIO 1: Usamos 'From' en lugar de 'Create'. Es asíncrono.
+                // Esto garantiza que el servidor se inicialice correctamente.
+                var server = await LanguageServer.From(options =>
                 {
-                    options
-                        .WithInput(Console.OpenStandardInput())
+                    _ = options
+                        //.WithInput(Console.OpenStandardInput())
+                        .WithInput(new DisconnectAwareStream(Console.OpenStandardInput()))
                         .WithOutput(Console.OpenStandardOutput())
                         .WithLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()))
                         .WithServices(services =>
                         {
-                            
-                            // Register parser
+                            // MANTÉN SOLO TUS SERVICIOS PROPIOS
                             services.AddSingleton<Mql4AntlrParser>();
-
-                            // Register document store for tracking open files
                             services.AddSingleton<OpenDocumentStore>();
-
-                            // Register global symbol index for cross-file tracking
                             services.AddSingleton<GlobalSymbolIndex>();
-
-                            // Register metrics collector for performance tracking
                             services.AddSingleton<MetricsCollector>();
-
-                            // Register all handlers
-                            services.AddSingleton<IDocumentSymbolHandler, DocumentSymbolHandler>();
-                            services.AddSingleton<DefinitionHandler>();
-                            services.AddSingleton<ReferencesHandler>();
-                            services.AddSingleton<CompletionHandler>();
-                            services.AddSingleton<HoverHandler>();
-                            services.AddSingleton<RenameHandler>();
-                            services.AddSingleton<SignatureHelpHandler>();
-                            services.AddSingleton<FoldingRangeHandler>();
-                            services.AddSingleton<SelectionRangeHandler>();
-                            services.AddSingleton<DocumentHighlightHandler>();
-                            services.AddSingleton<DocumentFormattingHandler>();
-                            services.AddSingleton<RangeFormattingHandler>();
-                            services.AddSingleton<TypeDefinitionHandler>();
-                            services.AddSingleton<CodeActionHandler>();
-                            services.AddSingleton<CodeActionResolveHandler>();
-                            services.AddSingleton<DidOpenTextDocumentHandler>();
-                            services.AddSingleton<DidCloseTextDocumentHandler>();
-                            services.AddSingleton<DidChangeTextDocumentHandler>();
-                            services.AddSingleton<DeclarationHandler>();
-                            services.AddSingleton<IImplementationHandler, ImplementationHandler>();
-
-                            services.AddSingleton<DiagnosticHandler>();
-                            services.AddSingleton<WorkspaceSymbolHandler>();
-
-                            // Note: WorkspaceSymbolHandler, DiagnosticHandler, DidSaveTextDocumentHandler, 
-                            // SemanticTokensHandler, MonikerHandler, InlayHintHandler need interface updates
-
-                            // Register LSP server
                             services.AddSingleton<Mql4LspServer>();
+
+                            // CAMBIO 2: ¡ELIMINA TODOS LOS AddSingleton DE HANDLERS AQUÍ!
+                            // .WithHandler<T>() se encarga de registrarlos en la DI automáticamente.
                         })
-                        // Explicitly register handlers with OmniSharp
+                        // CAMBIO 3: Registra los Handlers. La librería detectará sus interfaces
+                        // y llenará las Capabilities (hoverProvider: true, etc.) por ti.
                         .WithHandler<DocumentSymbolHandler>()
                         .WithHandler<DefinitionHandler>()
                         .WithHandler<ReferencesHandler>()
@@ -128,66 +100,35 @@ namespace Mql4LanguageServer
                         .WithHandler<TypeDefinitionHandler>()
                         .WithHandler<CodeActionHandler>()
                         .WithHandler<CodeActionResolveHandler>()
-                        .WithHandler<DidOpenTextDocumentHandler>()
-                        .WithHandler<DidCloseTextDocumentHandler>()
-                        .WithHandler<DidChangeTextDocumentHandler>()
                         .WithHandler<DeclarationHandler>()
                         .WithHandler<ImplementationHandler>()
                         .WithHandler<WorkspaceSymbolHandler>()
-                        .WithHandler<DiagnosticHandler>();
+                        .WithHandler<DiagnosticHandler>()
+
+                        // Handlers de sincronización de texto
+                        .WithHandler<DidOpenTextDocumentHandler>()
+                        .WithHandler<DidCloseTextDocumentHandler>()
+                        .WithHandler<DidChangeTextDocumentHandler>()
+
+                        // Esto está bien para forzar la configuración de sync
+                        .OnTextDocumentSync(
+                            TextDocumentSyncKind.Full,
+                            uri => new TextDocumentAttributes(uri, "mql4"),
+                            _ => { }, _ => { }, _ => { }, _ => { },
+                            new TextDocumentSyncRegistrationOptions());
                 });
 
-                Log.Information("Language Server created successfully");
-                Log.Information("All LSP Handlers registered:");
-                Log.Information("  - DocumentSymbolHandler (Outline View)");
-                Log.Information("  - DefinitionHandler (Go-to-Definition)");
-                Log.Information("  - ReferencesHandler (Find All References)");
-                Log.Information("  - CompletionHandler (Auto-completion)");
-                Log.Information("  - HoverHandler (Symbol Information)");
-                // Log.Information("  - SignatureHelpHandler (Parameter Hints)"); // TODO: Fix interface compatibility
-                Log.Information("  - TextDocumentSync Handlers (Open/Close/Change)");
+                Log.Information("Language Server started and listening on stdio...");
 
-                Log.Information("About to call server.Initialize()...");
-                await Task.Delay(100);  // Give time for log to flush
-
-                // Initialize with timeout for testing - in production, client connects immediately
-                try
-                {
-                    using (var cts = CancellationTokenSource.CreateLinkedTokenSource(default, CancellationToken.None))
-                    {
-                        cts.CancelAfter(TimeSpan.FromSeconds(5));
-                        await server.Initialize(cts.Token);
-                    }
-                    Log.Information("server.Initialize() completed - client connected!");
-
-                    // Send experimental/serverStatus notification after initialization
-                    server.SendNotification("experimental/serverStatus", new
-                    {
-                        quiescent = true
-                    });
-                    Log.Information("Sent experimental/serverStatus notification (quiescent: true)");
-                }
-                catch (OperationCanceledException)
-                {
-                    Log.Warning("server.Initialize() timed out - no LSP client connected. This is expected when running manually.");
-                    Log.Information("In production, the LSP client (VSCode, Neovim, etc.) will connect automatically.");
-                }
-
-                Log.Information("server.Initialize() process finished!");
-
-                Log.Information("=================================================");
-                Log.Information("MQL4 Language Server is ready");
-                Log.Information("Listening on stdio...");
-                Log.Information("=================================================");
-
-                // Wait for the server to shutdown when the client disconnects
-                await Task.Delay(Timeout.Infinite, CancellationToken.None);
+                // CAMBIO 4: Esperar a que termine
+                await server.WaitForExit;
 
                 // Log metrics summary before shutdown
                 var metrics = MetricsCollector.Instance.GetSummaryReport();
                 Log.Information("\n{MetricsSummary}", metrics);
 
                 Log.Information("MQL4 Language Server shutting down...");
+
 
                 return 0;
             }
@@ -202,5 +143,4 @@ namespace Mql4LanguageServer
             }
         }
     }
-
 }
