@@ -699,6 +699,204 @@ namespace Mql4LanguageServer.Parser
                 list.Add(symbol);
             }
         }
+
+        /// <summary>
+        /// Extract the body text of a function from the file content.
+        /// Uses the symbol's Range to determine start and end positions.
+        /// </summary>
+        /// <param name="content">Full file content</param>
+        /// <param name="symbol">Function symbol with Range</param>
+        /// <returns>Function body text (from opening { to closing }), or null if extraction fails</returns>
+        public string? GetFunctionBody(string content, Mql4Symbol symbol)
+        {
+            if (string.IsNullOrEmpty(content) || symbol == null || symbol.Range == null)
+            {
+                return null;
+            }
+
+            var lines = content.Split('\n');
+
+            // Check if line numbers are valid
+            var startLine = symbol.Range.Start.Line;
+            var endLine = symbol.Range.End.Line;
+
+            if (startLine < 0 || startLine >= lines.Length || endLine < 0 || endLine >= lines.Length)
+            {
+                return null;
+            }
+
+            // If it's a single line function or range is just the declaration
+            if (startLine == endLine)
+            {
+                return null; // No body to extract
+            }
+
+            // Find the opening brace
+            int bodyStartLine = -1;
+            int bodyStartColumn = -1;
+            for (int i = startLine; i <= endLine; i++)
+            {
+                var line = lines[i];
+                var braceIndex = line.IndexOf('{');
+                if (braceIndex >= 0)
+                {
+                    bodyStartLine = i;
+                    bodyStartColumn = braceIndex + 1; // Start after the brace
+                    break;
+                }
+            }
+
+            // Find the closing brace
+            int bodyEndLine = -1;
+            int bodyEndColumn = -1;
+            int braceCount = 0;
+            for (int i = startLine; i <= endLine; i++)
+            {
+                var line = lines[i];
+                for (int j = 0; j < line.Length; j++)
+                {
+                    if (line[j] == '{') braceCount++;
+                    else if (line[j] == '}')
+                    {
+                        braceCount--;
+                        if (braceCount == 0)
+                        {
+                            bodyEndLine = i;
+                            bodyEndColumn = j; // End at the brace
+                            break;
+                        }
+                    }
+                }
+                if (bodyEndLine >= 0) break;
+            }
+
+            if (bodyStartLine < 0 || bodyEndLine < 0)
+            {
+                return null;
+            }
+
+            // Extract the body text
+            var bodyLines = new List<string>();
+
+            if (bodyStartLine == bodyEndLine)
+            {
+                // Single line body
+                return lines[bodyStartLine].Substring(bodyStartColumn, bodyEndColumn - bodyStartColumn);
+            }
+
+            // First line (from opening brace to end)
+            var firstLine = lines[bodyStartLine].Substring(bodyStartColumn);
+            bodyLines.Add(firstLine);
+
+            // Middle lines
+            for (int i = bodyStartLine + 1; i < bodyEndLine; i++)
+            {
+                bodyLines.Add(lines[i]);
+            }
+
+            // Last line (from start to closing brace)
+            var lastLine = lines[bodyEndLine].Substring(0, bodyEndColumn + 1);
+            bodyLines.Add(lastLine);
+
+            return string.Join("\n", bodyLines);
+        }
+
+        /// <summary>
+        /// Get the line number where a function body starts (line after opening brace).
+        /// </summary>
+        /// <param name="content">Full file content</param>
+        /// <param name="symbol">Function symbol</param>
+        /// <returns>0-based line number where body starts, or -1 if not found</returns>
+        public int GetFunctionBodyStartLine(string content, Mql4Symbol symbol)
+        {
+            if (string.IsNullOrEmpty(content) || symbol == null || symbol.Range == null)
+            {
+                return -1;
+            }
+
+            var lines = content.Split('\n');
+            var startLine = symbol.Range.Start.Line;
+
+            if (startLine < 0 || startLine >= lines.Length)
+            {
+                return -1;
+            }
+
+            for (int i = startLine; i <= symbol.Range.End.Line; i++)
+            {
+                var line = lines[i];
+                var braceIndex = line.IndexOf('{');
+                if (braceIndex >= 0)
+                {
+                    // Check if there's content after the brace on the same line
+                    if (braceIndex + 1 < line.Length)
+                    {
+                        return i; // Body starts on same line
+                    }
+                    // Body starts on next line
+                    return i + 1;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Get the line number where a function body ends (line with closing brace).
+        /// </summary>
+        /// <param name="content">Full file content</param>
+        /// <param name="symbol">Function symbol</param>
+        /// <returns>0-based line number where body ends, or -1 if not found</returns>
+        public int GetFunctionBodyEndLine(string content, Mql4Symbol symbol)
+        {
+            if (string.IsNullOrEmpty(content) || symbol == null || symbol.Range == null)
+            {
+                return -1;
+            }
+
+            var lines = content.Split('\n');
+            int braceCount = 0;
+            int startLine = symbol.Range.Start.Line;
+
+            for (int i = startLine; i <= symbol.Range.End.Line; i++)
+            {
+                var line = lines[i];
+                foreach (var c in line)
+                {
+                    if (c == '{') braceCount++;
+                    else if (c == '}')
+                    {
+                        braceCount--;
+                        if (braceCount == 0)
+                        {
+                            return i;
+                        }
+                    }
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Get the number of lines in a function body.
+        /// </summary>
+        /// <param name="content">Full file content</param>
+        /// <param name="symbol">Function symbol</param>
+        /// <returns>Number of lines in function body, or -1 if not found</returns>
+        public int GetFunctionBodyLineCount(string content, Mql4Symbol symbol)
+        {
+            var startLine = GetFunctionBodyStartLine(content, symbol);
+            var endLine = GetFunctionBodyEndLine(content, symbol);
+
+            if (startLine < 0 || endLine < 0 || startLine > endLine)
+            {
+                return -1;
+            }
+
+            return endLine - startLine + 1;
+        }
+    }
     }
 
     /// <summary>
@@ -926,4 +1124,4 @@ namespace Mql4LanguageServer.Parser
             );
         }
     }
-}
+
