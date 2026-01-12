@@ -176,13 +176,32 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Get the 2 most recent releases
+            const releases = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 2
+            });
+
+            // Extract tag names from the 2 latest releases
+            const keepVersions = releases.data.map(r => r.tag_name);
+
+            // Also add current tag if it's a new release (not in releases list yet)
+            const currentTag = '${{ needs.get-effective-tag.outputs.effective_tag }}';
+            if (!keepVersions.includes(currentTag)) {
+              keepVersions.push(currentTag);
+            }
+
+            console.log('Keeping artifacts for versions:', keepVersions);
+
+            // Get all artifacts
             const artifacts = await github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               per_page: 100
             });
-            // Keep only artifacts from last 3 releases
-            const keepVersions = ['v1.7.0', 'v1.6.0', 'v1.5.0'];
+
+            // Delete artifacts that don't match the keep versions
             for (const artifact of artifacts.data.artifacts) {
               const shouldKeep = keepVersions.some(v => artifact.name.includes(v));
               if (!shouldKeep && !artifact.expired) {

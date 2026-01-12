@@ -65,7 +65,7 @@ public class DefinitionHandler : IDefinitionHandler
 
                 // Parse the file and cache it
                 mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
             // Convert LSP Position (0-based) to parser position (1-based)
@@ -116,7 +116,7 @@ public class DefinitionHandler : IDefinitionHandler
                         // (simple check: identifier followed by space, (, or {)
                         var match = System.Text.RegularExpressions.Regex.Match(
                             remainingText,
-                            @"^\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b\s*[(\{]"
+                            @"^\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b\s*[({]"
                         );
 
                         if (match.Success)

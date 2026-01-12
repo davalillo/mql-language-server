@@ -5,21 +5,22 @@ using Mql4LanguageServer.Models;
 namespace Mql4LanguageServer.Lsp.Server;
 
 /// <summary>
-/// Tracks open MQL4 documents for LSP handlers
+/// Tracks open MQL4 documents for LSP handlers (Model + Raw Content)
 /// </summary>
 public class OpenDocumentStore
 {
-    private readonly Dictionary<Uri, Mql4File> _openFiles = new();
+    // CAMBIO CLAVE: Guardamos una Tupla (Modelo, TextoCrudo)
+    private readonly Dictionary<Uri, (Mql4File Model, string Content)> _openFiles = new();
     private readonly MetricsCollector _metrics = MetricsCollector.Instance;
 
     /// <summary>
-    /// Add or update a document in the store
+    /// Add or update a document in the store with its raw content
     /// </summary>
-    public void AddOrUpdate(Uri uri, Mql4File file)
+    public void AddOrUpdate(Uri uri, Mql4File file, string content)
     {
         lock (_openFiles)
         {
-            _openFiles[uri] = file;
+            _openFiles[uri] = (file, content);
         }
     }
 
@@ -35,26 +36,35 @@ public class OpenDocumentStore
     }
 
     /// <summary>
-    /// Get a document from the store
+    /// Get a document model and its content from the store
     /// </summary>
-    public bool TryGetValue(Uri uri, out Mql4File? file)
+    public bool TryGetValue(Uri uri, out Mql4File? file, out string? content)
     {
         lock (_openFiles)
         {
-            var found = _openFiles.TryGetValue(uri, out file);
-            
-            // Record cache hit or miss
-            if (found && file != null)
+            if (_openFiles.TryGetValue(uri, out var data))
             {
+                file = data.Model;
+                content = data.Content;
+                
                 _metrics.RecordCacheHit();
-            }
-            else
-            {
-                _metrics.RecordCacheMiss();
+                return true;
             }
             
-            return found;
+            file = null;
+            content = null;
+            _metrics.RecordCacheMiss();
+            return false;
         }
+    }
+
+    /// <summary>
+    /// Overload para compatibilidad (si solo necesitas el modelo)
+    /// </summary>
+    public bool TryGetValue(Uri uri, out Mql4File? file)
+    {
+        var result = TryGetValue(uri, out file, out _);
+        return result;
     }
 
     /// <summary>
@@ -68,11 +78,9 @@ public class OpenDocumentStore
         }
     }
 
-    /// <summary>
-    /// Get cache statistics
-    /// </summary>
     public (long hits, long misses, double hitRate) GetCacheStats()
     {
-        return (_metrics.GetSnapshot().CacheHits, _metrics.GetSnapshot().CacheMisses, _metrics.GetSnapshot().CacheHitRate);
+        var snapshot = _metrics.GetSnapshot();
+        return (snapshot.CacheHits, snapshot.CacheMisses, snapshot.CacheHitRate);
     }
 }

@@ -11,9 +11,9 @@ using Mql4LanguageServer.Models;
 using Mql4LanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
 namespace Mql4LanguageServer.Lsp.Handlers;
 
@@ -25,15 +25,20 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
     private readonly ILogger<DidChangeTextDocumentHandler> _logger;
     private readonly Mql4AntlrParser _parser;
     private readonly OpenDocumentStore _openFiles;
+    // Añadimos GlobalSymbolIndex para mantener el workspace actualizado en tiempo real
+    private readonly GlobalSymbolIndex _globalSymbolIndex; 
 
     public DidChangeTextDocumentHandler(
         ILogger<DidChangeTextDocumentHandler> logger,
         Mql4AntlrParser parser,
-        OpenDocumentStore openFiles)
+        OpenDocumentStore openFiles,
+        GlobalSymbolIndex globalSymbolIndex)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
         _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
+        _globalSymbolIndex = globalSymbolIndex ?? throw new ArgumentNullException(nameof(globalSymbolIndex));
+        
         _logger.LogInformation("DidChangeTextDocumentHandler initialized");
     }
 
@@ -41,6 +46,9 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
     {
         return new TextDocumentChangeRegistrationOptions
         {
+            // CRUCIAL: Pedimos al cliente que envíe el texto COMPLETO en cada cambio.
+            // Esto evita tener que implementar algoritmos complejos de parcheo de strings.
+            SyncKind = TextDocumentSyncKind.Full,
             DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
         };
     }
@@ -54,21 +62,28 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
 
             _logger.LogDebug("Processing document changes for: {DocumentUri}", documentUri);
 
-            if (changes.Count() > 0 && _openFiles.TryGetValue(documentUri, out var mql4FileObj))
+            // Obtenemos el nuevo contenido completo
+            // Al usar SyncKind.Full, el último cambio contiene todo el texto del archivo.
+            var newContent = GetFullContent(changes);
+
+            if (!string.IsNullOrEmpty(newContent))
             {
-                var mql4File = mql4FileObj as Mql4File;
-                if (mql4File != null)
-                {
-                    // Rebuild content from changes
-                    var newContent = ApplyChanges(mql4File.Content, changes);
-                    var filePath = documentUri.AbsolutePath ?? "unknown";
+                var filePath = documentUri.AbsolutePath ?? "unknown";
 
-                    var newMql4File = _parser.ParseFile(newContent, filePath);
+                // 1. Reparsear el archivo con el nuevo contenido
+                var newMql4File = _parser.ParseFile(newContent, filePath);
 
-                    _openFiles.AddOrUpdate(documentUri, newMql4File);
+                // 2. Actualizar el OpenDocumentStore con el MODELO y el TEXTO CRUDO
+                // Esto es vital para que DiagnosticHandler no tenga que leer del disco
+                _openFiles.AddOrUpdate(documentUri, newMql4File, newContent);
 
-                    _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMql4File.Symbols.Count);
-                }
+                // 3. Actualizar el índice global para búsquedas de Workspace
+                _globalSymbolIndex.AddFile(filePath, newMql4File.Symbols);
+
+                // 4. (Opcional) Actualizar dependencias si han cambiado los #include
+                UpdateIncludes(newMql4File, filePath);
+
+                _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMql4File.Symbols.Count);
             }
         }
         catch (Exception ex)
@@ -79,10 +94,9 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
         return Task.FromResult(Unit.Value);
     }
 
-    private string ApplyChanges(string originalContent, Container<TextDocumentContentChangeEvent> changes)
+    private string GetFullContent(Container<TextDocumentContentChangeEvent> changes)
     {
-        // Simple implementation: rebuild from changes
-        // For full text sync, just return the latest content
+        // En modo Full Sync, nos interesa el último evento que tiene todo el texto.
         var changeList = changes.ToArray();
         if (changeList.Length > 0)
         {
@@ -92,7 +106,28 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
                 return lastChange.Text;
             }
         }
+        return string.Empty;
+    }
 
-        return originalContent;
+    private void UpdateIncludes(Mql4File file, string filePath)
+    {
+        // Limpiamos dependencias antiguas si es necesario (depende de tu implementación de GlobalSymbolIndex)
+        // Y registramos las nuevas
+        foreach (var include in file.Includes)
+        {
+            // Lógica simplificada de includes, similar a DidOpen
+            var includePath = ExtractIncludePath(include);
+            if (!string.IsNullOrEmpty(includePath))
+            {
+                // Aquí podrías añadir lógica para resolver la ruta completa
+                // _globalSymbolIndex.AddDependency(filePath, resolvedPath);
+            }
+        }
+    }
+
+    private string ExtractIncludePath(string includeDirective)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
+        return match.Success ? match.Groups[1].Value : string.Empty;
     }
 }

@@ -48,7 +48,7 @@ namespace Mql4LanguageServer
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.Console(
-                    standardErrorFromLevel: Serilog.Events.LogEventLevel.Information,
+                    standardErrorFromLevel: Serilog.Events.LogEventLevel.Verbose,
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File("mql4-lsp-server.log", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
@@ -74,7 +74,7 @@ namespace Mql4LanguageServer
                         .WithServices(services =>
                         {
                             // MANTÉN SOLO TUS SERVICIOS PROPIOS
-                            services.AddSingleton<Mql4AntlrParser>();
+                            services.AddTransient<Mql4AntlrParser>();
                             services.AddSingleton<OpenDocumentStore>();
                             services.AddSingleton<GlobalSymbolIndex>();
                             services.AddSingleton<MetricsCollector>();
@@ -103,19 +103,35 @@ namespace Mql4LanguageServer
                         .WithHandler<DeclarationHandler>()
                         .WithHandler<ImplementationHandler>()
                         .WithHandler<WorkspaceSymbolHandler>()
-                        .WithHandler<DiagnosticHandler>()
+                        // .WithHandler<DiagnosticHandler>()
 
                         // Handlers de sincronización de texto
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>()
+                        .OnInitialize((server, request, token) =>
+                        {
+                            Log.Information("MQL4 Language Server initialized for client: {ClientName}", request.ClientInfo?.Name ?? "unknown");
+                            return Task.FromResult(new InitializeResult
+                            {
+                                Capabilities = new ServerCapabilities
+                                {
+                                    // Forzamos que aparezca True (o el objeto de opciones)
+                                    WorkspaceSymbolProvider = true,
+
+                                    
+                                }
+                            });
+                        })
 
                         // Esto está bien para forzar la configuración de sync
                         .OnTextDocumentSync(
                             TextDocumentSyncKind.Full,
                             uri => new TextDocumentAttributes(uri, "mql4"),
                             _ => { }, _ => { }, _ => { }, _ => { },
-                            new TextDocumentSyncRegistrationOptions());
+                            new TextDocumentSyncRegistrationOptions())
+                        
+                            ;
                 });
 
                 Log.Information("Language Server started and listening on stdio...");

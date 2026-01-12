@@ -59,7 +59,7 @@ public class DocumentHighlightHandler : IDocumentHighlightHandler
             if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
             {
                 mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
             var line = request.Position.Line + 1;

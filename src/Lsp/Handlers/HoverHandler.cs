@@ -107,7 +107,7 @@ public class HoverHandler : IHoverHandler
                 try
                 {
                     mql4File = _parser.ParseFile(content, filePath);
-                    _documentStore.AddOrUpdate(uri, mql4File);
+                    _documentStore.AddOrUpdate(uri, mql4File, content);
                     _logger.LogTrace("[{CorrelationId}] Successfully parsed document with {SymbolCount} symbols", correlationId, mql4File?.Symbols.Count ?? 0);
                 }
                 catch (Exception ex)

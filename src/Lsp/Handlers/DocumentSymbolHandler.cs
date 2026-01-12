@@ -64,7 +64,7 @@ public class DocumentSymbolHandler : IDocumentSymbolHandler
 
                 // Parse the file and cache it
                 mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File);
+                _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
             // Convert Mql4Symbol to DocumentSymbol
