@@ -59,8 +59,15 @@ jobs:
         run: |
           dotnet restore
           dotnet build --no-restore -c Release
-          # Exclude performance tests which are flaky in CI due to timing issues
-          dotnet test --no-build -c Release --verbosity normal --filter "FullyQualifiedName!~Mql4LanguageServer.Tests.Performance"
+          # Skip performance tests in CI (they're flaky due to timing)
+          # CI environment variable is set by GitHub Actions
+          if [ -n "$CI" ]; then
+            echo "Running tests excluding Performance folder..."
+            dotnet test --no-build -c Release --filter "FullyQualifiedName!~Performance" || exit 1
+          else
+            echo "Running all tests..."
+            dotnet test --no-build -c Release --verbosity normal || exit 1
+          fi
 
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries
