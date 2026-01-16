@@ -46,3 +46,7 @@ mql4-lsp-server*.log
 # Release artifacts
 release-v*/
 release-artifacts/
+
+WARP.md
+.direnv/
+.claude/settings.local.json
