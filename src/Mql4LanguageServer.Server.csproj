@@ -19,7 +19,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>mql4-lsp-server</ToolCommandName>
     <PackageId>mql4-language-server</PackageId>
-    <Version>1.11.0</Version>
+    <Version>1.11.1</Version>
     <Authors>MQL4 Language Server Team</Authors>
     <Description>Language Server Protocol implementation for MQL4 (MetaTrader 4)</Description>
     <PackageTags>lsp;mql4;metatrader;language-server</PackageTags>

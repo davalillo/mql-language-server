@@ -1,3 +1,10 @@
+## [1.11.1] - 2026-01-16
+
+### Fixed
+- fix: Comment out artifact upload step in build workflow
+  - Workaround for GitHub Actions storage quota issues
+  - Prevents workflow failures due to exceeded artifact limits
+
 ## [1.11.0] - 2026-01-16
 
 ### Added
