@@ -1,3 +1,10 @@
+## [1.11.2] - 2026-01-16
+
+### Fixed
+- fix: Simplify CI test step to always skip performance tests
+  - Remove conditional logic for CI vs local runs
+  - Performance tests are always flaky due to timing variations in GitHub Actions workers
+
 ## [1.11.1] - 2026-01-16
 
 ### Fixed
