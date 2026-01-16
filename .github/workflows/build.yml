@@ -59,15 +59,10 @@ jobs:
         run: |
           dotnet restore
           dotnet build --no-restore -c Release
-          # Skip performance tests in CI (they're flaky due to timing)
-          # CI environment variable is set by GitHub Actions
-          if [ -n "$CI" ]; then
-            echo "Running tests excluding Performance folder..."
-            dotnet test --no-build -c Release --filter "FullyQualifiedName!~Performance" || exit 1
-          else
-            echo "Running all tests..."
-            dotnet test --no-build -c Release --verbosity normal || exit 1
-          fi
+          # Skip performance tests in CI (they're flaky due to timing variations in GitHub Actions workers)
+          # Use CI environment variable set by GitHub Actions
+          echo "Running tests excluding Performance folder..."
+          dotnet test --no-build -c Release --filter "FullyQualifiedName!~Performance"
 
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries
