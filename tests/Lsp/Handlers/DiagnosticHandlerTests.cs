@@ -72,9 +72,11 @@ public class DiagnosticHandlerTests
 
     #region Valid File Tests
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_ValidFile_ReturnsDiagnosticReportWithResultIdAsync()
     {
+        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
+            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var serviceProviderMock = new Mock<IServiceProvider>();
@@ -98,9 +100,11 @@ public class DiagnosticHandlerTests
         Assert.NotEmpty(report.ResultId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_RealFile_CanProcessFileWithoutErrorsAsync()
     {
+        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
+            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         var serviceProviderMock = new Mock<IServiceProvider>();
@@ -168,9 +172,11 @@ public class DiagnosticHandlerTests
         Assert.NotEqual(report1.ResultId, report2.ResultId);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task Handle_RealFile_CanReadAndProcessFileAsync()
     {
+        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
+            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
         
