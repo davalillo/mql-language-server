@@ -192,12 +192,12 @@ Integration tests for:
 src/
 ├── bin/
 │   └── Debug/
-│       └── net8.0/
+│       └── net10.0/
 │           ├── Mql4LanguageServer.Server.dll
 │           └── ... (dependencies)
 └── obj/
     └── Debug/
-        └── net8.0/
+        └── net10.0/
             └── ... (build artifacts)
 ```
 
@@ -206,7 +206,7 @@ src/
 src/
 └── bin/
     └── Release/
-        └── net8.0/
+        └── net10.0/
             └── linux-x64/
                 └── publish/
                     └── mql4-lsp-server (71MB, self-contained)
