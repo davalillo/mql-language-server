@@ -14,7 +14,7 @@ MQL4 Language Server is a comprehensive Language Server Protocol (LSP) implement
 
 ## Technology Stack
 
-- **Language**: C# .NET 8
+- **Language**: C# .NET 10
 - **Parser**: ANTLR 4.13.1 with Antlr4BuildTasks 12.10 (automatic JRE download)
 - **LSP Library**: OmniSharp.Extensions.LanguageProtocol 0.19.9
 - **Logging**: Serilog 4.0.0
