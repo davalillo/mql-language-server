@@ -1,7 +1,7 @@
 # MQL4 Language Server
 
 [![Build Status](https://github.com/davalillo/mql4-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql4-language-server/actions)
-[![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
 
 Language Server Protocol (LSP) implementation for MQL4 (MetaTrader 4). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
