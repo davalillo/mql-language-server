@@ -2,7 +2,7 @@
 
 ## Pre-Development Checklist
 
-- [ ] .NET 8 SDK installed
+- [ ] .NET 10 SDK installed
 - [ ] Git configured with user name and email
 - [ ] Repository cloned: `git clone https://github.com/davalillo/mql4-language-server.git`
 - [ ] Dependencies restored: `dotnet restore`
