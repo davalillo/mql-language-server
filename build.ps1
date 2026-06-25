@@ -12,7 +12,7 @@ Set-Location src/
 # Clean previous builds
 Write-Host "🧹 Cleaning previous builds..." -ForegroundColor Yellow
 dotnet clean --configuration Release | Out-Null
-Remove-Item -Path "bin/Release/net8.0/publish" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "bin/Release/net10.0/publish" -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host "✅ Clean complete" -ForegroundColor Green
 Write-Host ""
 
@@ -28,8 +28,8 @@ dotnet publish -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true `
   -p:DebugType=None `
   -p:DebugSymbols=false `
-  -o "./bin/Release/net8.0/publish/win-x64"
-Write-Host "✅ Windows x64 build complete: ./bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe" -ForegroundColor Green
+  -o "./bin/Release/net10.0/publish/win-x64"
+Write-Host "✅ Windows x64 build complete: ./bin/Release/net10.0/publish/win-x64/mql4-lsp-server.exe" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "=================================================" -ForegroundColor Cyan
@@ -37,8 +37,8 @@ Write-Host "✅ Build complete!" -ForegroundColor Green
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "📦 Build outputs:" -ForegroundColor White
-Write-Host "   - Windows x64: .\src\bin\Release\net8.0\publish\win-x64\mql4-lsp-server.exe"
+Write-Host "   - Windows x64: .\src\bin\Release\net10.0\publish\win-x64\mql4-lsp-server.exe"
 Write-Host ""
 Write-Host "🚀 To test the server, run:" -ForegroundColor White
-Write-Host "   .\src\bin\Release\net8.0\publish\win-x64\mql4-lsp-server.exe --stdio"
+Write-Host "   .\src\bin\Release\net10.0\publish\win-x64\mql4-lsp-server.exe --stdio"
 Write-Host "=================================================" -ForegroundColor Cyan
