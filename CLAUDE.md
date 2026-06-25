@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 📋 Project Overview
 
-This repository contains a **comprehensive implementation guide** for building an MQL4 Language Server Protocol (LSP) in C# .NET 8. The repository itself is currently a specification document (`instrucciones_agente.md`) with complete implementation instructions. The actual codebase needs to be created following the implementation plan outlined in the guide.
+This repository contains a **comprehensive implementation guide** for building an MQL4 Language Server Protocol (LSP) in C# .NET 10. The repository itself is currently a specification document (`instrucciones_agente.md`) with complete implementation instructions. The actual codebase needs to be created following the implementation plan outlined in the guide.
 
 ### What is MQL4 LSP?
 A Language Server that provides IDE features (completion, go-to-definition, hover, etc.) for MQL4 (MetaTrader 4) trading scripts. It enables any LSP-compatible editor (VSCode, Neovim, Emacs, etc.) to offer intelligent code features for MQL4 developers.
@@ -12,7 +12,7 @@ A Language Server that provides IDE features (completion, go-to-definition, hove
 ## 🏗️ Architecture Overview
 
 ### Technology Stack
-- **Language**: C# .NET 8
+- **Language**: C# .NET 10
 - **LSP Library**: Microsoft.LanguageServer.Protocol 8.0.0
 - **Logging**: Serilog 4.0.0
 - **Parser**: Regex-based (with Antlr4.Runtime 4.13.1 as optional future enhancement)
@@ -82,7 +82,7 @@ dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFil
 dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
 
 # Make executable (Linux/macOS)
-chmod +x bin/Release/net8.0/linux-x64/publish/mql4-lsp-server
+chmod +x bin/Release/net10.0/linux-x64/publish/mql4-lsp-server
 ```
 
 ### NuGet Packaging
@@ -154,7 +154,7 @@ mql4-language-server/
 The implementation guide outlines 7 phases:
 
 1. **Git Repository Setup** - Initialize repo, create README, .gitignore
-2. **.NET 8 Project Creation** - Create solution, configure project with dependencies
+2. **.NET 10 Project Creation** - Create solution, configure project with dependencies
 3. **LSP Implementation** - Parser, models, handlers, server core
 4. **Unit Tests** - xUnit tests for parser and core functionality
 5. **Standalone Compilation** - Build self-contained binaries for multiple platforms
@@ -200,7 +200,7 @@ Code coverage: coverlet.collector 6.0.0
 
 - [Language Server Protocol Specification 3.17](https://microsoft.github.io/language-server-protocol/specification)
 - [MQL4 Documentation](https://docs.mql4.com/)
-- [.NET 8 Documentation](https://learn.microsoft.com/en-us/dotnet/)
+- [.NET 10 Documentation](https://learn.microsoft.com/en-us/dotnet/)
 - [Microsoft.LanguageServer.Protocol](https://github.com/dotnet/LspMetaData)
 
 ## ⚠️ Current State
@@ -213,7 +213,7 @@ Code coverage: coverlet.collector 6.0.0
 
 If you need specific information about:
 - **MQL4 syntax and built-in functions**: Use Context7 MCP to get official MQL4 documentation and examples
-- **C# .NET 8 features and best practices**: Use Context7 MCP to retrieve current .NET documentation
+- **C# .NET 10 features and best practices**: Use Context7 MCP to retrieve current .NET documentation
 - **LSP protocol implementation details**: Use Context7 MCP to access LSP specification and examples
 - **Microsoft.LanguageServer.Protocol library**: Use Context7 MCP to get library-specific documentation
 - **Serilog logging framework**: Use Context7 MCP for configuration and usage patterns
@@ -232,7 +232,7 @@ For complex, multi-step implementation tasks, use the **sequential-thinking** to
 # Get MQL4 syntax reference
 mcp__context7__get-library-docs
 
-# Get .NET 8 documentation
+# Get .NET 10 documentation
 mcp__context7__get-library-docs
 
 # Get LSP protocol specification

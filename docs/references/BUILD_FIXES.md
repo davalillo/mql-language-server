@@ -74,14 +74,14 @@ MQL4 Language Server - Build Script (Linux/macOS)
 ✅ Clean complete
 
 🔨 Building project (generating ANTLR parser)...
-Mql4LanguageServer.Server -> /home/guillermo/source/mql4-language-server/src/bin/Release/net8.0/mql4-lsp-server.dll
+Mql4LanguageServer.Server -> /home/guillermo/source/mql4-language-server/src/bin/Release/net10.0/mql4-lsp-server.dll
 ✅ Build complete - ANTLR parser generated
 
 🐧 Building for Linux x64 (self-contained)...
-✅ Linux x64 build complete: ./bin/Release/net8.0/publish/linux-x64/mql4-lsp-server
+✅ Linux x64 build complete: ./bin/Release/net10.0/publish/linux-x64/mql4-lsp-server
 
 🍎 Building for macOS x64 (self-contained)...
-✅ macOS x64 build complete: ./bin/Release/net8.0/publish/osx-x64/mql4-lsp-server
+✅ macOS x64 build complete: ./bin/Release/net10.0/publish/osx-x64/mql4-lsp-server
 
 ==================================================
 ✅ Build complete!
@@ -121,7 +121,7 @@ dotnet tool install --global mql4-language-server \
   --add-source ./nupkg-local
 ```
 
-**Nota**: Requiere .NET 8 SDK instalado
+**Nota**: Requiere .NET 10 SDK instalado
 
 ---
 
@@ -129,9 +129,9 @@ dotnet tool install --global mql4-language-server \
 
 | Plataforma | Archivo | Tamaño | Ubicación |
 |------------|---------|--------|-----------|
-| Linux x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net8.0/publish/linux-x64/` |
-| macOS x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net8.0/publish/osx-x64/` |
-| Windows x64 | `mql4-lsp-server.exe` | 72MB | `src/bin/Release/net8.0/publish/win-x64/` |
+| Linux x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net10.0/publish/linux-x64/` |
+| macOS x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net10.0/publish/osx-x64/` |
+| Windows x64 | `mql4-lsp-server.exe` | 72MB | `src/bin/Release/net10.0/publish/win-x64/` |
 
 ---
 

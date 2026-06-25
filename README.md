@@ -114,7 +114,7 @@ variableDeclaration
 **Configuración**: `<AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>`
 
 **Problema resuelto**:
-ANTLR genera archivos en `obj/Debug/net8.0/` por defecto. Sin AntOutDir, requeriría copy manual a `src/Parser/Generated/`.
+ANTLR genera archivos en `obj/Debug/net10.0/` por defecto. Sin AntOutDir, requeriría copy manual a `src/Parser/Generated/`.
 
 **Configuración completa**:
 ```xml
@@ -256,16 +256,16 @@ dotnet tool install --tool-path . coverlet.console
 **Option 1: Coverlet as global tool**
 ```bash
 # Basic coverage report
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
 
 # Generate detailed coverage report in OpenCover format
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format opencover --output ./coverage/coverage.xml
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format opencover --output ./coverage/coverage.xml
 
 # Generate JSON coverage report
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format json --output ./coverage/coverage.json
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --format json --output ./coverage/coverage.json
 
 # Set coverage thresholds (fails build if below threshold)
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --threshold 80 --threshold-type line --threshold-stat total
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" --threshold 80 --threshold-type line --threshold-stat total
 ```
 
 **Option 2: Using Coverlet.MSBuild (package reference)**
@@ -288,7 +288,7 @@ dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCol
 dotnet build -c Release
 
 # Run tests with coverage
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build"
 ```
 
 #### Coverage Reports
@@ -340,7 +340,7 @@ Add to your GitHub Actions workflow:
 - name: Run tests with coverage
   run: |
     dotnet tool install --global coverlet.console
-    coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+    coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
       --target "dotnet" \
       --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
       --format opencover \
@@ -440,7 +440,7 @@ dotnet tool install -g mql4-language-server --add-source ./nupkg
 
 ### From Source
 
-**Prerequisites**: .NET 8 SDK
+**Prerequisites**: .NET 10 SDK
 
 **Linux/macOS**:
 ```bash

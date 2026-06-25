@@ -79,7 +79,7 @@ cat coverage/coverage_summary.csv
 
 ### Coverage con Thresholds (Falla si < 80%)
 ```bash
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
   --target "dotnet" \
   --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
   --threshold 80 --threshold-type line --threshold-stat total
@@ -87,7 +87,7 @@ coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
 
 ### Excluir Archivos Generados (ANTLR)
 ```bash
-coverlet ./tests/bin/Release/net8.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
   --target "dotnet" \
   --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
   --exclude-by-file "**/Mql4Grammar*.cs"
