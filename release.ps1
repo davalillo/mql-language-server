@@ -67,9 +67,9 @@ if (-not $SkipPack) {
 Write-Host "📋 Step 3/3: Copying release artifacts..." -ForegroundColor Yellow
 
 # Copy standalone binaries
-Copy-Item -Path "src/bin/Release/net8.0/publish/linux-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
-Copy-Item -Path "src/bin/Release/net8.0/publish/osx-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
-Copy-Item -Path "src/bin/Release/net8.0/publish/win-x64/mql4-lsp-server.exe" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/linux-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/osx-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/win-x64/mql4-lsp-server.exe" -Destination "$releaseDir/" -Force
 
 # Copy NuGet package
 if (Test-Path "nupkg") {
