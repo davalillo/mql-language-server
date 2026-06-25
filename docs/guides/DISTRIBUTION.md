@@ -56,7 +56,7 @@ chmod +x mql4-lsp-server
 **¿Qué es?**
 - Paquete NuGet distribuido via nuget.org o GitHub Packages
 - Se instala globalmente con: `dotnet tool install -g mql4-language-server`
-- Requiere .NET 8 SDK (framework-dependent)
+- Requiere .NET 10 SDK (framework-dependent)
 
 **Ventajas**:
 - ✅ Instalación moderna: `dotnet tool install -g mql4-language-server`
@@ -65,7 +65,7 @@ chmod +x mql4-lsp-server
 - ✅ Ideal para desarrolladores .NET
 
 **Desventajas**:
-- ❌ Requiere .NET 8 SDK instalado
+- ❌ Requiere .NET 10 SDK instalado
 - ❌ Tamaño menor pero necesita runtime
 - ❌ Registro en nuget.org o GitHub Packages
 
@@ -192,9 +192,9 @@ sha256sum -c SHA256SUMS.txt
 | Método | Tamaño | Dependencias | Instalación | Updates | Mejor para |
 |--------|--------|--------------|-------------|---------|------------|
 | Standalone Binaries | 71-72MB | Ninguna | Manual | Manual | Usuarios finales |
-| NuGet Tool | 2-5MB | .NET 8 SDK | `dotnet tool install` | `dotnet tool update` | Desarrolladores |
-| GitHub Packages | 2-5MB | .NET 8 SDK | `dotnet tool install` | `dotnet tool update` | Open source |
-| NuGet.org | 2-5MB | .NET 8 SDK | `dotnet tool install` | `dotnet tool update` | Público |
+| NuGet Tool | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Desarrolladores |
+| GitHub Packages | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Open source |
+| NuGet.org | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Público |
 
 ## 🎯 Recomendación por Audiencia
 

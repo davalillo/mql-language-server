@@ -4,7 +4,7 @@ Esta guía explica cómo instalar MQL4 LSP localmente **SIN** publicar en nuget.
 
 ## 📋 Requisitos Previos
 
-### 1. .NET 8 SDK
+### 1. .NET 10 SDK
 ```bash
 # Verificar instalación
 dotnet --version
@@ -29,7 +29,7 @@ cd mql4-language-server
 ```
 
 ### Qué hace el script:
-1. ✅ Verifica .NET 8 SDK
+1. ✅ Verifica .NET 10 SDK
 2. ✅ Construye el proyecto
 3. ✅ Crea paquete NuGet local (./nupkg-local/)
 4. ✅ Instala como herramienta global

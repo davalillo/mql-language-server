@@ -32,7 +32,7 @@ cd mql4-language-server
 
 ### Option 3: .NET Tool
 ```bash
-# Requires .NET 8 SDK
+# Requires .NET 10 SDK
 dotnet tool install --global mql4-language-server --version 1.0.0
 
 # Verify installation

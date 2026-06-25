@@ -35,7 +35,7 @@ tar -xzf mql4-lsp-server-linux-x64.tar.gz
 chmod +x mql4-lsp-server
 ```
 
-### .NET Tool (Requires .NET 8 SDK)
+### .NET Tool (Requires .NET 10 SDK)
 ```bash
 dotnet tool install --global mql4-language-server --version 1.0.0
 ```
