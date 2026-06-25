@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](ARCHITECTURE.md) for current architecture.**
+
 # Actualizaciones a la Gramática ANTLR4 MQL4
 
 ## Resumen

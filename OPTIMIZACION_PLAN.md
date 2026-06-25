@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](ARCHITECTURE.md) for current architecture.**
+
 # Plan de Optimización MQL4 Language Server
 
 **Rama:** `feature/optimizaciones-lsp`

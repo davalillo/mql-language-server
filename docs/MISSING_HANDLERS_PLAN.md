@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # Plan de Implementación: Handlers LSP Faltantes
 
 **Fecha:** 2026-01-09

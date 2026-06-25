@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # Plan de Implementación - MQL4 Language Server
 
 Este plan detalla todas las fases necesarias para implementar el MQL4 LSP completo.

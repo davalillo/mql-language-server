@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # Plan: Conectar Todos los Handlers LSP y Crear Pruebas
 
 ## Resumen Ejecutivo

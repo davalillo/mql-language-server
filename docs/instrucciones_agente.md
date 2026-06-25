@@ -1,8 +1,10 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # 🤖 Instrucciones para Implementación de LSP MQL4 en C#
 
 ## 📋 **Objetivo**
 
-Implementar un **Language Server Protocol (LSP) completo para MQL4** en **C# .NET 8**, que sea:
+Implementar un **Language Server Protocol (LSP) completo para MQL4** en **C# .NET 10**, que sea:
 - ✅ Totalmente **genérico** y reutilizable en cualquier editor LSP
 - ✅ **Standalone** (sin dependencias de .NET runtime)
 - ✅ **Multiplataforma** (Windows x64, Linux x64, macOS x64)
@@ -130,7 +132,7 @@ git commit -m "Initial commit: Project structure"
 
 ---
 
-## 📁 **Fase 2: Crear Solución y Proyecto .NET 8**
+## 📁 **Fase 2: Crear Solución y Proyecto .NET 10**
 
 ### 2.1 Crear Solución
 
@@ -164,7 +166,7 @@ dotnet sln list
 #   src/Mql4LanguageServer.Server.csproj
 ```
 
-### 2.3 Configurar Proyecto .NET 8
+### 2.3 Configurar Proyecto .NET 10
 
 Edita `src/Mql4LanguageServer.Server.csproj`:
 

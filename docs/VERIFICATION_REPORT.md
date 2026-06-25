@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # Phase 7: Verification Final Report
 
 **Date**: 2025-11-18  
@@ -80,13 +82,13 @@ Total tests: 11
 
 | Platform | Binary | Size | Location |
 |----------|--------|------|----------|
-| Linux x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net8.0/linux-x64/publish/` |
-| macOS x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net8.0/osx-x64/publish/` |
-| Windows x64 | `mql4-lsp-server.exe` | 72MB | `src/bin/Release/net8.0/win-x64/publish/` |
+| Linux x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net10.0/linux-x64/publish/` |
+| macOS x64 | `mql4-lsp-server` | 71MB | `src/bin/Release/net10.0/osx-x64/publish/` |
+| Windows x64 | `mql4-lsp-server.exe` | 72MB | `src/bin/Release/net10.0/win-x64/publish/` |
 
 **Verification**:
 ```bash
-$ file src/bin/Release/net8.0/linux-x64/publish/mql4-lsp-server
+$ file src/bin/Release/net10.0/linux-x64/publish/mql4-lsp-server
 ELF 64-bit LSB pie executable, x86-64, dynamically linked
 ```
 

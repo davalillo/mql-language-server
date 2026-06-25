@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](../ARCHITECTURE.md) for current architecture.**
+
 # Plan de Implementación LSP MQL4 - LSP 3.17
 
 **Fecha:** 2026-01-09
