@@ -34,7 +34,7 @@ Planned:
 
 Yes! The MQL4 LSP v1.0.0 is:
 - ✅ Used by developers worldwide
-- ✅ Built on proven technologies (ANTLR 4.13.1, .NET 8)
+- ✅ Built on proven technologies (ANTLR 4.13.1, .NET 10)
 - ✅ Fully tested (11 unit tests)
 - ✅ Cross-platform (Linux, Windows, macOS)
 - ✅ Standalone (no .NET runtime required)
@@ -50,19 +50,19 @@ Yes! The MQL4 LSP v1.0.0 is:
 
 **.NET Tool (For developers)**:
 - Pros: Smaller download, easy updates
-- Cons: Requires .NET 8 SDK installed
+- Cons: Requires .NET 10 SDK installed
 - Best for: Developers already using .NET
 
 **From Source (For contributors)**:
 - Pros: Full control, can modify code
-- Cons: Requires .NET 8 SDK, build process
+- Cons: Requires .NET 10 SDK, build process
 - Best for: Contributing to the project
 
 ### Do I need .NET installed?
 
 **Standalone Binary**: No, .NET is bundled in the binary (71-72MB).
 
-**.NET Tool**: Yes, requires .NET 8 SDK installed.
+**.NET Tool**: Yes, requires .NET 10 SDK installed.
 
 ### Can I install it without admin rights?
 
@@ -252,7 +252,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 
 ### How do I build from source?
 
-**Prerequisites**: .NET 8 SDK
+**Prerequisites**: .NET 10 SDK
 
 ```bash
 git clone https://github.com/davalillo/mql4-language-server.git
@@ -270,7 +270,7 @@ dotnet test
 .\build.ps1  # Windows
 ```
 
-Binaries will be in `src/bin/Release/net8.0/<rid>/publish/`
+Binaries will be in `src/bin/Release/net10.0/<rid>/publish/`
 
 ### Can I extend the parser?
 
@@ -301,7 +301,7 @@ Yes! The parser uses ANTLR 4.13.1:
 
 ### Why .NET?
 
-The MQL4 LSP uses C# .NET 8 because:
+The MQL4 LSP uses C# .NET 10 because:
 - ✅ **Mature LSP ecosystem**: OmniSharp Extensions
 - ✅ **Cross-platform**: Runs on Windows, Linux, macOS
 - ✅ **Performance**: Fast parsing and symbol lookup
