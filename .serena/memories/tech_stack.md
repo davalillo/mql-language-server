@@ -65,14 +65,14 @@
 ### MSBuild/dotnet CLI
 - **dotnet CLI 8.0+**: Build and project management
 - **Project format**: SDK-style projects (.NET Core/5/6+)
-- **Target frameworks**: net8.0
+- **Target frameworks**: net10.0
 - **Output type**: Console application
 
 ### Build Configuration
 ```xml
 <!-- Key project settings -->
 <OutputType>Exe</OutputType>
-<TargetFramework>net8.0</TargetFramework>
+<TargetFramework>net10.0</TargetFramework>
 <ImplicitUsings>disable</ImplicitUsings>
 <Nullable>enable</Nullable>
 <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -185,7 +185,7 @@ public class Mql4File
 ## Development Environment
 
 ### Required Tools
-- **.NET 8 SDK**: For building and testing
+- **.NET 10 SDK**: For building and testing
 - **Git**: Version control
 - **IDE**: VS Code, Visual Studio, or JetBrains Rider (optional)
 
