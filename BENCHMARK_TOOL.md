@@ -1,3 +1,5 @@
+> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](ARCHITECTURE.md) for current architecture.**
+
 # Benchmark Tool - MQL4 Language Server
 
 ## 📋 Overview
