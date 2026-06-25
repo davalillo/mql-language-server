@@ -11,6 +11,7 @@ Welcome to the MQL4 Language Server documentation. This repository is organized 
 - **[Manual Testing Guide](guides/MANUAL_TESTING.md)** - Test LSP features manually
 
 ### 🔧 Development
+- **[Architecture Reference](../ARCHITECTURE.md)** - Canonical architecture doc (handler surface, DI, LSP capabilities, test pyramid, build layout)
 - **[Build Instructions](../README.md#from-source)** - How to build from source
 - **[Build Fixes](references/BUILD_FIXES.md)** - Build script issues and solutions
 - **[Security Analysis](references/SECURITY.md)** - NuGet vulnerabilities analysis
