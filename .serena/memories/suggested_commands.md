@@ -104,8 +104,8 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 
 ### Make Executable (Linux/macOS)
 ```bash
-chmod +x bin/Release/net8.0/linux-x64/publish/mql4-lsp-server
-chmod +x bin/Release/net8.0/osx-x64/publish/mql4-lsp-server
+chmod +x bin/Release/net10.0/linux-x64/publish/mql4-lsp-server
+chmod +x bin/Release/net10.0/osx-x64/publish/mql4-lsp-server
 ```
 
 ## Testing Standalone Binary
@@ -185,7 +185,7 @@ dotnet build -c Release
 dotnet test --no-build
 
 # Verify artifacts
-ls -la src/bin/Release/net8.0/*/publish/
+ls -la src/bin/Release/net10.0/*/publish/
 ```
 
 ## Git Commands
@@ -303,7 +303,7 @@ time dotnet test --no-build --verbosity quiet
 
 ### Check Binary Size
 ```bash
-ls -lh src/bin/Release/net8.0/*/publish/mql4-lsp-server*
+ls -lh src/bin/Release/net10.0/*/publish/mql4-lsp-server*
 ```
 
 ## Troubleshooting
