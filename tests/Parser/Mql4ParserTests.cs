@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using Xunit;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Mql4LanguageServer.Tests.Parser;
+namespace MqlLanguageServer.Tests.Parser;
 
 /// <summary>
 /// Unit tests for Mql4AntlrParser

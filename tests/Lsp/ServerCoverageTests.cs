@@ -2,10 +2,10 @@ using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +16,10 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using Position = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
 
-namespace Mql4LanguageServer.Tests.Lsp;
+namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
-/// Tests para aumentar cobertura de Mql4LspServer y OpenDocumentStore
+/// Tests para aumentar cobertura de MqlLspServer y OpenDocumentStore
 /// </summary>
 public class ServerCoverageTests
 {
@@ -210,84 +210,84 @@ public class ServerCoverageTests
 
     #endregion
 
-    #region Mql4LspServer Tests
+    #region MqlLspServer Tests
 
     [Fact]
-    public void Mql4LspServer_Constructor_ShouldInitialize()
+    public void MqlLspServer_Constructor_ShouldInitialize()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var parser = new Mql4AntlrParser();
 
         // Act
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
 
         // Assert
         Assert.NotNull(server);
     }
 
     [Fact]
-    public void Mql4LspServer_HasInitializeMethod()
+    public void MqlLspServer_HasInitializeMethod()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
 
         // Act
-        var method = typeof(Mql4LspServer).GetMethod("Initialize");
+        var method = typeof(MqlLspServer).GetMethod("Initialize");
 
         // Assert
         Assert.NotNull(method);
     }
 
     [Fact]
-    public void Mql4LspServer_HasDisposeMethod()
+    public void MqlLspServer_HasDisposeMethod()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
 
         // Act
-        var method = typeof(Mql4LspServer).GetMethod("Dispose");
+        var method = typeof(MqlLspServer).GetMethod("Dispose");
 
         // Assert
         Assert.NotNull(method);
     }
 
     [Fact]
-    public void Mql4LspServer_Initialize_CanBeCalled()
+    public void MqlLspServer_Initialize_CanBeCalled()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
 
         // Act & Assert - should not throw
         server.Initialize();
     }
 
     [Fact]
-    public void Mql4LspServer_Initialize_DoesNotSendServerStatusNotification()
+    public void MqlLspServer_Initialize_DoesNotSendServerStatusNotification()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
 
         // Note: experimental/serverStatus notification is now sent from Program.cs
-        // after server.Initialize() completes, not from Mql4LspServer.Initialize()
+        // after server.Initialize() completes, not from MqlLspServer.Initialize()
 
         // Act
         server.Initialize();
 
-        // Assert - Verify that Mql4LspServer.Initialize() does NOT send serverStatus
+        // Assert - Verify that MqlLspServer.Initialize() does NOT send serverStatus
         // (it's handled in Program.cs after server.Initialize() completes)
         mockServer.Verify(s => s.SendNotification("experimental/serverStatus", It.IsAny<object>()), Times.Never);
     }

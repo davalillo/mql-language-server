@@ -1,12 +1,12 @@
 using Xunit;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Tests.Lsp;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Tests.Lsp;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.IO;
 
-namespace Mql4LanguageServer.Tests.CrossFile;
+namespace MqlLanguageServer.Tests.CrossFile;
 
 /// <summary>
 /// Tests for cross-file functionality including GlobalSymbolIndex and cross-file navigation

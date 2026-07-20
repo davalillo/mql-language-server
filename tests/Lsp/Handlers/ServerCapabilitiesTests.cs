@@ -5,17 +5,17 @@
 // using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 // using OmniSharp.Extensions.LanguageServer.Server;
 // using OmniSharp.Extensions.LanguageServer.Protocol.Server;
-// using Mql4LanguageServer.Lsp.Handlers;
-// using Mql4LanguageServer.Lsp.Server;
-// using Mql4LanguageServer.Models;
-// using Mql4LanguageServer.Parser;
+// using MqlLanguageServer.Lsp.Handlers;
+// using MqlLanguageServer.Lsp.Server;
+// using MqlLanguageServer.Models;
+// using MqlLanguageServer.Parser;
 // using Microsoft.Extensions.Logging;
 // using Moq;
 // using System.IO;
 // using System.Threading;
 // using System.Threading.Tasks;
 
-// namespace Mql4LanguageServer.Tests.Lsp.Handlers;
+// namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
 // /// <summary>
 // /// Tests for LSP Server capabilities publication

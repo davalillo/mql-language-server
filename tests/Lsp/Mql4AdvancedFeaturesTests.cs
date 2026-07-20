@@ -1,11 +1,11 @@
 using Xunit;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
 using System.IO;
 using System.Linq;
 
-namespace Mql4LanguageServer.Tests.Lsp;
+namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
 /// Tests for advanced MQL4-specific features and complex scenarios

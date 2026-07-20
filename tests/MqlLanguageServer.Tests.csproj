@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../src/Mql4LanguageServer.Server.csproj" />
+    <ProjectReference Include="../src/MqlLanguageServer.Server.csproj" />
   </ItemGroup>
 
   <!-- Copy fixtures to output directory for tests -->

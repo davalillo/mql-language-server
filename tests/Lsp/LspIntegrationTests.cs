@@ -3,16 +3,16 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
 
-namespace Mql4LanguageServer.Tests.Lsp;
+namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
 /// Integration tests for LSP Server
@@ -312,28 +312,28 @@ public class LspIntegrationTests : IDisposable
     }
 
     [Fact]
-    public void Mql4LspServer_CanBeCreated()
+    public void MqlLspServer_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var mockParser = new Mock<Mql4AntlrParser>();
 
         // Act
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
 
         // Assert
         Assert.NotNull(server);
     }
 
     [Fact]
-    public void Mql4LspServer_Initialize_DoesNotThrow()
+    public void MqlLspServer_Initialize_DoesNotThrow()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<Mql4LspServer>>();
+        var mockLogger = new Mock<ILogger<MqlLspServer>>();
         var mockServer = new Mock<ILanguageServer>();
         var mockParser = new Mock<Mql4AntlrParser>();
-        var server = new Mql4LspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
+        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
 
         // Act & Assert
         var exception = Record.Exception(() => server.Initialize());

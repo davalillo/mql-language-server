@@ -1,15 +1,15 @@
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Server;
 
-namespace Mql4LanguageServer.Tests.Lsp
+namespace MqlLanguageServer.Tests.Lsp
 {
     /// <summary>
-    /// Tests for Mql4ServerCapabilities declaration.
+    /// Tests for MqlServerCapabilities declaration.
     /// Verifies server capabilities configuration per LSP 3.17 specification.
     /// </summary>
-    public class Mql4ServerCapabilitiesTests
+    public class MqlServerCapabilitiesTests
     {
         #region GetDocumentSelector Tests
 
@@ -17,7 +17,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetDocumentSelector_ReturnsNonNull()
         {
             // Arrange & Act
-            var documentSelector = Mql4ServerCapabilities.GetDocumentSelector();
+            var documentSelector = MqlServerCapabilities.GetDocumentSelector();
 
             // Assert
             Assert.NotNull(documentSelector);
@@ -27,7 +27,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetDocumentSelector_ReturnsMq4Pattern()
         {
             // Arrange & Act
-            var documentSelector = Mql4ServerCapabilities.GetDocumentSelector();
+            var documentSelector = MqlServerCapabilities.GetDocumentSelector();
 
             // Assert
             Assert.NotNull(documentSelector);
@@ -38,7 +38,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetDocumentSelector_ReturnsMqhPattern()
         {
             // Arrange & Act
-            var documentSelector = Mql4ServerCapabilities.GetDocumentSelector();
+            var documentSelector = MqlServerCapabilities.GetDocumentSelector();
 
             // Assert
             Assert.NotNull(documentSelector);
@@ -46,14 +46,14 @@ namespace Mql4LanguageServer.Tests.Lsp
         }
 
         [Fact]
-        public void GetDocumentSelector_HasTwoPatterns()
+        public void GetDocumentSelector_HasThreePatterns()
         {
             // Arrange & Act
-            var documentSelector = Mql4ServerCapabilities.GetDocumentSelector();
+            var documentSelector = MqlServerCapabilities.GetDocumentSelector();
 
             // Assert
             Assert.NotNull(documentSelector);
-            Assert.Equal(2, documentSelector.Length);
+            Assert.Equal(3, documentSelector.Length);
         }
 
         #endregion
@@ -64,7 +64,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetFileExtensions_ReturnsNonNull()
         {
             // Arrange & Act
-            var extensions = Mql4ServerCapabilities.GetFileExtensions();
+            var extensions = MqlServerCapabilities.GetFileExtensions();
 
             // Assert
             Assert.NotNull(extensions);
@@ -74,7 +74,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetFileExtensions_ContainsMq4Extension()
         {
             // Arrange & Act
-            var extensions = Mql4ServerCapabilities.GetFileExtensions();
+            var extensions = MqlServerCapabilities.GetFileExtensions();
 
             // Assert
             Assert.Contains(".mq4", extensions);
@@ -84,20 +84,20 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetFileExtensions_ContainsMqhExtension()
         {
             // Arrange & Act
-            var extensions = Mql4ServerCapabilities.GetFileExtensions();
+            var extensions = MqlServerCapabilities.GetFileExtensions();
 
             // Assert
             Assert.Contains(".mqh", extensions);
         }
 
         [Fact]
-        public void GetFileExtensions_HasTwoExtensions()
+        public void GetFileExtensions_HasThreeExtensions()
         {
             // Arrange & Act
-            var extensions = Mql4ServerCapabilities.GetFileExtensions();
+            var extensions = MqlServerCapabilities.GetFileExtensions();
 
             // Assert
-            Assert.Equal(2, extensions.Length);
+            Assert.Equal(3, extensions.Length);
         }
 
         #endregion
@@ -108,7 +108,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetCompletionTriggerCharacters_ReturnsNonNull()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetCompletionTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetCompletionTriggerCharacters();
 
             // Assert
             Assert.NotNull(triggers);
@@ -118,7 +118,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetCompletionTriggerCharacters_ContainsDot()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetCompletionTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetCompletionTriggerCharacters();
 
             // Assert
             Assert.Contains(".", triggers);
@@ -128,7 +128,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetCompletionTriggerCharacters_ContainsOpenParen()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetCompletionTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetCompletionTriggerCharacters();
 
             // Assert
             Assert.Contains("(", triggers);
@@ -138,7 +138,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetCompletionTriggerCharacters_HasFourCharacters()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetCompletionTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetCompletionTriggerCharacters();
 
             // Assert
             Assert.Equal(4, triggers.Count());
@@ -148,7 +148,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSignatureHelpTriggerCharacters_ReturnsNonNull()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetSignatureHelpTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetSignatureHelpTriggerCharacters();
 
             // Assert
             Assert.NotNull(triggers);
@@ -158,7 +158,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSignatureHelpTriggerCharacters_ContainsOpenParen()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetSignatureHelpTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetSignatureHelpTriggerCharacters();
 
             // Assert
             Assert.Contains("(", triggers);
@@ -168,7 +168,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSignatureHelpRetriggerCharacters_ReturnsNonNull()
         {
             // Arrange & Act
-            var retriggers = Mql4ServerCapabilities.GetSignatureHelpRetriggerCharacters();
+            var retriggers = MqlServerCapabilities.GetSignatureHelpRetriggerCharacters();
 
             // Assert
             Assert.NotNull(retriggers);
@@ -178,7 +178,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSignatureHelpRetriggerCharacters_ContainsCloseParen()
         {
             // Arrange & Act
-            var retriggers = Mql4ServerCapabilities.GetSignatureHelpRetriggerCharacters();
+            var retriggers = MqlServerCapabilities.GetSignatureHelpRetriggerCharacters();
 
             // Assert
             Assert.Contains(")", retriggers);
@@ -188,7 +188,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetOnTypeFormattingTriggerCharacters_ReturnsNonNull()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetOnTypeFormattingTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetOnTypeFormattingTriggerCharacters();
 
             // Assert
             Assert.NotNull(triggers);
@@ -198,7 +198,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetOnTypeFormattingTriggerCharacters_ContainsSemicolon()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetOnTypeFormattingTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetOnTypeFormattingTriggerCharacters();
 
             // Assert
             Assert.Contains(";", triggers);
@@ -208,7 +208,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetOnTypeFormattingTriggerCharacters_ContainsCloseBrace()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetOnTypeFormattingTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetOnTypeFormattingTriggerCharacters();
 
             // Assert
             Assert.Contains("}", triggers);
@@ -218,7 +218,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetOnTypeFormattingTriggerCharacters_ContainsNewline()
         {
             // Arrange & Act
-            var triggers = Mql4ServerCapabilities.GetOnTypeFormattingTriggerCharacters();
+            var triggers = MqlServerCapabilities.GetOnTypeFormattingTriggerCharacters();
 
             // Assert
             Assert.Contains("\n", triggers);
@@ -232,7 +232,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_ReturnsNonNull()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.NotNull(kinds);
@@ -242,7 +242,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_ContainsQuickFix()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.Contains(CodeActionKind.QuickFix, kinds);
@@ -252,7 +252,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_ContainsRefactor()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.Contains(CodeActionKind.Refactor, kinds);
@@ -262,7 +262,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_ContainsRefactorExtract()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.Contains(CodeActionKind.RefactorExtract, kinds);
@@ -272,7 +272,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_ContainsOrganizeImports()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.Contains(CodeActionKind.SourceOrganizeImports, kinds);
@@ -282,7 +282,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSupportedCodeActionKinds_HasFourKinds()
         {
             // Arrange & Act
-            var kinds = Mql4ServerCapabilities.GetSupportedCodeActionKinds();
+            var kinds = MqlServerCapabilities.GetSupportedCodeActionKinds();
 
             // Assert
             Assert.Equal(4, kinds.Count());
@@ -296,7 +296,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenTypes_ReturnsNonNull()
         {
             // Arrange & Act
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert
             Assert.NotNull(types);
@@ -306,7 +306,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenTypes_ContainsFunction()
         {
             // Arrange & Act
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert
             Assert.Contains(SemanticTokenType.Function, types);
@@ -316,7 +316,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenTypes_ContainsKeyword()
         {
             // Arrange & Act
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert
             Assert.Contains(SemanticTokenType.Keyword, types);
@@ -326,7 +326,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenTypes_ContainsMql4SpecificTypes()
         {
             // Arrange & Act
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert - MQL4 specific token types
             Assert.Contains(SemanticTokenType.Method, types);
@@ -337,7 +337,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenTypes_HasTwentyTypes()
         {
             // Arrange & Act
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert
             Assert.Equal(20, types.Count());
@@ -347,7 +347,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenModifiers_ReturnsNonNull()
         {
             // Arrange & Act
-            var modifiers = Mql4ServerCapabilities.GetSemanticTokenModifiers();
+            var modifiers = MqlServerCapabilities.GetSemanticTokenModifiers();
 
             // Assert
             Assert.NotNull(modifiers);
@@ -357,7 +357,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenModifiers_ContainsDeclaration()
         {
             // Arrange & Act
-            var modifiers = Mql4ServerCapabilities.GetSemanticTokenModifiers();
+            var modifiers = MqlServerCapabilities.GetSemanticTokenModifiers();
 
             // Assert
             Assert.Contains(SemanticTokenModifier.Declaration, modifiers);
@@ -367,7 +367,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenModifiers_ContainsStatic()
         {
             // Arrange & Act
-            var modifiers = Mql4ServerCapabilities.GetSemanticTokenModifiers();
+            var modifiers = MqlServerCapabilities.GetSemanticTokenModifiers();
 
             // Assert
             Assert.Contains(SemanticTokenModifier.Static, modifiers);
@@ -377,7 +377,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokenModifiers_HasFiveModifiers()
         {
             // Arrange & Act
-            var modifiers = Mql4ServerCapabilities.GetSemanticTokenModifiers();
+            var modifiers = MqlServerCapabilities.GetSemanticTokenModifiers();
 
             // Assert
             Assert.Equal(5, modifiers.Count());
@@ -391,7 +391,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokensLegend_ReturnsNonNull()
         {
             // Arrange & Act
-            var legend = Mql4ServerCapabilities.GetSemanticTokensLegend();
+            var legend = MqlServerCapabilities.GetSemanticTokensLegend();
 
             // Assert
             Assert.NotNull(legend);
@@ -401,7 +401,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokensLegend_HasTokenTypes()
         {
             // Arrange & Act
-            var legend = Mql4ServerCapabilities.GetSemanticTokensLegend();
+            var legend = MqlServerCapabilities.GetSemanticTokensLegend();
 
             // Assert
             Assert.NotNull(legend.TokenTypes);
@@ -412,7 +412,7 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokensLegend_HasTokenModifiers()
         {
             // Arrange & Act
-            var legend = Mql4ServerCapabilities.GetSemanticTokensLegend();
+            var legend = MqlServerCapabilities.GetSemanticTokensLegend();
 
             // Assert
             Assert.NotNull(legend.TokenModifiers);
@@ -423,8 +423,8 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokensLegend_TokenTypesMatchGetSemanticTokenTypes()
         {
             // Arrange
-            var legend = Mql4ServerCapabilities.GetSemanticTokensLegend();
-            var types = Mql4ServerCapabilities.GetSemanticTokenTypes();
+            var legend = MqlServerCapabilities.GetSemanticTokensLegend();
+            var types = MqlServerCapabilities.GetSemanticTokenTypes();
 
             // Assert
             Assert.Equal(types.Count(), legend.TokenTypes.Count());
@@ -434,8 +434,8 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void GetSemanticTokensLegend_TokenModifiersMatchGetSemanticTokenModifiers()
         {
             // Arrange
-            var legend = Mql4ServerCapabilities.GetSemanticTokensLegend();
-            var modifiers = Mql4ServerCapabilities.GetSemanticTokenModifiers();
+            var legend = MqlServerCapabilities.GetSemanticTokensLegend();
+            var modifiers = MqlServerCapabilities.GetSemanticTokenModifiers();
 
             // Assert
             Assert.Equal(modifiers.Count(), legend.TokenModifiers.Count());
@@ -449,37 +449,37 @@ namespace Mql4LanguageServer.Tests.Lsp
         public void AllMainTextDocumentFeaturesHaveTriggerCharacters()
         {
             // Assert - Verifying that all main text document features have trigger characters
-            Assert.NotNull(Mql4ServerCapabilities.GetCompletionTriggerCharacters());
-            Assert.NotNull(Mql4ServerCapabilities.GetSignatureHelpTriggerCharacters());
+            Assert.NotNull(MqlServerCapabilities.GetCompletionTriggerCharacters());
+            Assert.NotNull(MqlServerCapabilities.GetSignatureHelpTriggerCharacters());
         }
 
         [Fact]
         public void AllNavigationFeaturesHaveSelectors()
         {
             // Assert - Verifying navigation features can be configured
-            Assert.NotNull(Mql4ServerCapabilities.GetDocumentSelector());
+            Assert.NotNull(MqlServerCapabilities.GetDocumentSelector());
         }
 
         [Fact]
         public void AllEditFeaturesHaveConfiguration()
         {
             // Assert - Verifying edit features have code action kinds
-            Assert.NotNull(Mql4ServerCapabilities.GetSupportedCodeActionKinds());
-            Assert.NotNull(Mql4ServerCapabilities.GetOnTypeFormattingTriggerCharacters());
+            Assert.NotNull(MqlServerCapabilities.GetSupportedCodeActionKinds());
+            Assert.NotNull(MqlServerCapabilities.GetOnTypeFormattingTriggerCharacters());
         }
 
         [Fact]
         public void AllSymbolFeaturesHaveSelectors()
         {
             // Assert - Verifying symbol features
-            Assert.NotNull(Mql4ServerCapabilities.GetDocumentSelector());
+            Assert.NotNull(MqlServerCapabilities.GetDocumentSelector());
         }
 
         [Fact]
         public void AllViewFeaturesHaveConfiguration()
         {
             // Assert - Verifying view/features features
-            Assert.NotNull(Mql4ServerCapabilities.GetSemanticTokensLegend());
+            Assert.NotNull(MqlServerCapabilities.GetSemanticTokensLegend());
         }
 
         #endregion

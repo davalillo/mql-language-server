@@ -1,11 +1,11 @@
 using Xunit;
 using Xunit.Abstractions;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.IO;
 
-namespace Mql4LanguageServer.Tests.Parser;
+namespace MqlLanguageServer.Tests.Parser;
 
 /// <summary>
 /// Tests using a real-world, complex MQL4 file: Ducibus_Pro_ver_2_90.mq4

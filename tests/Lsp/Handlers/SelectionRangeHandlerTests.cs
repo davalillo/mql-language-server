@@ -1,12 +1,12 @@
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Mql4LanguageServer.Tests.Lsp.Handlers
+namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
     /// <summary>
     /// Tests for SelectionRangeHandler.

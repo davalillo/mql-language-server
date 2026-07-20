@@ -3,14 +3,14 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Mql4LanguageServer.Tests.Lsp.Handlers;
+namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
 /// <summary>
 /// Tests for DiagnosticHandler

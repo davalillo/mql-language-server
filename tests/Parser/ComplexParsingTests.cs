@@ -1,9 +1,9 @@
 using System;
 using Xunit;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
 
-namespace Mql4LanguageServer.Tests.Parser
+namespace MqlLanguageServer.Tests.Parser
 {
     public class ComplexParsingTests
     {

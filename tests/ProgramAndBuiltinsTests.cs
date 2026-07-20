@@ -2,14 +2,14 @@ using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Mql4LanguageServer;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Mql4.Builtins;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Models;
 using System;
 using System.Linq;
 
-namespace Mql4LanguageServer.Tests;
+namespace MqlLanguageServer.Tests;
 
 /// <summary>
 /// Tests para Program.cs y Mql4Builtins
@@ -27,7 +27,7 @@ public class ProgramAndBuiltinsTests
         Assert.NotNull(assembly);
 
         // Verify Program type exists in the assembly
-        var programType = assembly.GetType("Mql4LanguageServer.Program");
+        var programType = assembly.GetType("MqlLanguageServer.Program");
         Assert.NotNull(programType);
     }
 

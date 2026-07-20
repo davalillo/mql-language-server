@@ -1,10 +1,10 @@
 using Xunit;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
@@ -12,7 +12,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mql4LanguageServer.Tests.Lsp;
+namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
 /// Tests para aumentar cobertura de LSP Handlers

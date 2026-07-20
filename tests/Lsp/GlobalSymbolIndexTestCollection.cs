@@ -1,8 +1,8 @@
 using System;
 using Xunit;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Server;
 
-namespace Mql4LanguageServer.Tests.Lsp
+namespace MqlLanguageServer.Tests.Lsp
 {
     /// <summary>
     /// Fixture class that ensures GlobalSymbolIndex is cleaned up after all tests in a test collection

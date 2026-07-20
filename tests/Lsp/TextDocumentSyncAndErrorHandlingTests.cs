@@ -1,10 +1,10 @@
 using Xunit;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +16,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MediatR;
 
-namespace Mql4LanguageServer.Tests.Lsp;
+namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
 /// Tests for Text Document Synchronization (DidOpen, DidChange, DidClose) and error handling
