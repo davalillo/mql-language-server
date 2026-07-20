@@ -6,13 +6,14 @@ using Xunit;
 
 namespace MqlLanguageServer.Tests.Lsp.Server;
 
+/// <summary>
+/// Shares the GlobalSymbolIndex singleton with the rest of the GlobalSymbolIndex Tests collection
+/// to prevent cross-test contamination (spec REQ-TD-05). The collection fixture clears the index
+/// before and after the collection runs; tests must not call Clear() themselves.
+/// </summary>
+[Collection("GlobalSymbolIndex Tests")]
 public class GlobalSymbolIndexDualKeyTests
 {
-    public GlobalSymbolIndexDualKeyTests()
-    {
-        GlobalSymbolIndex.Instance.Clear();
-    }
-
     [Fact]
     public void CrossLanguage_Query_Does_Not_Leak()
     {
