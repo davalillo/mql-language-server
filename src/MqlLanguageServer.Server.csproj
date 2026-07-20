@@ -69,7 +69,14 @@
       <Listener>true</Listener>
       <Visitor>true</Visitor>
       <Package>Mql4Grammar</Package>
-      <AntOutDir>$(MSBuildProjectDirectory)/Parser/Generated</AntOutDir>
+      <AntOutDir>$(MSBuildProjectDirectory)/Parser/Generated/Mql4</AntOutDir>
+    </Antlr4>
+    <Antlr4 Include="Mql5/Grammar/Mql5Grammar.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <Listener>true</Listener>
+      <Visitor>true</Visitor>
+      <Package>Mql5Grammar</Package>
+      <AntOutDir>$(MSBuildProjectDirectory)/Parser/Generated/Mql5</AntOutDir>
     </Antlr4>
   </ItemGroup>
 

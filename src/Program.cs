@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Serilog;
@@ -75,6 +76,7 @@ namespace MqlLanguageServer
                         {
                             // MANTÉN SOLO TUS SERVICIOS PROPIOS
                             services.AddTransient<Mql4AntlrParser>();
+                            services.AddTransient<Mql5AntlrParser>();
                             services.AddSingleton<OpenDocumentStore>();
                             services.AddSingleton<GlobalSymbolIndex>();
                             services.AddSingleton<MetricsCollector>();

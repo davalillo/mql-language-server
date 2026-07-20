@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 
@@ -12,24 +13,25 @@ namespace MqlLanguageServer.Lsp.Server;
 public class MqlLanguageService
 {
     private readonly Mql4AntlrParser _mql4Parser;
+    private readonly Mql5AntlrParser _mql5Parser;
     private readonly ILogger<MqlLanguageService>? _logger;
 
-    public MqlLanguageService(Mql4AntlrParser mql4Parser, ILogger<MqlLanguageService>? logger = null)
+    public MqlLanguageService(Mql4AntlrParser mql4Parser, Mql5AntlrParser mql5Parser, ILogger<MqlLanguageService>? logger = null)
     {
         _mql4Parser = mql4Parser ?? throw new ArgumentNullException(nameof(mql4Parser));
+        _mql5Parser = mql5Parser ?? throw new ArgumentNullException(nameof(mql5Parser));
         _logger = logger;
     }
 
     /// <summary>
     /// Get the parser for the requested language.
-    /// MQL5 returns null in Slice 1; callers must guard until Slice 2.
+    /// Slice 2: MQL5 parser is now registered.
     /// </summary>
-    public IMqlParser? GetParser(MqlLanguage language)
+    public IMqlParser GetParser(MqlLanguage language)
     {
         if (language == MqlLanguage.Mql5)
         {
-            _logger?.LogWarning("MQL5 parser not yet registered");
-            return null;
+            return _mql5Parser;
         }
 
         return _mql4Parser;
