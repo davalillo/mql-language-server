@@ -79,6 +79,7 @@ namespace MqlLanguageServer
                             services.AddSingleton<GlobalSymbolIndex>();
                             services.AddSingleton<MetricsCollector>();
                             services.AddSingleton<MqlLspServer>();
+                            services.AddSingleton<MqlLanguageService>();
 
                             // CAMBIO 2: ¡ELIMINA TODOS LOS AddSingleton DE HANDLERS AQUÍ!
                             // .WithHandler<T>() se encarga de registrarlos en la DI automáticamente.

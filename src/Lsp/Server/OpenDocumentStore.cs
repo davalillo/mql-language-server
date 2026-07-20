@@ -5,23 +5,30 @@ using MqlLanguageServer.Models;
 namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
-/// Tracks open MQL4 documents for LSP handlers (Model + Raw Content)
+/// Tracks open MQL documents for LSP handlers (Model + Raw Content + Language)
 /// </summary>
 public class OpenDocumentStore
 {
-    // CAMBIO CLAVE: Guardamos una Tupla (Modelo, TextoCrudo)
-    private readonly Dictionary<Uri, (Mql4File Model, string Content)> _openFiles = new();
+    private readonly Dictionary<Uri, (MqlFile Model, string Content, MqlLanguage Language)> _openFiles = new();
     private readonly MetricsCollector _metrics = MetricsCollector.Instance;
 
     /// <summary>
-    /// Add or update a document in the store with its raw content
+    /// Add or update a document in the store with its raw content and language.
     /// </summary>
-    public void AddOrUpdate(Uri uri, Mql4File file, string content)
+    public void AddOrUpdate(Uri uri, MqlFile file, string content, MqlLanguage language)
     {
         lock (_openFiles)
         {
-            _openFiles[uri] = (file, content);
+            _openFiles[uri] = (file, content, language);
         }
+    }
+
+    /// <summary>
+    /// Add or update a document in the store with its raw content (defaults to MQL4).
+    /// </summary>
+    public void AddOrUpdate(Uri uri, MqlFile file, string content)
+    {
+        AddOrUpdate(uri, file, content, MqlLanguage.Mql4);
     }
 
     /// <summary>
@@ -36,9 +43,9 @@ public class OpenDocumentStore
     }
 
     /// <summary>
-    /// Get a document model and its content from the store
+    /// Get a document model, content, and language from the store
     /// </summary>
-    public bool TryGetValue(Uri uri, out Mql4File? file, out string? content)
+    public bool TryGetValue(Uri uri, out MqlFile? file, out string? content, out MqlLanguage language)
     {
         lock (_openFiles)
         {
@@ -46,25 +53,53 @@ public class OpenDocumentStore
             {
                 file = data.Model;
                 content = data.Content;
-                
+                language = data.Language;
                 _metrics.RecordCacheHit();
                 return true;
             }
-            
+
             file = null;
             content = null;
+            language = MqlLanguage.Mql4;
             _metrics.RecordCacheMiss();
             return false;
         }
     }
 
     /// <summary>
+    /// Get a document model and its content from the store.
+    /// </summary>
+    public bool TryGetValue(Uri uri, out MqlFile? file, out string? content)
+    {
+        var result = TryGetValue(uri, out file, out content, out _);
+        return result;
+    }
+
+    /// <summary>
     /// Overload para compatibilidad (si solo necesitas el modelo)
     /// </summary>
-    public bool TryGetValue(Uri uri, out Mql4File? file)
+    public bool TryGetValue(Uri uri, out MqlFile? file)
     {
-        var result = TryGetValue(uri, out file, out _);
+        var result = TryGetValue(uri, out file, out _, out _);
         return result;
+    }
+
+    /// <summary>
+    /// Get the language recorded for an open document.
+    /// </summary>
+    public bool TryGetLanguage(Uri uri, out MqlLanguage language)
+    {
+        lock (_openFiles)
+        {
+            if (_openFiles.TryGetValue(uri, out var data))
+            {
+                language = data.Language;
+                return true;
+            }
+
+            language = MqlLanguage.Mql4;
+            return false;
+        }
     }
 
     /// <summary>

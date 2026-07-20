@@ -43,7 +43,12 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
     {
         return new TextDocumentOpenRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            DocumentSelector = new[]
+            {
+                new TextDocumentFilter { Pattern = "**/*.mq4" },
+                new TextDocumentFilter { Pattern = "**/*.mq5" },
+                new TextDocumentFilter { Pattern = "**/*.mqh" }
+            }
         };
     }
 
@@ -53,22 +58,25 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
         {
             var documentUri = request.TextDocument.Uri.ToUri();
             var content = request.TextDocument.Text;
+            var languageId = request.TextDocument.LanguageId;
 
             _logger.LogDebug("Opening document: {DocumentUri}", documentUri);
 
             if (content != null)
             {
-                 var filePath = documentUri.AbsolutePath ?? "unknown";
-                var mql4File = _parser.ParseFile(content, filePath);
+                var filePath = documentUri.AbsolutePath ?? "unknown";
+                var language = LanguageDetection.Detect(documentUri, languageId, content);
 
-                // CAMBIO: Ahora pasamos 3 argumentos (uri, modelo, texto)
-                _openFiles.AddOrUpdate(documentUri, mql4File, content); 
-                
+                var mqlFile = _parser.ParseFile(content, filePath);
+                mqlFile.Language = language;
+
+                _openFiles.AddOrUpdate(documentUri, mqlFile, content, language);
+
                 // Register file and its symbols in GlobalSymbolIndex for cross-file navigation
-                GlobalSymbolIndex.Instance.AddFile(filePath, mql4File.Symbols);
+                GlobalSymbolIndex.Instance.AddFile(filePath, language, mqlFile.Symbols);
 
                 // Register dependencies (includes)
-                foreach (var include in mql4File.Includes)
+                foreach (var include in mqlFile.Includes)
                 {
                     var includePath = ExtractIncludePath(include);
                     if (!string.IsNullOrEmpty(includePath))
@@ -81,7 +89,7 @@ public class DidOpenTextDocumentHandler : IDidOpenTextDocumentHandler
                     }
                 }
 
-                _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", mql4File.Symbols.Count);
+                _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", mqlFile.Symbols.Count);
             }
         }
         catch (Exception ex)

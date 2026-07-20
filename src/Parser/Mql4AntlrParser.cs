@@ -18,7 +18,7 @@ namespace MqlLanguageServer.Parser
     /// <summary>
     /// MQL4 ANTLR Parser - Wraps the generated ANTLR parser with MQL4-specific functionality
     /// </summary>
-    public class Mql4AntlrParser
+    public class Mql4AntlrParser : IMqlParser
     {
         public Mql4AntlrParser()
         {

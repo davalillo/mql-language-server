@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Models;
 
-namespace Mql4LanguageServer.Tests.Performance;
+namespace MqlLanguageServer.Tests.Performance;
 
 /// <summary>
 /// Memory profiling tests for PASO 5.4 - Verificación Final

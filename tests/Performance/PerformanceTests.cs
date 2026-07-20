@@ -1,11 +1,11 @@
 using Xunit;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.Diagnostics;
 using System.Linq;
 
-namespace Mql4LanguageServer.Tests.Performance;
+namespace MqlLanguageServer.Tests.Performance;
 
 /// <summary>
 /// Performance tests to verify cache improvements and measure parsing performance

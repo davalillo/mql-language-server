@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# MQL4 Language Server - Release Automation Script
+# MQL Language Server - Release Automation Script
 
 param(
     [Parameter(Mandatory=$true)]
@@ -11,7 +11,7 @@ param(
 )
 
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "MQL4 Language Server - Release $Version" -ForegroundColor Cyan
+Write-Host "MQL Language Server - Release $Version" -ForegroundColor Cyan
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -67,9 +67,9 @@ if (-not $SkipPack) {
 Write-Host "📋 Step 3/3: Copying release artifacts..." -ForegroundColor Yellow
 
 # Copy standalone binaries
-Copy-Item -Path "src/bin/Release/net10.0/publish/linux-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
-Copy-Item -Path "src/bin/Release/net10.0/publish/osx-x64/mql4-lsp-server" -Destination "$releaseDir/" -Force
-Copy-Item -Path "src/bin/Release/net10.0/publish/win-x64/mql4-lsp-server.exe" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/linux-x64/mql-lsp-server" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/osx-x64/mql-lsp-server" -Destination "$releaseDir/" -Force
+Copy-Item -Path "src/bin/Release/net10.0/publish/win-x64/mql-lsp-server.exe" -Destination "$releaseDir/" -Force
 
 # Copy NuGet package
 if (Test-Path "nupkg") {

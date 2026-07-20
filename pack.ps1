@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# MQL4 Language Server - NuGet Packaging Script
+# MQL Language Server - NuGet Packaging Script
 
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "MQL4 Language Server - NuGet Packaging" -ForegroundColor Cyan
+Write-Host "MQL Language Server - NuGet Packaging" -ForegroundColor Cyan
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -30,9 +30,9 @@ Write-Host "=================================================" -ForegroundColor 
 Write-Host "Installation instructions:" -ForegroundColor White
 Write-Host ""
 Write-Host "1. Install as global tool:" -ForegroundColor Yellow
-Write-Host "   dotnet tool install --global mql4-language-server --version 1.0.0 --add-source ./$nupkgDir" -ForegroundColor Gray
+Write-Host "   dotnet tool install --global mql-language-server --version 1.0.0 --add-source ./$nupkgDir" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2. Use the LSP server:" -ForegroundColor Yellow
-Write-Host "   mql4-lsp-server --stdio" -ForegroundColor Gray
+Write-Host "   mql-lsp-server --stdio" -ForegroundColor Gray
 Write-Host ""
 Write-Host "=================================================" -ForegroundColor Cyan

@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # =============================================================================
-# MQL4 Language Server - Local Installation Script
+# MQL Language Server - Local Installation Script
 # =============================================================================
-# This script demonstrates how to install MQL4 LSP as a .NET global tool
+# This script demonstrates how to install MQL LSP as a .NET global tool
 # WITHOUT publishing to nuget.org
 # =============================================================================
 
 set -e
 
 echo "╔══════════════════════════════════════════════════════════════════════════╗"
-echo "║          MQL4 Language Server - Local .NET Tool Installation             ║"
+echo "║          MQL Language Server - Local .NET Tool Installation             ║"
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -52,7 +52,7 @@ print_success ".NET SDK version: $DOTNET_VERSION"
 # Check if we're in the right directory
 if [ ! -f "Mql4LanguageServer.sln" ]; then
     print_error "Mql4LanguageServer.sln not found!"
-    echo "Please run this script from the mql4-language-server repository root"
+    echo "Please run this script from the mql-language-server repository root"
     exit 1
 fi
 
@@ -83,8 +83,8 @@ print_success "NuGet package created: $NUPKG_FILE"
 echo ""
 
 # Step 3: Install as global tool from local source
-print_step "Installing MQL4 Language Server as global tool..."
-dotnet tool install --global mql4-language-server \
+print_step "Installing MQL Language Server as global tool..."
+dotnet tool install --global mql-language-server \
     --version 1.0.0 \
     --add-source "$PACKAGE_DIR"
 
@@ -93,7 +93,7 @@ echo ""
 
 # Step 4: Verify installation
 print_step "Verifying installation..."
-TOOL_PATH=$(which mql4-lsp-server || echo "Tool not found in PATH")
+TOOL_PATH=$(which mql-lsp-server || echo "Tool not found in PATH")
 
 if [ -z "$TOOL_PATH" ]; then
     print_warning "Tool might be installed but not in PATH"
@@ -109,11 +109,11 @@ echo ""
 
 # Step 5: Test the tool
 print_step "Testing the tool..."
-echo "Testing: mql4-lsp-server --version"
-timeout 5 mql4-lsp-server --version 2>&1 || echo "(version command not implemented)"
+echo "Testing: mql-lsp-server --version"
+timeout 5 mql-lsp-server --version 2>&1 || echo "(version command not implemented)"
 
 echo ""
-print_success "mql4-lsp-server tool is ready to use!"
+print_success "mql-lsp-server tool is ready to use!"
 echo ""
 
 # Step 6: Provide usage instructions
@@ -122,7 +122,7 @@ echo "║                           Installation Complete!                      
 echo "╚══════════════════════════════════════════════════════════════════════════╝"
 echo ""
 echo "📦 Package Location: $NUPKG_FILE"
-echo "🔧 Tool Command: mql4-lsp-server"
+echo "🔧 Tool Command: mql-lsp-server"
 echo "📝 Arguments: --stdio"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -134,7 +134,7 @@ echo "   VSCode (settings.json):"
 echo '   {'
 echo '     "languageServers": {'
 echo '       "MQL4": {'
-echo '         "command": "mql4-lsp-server",'
+echo '         "command": "mql-lsp-server",'
 echo '         "args": ["--stdio"]'
 echo '       }'
 echo '     }'
@@ -147,7 +147,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "💡 To uninstall:"
-echo "   dotnet tool uninstall --global mql4-language-server"
+echo "   dotnet tool uninstall --global mql-language-server"
 echo ""
 echo "💡 To reinstall:"
 echo "   Run this script again"

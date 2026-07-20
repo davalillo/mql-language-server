@@ -353,8 +353,9 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         // Assert
         Assert.NotNull(options);
         Assert.NotNull(options.DocumentSelector);
-        Assert.Equal(2, options.DocumentSelector.Count());
+        Assert.Equal(3, options.DocumentSelector.Count());
         Assert.Contains(options.DocumentSelector, f => f.Pattern == "**/*.mq4");
+        Assert.Contains(options.DocumentSelector, f => f.Pattern == "**/*.mq5");
         Assert.Contains(options.DocumentSelector, f => f.Pattern == "**/*.mqh");
     }
 

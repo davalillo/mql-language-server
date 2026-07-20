@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Parser;
 
-namespace Mql4LanguageServer.Tests.Performance;
+namespace MqlLanguageServer.Tests.Performance;
 
 /// <summary>
 /// Baseline Benchmark for measuring MQL4 LSP performance

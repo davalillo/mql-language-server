@@ -52,7 +52,7 @@ public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
 
         try
         {
-            foreach (var (uri, fileSymbols) in _globalSymbolIndex.GetAllSymbols())
+            foreach (var (uri, _, fileSymbols) in _globalSymbolIndex.GetAllSymbols())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 

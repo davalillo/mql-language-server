@@ -1,4 +1,4 @@
-name: Build and Release (Fixed Names)
+name: Build and Release
 
 on:
   push:
@@ -69,7 +69,7 @@ jobs:
         run: |
           platforms=("linux-x64" "osx-x64" "osx-arm64" "win-x64")
           outputs=("linux" "osx-x64" "osx-arm64" "win")
-          names=("mql4-lsp-server-linux-x64" "mql4-lsp-server-osx-x64" "mql4-lsp-server-osx-arm64" "mql4-lsp-server-win-x64.exe")
+          names=("mql-lsp-server-linux-x64" "mql-lsp-server-osx-x64" "mql-lsp-server-osx-arm64" "mql-lsp-server-win-x64.exe")
           
           for i in "${!platforms[@]}"; do
             rid="${platforms[$i]}"
@@ -78,7 +78,7 @@ jobs:
             
             echo "Building $rid → $final_name"
             
-            dotnet publish src/Mql4LanguageServer.Server.csproj \
+            dotnet publish src/MqlLanguageServer.Server.csproj \
               -c Release -r "$rid" --self-contained true \
               -p:PublishSingleFile=true \
               -p:IncludeNativeLibrariesForSelfExtract=true \
@@ -87,13 +87,13 @@ jobs:
             
             mkdir -p bin
             if [[ "$rid" == win-x64 ]]; then
-              mv "bin_temp/$out_dir/mql4-lsp-server.exe" "bin/$final_name"
+              mv "bin_temp/$out_dir/mql-lsp-server.exe" "bin/$final_name"
             else
-              mv "bin_temp/$out_dir/mql4-lsp-server" "bin/$final_name"
+              mv "bin_temp/$out_dir/mql-lsp-server" "bin/$final_name"
             fi
           done
     
-          chmod +x bin/mql4-lsp-server-*  
+          chmod +x bin/mql-lsp-server-*  
 
       - name: Generate CHECKSUMS.txt
         run: |
@@ -102,11 +102,11 @@ jobs:
           echo "# SHA256 checksums for ${{ needs.get-effective-tag.outputs.effective_tag }}" > CHECKSUMS.txt
           echo "# Generated: $(date -u '+%Y-%m-%d')" >> CHECKSUMS.txt
           echo "" >> CHECKSUMS.txt
-          find . -type f -name "mql4-lsp-server-*" -exec sha256sum {} \; >> CHECKSUMS.txt
+          find . -type f -name "mql-lsp-server-*" -exec sha256sum {} \; >> CHECKSUMS.txt
           cat CHECKSUMS.txt
 
       - name: Pack NuGet
-        run: dotnet pack src/Mql4LanguageServer.Server.csproj -c Release --no-build --output nupkg/
+        run: dotnet pack src/MqlLanguageServer.Server.csproj -c Release --no-build --output nupkg/
 
       - name: Cleanup old artifacts BEFORE upload
         uses: actions/github-script@v7
@@ -145,17 +145,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.PUBLIC_RELEASES_TOKEN }}
-          repository: davalillo/mql4-language-server-releases
+          repository: davalillo/mql-language-server-releases
           tag_name: ${{ needs.get-effective-tag.outputs.effective_tag }}
-          name: "MQL4 Language Server ${{ needs.get-effective-tag.outputs.effective_tag }}"
+          name: "MQL Language Server ${{ needs.get-effective-tag.outputs.effective_tag }}"
           body: |
             Binaries y paquete NuGet para la versión ${{ needs.get-effective-tag.outputs.effective_tag }}.
 
             ### Archivos disponibles:
-            - **Windows:** `mql4-lsp-server-win-x64.exe`
-            - **Linux:** `mql4-lsp-server-linux-x64`
-            - **macOS (Intel):** `mql4-lsp-server-osx-x64`
-            - **macOS (M1/M2/M3):** `mql4-lsp-server-osx-arm64`
+            - **Windows:** `mql-lsp-server-win-x64.exe`
+            - **Linux:** `mql-lsp-server-linux-x64`
+            - **macOS (Intel):** `mql-lsp-server-osx-x64`
+            - **macOS (M1/M2/M3):** `mql-lsp-server-osx-arm64`
             - **Checksums:** `CHECKSUMS.txt` (verifica integridad de archivos)
 
             _El código fuente adjunto abajo (Source code zip) solo contiene el README de este repositorio, el código real es privado._
@@ -165,10 +165,10 @@ jobs:
             sha256sum -c CHECKSUMS.txt
             ```
           files: |
-            bin/mql4-lsp-server-linux-x64
-            bin/mql4-lsp-server-osx-x64
-            bin/mql4-lsp-server-osx-arm64
-            bin/mql4-lsp-server-win-x64.exe
+            bin/mql-lsp-server-linux-x64
+            bin/mql-lsp-server-osx-x64
+            bin/mql-lsp-server-osx-arm64
+            bin/mql-lsp-server-win-x64.exe
             bin/CHECKSUMS.txt
             nupkg/*.nupkg
           draft: false

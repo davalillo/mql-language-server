@@ -3,9 +3,9 @@ using System.Collections.Generic;
 namespace MqlLanguageServer.Models;
 
 /// <summary>
-/// Represents an MQL4 file (.mq4 or .mqh)
+/// Represents an MQL file (.mq4, .mq5, or .mqh)
 /// </summary>
-public class Mql4File
+public class MqlFile
 {
     /// <summary>
     /// File path
@@ -16,6 +16,11 @@ public class Mql4File
     /// File content
     /// </summary>
     public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Language of the file (MQL4 or MQL5)
+    /// </summary>
+    public MqlLanguage Language { get; set; } = MqlLanguage.Mql4;
 
     /// <summary>
     /// Parsed symbols

@@ -8,17 +8,17 @@ namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Thread-safe global symbol index for cross-file symbol tracking
-/// Tracks symbols across all open MQL4 files and their includes
+/// Tracks symbols across all open MQL files and their includes
 /// </summary>
 public class GlobalSymbolIndex
 {
     private static GlobalSymbolIndex? _instance;
     private static readonly object _lock = new object();
 
-    // Thread-safe storage: file path -> list of symbols in that file
-    private readonly ConcurrentDictionary<string, List<Mql4Symbol>> _symbolsByFile = new();
+    // Thread-safe storage: (file path, language) -> list of symbols in that file
+    private readonly ConcurrentDictionary<(string FilePath, MqlLanguage Language), List<MqlSymbol>> _symbolsByFile = new();
 
-    // Thread-safe index: symbol name -> list of occurrences across files
+    // Thread-safe index: symbol name -> list of occurrences across (file, language)
     private readonly ConcurrentDictionary<string, List<SymbolLocation>> _symbolsByName = new();
 
     // Track includes/dependencies between files
@@ -45,17 +45,19 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
-    /// Add or update symbols from a file
+    /// Add or update symbols from a file for a specific language.
     /// </summary>
-    public void AddFile(string filePath, List<Mql4Symbol> symbols)
+    public void AddFile(string filePath, MqlLanguage language, List<MqlSymbol> symbols)
     {
         if (string.IsNullOrEmpty(filePath) || symbols == null)
             return;
 
+        var key = (filePath, language);
+
         lock (_lock)
         {
-            // Store symbols by file
-            _symbolsByFile.AddOrUpdate(filePath, symbols, (key, existing) =>
+            // Store symbols by (file, language)
+            _symbolsByFile.AddOrUpdate(key, symbols, (key, existing) =>
             {
                 existing.Clear();
                 existing.AddRange(symbols);
@@ -71,32 +73,46 @@ public class GlobalSymbolIndex
                 var location = new SymbolLocation
                 {
                     FilePath = filePath,
+                    Language = language,
                     Symbol = symbol
                 };
 
                 _symbolsByName.AddOrUpdate(symbol.Name, new List<SymbolLocation> { location }, (key, existing) =>
                 {
-                    // Remove old location for this file if it exists
-                    existing.RemoveAll(loc => loc.FilePath == filePath);
-                    existing.Add(location);
-                    return existing;
+                    lock (existing)
+                    {
+                        // Remove old location for this (file, language) if it exists
+                        existing.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+                        existing.Add(location);
+                        return existing;
+                    }
                 });
             }
         }
     }
 
     /// <summary>
-    /// Remove a file from the index
+    /// Add or update symbols from a file (defaults to MQL4 for backward compatibility).
     /// </summary>
-    public void RemoveFile(string filePath)
+    public void AddFile(string filePath, List<MqlSymbol> symbols)
+    {
+        AddFile(filePath, MqlLanguage.Mql4, symbols);
+    }
+
+    /// <summary>
+    /// Remove a file from the index for a specific language.
+    /// </summary>
+    public void RemoveFile(string filePath, MqlLanguage language)
     {
         if (string.IsNullOrEmpty(filePath))
             return;
 
+        var key = (filePath, language);
+
         lock (_lock)
         {
-            // Remove from symbols by file
-            _symbolsByFile.TryRemove(filePath, out var removedSymbols);
+            // Remove from symbols by (file, language)
+            _symbolsByFile.TryRemove(key, out var removedSymbols);
 
             // Remove from name index
             if (removedSymbols != null)
@@ -108,14 +124,17 @@ public class GlobalSymbolIndex
 
                     _symbolsByName.AddOrUpdate(symbol.Name, new List<SymbolLocation>(), (key, existing) =>
                     {
-                        existing.RemoveAll(loc => loc.FilePath == filePath);
-
-                        // Remove the entry entirely if no more locations
-                        if (!existing.Any())
+                        lock (existing)
                         {
-                            _symbolsByName.TryRemove(key, out _);
+                            existing.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+
+                            // Remove the entry entirely if no more locations
+                            if (!existing.Any())
+                            {
+                                _symbolsByName.TryRemove(key, out _);
+                            }
+                            return existing;
                         }
-                        return existing;
                     });
                 }
             }
@@ -130,7 +149,28 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
-    /// Find all symbols with the given name across all files
+    /// Remove a file from the index (defaults to MQL4 for backward compatibility).
+    /// </summary>
+    public void RemoveFile(string filePath)
+    {
+        RemoveFile(filePath, MqlLanguage.Mql4);
+    }
+
+    /// <summary>
+    /// Find all symbols with the given name restricted to a specific language.
+    /// </summary>
+    public List<SymbolLocation> FindSymbol(string symbolName, MqlLanguage language)
+    {
+        if (string.IsNullOrEmpty(symbolName))
+            return new List<SymbolLocation>();
+
+        return _symbolsByName.TryGetValue(symbolName, out var locations)
+            ? locations.Where(loc => loc.Language == language).ToList()
+            : new List<SymbolLocation>();
+    }
+
+    /// <summary>
+    /// Find all symbols with the given name across all languages (cross-language workspace query).
     /// </summary>
     public List<SymbolLocation> FindSymbol(string symbolName)
     {
@@ -143,7 +183,15 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
-    /// Find all references to a symbol across all indexed files
+    /// Find all references to a symbol restricted to a specific language.
+    /// </summary>
+    public List<SymbolLocation> FindAllReferences(string symbolName, MqlLanguage language)
+    {
+        return FindSymbol(symbolName, language);
+    }
+
+    /// <summary>
+    /// Find all references to a symbol across all languages.
     /// </summary>
     public List<SymbolLocation> FindAllReferences(string symbolName)
     {
@@ -151,22 +199,39 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
-    /// Get all symbols from a specific file
+    /// Get all symbols from a specific file and language.
     /// </summary>
-    public List<Mql4Symbol>? GetFileSymbols(string filePath)
+    public List<MqlSymbol>? GetFileSymbols(string filePath, MqlLanguage language)
     {
         if (string.IsNullOrEmpty(filePath))
             return null;
 
-        return _symbolsByFile.TryGetValue(filePath, out var symbols)
+        var key = (filePath, language);
+        return _symbolsByFile.TryGetValue(key, out var symbols)
             ? symbols.ToList()
             : null;
     }
 
     /// <summary>
-    /// Get all indexed files
+    /// Get all symbols from a specific file (defaults to MQL4).
+    /// </summary>
+    public List<MqlSymbol>? GetFileSymbols(string filePath)
+    {
+        return GetFileSymbols(filePath, MqlLanguage.Mql4);
+    }
+
+    /// <summary>
+    /// Get all indexed files (returns distinct file paths).
     /// </summary>
     public List<string> GetIndexedFiles()
+    {
+        return _symbolsByFile.Keys.Select(k => k.FilePath).Distinct().ToList();
+    }
+
+    /// <summary>
+    /// Get all indexed (file, language) keys.
+    /// </summary>
+    public List<(string FilePath, MqlLanguage Language)> GetIndexedFileKeys()
     {
         return _symbolsByFile.Keys.ToList();
     }
@@ -233,25 +298,26 @@ public class GlobalSymbolIndex
     /// <summary>
     /// Get all symbols from all indexed files as (Uri, symbols) pairs
     /// </summary>
-    public IEnumerable<(Uri Uri, List<Mql4Symbol> Symbols)> GetAllSymbols()
+    public IEnumerable<(Uri Uri, MqlLanguage Language, List<MqlSymbol> Symbols)> GetAllSymbols()
     {
         foreach (var kvp in _symbolsByFile)
         {
-            if (Uri.TryCreate(kvp.Key, UriKind.Absolute, out var uri))
+            if (Uri.TryCreate(kvp.Key.FilePath, UriKind.Absolute, out var uri))
             {
-                yield return (uri, kvp.Value);
+                yield return (uri, kvp.Key.Language, kvp.Value);
             }
         }
     }
 }
 
 /// <summary>
-/// Represents a symbol location (file + symbol data)
+/// Represents a symbol location (file + language + symbol data)
 /// </summary>
 public class SymbolLocation
 {
     public string FilePath { get; set; } = string.Empty;
-    public Mql4Symbol Symbol { get; set; } = new();
+    public MqlLanguage Language { get; set; }
+    public MqlSymbol Symbol { get; set; } = new();
 }
 
 /// <summary>

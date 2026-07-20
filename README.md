@@ -1,10 +1,10 @@
-# MQL4 Language Server
+# MQL Language Server
 
-[![Build Status](https://github.com/davalillo/mql4-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql4-language-server/actions)
+[![Build Status](https://github.com/davalillo/mql-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql-language-server/actions)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
 
-Language Server Protocol (LSP) implementation for MQL4 (MetaTrader 4). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
+Language Server Protocol (LSP) implementation for MQL and MQL5 (MetaTrader 4/5). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.. Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
 
 ## Features
 
@@ -24,13 +24,13 @@ Esta sección documenta las decisiones técnicas clave tomadas durante el desarr
 **Elegido**: ANTLR 4.13.1 con Antlr4BuildTasks 12.10
 
 **Alternativas consideradas**:
-- Regex (rechazado - insuficiente para código MQL4 complejo)
+- Regex (rechazado - insuficiente para código MQL complejo)
 - Sprache (rechazado - parser combinator, menos robusto para gramáticas complejas)
 - Superpower (rechazado - más nuevo, menos documentación)
 - Irony (rechazado - no mantenido)
 
 **Razón principal**:
-La decisión inicial de usar regex se revirtió después de experimentar limitaciones al parsear código MQL4 real. ANTLR proporciona:
+La decisión inicial de usar regex se revirtió después de experimentar limitaciones al parsear código MQL real. ANTLR proporciona:
 - Gramática formal y mantenible
 - Abstract Syntax Tree (AST) preciso
 - Mejor soporte para casos de uso LSP
@@ -79,9 +79,9 @@ Evitar dependencias manuales en el entorno de desarrollo. Antlr4BuildTasks:
 
 ### 4. Grammar Strategy: Simplificación Pragmática
 
-**Elegido**: Gramática MQL4 simplificada pero funcional
+**Elegido**: Gramática MQL simplificada pero funcional
 
-**Alternativa**: Gramática completa con todas las características MQL4
+**Alternativa**: Gramática completa con todas las características MQL
 
 **Razón principal**:
 LSP no necesita parsear toda la semántica del lenguaje, solo estructura sintáctica suficiente para:
@@ -202,7 +202,7 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
   - Build scripts: build.sh (Linux/macOS), build.ps1 (Windows)
 - ✅ CI/CD: GitHub Actions con matrix builds
 - ✅ NuGet Packaging: pack.ps1 script disponible
-- ✅ Repository: https://github.com/davalillo/mql4-language-server
+- ✅ Repository: https://github.com/davalillo/mql-language-server
 
 ## ⚠️ NuGet Package Vulnerabilities
 
@@ -222,7 +222,7 @@ These are vulnerabilities in **transitive dependencies** (dependencies of depend
   - Runs as standalone process (not library)
   - Does not make HTTP requests
   - Does not parse external URIs
-  - Only reads MQL4 files locally
+  - Only reads MQL files locally
 
 See [SECURITY_ANALYSIS.md](docs/references/SECURITY.md) for detailed analysis and justification.
 
@@ -415,27 +415,27 @@ See [.github/workflows/build.yml](.github/workflows/build.yml) for details.
 
 ### Standalone Binaries (Recommended)
 
-Download a pre-built binary from [GitHub Releases](https://github.com/davalillo/mql4-language-server/releases):
+Download a pre-built binary from [GitHub Releases](https://github.com/davalillo/mql-language-server/releases):
 
-- **Linux**: `mql4-lsp-server` (71MB, self-contained)
-- **macOS**: `mql4-lsp-server` (71MB, self-contained)
-- **Windows**: `mql4-lsp-server.exe` (72MB, self-contained)
+- **Linux**: `mql-lsp-server` (71MB, self-contained)
+- **macOS**: `mql-lsp-server` (71MB, self-contained)
+- **Windows**: `mql-lsp-server.exe` (72MB, self-contained)
 
 Make executable (Linux/macOS):
 ```bash
-chmod +x mql4-lsp-server
+chmod +x mql-lsp-server
 ```
 
 ### Via .NET Tool (NuGet)
 
 ```bash
-dotnet tool install -g mql4-language-server --version 1.0.0
+dotnet tool install -g mql-language-server --version 1.0.0
 ```
 
 Or install from local build:
 ```bash
 ./pack.ps1
-dotnet tool install -g mql4-language-server --add-source ./nupkg
+dotnet tool install -g mql-language-server --add-source ./nupkg
 ```
 
 ### From Source
@@ -444,36 +444,36 @@ dotnet tool install -g mql4-language-server --add-source ./nupkg
 
 **Linux/macOS**:
 ```bash
-git clone https://github.com/davalillo/mql4-language-server.git
-cd mql4-language-server
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
 ./build.sh
 
 # Test the binary
-./src/bin/linux-x64/mql4-lsp-server --stdio
+./src/bin/linux-x64/mql-lsp-server --stdio
 ```
 
 **Windows**:
 ```powershell
-git clone https://github.com/davalillo/mql4-language-server.git
-cd mql4-language-server
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
 .\build.ps1
 
 # Test the binary
-.\src\bin\win-x64\mql4-lsp-server.exe --stdio
+.\src\bin\win-x64\mql-lsp-server.exe --stdio
 ```
 
 ### Build Outputs
 
 After building, find binaries in:
-- `src/bin/linux-x64/mql4-lsp-server`
-- `src/bin/osx-x64/mql4-lsp-server`
-- `src/bin/win-x64/mql4-lsp-server.exe`
+- `src/bin/linux-x64/mql-lsp-server`
+- `src/bin/osx-x64/mql-lsp-server`
+- `src/bin/win-x64/mql-lsp-server.exe`
 
 ## Usage
 
 ### Command Line
 ```bash
-mql4-lsp-server --stdio
+mql-lsp-server --stdio
 ```
 
 ### VSCode
@@ -481,8 +481,8 @@ Add to your settings.json:
 ```json
 {
   "languageServers": {
-    "MQL4": {
-      "command": "mql4-lsp-server",
+    "MQL": {
+      "command": "mql-lsp-server",
       "args": ["--stdio"]
     }
   }
