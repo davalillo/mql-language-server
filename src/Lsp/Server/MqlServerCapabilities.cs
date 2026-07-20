@@ -4,17 +4,17 @@ using System.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
-namespace Mql4LanguageServer.Lsp.Server
+namespace MqlLanguageServer.Lsp.Server
 {
     /// <summary>
-    /// Declares the server capabilities configuration for MQL4 Language Server.
+    /// Declares the server capabilities configuration for MQL Language Server.
     /// Compliant with LSP 3.17 specification.
     /// See: https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification
     ///
     /// In OmniSharp v0.19.9, capabilities are deduced automatically from registered handlers.
     /// This class provides helper methods for capability configuration and documentation.
     /// </summary>
-    public static class Mql4ServerCapabilities
+    public static class MqlServerCapabilities
     {
         /// <summary>
         /// Gets the document selector for MQL4 files.
@@ -25,6 +25,7 @@ namespace Mql4LanguageServer.Lsp.Server
             return new[]
             {
                 new TextDocumentFilter { Pattern = "**/*.mq4" },
+                new TextDocumentFilter { Pattern = "**/*.mq5" },
                 new TextDocumentFilter { Pattern = "**/*.mqh" }
             };
         }
@@ -34,7 +35,7 @@ namespace Mql4LanguageServer.Lsp.Server
         /// </summary>
         public static string[] GetFileExtensions()
         {
-            return new[] { ".mq4", ".mqh" };
+            return new[] { ".mq4", ".mq5", ".mqh" };
         }
 
         /// <summary>

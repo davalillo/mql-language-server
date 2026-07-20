@@ -10,11 +10,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles codeAction/resolve requests.
@@ -61,6 +61,6 @@ public class CodeActionResolveHandler : ICodeActionResolveHandler
 
     public TextDocumentFilter[] GetDocumentSelector()
     {
-        return Mql4ServerCapabilities.GetDocumentSelector();
+        return MqlServerCapabilities.GetDocumentSelector();
     }
 }

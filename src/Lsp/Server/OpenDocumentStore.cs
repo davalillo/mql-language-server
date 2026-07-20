@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Models;
 
-namespace Mql4LanguageServer.Lsp.Server;
+namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Tracks open MQL4 documents for LSP handlers (Model + Raw Content)

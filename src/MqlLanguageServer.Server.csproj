@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Mql4LanguageServer</RootNamespace>
-    <AssemblyName>mql4-lsp-server</AssemblyName>
+    <RootNamespace>MqlLanguageServer</RootNamespace>
+    <AssemblyName>mql-lsp-server</AssemblyName>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,12 +17,12 @@
 
     <!-- NuGet Tool Configuration -->
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>mql4-lsp-server</ToolCommandName>
-    <PackageId>mql4-language-server</PackageId>
+    <ToolCommandName>mql-lsp-server</ToolCommandName>
+    <PackageId>mql-language-server</PackageId>
     <Version>1.11.4</Version>
-    <Authors>MQL4 Language Server Team</Authors>
-    <Description>Language Server Protocol implementation for MQL4 (MetaTrader 4)</Description>
-    <PackageTags>lsp;mql4;metatrader;language-server</PackageTags>
+    <Authors>MQL Language Server Team</Authors>
+    <Description>Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5)</Description>
+    <PackageTags>lsp;mql4;mql5;metatrader;language-server</PackageTags>
     <RepositoryUrl>https://github.com/davalillo/mql4-language-server</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>

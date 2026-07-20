@@ -6,18 +6,18 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Mql4.Builtins;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Parser;
 using System.Diagnostics;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for completion requests (auto-completion)
@@ -41,7 +41,7 @@ public class CompletionHandler : ICompletionHandler
     {
         return new CompletionRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = Constants.FilePatterns[0] }, new TextDocumentFilter { Pattern = Constants.FilePatterns[1] } },
+            DocumentSelector = Constants.FilePatterns.Select(p => new TextDocumentFilter { Pattern = p }).ToArray(),
             TriggerCharacters = new[] { ".", "(", ":", "_" }
         };
     }

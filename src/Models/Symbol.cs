@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
-namespace Mql4LanguageServer.Models;
+namespace MqlLanguageServer.Models;
 
 /// <summary>
 /// Represents a symbol in MQL4 code (function, variable, etc.)

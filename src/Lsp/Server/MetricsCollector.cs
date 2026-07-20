@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
-namespace Mql4LanguageServer.Lsp.Server;
+namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Thread-safe metrics collector for tracking performance and operations

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Mql4LanguageServer.Mql4.Builtins
+namespace MqlLanguageServer.Mql4.Builtins
 {
     /// <summary>
     /// MQL4 Built-in Functions and Variables

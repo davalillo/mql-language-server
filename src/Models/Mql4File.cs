@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Mql4LanguageServer.Models;
+namespace MqlLanguageServer.Models;
 
 /// <summary>
 /// Represents an MQL4 file (.mq4 or .mqh)

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Mql4LanguageServer;
+namespace MqlLanguageServer;
 
 /// <summary>
 /// Constants used throughout the MQL4 Language Server
@@ -14,6 +14,7 @@ public static class Constants
     public static readonly string[] FilePatterns = new[]
     {
         "**/*.mq4",
+        "**/*.mq5",
         "**/*.mqh"
     };
 
@@ -23,6 +24,7 @@ public static class Constants
     public static class Languages
     {
         public const string Mql4 = "mql4";
+        public const string Mql5 = "mql5";
         public const string Mqh = "mqh";
     }
 
@@ -45,10 +47,10 @@ public static class Constants
     /// </summary>
     public static class Server
     {
-        public const string Name = "MQL4 Language Server";
+        public const string Name = "MQL Language Server";
         public const string Version = "1.0.0";
-        public const string DisplayName = "MQL4 LSP";
-        public const string LogFileName = "mql4-lsp-server.log";
+        public const string DisplayName = "MQL LSP";
+        public const string LogFileName = "mql-lsp-server.log";
     }
 
     /// <summary>
@@ -134,7 +136,7 @@ public static class Constants
     }
 
     /// <summary>
-    /// MQL4 specific constants
+    /// MQL language specific constants
     /// </summary>
     public static class Mql4
     {
@@ -184,6 +186,7 @@ public static class Constants
     public static class FileExtensions
     {
         public const string Mql4 = ".mq4";
+        public const string Mql5 = ".mq5";
         public const string Mqh = ".mqh";
         public const string Mq4 = ".mq4"; // Alternative
         public const string Include = ".mqh"; // Include files

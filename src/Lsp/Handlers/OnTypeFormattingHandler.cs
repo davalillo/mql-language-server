@@ -10,11 +10,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles textDocument/onTypeFormatting requests.
@@ -90,7 +90,7 @@ public class OnTypeFormattingHandler : IDocumentOnTypeFormattingHandler
     {
         return new DocumentOnTypeFormattingRegistrationOptions
         {
-            DocumentSelector = Mql4ServerCapabilities.GetDocumentSelector()
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
         };
     }
 }

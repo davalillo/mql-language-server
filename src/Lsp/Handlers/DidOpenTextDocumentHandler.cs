@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handler for didOpen text document notification

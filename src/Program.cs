@@ -5,10 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using Serilog;
 
 using OmniSharp.Extensions.LanguageServer.Server;
@@ -19,7 +19,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
-namespace Mql4LanguageServer
+namespace MqlLanguageServer
 {
     /// <summary>
     /// Entry point for the MQL4 Language Server
@@ -38,7 +38,7 @@ namespace Mql4LanguageServer
             // Check for --version flag first
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
             {
-                Console.WriteLine($"MQL4 Language Server {versionStr}");
+                Console.WriteLine($"MQL Language Server {versionStr}");
                 Console.WriteLine($"Build Date: {buildDateStr}");
                 return 0;
             }
@@ -50,13 +50,13 @@ namespace Mql4LanguageServer
                 .WriteTo.Console(
                     standardErrorFromLevel: Serilog.Events.LogEventLevel.Verbose,
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
-                .WriteTo.File("mql4-lsp-server.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.File("mql-lsp-server.log", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             try
             {
                 Log.Information("=================================================");
-                Log.Information("Starting MQL4 Language Server");
+                Log.Information("Starting MQL Language Server");
                 Log.Information($"Version: {versionStr}");
                 Log.Information($"Build Date: {buildDateStr}");
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
@@ -78,7 +78,7 @@ namespace Mql4LanguageServer
                             services.AddSingleton<OpenDocumentStore>();
                             services.AddSingleton<GlobalSymbolIndex>();
                             services.AddSingleton<MetricsCollector>();
-                            services.AddSingleton<Mql4LspServer>();
+                            services.AddSingleton<MqlLspServer>();
 
                             // CAMBIO 2: ¡ELIMINA TODOS LOS AddSingleton DE HANDLERS AQUÍ!
                             // .WithHandler<T>() se encarga de registrarlos en la DI automáticamente.
@@ -111,7 +111,7 @@ namespace Mql4LanguageServer
                         .WithHandler<DidChangeTextDocumentHandler>()
                         .OnInitialize((server, request, token) =>
                         {
-                            Log.Information("MQL4 Language Server initialized for client: {ClientName}", request.ClientInfo?.Name ?? "unknown");
+                            Log.Information("MQL Language Server initialized for client: {ClientName}", request.ClientInfo?.Name ?? "unknown");
                             return Task.FromResult(new InitializeResult
                             {
                                 Capabilities = new ServerCapabilities
@@ -143,7 +143,7 @@ namespace Mql4LanguageServer
                 var metrics = MetricsCollector.Instance.GetSummaryReport();
                 Log.Information("\n{MetricsSummary}", metrics);
 
-                Log.Information("MQL4 Language Server shutting down...");
+                Log.Information("MQL Language Server shutting down...");
 
 
                 return 0;

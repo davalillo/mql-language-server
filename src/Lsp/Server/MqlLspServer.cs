@@ -3,28 +3,28 @@ using System.Collections.Generic;
 using System.Threading;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Mql4LanguageServer.Lsp.Handlers;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Lsp.Handlers;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 
-namespace Mql4LanguageServer.Lsp.Server
+namespace MqlLanguageServer.Lsp.Server
 {
     /// <summary>
-    /// MQL4 Language Server Protocol (LSP) server implementation.
-    /// Provides IDE features for MQL4 (MetaTrader 4) trading scripts.
+    /// MQL Language Server Protocol (LSP) server implementation.
+    /// Provides IDE features for MQL4 (MetaTrader 4) and MQL5 (MetaTrader 5) trading scripts.
     ///
     /// Phase 3.5: Server Core with basic initialization and capabilities.
     /// Phase 3.6: LSP Handlers implemented (DocumentSymbol, Definition, References, Completion, Hover, and TextDocumentSync)
     /// </summary>
-    public class Mql4LspServer : IDisposable
+    public class MqlLspServer : IDisposable
     {
-        private readonly ILogger<Mql4LspServer> _logger;
+        private readonly ILogger<MqlLspServer> _logger;
         private readonly ILanguageServer _server;
         private readonly Mql4AntlrParser _parser;
         private readonly Dictionary<Uri, object> _openFiles;
 
-        public Mql4LspServer(
-            ILogger<Mql4LspServer> logger,
+        public MqlLspServer(
+            ILogger<MqlLspServer> logger,
             ILanguageServer server,
             Mql4AntlrParser parser)
         {
@@ -33,7 +33,7 @@ namespace Mql4LanguageServer.Lsp.Server
             _parser = parser ?? throw new ArgumentNullException(nameof(parser));
             _openFiles = new Dictionary<Uri, object>();
 
-            _logger.LogInformation("MQL4LspServer instance created");
+            _logger.LogInformation("MqlLspServer instance created");
         }
 
         /// <summary>
@@ -42,9 +42,9 @@ namespace Mql4LanguageServer.Lsp.Server
         /// </summary>
         public void Initialize()
         {
-            _logger.LogInformation("Initializing MQL4 Language Server...");
-            _logger.LogInformation("MQL4 Language Server initialized successfully");
-            _logger.LogInformation("Server ready to serve LSP requests for MQL4 files");
+            _logger.LogInformation("Initializing MQL Language Server...");
+            _logger.LogInformation("MQL Language Server initialized successfully");
+            _logger.LogInformation("Server ready to serve LSP requests for MQL4 and MQL5 files");
             _logger.LogInformation("Phase 3.6 Complete: All LSP Handlers implemented and registered via MediatR");
         }
 

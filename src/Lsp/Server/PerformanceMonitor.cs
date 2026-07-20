@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace Mql4LanguageServer.Lsp.Server;
+namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Helper class for monitoring performance of operations

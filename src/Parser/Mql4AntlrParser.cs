@@ -7,13 +7,13 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Mql4Grammar;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using LspPosition = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
 using LspSymbolKind = OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind;
 
-namespace Mql4LanguageServer.Parser
+namespace MqlLanguageServer.Parser
 {
     /// <summary>
     /// MQL4 ANTLR Parser - Wraps the generated ANTLR parser with MQL4-specific functionality

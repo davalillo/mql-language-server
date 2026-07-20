@@ -10,11 +10,11 @@ using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Parser;
-using Mql4LanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
+using MqlLanguageServer.Lsp.Server;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Provides semantic tokens for syntax highlighting.

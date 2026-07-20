@@ -10,11 +10,11 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using Mql4LanguageServer.Models;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Parser;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Parser;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 public class DiagnosticHandler : IDocumentDiagnosticHandler
 {
@@ -133,7 +133,7 @@ public class DiagnosticHandler : IDocumentDiagnosticHandler
     {
         return new DiagnosticsRegistrationOptions
         {
-            DocumentSelector = Mql4ServerCapabilities.GetDocumentSelector(),
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector(),
             InterFileDependencies = false,
             WorkspaceDiagnostics = false
         };

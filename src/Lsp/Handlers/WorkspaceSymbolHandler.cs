@@ -9,10 +9,10 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
-using Mql4LanguageServer.Lsp.Server;
-using Mql4LanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
 
-namespace Mql4LanguageServer.Lsp.Handlers;
+namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles workspace/symbol requests for searching symbols across all files in the workspace.

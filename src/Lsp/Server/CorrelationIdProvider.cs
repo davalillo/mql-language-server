@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mql4LanguageServer.Lsp.Server;
+namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Thread-safe provider for generating and managing correlation IDs
