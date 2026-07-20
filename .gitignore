@@ -50,3 +50,18 @@ release-artifacts/
 WARP.md
 .direnv/
 .claude/settings.local.json
+
+# AI / agent tooling (managed externally, not part of the language server source)
+.atl/
+.claude/
+.config/
+.copilot/
+.gga
+.serena/.atl/
+AGENTS.md
+build_registry.sh
+okf/
+openspec/
+
+# Test transient output
+tests/TestResults/
