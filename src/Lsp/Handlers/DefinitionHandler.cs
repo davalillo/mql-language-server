@@ -9,6 +9,9 @@ using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -20,29 +23,48 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for definition requests (go-to-definition)
 /// </summary>
-public class DefinitionHandler : IDefinitionHandler
+public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, LocationOrLocationLinks?>, IDefinitionHandler
 {
     private readonly ILogger<DefinitionHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
-    public DefinitionHandler(ILogger<DefinitionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore, GlobalSymbolIndex globalSymbolIndex)
+    public DefinitionHandler(
+        ILogger<DefinitionHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("DefinitionHandler initialized");
     }
 
-    public async Task<LocationOrLocationLinks?> Handle(DefinitionParams request, CancellationToken cancellationToken)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public DefinitionHandler(
+        ILogger<DefinitionHandler> logger,
+        Mql4AntlrParser parser,
+        OpenDocumentStore documentStore,
+        GlobalSymbolIndex globalSymbolIndex)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public Task<LocationOrLocationLinks?> Handle(DefinitionParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override LocationOrLocationLinks? HandleForLanguage(DefinitionParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing definition request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing definition request for: {DocumentUri} ({Language})", documentUri, language);
 
-            // Get file path from URI
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
@@ -50,30 +72,22 @@ public class DefinitionHandler : IDefinitionHandler
                 return null;
             }
 
-            // Read content for symbol search
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-
-            // Convert DocumentUri to System.Uri for the document store
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-
-            // Try to get the document from cache first
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
                 _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
-
-                // Parse the file and cache it
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // Convert LSP Position (0-based) to parser position (1-based)
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol definition at position
-            var symbol = _parser.FindSymbolDefinition(mql4File, content, line, character);
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
 
             if (symbol == null)
             {
@@ -81,11 +95,8 @@ public class DefinitionHandler : IDefinitionHandler
                 return null;
             }
 
-            // Use GlobalSymbolIndex to find definitions across all files
             var allDefinitions = GlobalSymbolIndex.Instance.FindSymbol(symbol.Name);
 
-            // Filter for actual definitions (not just occurrences)
-            // Look for symbols with the same name and matching file
             Location? definitionLocation = null;
 
             foreach (var defLocation in allDefinitions)
@@ -95,25 +106,19 @@ public class DefinitionHandler : IDefinitionHandler
                     continue;
                 }
 
-                // Read the file to verify this is a definition (not just a reference)
                 try
                 {
-                    var defContent = await File.ReadAllTextAsync(defLocation.FilePath, cancellationToken);
+                    var defContent = File.ReadAllText(defLocation.FilePath);
                     var lines = defContent.Split('\n');
                     var defLine = defLocation.Symbol.Range.Start.Line;
                     var defChar = defLocation.Symbol.Range.Start.Character;
 
-                    // Check if this position contains a symbol declaration
-                    // Simple heuristic: if the position is at the start of an identifier
-                    // and the next characters form the symbol name
                     if (defLine >= 0 && defLine < lines.Length &&
                         defChar >= 0 && defChar < lines[defLine].Length)
                     {
                         var lineText = lines[defLine];
                         var remainingText = lineText.Substring(defChar);
 
-                        // Check if this looks like a declaration
-                        // (simple check: identifier followed by space, (, or {)
                         var match = System.Text.RegularExpressions.Regex.Match(
                             remainingText,
                             @"^\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b\s*[({]"
@@ -121,7 +126,6 @@ public class DefinitionHandler : IDefinitionHandler
 
                         if (match.Success)
                         {
-                            // This is likely a definition
                             definitionLocation = new Location
                             {
                                 Uri = DocumentUri.File(defLocation.FilePath),
@@ -137,7 +141,6 @@ public class DefinitionHandler : IDefinitionHandler
                 }
             }
 
-            // If no cross-file definition found, return the original symbol's location
             if (definitionLocation == null)
             {
                 definitionLocation = new Location
@@ -163,7 +166,7 @@ public class DefinitionHandler : IDefinitionHandler
     {
         return new DefinitionRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
         };
     }
 }

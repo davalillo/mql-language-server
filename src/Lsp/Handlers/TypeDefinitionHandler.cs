@@ -13,38 +13,52 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
-/// Handles textDocument/typeDefinition requests (LSP 3.6).
-/// Goes to the type definition of a symbol (e.g., the class/type of a variable).
+/// Handles textDocument/typeDefinition requests.
 /// </summary>
-public class TypeDefinitionHandler : ITypeDefinitionHandler
+public class TypeDefinitionHandler : LanguageAwareHandlerBase<TypeDefinitionParams, LocationOrLocationLinks?>, ITypeDefinitionHandler
 {
     private readonly ILogger<TypeDefinitionHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public TypeDefinitionHandler(
         ILogger<TypeDefinitionHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
         _logger.LogInformation("TypeDefinitionHandler initialized");
     }
 
-    public async Task<LocationOrLocationLinks?> Handle(TypeDefinitionParams request, CancellationToken cancellationToken)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public TypeDefinitionHandler(ILogger<TypeDefinitionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public Task<LocationOrLocationLinks?> Handle(TypeDefinitionParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override LocationOrLocationLinks? HandleForLanguage(TypeDefinitionParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing type definition request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing type definition request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -53,21 +67,21 @@ public class TypeDefinitionHandler : ITypeDefinitionHandler
                 return null;
             }
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol at position
-            var symbol = _parser.FindSymbolAtPosition(mql4File, line, character);
+            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
 
             if (symbol == null)
             {
@@ -75,9 +89,7 @@ public class TypeDefinitionHandler : ITypeDefinitionHandler
                 return null;
             }
 
-            // For type definition, we look for the type declaration
-            // MQL4 is dynamically typed in some cases, but we can still find type info
-            var typeSymbol = FindTypeDeclaration(mql4File, symbol);
+            var typeSymbol = FindTypeDeclaration(mqlFile, symbol);
 
             if (typeSymbol == null)
             {
@@ -103,14 +115,8 @@ public class TypeDefinitionHandler : ITypeDefinitionHandler
         }
     }
 
-    /// <summary>
-    /// Finds the type declaration for a given symbol.
-    /// In MQL4, this looks for class/struct definitions matching the type name.
-    /// </summary>
-    private Mql4Symbol? FindTypeDeclaration(Mql4File mql4File, Mql4Symbol symbol)
+    private MqlSymbol? FindTypeDeclaration(MqlFile mqlFile, MqlSymbol symbol)
     {
-        // For now, return the symbol itself
-        // Type resolution for MQL4 would require analyzing the symbol's type
         return symbol;
     }
 

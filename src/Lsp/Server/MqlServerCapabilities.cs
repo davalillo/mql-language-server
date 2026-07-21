@@ -22,11 +22,14 @@ namespace MqlLanguageServer.Lsp.Server
         /// </summary>
         public static TextDocumentFilter[] GetDocumentSelector()
         {
+            // REQ-HD-01: selectors cover both file patterns and LSP language ids.
             return new[]
             {
                 new TextDocumentFilter { Pattern = "**/*.mq4" },
                 new TextDocumentFilter { Pattern = "**/*.mq5" },
-                new TextDocumentFilter { Pattern = "**/*.mqh" }
+                new TextDocumentFilter { Pattern = "**/*.mqh" },
+                new TextDocumentFilter { Language = "mql4" },
+                new TextDocumentFilter { Language = "mql5" }
             };
         }
 

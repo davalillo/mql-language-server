@@ -13,40 +13,68 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles textDocument/rename requests.
-/// Renames a symbol throughout the document.
 /// </summary>
-public class RenameHandler : IRenameHandler
+public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdit?>, IRenameHandler
 {
     private readonly ILogger<RenameHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
+    public RenameHandler(
+        ILogger<RenameHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("RenameHandler initialized");
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
+    public RenameHandler(
+        ILogger<RenameHandler> logger,
+        Mql4AntlrParser parser,
+        OpenDocumentStore documentStore,
+        GlobalSymbolIndex globalSymbolIndex)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    // Backward-compatible constructor used by EditingHandlersTests.
     public RenameHandler(
         ILogger<RenameHandler> logger,
         Mql4AntlrParser parser,
         OpenDocumentStore documentStore)
+        : this(logger, parser, documentStore, GlobalSymbolIndex.Instance)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
-        _logger.LogInformation("RenameHandler initialized");
     }
 
-    public async Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)
+    public Task<WorkspaceEdit?> Handle(RenameParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override WorkspaceEdit? HandleForLanguage(RenameParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
             var newName = request.NewName;
 
-            _logger.LogDebug("Processing rename request for: {DocumentUri} to '{NewName}'",
-                documentUri, newName);
+            _logger.LogDebug("Processing rename request for: {DocumentUri} to '{NewName}' ({Language})",
+                documentUri, newName, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -55,30 +83,30 @@ public class RenameHandler : IRenameHandler
                 return null;
             }
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            var symbol = _parser.FindSymbolAtPosition(mql4File, line, character);
+            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
             if (symbol == null)
             {
                 _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
                 return null;
             }
 
-            // Find all occurrences of this symbol in the document
             var textEdits = new List<TextEdit>();
 
-            foreach (var s in mql4File.Symbols)
+            foreach (var s in mqlFile.Symbols)
             {
                 if (s.Name == symbol.Name)
                 {
@@ -95,7 +123,6 @@ public class RenameHandler : IRenameHandler
                 return null;
             }
 
-            // Use changes dictionary instead of DocumentChanges
             var edit = new WorkspaceEdit
             {
                 Changes = new Dictionary<DocumentUri, IEnumerable<TextEdit>>

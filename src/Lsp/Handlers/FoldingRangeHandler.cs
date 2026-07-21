@@ -14,59 +14,75 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles textDocument/foldingRange requests.
-/// Provides folding ranges for code blocks in a document.
 /// </summary>
-public class FoldingRangeHandler : IFoldingRangeHandler
+public class FoldingRangeHandler : LanguageAwareHandlerBase<FoldingRangeRequestParam, Container<FoldingRange>?>, IFoldingRangeHandler
 {
     private readonly ILogger<FoldingRangeHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public FoldingRangeHandler(
         ILogger<FoldingRangeHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("FoldingRangeHandler initialized");
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
+    public FoldingRangeHandler(ILogger<FoldingRangeHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
     }
 
     public Task<Container<FoldingRange>?> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
     {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override Container<FoldingRange>? HandleForLanguage(FoldingRangeRequestParam request, MqlLanguage language, CancellationToken cancellationToken)
+    {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing folding range request for: {DocumentUri}", documentUri);
+            _logger.LogDebug("Processing folding range request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 _logger.LogWarning("File not found: {FilePath}", filePath);
-                return Task.FromResult<Container<FoldingRange>?>(null);
+                return null;
             }
 
+            var parser = ResolveParser(language);
             var content = File.ReadAllText(filePath);
             var lines = content.Split('\n');
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var foldingRanges = new List<FoldingRange>();
 
-            // Add function-based folding ranges
-            foreach (var symbol in mql4File.Symbols.Where(s => s.Kind == SymbolKind.Function))
+            foreach (var symbol in mqlFile.Symbols.Where(s => s.Kind == SymbolKind.Function))
             {
                 if (symbol.Range.Start.Line > 0 && symbol.Range.End.Line > symbol.Range.Start.Line)
                 {
@@ -81,13 +97,10 @@ public class FoldingRangeHandler : IFoldingRangeHandler
                 }
             }
 
-            // Add brace-based folding ranges for code blocks
             for (int i = 0; i < lines.Length - 1; i++)
             {
                 var line = lines[i].TrimEnd();
-                var nextLine = lines[i + 1].TrimEnd();
 
-                // Check for opening braces at end of line
                 if (line.EndsWith("{") || line.EndsWith("{ //") || line.EndsWith("{ /*"))
                 {
                     var closingBraceLine = FindMatchingBraceLine(lines, i);
@@ -107,12 +120,12 @@ public class FoldingRangeHandler : IFoldingRangeHandler
 
             _logger.LogDebug("Returning {Count} folding ranges", foldingRanges.Count);
 
-            return Task.FromResult<Container<FoldingRange>?>(new Container<FoldingRange>(foldingRanges));
+            return new Container<FoldingRange>(foldingRanges);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing folding range for {Uri}", request.TextDocument.Uri);
-            return Task.FromResult<Container<FoldingRange>?>(null);
+            return null;
         }
     }
 

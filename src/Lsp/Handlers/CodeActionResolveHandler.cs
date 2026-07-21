@@ -1,56 +1,67 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.LanguageServer.Protocol;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using MqlLanguageServer.Models;
-using MqlLanguageServer.Parser;
-using MqlLanguageServer.Lsp.Server;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles codeAction/resolve requests.
-/// Resolves additional details for code actions.
 /// </summary>
-public class CodeActionResolveHandler : ICodeActionResolveHandler
+public class CodeActionResolveHandler : LanguageAwareHandlerBase<CodeAction, CodeAction>, ICodeActionResolveHandler
 {
     private readonly ILogger<CodeActionResolveHandler> _logger;
     private CodeActionCapability? _capability;
 
     public Guid Id => Guid.Empty;
 
-    public CodeActionResolveHandler(ILogger<CodeActionResolveHandler> logger)
+    public CodeActionResolveHandler(
+        ILogger<CodeActionResolveHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("CodeActionResolveHandler initialized");
     }
 
+    // Backward-compatible constructor for existing MQL4 tests.
+    public CodeActionResolveHandler(ILogger<CodeActionResolveHandler> logger)
+        : this(logger,
+               new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser()),
+               new OpenDocumentStore(),
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
     public Task<CodeAction> Handle(CodeAction data, CancellationToken cancellationToken)
+    {
+        var language = MqlLanguage.Mql4;
+        return Task.FromResult(HandleForLanguage(data, language, cancellationToken));
+    }
+
+    protected override CodeAction HandleForLanguage(CodeAction data, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             _logger.LogDebug("Resolving code action: {Title}", data.Title);
-
-            // For now, just return the action as-is
-            // In a full implementation, this would:
-            // - Fetch additional details from the server
-            // - Generate the actual edit for quick fixes
-            // - Prepare refactoring previews
-
-            return Task.FromResult(data);
+            return data;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error resolving code action: {Title}", data.Title);
-            return Task.FromResult(data);
+            return data;
         }
     }
 

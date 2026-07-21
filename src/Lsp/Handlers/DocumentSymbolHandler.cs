@@ -6,6 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -20,28 +23,44 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for document symbol requests (outline view)
 /// </summary>
-public class DocumentSymbolHandler : IDocumentSymbolHandler
+public class DocumentSymbolHandler : LanguageAwareHandlerBase<DocumentSymbolParams, SymbolInformationOrDocumentSymbolContainer?>, IDocumentSymbolHandler
 {
     private readonly ILogger<DocumentSymbolHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
-    public DocumentSymbolHandler(ILogger<DocumentSymbolHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+    public DocumentSymbolHandler(
+        ILogger<DocumentSymbolHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("DocumentSymbolHandler initialized");
     }
 
-    public async Task<SymbolInformationOrDocumentSymbolContainer?> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public DocumentSymbolHandler(ILogger<DocumentSymbolHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public Task<SymbolInformationOrDocumentSymbolContainer?> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override SymbolInformationOrDocumentSymbolContainer? HandleForLanguage(DocumentSymbolParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing document symbols for: {DocumentUri}", documentUri);
+            _logger.LogDebug("Processing document symbols for: {DocumentUri} ({Language})", documentUri, language);
 
-            // Get file path from URI
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
@@ -49,26 +68,18 @@ public class DocumentSymbolHandler : IDocumentSymbolHandler
                 return null;
             }
 
-            // Read content for parsing
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-
-            // Convert DocumentUri to System.Uri for the document store
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-
-            // Try to get the document from cache first
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            if (!_documentStore.TryGetValue(uri, out var mqlFile) || mqlFile == null)
             {
                 _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
-
-                // Parse the file and cache it
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // Convert Mql4Symbol to DocumentSymbol
-            var symbols = mql4File.Symbols
+            var symbols = mqlFile.Symbols
                 .Select(ConvertToSymbolInformationOrDocumentSymbol);
 
             _logger.LogDebug("Found {SymbolCount} symbols in {FilePath}", symbols.Count(), filePath);
@@ -82,7 +93,7 @@ public class DocumentSymbolHandler : IDocumentSymbolHandler
         }
     }
 
-    private SymbolInformationOrDocumentSymbol ConvertToSymbolInformationOrDocumentSymbol(Mql4Symbol symbol)
+    private SymbolInformationOrDocumentSymbol ConvertToSymbolInformationOrDocumentSymbol(MqlSymbol symbol)
     {
         return new SymbolInformationOrDocumentSymbol(new DocumentSymbol
         {
@@ -98,7 +109,7 @@ public class DocumentSymbolHandler : IDocumentSymbolHandler
     {
         return new DocumentSymbolRegistrationOptions
         {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
         };
     }
 }

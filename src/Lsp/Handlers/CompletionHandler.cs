@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using System.Diagnostics;
 using MqlLanguageServer.Lsp.Server;
@@ -22,31 +24,38 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for completion requests (auto-completion)
 /// </summary>
-public class CompletionHandler : ICompletionHandler
+public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, CompletionList>, ICompletionHandler
 {
     private readonly ILogger<CompletionHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
-    
 
-    public CompletionHandler(ILogger<CompletionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+    public CompletionHandler(
+        ILogger<CompletionHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("CompletionHandler initialized");
     }
 
-    public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public CompletionHandler(ILogger<CompletionHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
     {
-        return new CompletionRegistrationOptions
-        {
-            DocumentSelector = Constants.FilePatterns.Select(p => new TextDocumentFilter { Pattern = p }).ToArray(),
-            TriggerCharacters = new[] { ".", "(", ":", "_" }
-        };
     }
 
-    public async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+    public Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override CompletionList HandleForLanguage(CompletionParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         var metrics = new PerformanceMonitor(MetricsCollector.Instance, _logger);
         using var operation = metrics.MonitorOperation("Completion", request.TextDocument.Uri.ToString());
@@ -57,15 +66,14 @@ public class CompletionHandler : ICompletionHandler
             _logger.LogDebug(Constants.LogMessages.ProcessingRequest,
                 "completion", documentUri, request.Position.Line, request.Position.Character);
 
-            // Convert DocumentUri to System.Uri for the document store
             var uri = documentUri.ToUri();
+            var parser = ResolveParser(language);
+            var builtins = ResolveBuiltins(language);
 
-            // Try to get the document from cache first
-            if (!_documentStore.TryGetValue(uri, out var mql4File) || mql4File == null)
+            if (!_documentStore.TryGetValue(uri, out var mqlFile) || mqlFile == null)
             {
                 _logger.LogDebug(Constants.LogMessages.DocumentNotInCache, documentUri);
 
-                // Get file path from URI
                 var filePath = documentUri.GetFileSystemPath();
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                 {
@@ -73,69 +81,53 @@ public class CompletionHandler : ICompletionHandler
                     return new CompletionList(Array.Empty<CompletionItem>(), false);
                 }
 
-                // Parse the file and cache it with timing
                 var parseStopwatch = Stopwatch.StartNew();
-                var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-                mql4File = _parser.ParseFile(content, filePath);
+                var content = File.ReadAllText(filePath);
+                mqlFile = parser.ParseFile(content, filePath);
                 parseStopwatch.Stop();
 
-                // Record parsing metrics
-                metrics.RecordParsingTime(filePath, parseStopwatch.Elapsed, mql4File.Symbols.Count, fromCache: false);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                metrics.RecordParsingTime(filePath, parseStopwatch.Elapsed, mqlFile.Symbols.Count, fromCache: false);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
             else
             {
-                // Record cache hit metrics
                 var filePath = documentUri.GetFileSystemPath();
                 if (!string.IsNullOrEmpty(filePath))
                 {
-                    metrics.RecordParsingTime(filePath, TimeSpan.Zero, mql4File.Symbols.Count, fromCache: true);
+                    metrics.RecordParsingTime(filePath, TimeSpan.Zero, mqlFile.Symbols.Count, fromCache: true);
                 }
             }
 
-            // Analyze context for contextual completion
             var filePathForContext = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
             {
                 return new CompletionList(Array.Empty<CompletionItem>(), false);
             }
 
-            var fileContent = await File.ReadAllTextAsync(filePathForContext, cancellationToken);
+            var fileContent = File.ReadAllText(filePathForContext);
             var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
 
             var completions = new List<CompletionItem>();
 
-            // Add contextual completions based on position
             if (context.IsInsideFunction)
             {
-                // Inside a function - show more relevant completions
                 completions.AddRange(GetContextualCompletions(context));
             }
             else
             {
-                // At global scope
-                completions.AddRange(GetGlobalScopeCompletions(mql4File));
+                completions.AddRange(GetGlobalScopeCompletions(mqlFile, builtins));
             }
 
-            // Add keyword completions (always relevant)
-            completions.AddRange(GetKeywordCompletions());
+            completions.AddRange(GetKeywordCompletions(language));
+            completions.AddRange(GetSnippetCompletions(context, language));
+            completions.AddRange(GetFilteredBuiltinCompletions(context, builtins));
+            completions.AddRange(GetSymbolCompletions(mqlFile, builtins));
 
-            // Add snippets for common blocks
-            completions.AddRange(GetSnippetCompletions(context));
-
-            // Add builtin functions/variables (filtered by context)
-            completions.AddRange(GetFilteredBuiltinCompletions(context));
-
-            // Add symbols from current file
-            completions.AddRange(GetSymbolCompletions(mql4File));
-
-            // Group and sort completions
             var groupedCompletions = GroupCompletionsByType(completions).ToList();
             var sortedCompletions = SortCompletionsByRelevance(groupedCompletions, context);
 
             _logger.LogDebug(Constants.LogMessages.ReturningCompletions, sortedCompletions.Count);
 
-            // Return CompletionList with items and isIncomplete=false (results are complete)
             return new CompletionList(sortedCompletions.ToArray(), isIncomplete: false);
         }
         catch (Exception ex)
@@ -146,9 +138,6 @@ public class CompletionHandler : ICompletionHandler
         }
     }
 
-    /// <summary>
-    /// Analyze the context around the cursor position for contextual completion
-    /// </summary>
     private CompletionContext AnalyzeCompletionContext(string content, int line, int column)
     {
         var lines = content.Split('\n');
@@ -163,10 +152,8 @@ public class CompletionHandler : ICompletionHandler
             ContextType = ContextType.General
         };
 
-        // Check if inside a function body
         var functionKeywords = new[] { "void ", "int ", "double ", "string ", "bool ", "datetime ", "color " };
 
-        // Look backwards from current position to find if we're inside a function
         for (int i = 0; i < Math.Min(50, line); i++)
         {
             var checkLine = lines[line - 2 - i];
@@ -178,10 +165,8 @@ public class CompletionHandler : ICompletionHandler
             }
         }
 
-        // Check context based on current line
         var currentLine = context.CurrentLine;
 
-        // Determine what type of completions would be relevant
         if (currentLine.Contains("OnTick") || currentLine.Contains("OnInit"))
         {
             context.ContextType = ContextType.EventHandler;
@@ -195,7 +180,6 @@ public class CompletionHandler : ICompletionHandler
             context.ContextType = ContextType.Trading;
         }
 
-        // Check if we just typed a keyword
         var keywords = new[] { "if", "for", "while", "switch" };
         context.IsAfterKeyword = keywords.Any(kw => currentLine.TrimEnd().EndsWith(kw));
 
@@ -204,7 +188,6 @@ public class CompletionHandler : ICompletionHandler
 
     private string? ExtractFunctionName(string line)
     {
-        // Simple extraction of function name from declaration
         var parts = line.Trim().Split(new[] { ' ', '(' }, StringSplitOptions.RemoveEmptyEntries);
         return parts.Length > 1 ? parts[1].TrimEnd('(') : null;
     }
@@ -213,7 +196,6 @@ public class CompletionHandler : ICompletionHandler
     {
         var completions = new List<CompletionItem>();
 
-        // Add trading-specific completions if relevant
         if (context.CurrentLine.Contains("Order") || context.PreviousLine.Contains("Order"))
         {
             completions.AddRange(GetTradingCompletions());
@@ -222,30 +204,26 @@ public class CompletionHandler : ICompletionHandler
         return completions;
     }
 
-    private IEnumerable<CompletionItem> GetGlobalScopeCompletions(Mql4File mql4File)
+    private IEnumerable<CompletionItem> GetGlobalScopeCompletions(MqlFile mqlFile, IMqlBuiltins builtins)
     {
-        var completions = new List<CompletionItem>();
-
-        // Add function declarations (exclude built-ins to avoid duplicates)
-        completions.AddRange(mql4File.Symbols
+        return mqlFile.Symbols
             .Where(s => s.Kind == SymbolKind.Function)
-            .Where(s => !IsBuiltinCaseInsensitive(s.Name))
+            .Where(s => !IsBuiltinCaseInsensitive(s.Name, builtins))
             .Select(s => new CompletionItem
             {
                 Label = s.Name,
                 Kind = CompletionItemKind.Function,
                 InsertText = s.Name,
                 Detail = s.Detail
-            }));
-
-        return completions;
+            });
     }
 
-    private IEnumerable<CompletionItem> GetSnippetCompletions(CompletionContext context)
+    private IEnumerable<CompletionItem> GetSnippetCompletions(CompletionContext context, MqlLanguage language)
     {
         var snippets = new List<CompletionItem>();
 
-        // If we just typed 'if', suggest if-else snippet
+        var fence = language == MqlLanguage.Mql5 ? "mql5" : "mql4";
+
         if (context.IsAfterKeyword && context.CurrentLine.TrimEnd().EndsWith("if"))
         {
             snippets.Add(new CompletionItem
@@ -253,15 +231,10 @@ public class CompletionHandler : ICompletionHandler
                 Label = "if statement",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "if (${1:condition})\n{\n\t${2:// code}\n}",
-                Documentation = new MarkupContent
-                {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```mql4\n$1\n```"
-                }
+                Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
             });
         }
 
-        // If we just typed 'for', suggest for loop snippet
         if (context.IsAfterKeyword && context.CurrentLine.TrimEnd().EndsWith("for"))
         {
             snippets.Add(new CompletionItem
@@ -269,15 +242,10 @@ public class CompletionHandler : ICompletionHandler
                 Label = "for loop",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "for (int ${1:i} = 0; ${1} < ${2:count}; ${1}++)\n{\n\t${3:// code}\n}",
-                Documentation = new MarkupContent
-                {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```mql4\n$1\n```"
-                }
+                Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
             });
         }
 
-        // If we just typed 'while', suggest while loop snippet
         if (context.IsAfterKeyword && context.CurrentLine.TrimEnd().EndsWith("while"))
         {
             snippets.Add(new CompletionItem
@@ -285,40 +253,48 @@ public class CompletionHandler : ICompletionHandler
                 Label = "while loop",
                 Kind = CompletionItemKind.Snippet,
                 InsertText = "while (${1:condition})\n{\n\t${2:// code}\n}",
-                Documentation = new MarkupContent
-                {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```mql4\n$1\n```"
-                }
+                Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
             });
         }
 
-        // Event handler snippets
         if (context.ContextType == ContextType.General)
         {
-            snippets.Add(new CompletionItem
+            if (language == MqlLanguage.Mql5)
             {
-                Label = "OnInit function",
-                Kind = CompletionItemKind.Snippet,
-                InsertText = "int OnInit()\n{\n\t${1:// initialization code}\n\treturn(INIT_SUCCEEDED);\n}",
-                Documentation = new MarkupContent
+                snippets.Add(new CompletionItem
                 {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```mql4\n$1\n```"
-                }
-            });
+                    Label = "OnInit function",
+                    Kind = CompletionItemKind.Snippet,
+                    InsertText = "int OnInit()\n{\n\t${1:// initialization code}\n\treturn(INIT_SUCCEEDED);\n}",
+                    Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
+                });
 
-            snippets.Add(new CompletionItem
-            {
-                Label = "OnTick function",
-                Kind = CompletionItemKind.Snippet,
-                InsertText = "void OnTick()\n{\n\t${1:// trading logic}\n}",
-                Documentation = new MarkupContent
+                snippets.Add(new CompletionItem
                 {
-                    Kind = MarkupKind.Markdown,
-                    Value = $"```mql4\n$1\n```"
-                }
-            });
+                    Label = "OnTick function",
+                    Kind = CompletionItemKind.Snippet,
+                    InsertText = "void OnTick()\n{\n\t${1:// trading logic}\n}",
+                    Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
+                });
+            }
+            else
+            {
+                snippets.Add(new CompletionItem
+                {
+                    Label = "OnInit function",
+                    Kind = CompletionItemKind.Snippet,
+                    InsertText = "int OnInit()\n{\n\t${1:// initialization code}\n\treturn(INIT_SUCCEEDED);\n}",
+                    Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
+                });
+
+                snippets.Add(new CompletionItem
+                {
+                    Label = "OnTick function",
+                    Kind = CompletionItemKind.Snippet,
+                    InsertText = "void OnTick()\n{\n\t${1:// trading logic}\n}",
+                    Documentation = new MarkupContent { Kind = MarkupKind.Markdown, Value = $"```{fence}\n$1\n```" }
+                });
+            }
         }
 
         return snippets;
@@ -334,16 +310,14 @@ public class CompletionHandler : ICompletionHandler
         };
     }
 
-    private IEnumerable<CompletionItem> GetFilteredBuiltinCompletions(CompletionContext context)
+    private IEnumerable<CompletionItem> GetFilteredBuiltinCompletions(CompletionContext context, IMqlBuiltins builtins)
     {
-        var allBuiltins = GetBuiltinCompletions();
+        var allBuiltins = GetBuiltinCompletions(builtins);
         var filtered = new List<CompletionItem>();
 
-        // Contextual filtering
         switch (context.ContextType)
         {
             case ContextType.Trading:
-                // Show trading-related built-ins
                 filtered.AddRange(allBuiltins.Where(c =>
                     c.Label.Contains("Order") ||
                     c.Label.Contains("Ask") ||
@@ -352,7 +326,6 @@ public class CompletionHandler : ICompletionHandler
                 break;
 
             case ContextType.EventHandler:
-                // Show event-related built-ins
                 filtered.AddRange(allBuiltins.Where(c =>
                     c.Label.Contains("OnInit") ||
                     c.Label.Contains("OnTick") ||
@@ -360,7 +333,6 @@ public class CompletionHandler : ICompletionHandler
                 break;
 
             default:
-                // Show all built-ins
                 filtered.AddRange(allBuiltins);
                 break;
         }
@@ -370,7 +342,6 @@ public class CompletionHandler : ICompletionHandler
 
     private IEnumerable<CompletionItem> GroupCompletionsByType(List<CompletionItem> completions)
     {
-        // Group by kind and order logically
         var keywordCompletions = completions.Where(c => c.Kind == CompletionItemKind.Keyword).OrderBy(c => c.Label);
         var snippetCompletions = completions.Where(c => c.Kind == CompletionItemKind.Snippet).OrderBy(c => c.Label);
         var functionCompletions = completions.Where(c => c.Kind == CompletionItemKind.Function).OrderBy(c => c.Label);
@@ -387,7 +358,6 @@ public class CompletionHandler : ICompletionHandler
 
     private List<CompletionItem> SortCompletionsByRelevance(List<CompletionItem> completions, CompletionContext context)
     {
-        // Simple relevance scoring
         return completions
             .Select(c => new
             {
@@ -404,25 +374,21 @@ public class CompletionHandler : ICompletionHandler
     {
         int score = 0;
 
-        // Snippets get high priority in control flow context
         if (item.Kind == CompletionItemKind.Snippet && context.IsAfterKeyword)
         {
             score += 100;
         }
 
-        // Keywords get priority in general context
         if (item.Kind == CompletionItemKind.Keyword)
         {
             score += 50;
         }
 
-        // Built-in functions get priority
         if (item.Kind == CompletionItemKind.Function)
         {
             score += 40;
         }
 
-        // Event handlers in event context
         if (item.Kind == CompletionItemKind.Function &&
             (item.Label.Contains("OnInit") || item.Label.Contains("OnTick")))
         {
@@ -432,14 +398,22 @@ public class CompletionHandler : ICompletionHandler
         return score;
     }
 
-    private IEnumerable<CompletionItem> GetKeywordCompletions()
+    private IEnumerable<CompletionItem> GetKeywordCompletions(MqlLanguage language)
     {
-        var keywords = new[]
-        {
-            "int", "double", "string", "bool", "void", "datetime", "color",
-            "if", "else", "for", "while", "do", "switch", "case", "default",
-            "break", "continue", "return", "true", "false", "NULL"
-        };
+        var keywords = language == MqlLanguage.Mql5
+            ? new[]
+            {
+                "int", "long", "double", "string", "bool", "void", "datetime", "color", "uchar", "ushort", "uint",
+                "if", "else", "for", "while", "do", "switch", "case", "default",
+                "break", "continue", "return", "true", "false", "NULL", "nullptr",
+                "class", "struct", "enum", "union", "template", "final", "override", "using", "namespace"
+            }
+            : new[]
+            {
+                "int", "double", "string", "bool", "void", "datetime", "color",
+                "if", "else", "for", "while", "do", "switch", "case", "default",
+                "break", "continue", "return", "true", "false", "NULL"
+            };
 
         return keywords.Select(keyword => new CompletionItem
         {
@@ -449,12 +423,11 @@ public class CompletionHandler : ICompletionHandler
         });
     }
 
-    private IEnumerable<CompletionItem> GetBuiltinCompletions()
+    private IEnumerable<CompletionItem> GetBuiltinCompletions(IMqlBuiltins builtins)
     {
         var completionItems = new List<CompletionItem>();
 
-        // Add builtin functions
-        foreach (var kvp in Mql4Builtins.BuiltInFunctions)
+        foreach (var kvp in builtins.BuiltInFunctions)
         {
             completionItems.Add(new CompletionItem
             {
@@ -465,8 +438,7 @@ public class CompletionHandler : ICompletionHandler
             });
         }
 
-        // Add builtin variables
-        foreach (var kvp in Mql4Builtins.BuiltInVariables)
+        foreach (var kvp in builtins.BuiltInVariables)
         {
             completionItems.Add(new CompletionItem
             {
@@ -480,13 +452,11 @@ public class CompletionHandler : ICompletionHandler
         return completionItems;
     }
 
-    private IEnumerable<CompletionItem> GetSymbolCompletions(Mql4File file)
+    private IEnumerable<CompletionItem> GetSymbolCompletions(MqlFile file, IMqlBuiltins builtins)
     {
-        // Get all symbols EXCEPT functions (functions are added by GetGlobalScopeCompletions)
-        // This prevents duplicates
         return file.Symbols
-            .Where(symbol => symbol.Kind != SymbolKind.Function) // Exclude functions
-            .Where(symbol => !IsBuiltinCaseInsensitive(symbol.Name)) // Exclude built-ins (case-insensitive)
+            .Where(symbol => symbol.Kind != SymbolKind.Function)
+            .Where(symbol => !IsBuiltinCaseInsensitive(symbol.Name, builtins))
             .Select(symbol => new CompletionItem
             {
                 Label = symbol.Name,
@@ -496,20 +466,18 @@ public class CompletionHandler : ICompletionHandler
             });
     }
 
-    private bool IsBuiltinCaseInsensitive(string name)
+    private bool IsBuiltinCaseInsensitive(string name, IMqlBuiltins builtins)
     {
         if (string.IsNullOrEmpty(name))
             return false;
 
-        // Check built-in functions (case-insensitive)
-        foreach (var kvp in Mql4Builtins.BuiltInFunctions)
+        foreach (var kvp in builtins.BuiltInFunctions)
         {
             if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
                 return true;
         }
 
-        // Check built-in variables (case-insensitive)
-        foreach (var kvp in Mql4Builtins.BuiltInVariables)
+        foreach (var kvp in builtins.BuiltInVariables)
         {
             if (string.Equals(kvp.Key, name, StringComparison.OrdinalIgnoreCase))
                 return true;
@@ -526,6 +494,15 @@ public class CompletionHandler : ICompletionHandler
             SymbolKind.Variable => CompletionItemKind.Variable,
             SymbolKind.Constant => CompletionItemKind.Value,
             _ => CompletionItemKind.Text
+        };
+    }
+
+    public CompletionRegistrationOptions GetRegistrationOptions(CompletionCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new CompletionRegistrationOptions
+        {
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector(),
+            TriggerCharacters = new[] { ".", "(", ":", "_" }
         };
     }
 }

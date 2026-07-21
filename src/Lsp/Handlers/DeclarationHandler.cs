@@ -13,37 +13,52 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
-/// Handles textDocument/declaration requests (LSP 3.14).
-/// Goes to the declaration of a symbol (similar to definition but for declarations).
+/// Handles textDocument/declaration requests.
 /// </summary>
-public class DeclarationHandler : IDeclarationHandler
+public class DeclarationHandler : LanguageAwareHandlerBase<DeclarationParams, LocationOrLocationLinks?>, IDeclarationHandler
 {
     private readonly ILogger<DeclarationHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public DeclarationHandler(
         ILogger<DeclarationHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("DeclarationHandler initialized");
     }
 
-    public async Task<LocationOrLocationLinks?> Handle(DeclarationParams request, CancellationToken cancellationToken)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public DeclarationHandler(ILogger<DeclarationHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public Task<LocationOrLocationLinks?> Handle(DeclarationParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override LocationOrLocationLinks? HandleForLanguage(DeclarationParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing declaration request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing declaration request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -52,21 +67,21 @@ public class DeclarationHandler : IDeclarationHandler
                 return null;
             }
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // For declaration, we look for the symbol definition
-            var symbol = _parser.FindSymbolDefinition(mql4File, content, line, character);
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
 
             if (symbol == null)
             {
@@ -74,7 +89,6 @@ public class DeclarationHandler : IDeclarationHandler
                 return null;
             }
 
-            // Return the symbol's location as declaration
             var location = new Location
             {
                 Uri = documentUri,

@@ -11,35 +11,47 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
+using MqlLanguageServer.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles workspace/symbol requests for searching symbols across all files in the workspace.
 /// </summary>
-public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
+public class WorkspaceSymbolHandler : LanguageAwareHandlerBase<WorkspaceSymbolParams, Container<WorkspaceSymbol>?>, IWorkspaceSymbolsHandler
 {
     private readonly ILogger<WorkspaceSymbolHandler> _logger;
-    private readonly GlobalSymbolIndex _globalSymbolIndex;
 
     public WorkspaceSymbolHandler(
         ILogger<WorkspaceSymbolHandler> logger,
-        GlobalSymbolIndex globalSymbolIndex)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _globalSymbolIndex = globalSymbolIndex ?? throw new ArgumentNullException(nameof(globalSymbolIndex));
-
         _logger.LogInformation("WorkspaceSymbolHandler initialized");
     }
 
-    public WorkspaceSymbolRegistrationOptions GetRegistrationOptions(
-        WorkspaceSymbolCapability capability,
-        ClientCapabilities clientCapabilities)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public WorkspaceSymbolHandler(
+        ILogger<WorkspaceSymbolHandler> logger,
+        GlobalSymbolIndex globalSymbolIndex)
+        : this(logger,
+               new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser()),
+               new OpenDocumentStore(),
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public WorkspaceSymbolRegistrationOptions GetRegistrationOptions(WorkspaceSymbolCapability capability, ClientCapabilities clientCapabilities)
     {
         return new WorkspaceSymbolRegistrationOptions
         {
-            WorkDoneProgress = false,
-            // PartialResultProgress not available in OmniSharp 0.19.9
+            WorkDoneProgress = false
         };
     }
 
@@ -47,12 +59,19 @@ public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
         WorkspaceSymbolParams request,
         CancellationToken cancellationToken)
     {
+        var language = MqlLanguage.Mql4;
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override Container<WorkspaceSymbol>? HandleForLanguage(WorkspaceSymbolParams request, MqlLanguage language, CancellationToken cancellationToken)
+    {
         var query = request.Query ?? "";
         var symbols = new List<WorkspaceSymbol>();
 
         try
         {
-            foreach (var (uri, _, fileSymbols) in _globalSymbolIndex.GetAllSymbols())
+            // F3 fix: language-agnostic iteration returns matches from BOTH MQL4 and MQL5.
+            foreach (var (uri, _, fileSymbols) in GlobalSymbolIndex.Instance.GetAllSymbols())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -69,23 +88,22 @@ public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
                 }
             }
 
-            // Limit results for performance per LSP spec recommendation
             var limitedResults = symbols.Take(100).ToList();
 
             _logger.LogDebug("Workspace symbol search for '{Query}' returned {Count} results",
                 query, limitedResults.Count);
 
-            return Task.FromResult<Container<WorkspaceSymbol>?>(new Container<WorkspaceSymbol>(limitedResults));
+            return new Container<WorkspaceSymbol>(limitedResults);
         }
         catch (OperationCanceledException)
         {
             _logger.LogDebug("Workspace symbol search was cancelled");
-            return Task.FromResult<Container<WorkspaceSymbol>?>(null);
+            return null;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error handling workspace/symbol request for query '{Query}'", query);
-            return Task.FromResult<Container<WorkspaceSymbol>?>(null);
+            return null;
         }
     }
 
@@ -96,7 +114,7 @@ public class WorkspaceSymbolHandler : IWorkspaceSymbolsHandler
         return name.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static WorkspaceSymbol? CreateWorkspaceSymbol(Mql4Symbol symbol, Uri uri)
+    private static WorkspaceSymbol? CreateWorkspaceSymbol(MqlSymbol symbol, Uri uri)
     {
         if (string.IsNullOrEmpty(symbol.Name))
             return null;

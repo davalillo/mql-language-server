@@ -38,13 +38,24 @@ public static class LanguageDetection
         if (languageId == Constants.Languages.Mql4)
             return MqlLanguage.Mql4;
 
-        // Only sniff content for include files when the client did not provide a languageId.
-        if (string.IsNullOrEmpty(languageId) && Path.GetExtension(uri.AbsolutePath).Equals(".mqh", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(languageId))
         {
-            foreach (var token in Mql5Tokens)
+            var extension = Path.GetExtension(uri.AbsolutePath);
+
+            if (extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase))
+                return MqlLanguage.Mql5;
+
+            if (extension.Equals(".mq4", StringComparison.OrdinalIgnoreCase))
+                return MqlLanguage.Mql4;
+
+            // Only sniff content for include files when the client did not provide a languageId.
+            if (extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
             {
-                if (content.Contains(token, StringComparison.Ordinal))
-                    return MqlLanguage.Mql5;
+                foreach (var token in Mql5Tokens)
+                {
+                    if (content.Contains(token, StringComparison.Ordinal))
+                        return MqlLanguage.Mql5;
+                }
             }
         }
 

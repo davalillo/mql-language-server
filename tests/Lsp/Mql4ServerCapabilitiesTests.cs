@@ -53,7 +53,8 @@ namespace MqlLanguageServer.Tests.Lsp
 
             // Assert
             Assert.NotNull(documentSelector);
-            Assert.Equal(3, documentSelector.Length);
+            // Pattern-only entries remain three; language id entries are additional (REQ-HD-01).
+            Assert.Equal(3, documentSelector.Count(f => f.Pattern != null));
         }
 
         #endregion

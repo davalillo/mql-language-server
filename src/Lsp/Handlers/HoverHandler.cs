@@ -9,6 +9,8 @@ using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -20,31 +22,38 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for hover requests (display symbol information on mouse hover)
 /// </summary>
-public class HoverHandler : IHoverHandler
+public class HoverHandler : LanguageAwareHandlerBase<HoverParams, Hover?>, IHoverHandler
 {
     private readonly ILogger<HoverHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
-    public HoverHandler(ILogger<HoverHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+    public HoverHandler(
+        ILogger<HoverHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
         _logger.LogInformation("HoverHandler initialized");
     }
 
-    public HoverRegistrationOptions GetRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public HoverHandler(ILogger<HoverHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
     {
-        return new HoverRegistrationOptions
-        {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
-            //DocumentSelector = DocumentSelector.ForLanguage("mql4")
-        };
     }
 
-    public async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
+    public Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override Hover? HandleForLanguage(HoverParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         var correlationId = Guid.NewGuid().ToString("N")[..8];
         _logger.LogDebug("[{CorrelationId}] Processing hover request at position {Line}:{Character}",
@@ -52,7 +61,6 @@ public class HoverHandler : IHoverHandler
 
         try
         {
-            // Validate request parameters
             if (request.TextDocument == null || request.TextDocument.Uri == null!)
             {
                 _logger.LogWarning("[{CorrelationId}] Invalid request: documentUri is null", correlationId);
@@ -60,32 +68,17 @@ public class HoverHandler : IHoverHandler
             }
 
             var documentUri = request.TextDocument.Uri;
-
-            // Get file path from URI
             var filePath = documentUri.GetFileSystemPath();
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 _logger.LogWarning("[{CorrelationId}] Invalid file path from URI: {DocumentUri}", correlationId, documentUri);
                 return null;
             }
 
-            if (!File.Exists(filePath))
-            {
-                _logger.LogWarning("[{CorrelationId}] File not found: {FilePath}", correlationId, filePath);
-                return null;
-            }
-
-            // Read content with timeout handling
             string content;
             try
             {
-                _logger.LogTrace("[{CorrelationId}] Reading file content from: {FilePath}", correlationId, filePath);
-                content = await File.ReadAllTextAsync(filePath, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogWarning("[{CorrelationId}] File read operation cancelled for: {FilePath}", correlationId, filePath);
-                throw;
+                content = File.ReadAllText(filePath);
             }
             catch (Exception ex)
             {
@@ -93,46 +86,47 @@ public class HoverHandler : IHoverHandler
                 return null;
             }
 
-            // Convert DocumentUri to System.Uri for the document store
             var uri = documentUri.ToUri();
+            var parser = ResolveParser(language);
+            var builtins = ResolveBuiltins(language);
 
-            Mql4File? mql4File = null;
-
-            // Try to get the document from cache first
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
                 _logger.LogDebug("[{CorrelationId}] Document not in cache, parsing: {DocumentUri}", correlationId, documentUri);
-
-                // Parse the file and cache it
-                try
-                {
-                    mql4File = _parser.ParseFile(content, filePath);
-                    _documentStore.AddOrUpdate(uri, mql4File, content);
-                    _logger.LogTrace("[{CorrelationId}] Successfully parsed document with {SymbolCount} symbols", correlationId, mql4File?.Symbols.Count ?? 0);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[{CorrelationId}] Failed to parse file: {FilePath}", correlationId, filePath);
-                    return null;
-                }
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // Convert LSP Position (0-based) to parser position (1-based)
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Validate position
             if (line < 1 || character < 1)
             {
                 _logger.LogWarning("[{CorrelationId}] Invalid position: line={Line}, character={Character}", correlationId, line, character);
                 return null;
             }
 
-            // Find symbol at position
-            Mql4Symbol? symbol;
+            MqlSymbol? symbol;
             try
             {
-                symbol = _parser.FindSymbolAtPosition(mql4File!, line, character);
+                symbol = parser.FindSymbolAtPosition(mqlFile!, line, character);
+
+                // FindSymbolAtPosition tends to return the containing declaration (e.g.
+                // the enclosing function) when the cursor is inside a function body. Try
+                // FindSymbolDefinition as a refinement: it extracts the exact identifier
+                // at the position and resolves builtins/references more precisely. Only
+                // override when FindSymbolDefinition finds something different.
+                if (symbol != null
+                    && (symbol.Kind == SymbolKind.Function || symbol.Kind == SymbolKind.Method))
+                {
+                    var refined = parser.FindSymbolDefinition(mqlFile!, content, line, character);
+                    if (refined != null && refined.Name != symbol.Name)
+                    {
+                        symbol = refined;
+                    }
+                }
+                symbol ??= parser.FindSymbolDefinition(mqlFile!, content, line, character);
             }
             catch (Exception ex)
             {
@@ -146,41 +140,35 @@ public class HoverHandler : IHoverHandler
                 return null;
             }
 
-            // Create enriched hover content with markdown
-            Hover hover;
             try
             {
-                var isPredefined = _parser.IsBuiltin(symbol.Name);
-                var symbolType = isPredefined ? "MQL4 Built-in" : "User Defined";
+                var isPredefined = builtins.IsBuiltin(symbol.Name);
+                var symbolType = isPredefined ? $"MQL{(language == MqlLanguage.Mql5 ? "5" : "4")} Built-in" : "User Defined";
 
-                // Get function signature for built-in functions
-                var signature = Mql4Builtins.GetBuiltinFunctionSignature(symbol.Name);
+                var signature = builtins.GetBuiltinFunctionSignature(symbol.Name);
+                var markdownContent = BuildHoverContent(symbol, signature, isPredefined, symbolType, language);
 
-                // Build enriched markdown content
-                var markdownContent = BuildHoverContent(symbol, signature, isPredefined, symbolType);
-
-                hover = new Hover
+                var hover = new Hover
                 {
                     Contents = new MarkedStringsOrMarkupContent(
-                        new MarkedString("markdown", markdownContent.ToString())
+                        new MarkupContent { Kind = MarkupKind.Markdown, Value = markdownContent.ToString() }
                     ),
                     Range = symbol.Range
                 };
 
                 _logger.LogDebug("[{CorrelationId}] Successfully created hover for symbol: {SymbolName}", correlationId, symbol.Name);
+                return hover;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[{CorrelationId}] Error building hover content for symbol: {SymbolName}", correlationId, symbol?.Name ?? "unknown");
                 return null;
             }
-
-            return hover;
         }
         catch (OperationCanceledException)
         {
             _logger.LogWarning("[{CorrelationId}] Hover request cancelled", correlationId);
-            throw; // Re-throw cancellation to allow proper handling
+            throw;
         }
         catch (Exception ex)
         {
@@ -189,24 +177,20 @@ public class HoverHandler : IHoverHandler
         }
     }
 
-    /// <summary>
-    /// Build hover content markdown
-    /// </summary>
-    private StringBuilder BuildHoverContent(Mql4Symbol symbol, string? signature, bool isPredefined, string symbolType)
+    private StringBuilder BuildHoverContent(MqlSymbol symbol, string? signature, bool isPredefined, string symbolType, MqlLanguage language)
     {
         var markdownContent = new StringBuilder();
         markdownContent.AppendLine($"## {symbol.Name}");
 
-        // Add signature if available (for built-in functions)
         if (!string.IsNullOrEmpty(signature))
         {
-            markdownContent.AppendLine("```mql4");
+            var fence = language == MqlLanguage.Mql5 ? "mql5" : "mql4";
+            markdownContent.AppendLine($"```{fence}");
             markdownContent.AppendLine(signature);
             markdownContent.AppendLine("```");
             markdownContent.AppendLine();
         }
 
-        // Add metadata
         markdownContent.AppendLine($"**Type:** {symbolType}");
         markdownContent.AppendLine($"**Kind:** {symbol.Kind}");
 
@@ -215,23 +199,22 @@ public class HoverHandler : IHoverHandler
             markdownContent.AppendLine($"**Detail:** {symbol.Detail}");
         }
 
-        // Add file path for user-defined symbols
         if (!isPredefined && !string.IsNullOrEmpty(symbol.FilePath))
         {
             var relativePath = Path.GetFileName(symbol.FilePath);
             markdownContent.AppendLine($"**File:** {relativePath}");
         }
 
-        // Add usage examples for common built-in functions
         if (isPredefined && !string.IsNullOrEmpty(signature))
         {
             markdownContent.AppendLine();
             markdownContent.AppendLine("### Example Usage");
 
-            var example = GetExampleUsage(symbol.Name);
+            var example = GetExampleUsage(symbol.Name, language);
             if (!string.IsNullOrEmpty(example))
             {
-                markdownContent.AppendLine("```mql4");
+                var fence = language == MqlLanguage.Mql5 ? "mql5" : "mql4";
+                markdownContent.AppendLine($"```{fence}");
                 markdownContent.AppendLine(example);
                 markdownContent.AppendLine("```");
             }
@@ -240,11 +223,37 @@ public class HoverHandler : IHoverHandler
         return markdownContent;
     }
 
-    /// <summary>
-    /// Get example usage for built-in functions
-    /// </summary>
-    private string GetExampleUsage(string functionName)
+    private string GetExampleUsage(string functionName, MqlLanguage language)
     {
+        if (language == MqlLanguage.Mql5)
+        {
+            return functionName.ToLowerInvariant() switch
+            {
+                "ordersend" => @"MqlTradeRequest request;
+MqlTradeResult result;
+request.action = TRADE_ACTION_DEAL;
+request.symbol = _Symbol;
+request.volume = 0.1;
+request.type = ORDER_TYPE_BUY;
+OrderSend(request, result);",
+                "positiongetsymbol" => @"if(PositionSelect(_Symbol))
+{
+   long ticket = PositionGetInteger(POSITION_TICKET);
+}",
+                "print" => @"Print(""Message: "", _Symbol, "" Price: "", Ask);",
+                "oninit" => @"int OnInit()
+{
+    Print(""EA initialized"");
+    return(INIT_SUCCEEDED);
+}",
+                "ontick" => @"void OnTick()
+{
+    if(Bars < 100) return;
+}",
+                _ => string.Empty
+            };
+        }
+
         return functionName.ToLowerInvariant() switch
         {
             "ordersend" => @"// Market Order
@@ -273,6 +282,14 @@ Print(""Bid price is: "", Bid);",
 }",
             "sleep" => @"Sleep(5000); // Sleep for 5 seconds",
             _ => string.Empty
+        };
+    }
+
+    public HoverRegistrationOptions GetRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new HoverRegistrationOptions
+        {
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
         };
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,9 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -20,70 +24,75 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for didChange text document notification
 /// </summary>
-public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
+public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTextDocumentParams, Unit>, IDidChangeTextDocumentHandler
 {
     private readonly ILogger<DidChangeTextDocumentHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _openFiles;
-    // Añadimos GlobalSymbolIndex para mantener el workspace actualizado en tiempo real
-    private readonly GlobalSymbolIndex _globalSymbolIndex; 
 
+    public DidChangeTextDocumentHandler(
+        ILogger<DidChangeTextDocumentHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore openFiles,
+        IMqlBuiltins[] builtins)
+        : base(languageService, openFiles, builtins)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("DidChangeTextDocumentHandler initialized");
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
     public DidChangeTextDocumentHandler(
         ILogger<DidChangeTextDocumentHandler> logger,
         Mql4AntlrParser parser,
         OpenDocumentStore openFiles,
         GlobalSymbolIndex globalSymbolIndex)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               openFiles,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _openFiles = openFiles ?? throw new ArgumentNullException(nameof(openFiles));
-        _globalSymbolIndex = globalSymbolIndex ?? throw new ArgumentNullException(nameof(globalSymbolIndex));
-        
-        _logger.LogInformation("DidChangeTextDocumentHandler initialized");
     }
 
     public TextDocumentChangeRegistrationOptions GetRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities)
     {
         return new TextDocumentChangeRegistrationOptions
         {
-            // CRUCIAL: Pedimos al cliente que envíe el texto COMPLETO en cada cambio.
-            // Esto evita tener que implementar algoritmos complejos de parcheo de strings.
             SyncKind = TextDocumentSyncKind.Full,
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
         };
     }
 
     public Task<Unit> Handle(DidChangeTextDocumentParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override Unit HandleForLanguage(DidChangeTextDocumentParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri.ToUri();
             var changes = request.ContentChanges;
 
-            _logger.LogDebug("Processing document changes for: {DocumentUri}", documentUri);
+            _logger.LogDebug("Processing document changes for: {DocumentUri} ({Language})", documentUri, language);
 
-            // Obtenemos el nuevo contenido completo
-            // Al usar SyncKind.Full, el último cambio contiene todo el texto del archivo.
             var newContent = GetFullContent(changes);
 
             if (!string.IsNullOrEmpty(newContent))
             {
                 var filePath = documentUri.AbsolutePath ?? "unknown";
 
-                // 1. Reparsear el archivo con el nuevo contenido
-                var newMql4File = _parser.ParseFile(newContent, filePath);
+                var parser = ResolveParser(language);
+                var newMqlFile = parser.ParseFile(newContent, filePath);
 
-                // 2. Actualizar el OpenDocumentStore con el MODELO y el TEXTO CRUDO
-                // Esto es vital para que DiagnosticHandler no tenga que leer del disco
-                _openFiles.AddOrUpdate(documentUri, newMql4File, newContent);
+                _documentStore.AddOrUpdate(documentUri, newMqlFile, newContent, language);
 
-                // 3. Actualizar el índice global para búsquedas de Workspace
-                _globalSymbolIndex.AddFile(filePath, newMql4File.Symbols);
+                GlobalSymbolIndex.Instance.AddFile(filePath, language, newMqlFile.Symbols);
 
-                // 4. (Opcional) Actualizar dependencias si han cambiado los #include
-                UpdateIncludes(newMql4File, filePath);
+                UpdateIncludes(newMqlFile, filePath);
 
-                _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMql4File.Symbols.Count);
+                _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMqlFile.Symbols.Count);
             }
         }
         catch (Exception ex)
@@ -91,12 +100,11 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
             _logger.LogError(ex, "Error handling didChange for {Uri}", request.TextDocument.Uri);
         }
 
-        return Task.FromResult(Unit.Value);
+        return Unit.Value;
     }
 
     private string GetFullContent(Container<TextDocumentContentChangeEvent> changes)
     {
-        // En modo Full Sync, nos interesa el último evento que tiene todo el texto.
         var changeList = changes.ToArray();
         if (changeList.Length > 0)
         {
@@ -109,18 +117,14 @@ public class DidChangeTextDocumentHandler : IDidChangeTextDocumentHandler
         return string.Empty;
     }
 
-    private void UpdateIncludes(Mql4File file, string filePath)
+    private void UpdateIncludes(MqlFile file, string filePath)
     {
-        // Limpiamos dependencias antiguas si es necesario (depende de tu implementación de GlobalSymbolIndex)
-        // Y registramos las nuevas
         foreach (var include in file.Includes)
         {
-            // Lógica simplificada de includes, similar a DidOpen
             var includePath = ExtractIncludePath(include);
             if (!string.IsNullOrEmpty(includePath))
             {
-                // Aquí podrías añadir lógica para resolver la ruta completa
-                // _globalSymbolIndex.AddDependency(filePath, resolvedPath);
+                // Path resolution and indexing delegated to DidOpen / workspace scan.
             }
         }
     }

@@ -13,55 +13,69 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles textDocument/selectionRange requests.
-/// Provides selection ranges for given positions in a document.
 /// </summary>
-public class SelectionRangeHandler : ISelectionRangeHandler
+public class SelectionRangeHandler : LanguageAwareHandlerBase<SelectionRangeParams, Container<SelectionRange>?>, ISelectionRangeHandler
 {
     private readonly ILogger<SelectionRangeHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public SelectionRangeHandler(
         ILogger<SelectionRangeHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
         _logger.LogInformation("SelectionRangeHandler initialized");
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
+    public SelectionRangeHandler(ILogger<SelectionRangeHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
     }
 
     public Task<Container<SelectionRange>?> Handle(SelectionRangeParams request, CancellationToken cancellationToken)
     {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override Container<SelectionRange>? HandleForLanguage(SelectionRangeParams request, MqlLanguage language, CancellationToken cancellationToken)
+    {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing selection range request for: {DocumentUri} with {Count} positions",
-                documentUri, request.Positions.Count());
+            _logger.LogDebug("Processing selection range request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 _logger.LogWarning("File not found: {FilePath}", filePath);
-                return Task.FromResult<Container<SelectionRange>?>(null);
+                return null;
             }
 
+            var parser = ResolveParser(language);
             var content = File.ReadAllText(filePath);
-            var lines = content.Split('\n');
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var selectionRanges = new List<SelectionRange>();
@@ -71,21 +85,18 @@ public class SelectionRangeHandler : ISelectionRangeHandler
                 var line = position.Line;
                 var character = position.Character;
 
-                // Create selection range for this position
-                var selectionRange = new SelectionRange
+                selectionRanges.Add(new SelectionRange
                 {
                     Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(line, character, line, character)
-                };
-
-                selectionRanges.Add(selectionRange);
+                });
             }
 
-            return Task.FromResult<Container<SelectionRange>?>(new Container<SelectionRange>(selectionRanges));
+            return new Container<SelectionRange>(selectionRanges);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing selection range for {Uri}", request.TextDocument.Uri);
-            return Task.FromResult<Container<SelectionRange>?>(null);
+            return null;
         }
     }
 

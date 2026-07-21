@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
@@ -83,6 +85,10 @@ namespace MqlLanguageServer
                             services.AddSingleton<MqlLspServer>();
                             services.AddSingleton<MqlLanguageService>();
 
+                            // Per-language built-in registries (IMqlBuiltins[]) are injected into handlers.
+                            services.AddSingleton<IMqlBuiltins, Mql4BuiltinsAdapter>();
+                            services.AddSingleton<IMqlBuiltins, Mql5Builtins>();
+
                             // CAMBIO 2: ¡ELIMINA TODOS LOS AddSingleton DE HANDLERS AQUÍ!
                             // .WithHandler<T>() se encarga de registrarlos en la DI automáticamente.
                         })
@@ -106,7 +112,7 @@ namespace MqlLanguageServer
                         .WithHandler<DeclarationHandler>()
                         .WithHandler<ImplementationHandler>()
                         .WithHandler<WorkspaceSymbolHandler>()
-                        // .WithHandler<DiagnosticHandler>()
+                        .WithHandler<DiagnosticHandler>()
 
                         // Handlers de sincronización de texto
                         .WithHandler<DidOpenTextDocumentHandler>()
@@ -130,7 +136,7 @@ namespace MqlLanguageServer
                         // Esto está bien para forzar la configuración de sync
                         .OnTextDocumentSync(
                             TextDocumentSyncKind.Full,
-                            uri => new TextDocumentAttributes(uri, "mql4"),
+                            uri => new TextDocumentAttributes(uri, uri.Path.EndsWith(".mq5") ? "mql5" : "mql4"),
                             _ => { }, _ => { }, _ => { }, _ => { },
                             new TextDocumentSyncRegistrationOptions())
                         

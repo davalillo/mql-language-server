@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -22,38 +25,48 @@ namespace MqlLanguageServer.Lsp.Handlers;
 /// <summary>
 /// Handler for references requests (find all references)
 /// </summary>
-public class ReferencesHandler : IReferencesHandler
+public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, LocationContainer?>, IReferencesHandler
 {
     private readonly ILogger<ReferencesHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
-    public ReferencesHandler(ILogger<ReferencesHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore, GlobalSymbolIndex globalSymbolIndex)
+    public ReferencesHandler(
+        ILogger<ReferencesHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
         _logger.LogInformation("ReferencesHandler initialized");
     }
 
-    public ReferenceRegistrationOptions GetRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public ReferencesHandler(
+        ILogger<ReferencesHandler> logger,
+        Mql4AntlrParser parser,
+        OpenDocumentStore documentStore,
+        GlobalSymbolIndex globalSymbolIndex)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
     {
-        return new ReferenceRegistrationOptions
-        {
-            DocumentSelector = new[] { new TextDocumentFilter { Pattern = "**/*.mq4" }, new TextDocumentFilter { Pattern = "**/*.mqh" } }
-        };
     }
 
-    public async Task<LocationContainer?> Handle(ReferenceParams request, CancellationToken cancellationToken)
+    public Task<LocationContainer?> Handle(ReferenceParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override LocationContainer? HandleForLanguage(ReferenceParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing references request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing references request for: {DocumentUri} ({Language})", documentUri, language);
 
-            // Get file path from URI
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
@@ -61,30 +74,22 @@ public class ReferencesHandler : IReferencesHandler
                 return null;
             }
 
-            // Read content for symbol search
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
-
-            // Convert DocumentUri to System.Uri for the document store
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-
-            // Try to get the document from cache first
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
                 _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
-
-                // Parse the file and cache it
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // Convert LSP Position (0-based) to parser position (1-based)
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol definition at position
-            var symbol = _parser.FindSymbolDefinition(mql4File, content, line, character);
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
 
             if (symbol == null)
             {
@@ -92,7 +97,6 @@ public class ReferencesHandler : IReferencesHandler
                 return null;
             }
 
-            // Use GlobalSymbolIndex for cross-file reference search
             var allReferences = GlobalSymbolIndex.Instance.FindAllReferences(symbol.Name);
             var references = new List<Location>();
 
@@ -105,16 +109,13 @@ public class ReferencesHandler : IReferencesHandler
 
                 try
                 {
-                    // Read the file to get content for position calculation
-                    var refContent = await File.ReadAllTextAsync(refLocation.FilePath, cancellationToken);
+                    var refContent = File.ReadAllText(refLocation.FilePath);
                     var refLines = refContent.Split('\n');
 
-                    // Find all occurrences in this file
                     for (int i = 0; i < refLines.Length; i++)
                     {
                         var currentLine = refLines[i];
 
-                        // Use regex to find identifier matches
                         var matches = System.Text.RegularExpressions.Regex.Matches(
                             currentLine,
                             @"\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b"
@@ -122,7 +123,6 @@ public class ReferencesHandler : IReferencesHandler
 
                         foreach (System.Text.RegularExpressions.Match match in matches)
                         {
-                            // Create Location for each match
                             references.Add(new Location
                             {
                                 Uri = DocumentUri.File(refLocation.FilePath),
@@ -150,5 +150,13 @@ public class ReferencesHandler : IReferencesHandler
             _logger.LogError(ex, "Error processing references request for {Uri}", request.TextDocument.Uri);
             return null;
         }
+    }
+
+    public ReferenceRegistrationOptions GetRegistrationOptions(ReferenceCapability capability, ClientCapabilities clientCapabilities)
+    {
+        return new ReferenceRegistrationOptions
+        {
+            DocumentSelector = MqlServerCapabilities.GetDocumentSelector()
+        };
     }
 }

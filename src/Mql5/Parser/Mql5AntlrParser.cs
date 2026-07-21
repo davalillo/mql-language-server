@@ -5,6 +5,7 @@ using System.Linq;
 using Antlr4.Runtime;
 using Mql5Grammar;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Parser;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using LspPosition = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
@@ -18,6 +19,8 @@ namespace MqlLanguageServer.Mql5.Parser;
 /// </summary>
 public class Mql5AntlrParser : IMqlParser
 {
+    private static readonly Mql5Builtins _builtins = new();
+
     public Mql5AntlrParser()
     {
     }
@@ -217,12 +220,10 @@ public class Mql5AntlrParser : IMqlParser
 
     /// <summary>
     /// Check if a symbol is a built-in function or variable.
-    /// MQL5 built-ins are not wired in Slice 2; always returns false here.
     /// </summary>
     public bool IsBuiltin(string name)
     {
-        // Slice 2 only covers parser; built-in registry comes in Slice 3.
-        return false;
+        return _builtins.IsBuiltin(name);
     }
 
     /// <summary>

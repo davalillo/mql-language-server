@@ -13,37 +13,52 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
-/// Handles textDocument/implementation requests (LSP 3.6).
-/// Finds all implementations of a symbol (e.g., overriding methods).
+/// Handles textDocument/implementation requests.
 /// </summary>
-public class ImplementationHandler : IImplementationHandler
+public class ImplementationHandler : LanguageAwareHandlerBase<ImplementationParams, LocationOrLocationLinks?>, IImplementationHandler
 {
     private readonly ILogger<ImplementationHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public ImplementationHandler(
         ILogger<ImplementationHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _logger.LogInformation("ImplementationHandler initialized");
     }
 
-    public async Task<LocationOrLocationLinks?> Handle(ImplementationParams request, CancellationToken cancellationToken)
+    // Backward-compatible constructor for existing MQL4 tests.
+    public ImplementationHandler(ILogger<ImplementationHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
+    }
+
+    public Task<LocationOrLocationLinks?> Handle(ImplementationParams request, CancellationToken cancellationToken)
+    {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override LocationOrLocationLinks? HandleForLanguage(ImplementationParams request, MqlLanguage language, CancellationToken cancellationToken)
     {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing implementation request for: {DocumentUri} at position {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing implementation request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -52,21 +67,21 @@ public class ImplementationHandler : IImplementationHandler
                 return null;
             }
 
-            var content = await File.ReadAllTextAsync(filePath, cancellationToken);
+            var parser = ResolveParser(language);
+            var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            // Find symbol at position
-            var symbol = _parser.FindSymbolAtPosition(mql4File, line, character);
+            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
 
             if (symbol == null)
             {
@@ -74,15 +89,12 @@ public class ImplementationHandler : IImplementationHandler
                 return null;
             }
 
-            // Find all implementations of this method
             var implementations = new List<Location>();
 
-            foreach (var s in mql4File.Symbols)
+            foreach (var s in mqlFile.Symbols)
             {
-                // Find methods with the same name (potential overrides/overloads)
                 if (s.Name == symbol.Name && s.Kind == SymbolKind.Function)
                 {
-                    // In MQL4, all methods with the same name are considered implementations
                     implementations.Add(new Location
                     {
                         Uri = documentUri,
@@ -97,13 +109,11 @@ public class ImplementationHandler : IImplementationHandler
                 return null;
             }
 
-            // If only one implementation, return it directly
             if (implementations.Count == 1)
             {
                 return new LocationOrLocationLinks(implementations[0]);
             }
 
-            // Return all implementations as location links
             return new LocationOrLocationLinks(implementations.Select(l => new LocationOrLocationLink(new LocationLink
             {
                 OriginSelectionRange = symbol.Range,

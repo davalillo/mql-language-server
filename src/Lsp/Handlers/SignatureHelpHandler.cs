@@ -13,70 +13,84 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
 /// Handles textDocument/signatureHelp requests.
-/// Provides information about function signatures and parameters.
 /// </summary>
-public class SignatureHelpHandler : ISignatureHelpHandler
+public class SignatureHelpHandler : LanguageAwareHandlerBase<SignatureHelpParams, SignatureHelp?>, ISignatureHelpHandler
 {
     private readonly ILogger<SignatureHelpHandler> _logger;
-    private readonly Mql4AntlrParser _parser;
-    private readonly OpenDocumentStore _documentStore;
 
     public SignatureHelpHandler(
         ILogger<SignatureHelpHandler> logger,
-        Mql4AntlrParser parser,
-        OpenDocumentStore documentStore)
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-
         _logger.LogInformation("SignatureHelpHandler initialized");
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
+    public SignatureHelpHandler(ILogger<SignatureHelpHandler> logger, Mql4AntlrParser parser, OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+    {
     }
 
     public Task<SignatureHelp?> Handle(SignatureHelpParams request, CancellationToken cancellationToken)
     {
+        var uri = request.TextDocument.Uri.ToUri();
+        var language = ResolveLanguage(uri);
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
+
+    protected override SignatureHelp? HandleForLanguage(SignatureHelpParams request, MqlLanguage language, CancellationToken cancellationToken)
+    {
         try
         {
             var documentUri = request.TextDocument.Uri;
-            _logger.LogDebug("Processing signature help request for: {DocumentUri} at {Line}:{Character}",
-                documentUri, request.Position.Line, request.Position.Character);
+            _logger.LogDebug("Processing signature help request for: {DocumentUri} ({Language})", documentUri, language);
 
             var filePath = documentUri.GetFileSystemPath();
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 _logger.LogWarning("File not found: {FilePath}", filePath);
-                return Task.FromResult<SignatureHelp?>(null);
+                return null;
             }
 
+            var parser = ResolveParser(language);
             var content = File.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            Mql4File? mql4File = null;
-            if (!_documentStore.TryGetValue(uri, out mql4File) || mql4File == null)
+            MqlFile? mqlFile = null;
+            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
-                mql4File = _parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mql4File, content);
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // Find function at position
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            var symbol = _parser.FindSymbolAtPosition(mql4File, line, character);
+            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
+            symbol ??= parser.FindSymbolDefinition(mqlFile, content, line, character);
             if (symbol == null || symbol.Kind != SymbolKind.Function)
             {
-                return Task.FromResult<SignatureHelp?>(null);
+                return null;
             }
 
-            // Create signature help for the function
             var signature = new SignatureInformation
             {
-                Label = symbol.Name,
+                Label = symbol.Detail ?? symbol.Name,
                 Documentation = new MarkupContent
                 {
                     Kind = MarkupKind.Markdown,
@@ -94,12 +108,12 @@ public class SignatureHelpHandler : ISignatureHelpHandler
 
             _logger.LogDebug("Returning signature help for: {SymbolName}", symbol.Name);
 
-            return Task.FromResult<SignatureHelp?>(signatureHelp);
+            return signatureHelp;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing signature help for {Uri}", request.TextDocument.Uri);
-            return Task.FromResult<SignatureHelp?>(null);
+            return null;
         }
     }
 

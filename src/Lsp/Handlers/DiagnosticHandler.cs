@@ -1,99 +1,120 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
+using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
-using MqlLanguageServer.Models;
-using MqlLanguageServer.Lsp.Server;
-using MqlLanguageServer.Parser;
 
 namespace MqlLanguageServer.Lsp.Handlers;
 
-public class DiagnosticHandler : IDocumentDiagnosticHandler
+public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticParams, RelatedDocumentDiagnosticReport>, IDocumentDiagnosticHandler
 {
     private readonly ILogger<DiagnosticHandler> _logger;
-    private readonly IServiceProvider _serviceProvider; // Usamos esto para crear Parsers aislados
-    private readonly OpenDocumentStore _documentStore;
+    private readonly IServiceProvider? _serviceProvider;
 
+    public DiagnosticHandler(
+        ILogger<DiagnosticHandler> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins)
+        : base(languageService, documentStore, builtins)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    // Backward-compatible constructor for existing MQL4 tests.
     public DiagnosticHandler(
         ILogger<DiagnosticHandler> logger,
         IServiceProvider serviceProvider,
         OpenDocumentStore documentStore)
+        : this(logger,
+               new MqlLanguageService(
+                   serviceProvider?.GetService(typeof(Mql4AntlrParser)) as Mql4AntlrParser ?? new Mql4AntlrParser(),
+                   serviceProvider?.GetService(typeof(Mql5AntlrParser)) as Mql5AntlrParser ?? new Mql5AntlrParser()),
+               documentStore,
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _serviceProvider = serviceProvider;
     }
 
-    public async Task<RelatedDocumentDiagnosticReport> Handle(
+    public Task<RelatedDocumentDiagnosticReport> Handle(
         DocumentDiagnosticParams request,
         CancellationToken cancellationToken)
     {
-        // Timeout de seguridad: Si tarda más de 2s, abortamos para no colgar el cliente
-        using var timeoutCts = new CancellationTokenSource(2000);
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-        var token = linkedCts.Token;
+        var language = ResolveLanguage(request.TextDocument.Uri.ToUri());
+        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+    }
 
+    private RelatedFullDocumentDiagnosticReport GenerateReport(MqlFile? file, string content, MqlLanguage language, CancellationToken token)
+    {
+        var diagnostics = GenerateDiagnostics(file, content, language, token);
+
+        return new RelatedFullDocumentDiagnosticReport
+        {
+            ResultId = Guid.NewGuid().ToString(),
+            Items = diagnostics
+        };
+    }
+
+    protected override RelatedDocumentDiagnosticReport HandleForLanguage(DocumentDiagnosticParams request, MqlLanguage language, CancellationToken cancellationToken)
+    {
         try
         {
-            var uri = request.TextDocument.Uri.ToUri();
-            
-            // Variables para almacenar lo que encontremos
-            string? content = null;
-            Mql4File? mql4File = null;
+            using var timeoutCts = new CancellationTokenSource(2000);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            var token = linkedCts.Token;
 
-            // 1. INTENTO MEMORIA (Prioritario)
-            if (_documentStore.TryGetValue(uri, out var storedFile, out var storedContent))
+            var uri = request.TextDocument.Uri.ToUri();
+
+            string? content = null;
+            MqlFile? mqlFile = null;
+
+            if (_documentStore.TryGetValue(uri, out var storedFile, out var storedContent, out _))
             {
-                mql4File = storedFile;
+                mqlFile = storedFile;
                 content = storedContent;
             }
 
-            // 2. INTENTO DISCO (Fallback si no hay DidOpen previo)
             if (string.IsNullOrEmpty(content))
             {
                 var fsPath = request.TextDocument.Uri.GetFileSystemPath();
-                if (!string.IsNullOrEmpty(fsPath) && File.Exists(fsPath))
+                if (!string.IsNullOrEmpty(fsPath) && System.IO.File.Exists(fsPath))
                 {
-                    try 
+                    try
                     {
-                        content = await File.ReadAllTextAsync(fsPath, token);
+                        content = System.IO.File.ReadAllText(fsPath);
                     }
-                    catch (IOException) { /* Ignorar si está bloqueado */ }
+                    catch (System.IO.IOException) { }
                 }
             }
 
-            // Si no tenemos contenido, no podemos hacer nada. Devolvemos vacío.
             if (string.IsNullOrEmpty(content))
             {
                 return CreateEmptyReport();
             }
 
-            // 3. PARSING SEGURO (Thread-Safe)
-            // Si no teníamos el modelo parseado, lo creamos ahora usando un parser FRESCO.
-            if (mql4File == null)
+            if (mqlFile == null)
             {
-                // Obtenemos una instancia nueva del parser para evitar conflictos de hilos
-                var freshParser = _serviceProvider.GetRequiredService<Mql4AntlrParser>();
-                var filePath = request.TextDocument.Uri.GetFileSystemPath() ?? "unknown.mq4";
-
-                // Parseamos en un hilo aparte
-                mql4File = await Task.Run(() => freshParser.ParseFile(content!, filePath), token);
-                
-                // Guardamos en caché
-                _documentStore.AddOrUpdate(uri, mql4File, content!);
+                var parser = ResolveParser(language);
+                var filePath = request.TextDocument.Uri.GetFileSystemPath() ?? (language == MqlLanguage.Mql5 ? "unknown.mq5" : "unknown.mq4");
+                mqlFile = parser.ParseFile(content, filePath);
+                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            // 4. GENERAR REPORTE
-            // Aquí usamos 'content!' porque el check de IsNullOrEmpty de arriba nos garantiza que tiene texto.
-            return GenerateReport(mql4File, content!, token);
+            return GenerateReport(mqlFile, content, language, token);
         }
         catch (OperationCanceledException)
         {
@@ -105,17 +126,6 @@ public class DiagnosticHandler : IDocumentDiagnosticHandler
             _logger.LogError(ex, "Diagnostic handler failed.");
             return CreateEmptyReport();
         }
-    }
-
-    private RelatedFullDocumentDiagnosticReport GenerateReport(Mql4File? file, string content, CancellationToken token)
-    {
-        var diagnostics = GenerateDiagnostics(file, content, token);
-        
-        return new RelatedFullDocumentDiagnosticReport
-        {
-            ResultId = Guid.NewGuid().ToString(),
-            Items = diagnostics
-        };
     }
 
     private RelatedFullDocumentDiagnosticReport CreateEmptyReport()
@@ -139,34 +149,30 @@ public class DiagnosticHandler : IDocumentDiagnosticHandler
         };
     }
 
-    private List<Diagnostic> GenerateDiagnostics(Mql4File? mql4File, string content, CancellationToken token)
+    private List<Diagnostic> GenerateDiagnostics(MqlFile? mqlFile, string content, MqlLanguage language, CancellationToken token)
     {
         var diagnostics = new List<Diagnostic>();
-        
-        // Split simple. Para archivos gigantescos sería mejor buscar índices manuales,
-        // pero para MQL4 esto es suficiente.
         var lines = content.Split('\n');
+        var prefix = language == MqlLanguage.Mql5 ? "MQL5" : "MQL4";
 
         for (int i = 0; i < lines.Length; i++)
         {
-            // Verificamos cancelación periódicamente
             if (i % 100 == 0) token.ThrowIfCancellationRequested();
 
             var line = lines[i];
 
-            // 1. Typos
             if (line.Contains("UnkownFunction") || line.Contains("UnkownVariable"))
             {
-                diagnostics.Add(new Diagnostic {
+                diagnostics.Add(new Diagnostic
+                {
                     Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
                     Severity = DiagnosticSeverity.Error,
                     Message = "Potential typo: 'Unkown' should be 'Unknown'",
-                    Code = "MQL4001",
-                    Source = "mql4-lsp"
+                    Code = $"{prefix}001",
+                    Source = "mql-lsp"
                 });
             }
 
-            // 2. OnInit vacío
             if (line.Contains("int OnInit()") && i + 1 < lines.Length)
             {
                 var nextLine = lines[i + 1].Trim();
@@ -177,32 +183,33 @@ public class DiagnosticHandler : IDocumentDiagnosticHandler
                         Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
                         Severity = DiagnosticSeverity.Warning,
                         Message = "OnInit function appears to be empty.",
-                        Code = "MQL4002",
-                        Source = "mql4-lsp"
+                        Code = $"{prefix}002",
+                        Source = "mql-lsp"
                     });
                 }
             }
         }
-        
-        // 3. Símbolos (Underscores)
-        if (mql4File?.Symbols != null)
+
+        if (mqlFile?.Symbols != null)
         {
-            foreach (var symbol in mql4File.Symbols)
+            foreach (var symbol in mqlFile.Symbols)
             {
                 token.ThrowIfCancellationRequested();
 
                 if (symbol.Name.StartsWith("_") && symbol.Kind == SymbolKind.Variable)
                 {
-                    diagnostics.Add(new Diagnostic {
+                    diagnostics.Add(new Diagnostic
+                    {
                         Range = symbol.Range,
                         Severity = DiagnosticSeverity.Hint,
                         Message = $"Variable '{symbol.Name}' starts with underscore",
-                        Code = "MQL4003",
-                        Source = "mql4-lsp"
+                        Code = $"{prefix}003",
+                        Source = "mql-lsp"
                     });
                 }
             }
         }
+
         return diagnostics;
     }
 }
