@@ -53,10 +53,21 @@ public class Mql5HandlersTests
     [Fact]
     public void Fixture_Setup_GlobalSymbolIndex_Is_Empty()
     {
-        // F12 acceptance: the constructor above calls GlobalSymbolIndex.Instance.Clear()
-        // before each test, so the dual-key dictionary must be empty at this point.
+        // F12 acceptance: the fixture's InitializeAsync (and the ctor Clear()) run before
+        // each test, so the dual-key dictionary must be empty at this point.
         var stats = GlobalSymbolIndex.Instance.GetStatistics();
         Assert.Equal(0, stats.FileCount);
+    }
+
+    [Fact]
+    public void Fixture_Pollutes_Index_NextTestStillIsolated()
+    {
+        // A-004: deliberately pollute the shared singleton. The next test in this
+        // collection must still see an empty index (verified by Fixture_Setup_GlobalSymbolIndex_Is_Empty)
+        // without this test calling Clear() itself.
+        GlobalSymbolIndex.Instance.AddFile("/polluted.mq5", MqlLanguage.Mql5,
+            new List<MqlSymbol> { new() { Name = "Polluted", FilePath = "/polluted.mq5" } });
+        Assert.True(GlobalSymbolIndex.Instance.GetStatistics().FileCount > 0);
     }
 
     [Fact]
@@ -91,11 +102,17 @@ public class Mql5HandlersTests
         // Assert
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
+        // A-007: codes are now numeric. MQL5 base = 5000, offsets 001/002/003.
         var codes = report.Items.Select(d => d.Code?.String).Where(c => c != null).ToList();
-        Assert.Contains("MQL5001", codes);
-        Assert.Contains("MQL5002", codes);
-        Assert.Contains("MQL5003", codes);
-        Assert.All(report.Items, d => Assert.StartsWith("MQL5", d.Code?.String ?? ""));
+        Assert.Contains("5001", codes);
+        Assert.Contains("5002", codes);
+        Assert.Contains("5003", codes);
+        Assert.All(report.Items, d =>
+        {
+            var code = d.Code?.String ?? "0";
+            Assert.True(int.TryParse(code, out var n) && n >= 5000 && n < 6000,
+                $"MQL5 diagnostic code '{code}' must be in the 5000-5999 range");
+        });
     }
 
     [Fact]

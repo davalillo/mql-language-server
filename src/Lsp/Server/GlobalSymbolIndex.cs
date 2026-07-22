@@ -21,6 +21,10 @@ public class GlobalSymbolIndex
     // Thread-safe index: symbol name -> list of occurrences across (file, language)
     private readonly ConcurrentDictionary<string, List<SymbolLocation>> _symbolsByName = new();
 
+    // A-010: secondary index (name, language) -> locations, for O(1) FindSymbol(name, lang).
+    // The primary _symbolsByName is kept for the cross-language FindSymbol(name) overload.
+    private readonly ConcurrentDictionary<(string Name, MqlLanguage Language), List<SymbolLocation>> _symbolsByNameAndLanguage = new();
+
     // Track includes/dependencies between files
     private readonly ConcurrentDictionary<string, List<string>> _fileDependencies = new();
 
@@ -87,6 +91,18 @@ public class GlobalSymbolIndex
                         return existing;
                     }
                 });
+
+                // A-010: secondary (name, language) index for O(1) language-filtered lookup.
+                var langKey = (symbol.Name, language);
+                _symbolsByNameAndLanguage.AddOrUpdate(langKey, new List<SymbolLocation> { location }, (key, existing) =>
+                {
+                    lock (existing)
+                    {
+                        existing.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+                        existing.Add(location);
+                        return existing;
+                    }
+                });
             }
         }
     }
@@ -136,6 +152,21 @@ public class GlobalSymbolIndex
                             return existing;
                         }
                     });
+
+                    // A-010: remove from secondary (name, language) index.
+                    var langKey = (symbol.Name, language);
+                    _symbolsByNameAndLanguage.AddOrUpdate(langKey, new List<SymbolLocation>(), (key, existing) =>
+                    {
+                        lock (existing)
+                        {
+                            existing.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+                            if (!existing.Any())
+                            {
+                                _symbolsByNameAndLanguage.TryRemove(key, out _);
+                            }
+                            return existing;
+                        }
+                    });
                 }
             }
 
@@ -158,14 +189,15 @@ public class GlobalSymbolIndex
 
     /// <summary>
     /// Find all symbols with the given name restricted to a specific language.
+    /// Uses the secondary (name, language) index for O(1) lookup (A-010).
     /// </summary>
     public List<SymbolLocation> FindSymbol(string symbolName, MqlLanguage language)
     {
         if (string.IsNullOrEmpty(symbolName))
             return new List<SymbolLocation>();
 
-        return _symbolsByName.TryGetValue(symbolName, out var locations)
-            ? locations.Where(loc => loc.Language == language).ToList()
+        return _symbolsByNameAndLanguage.TryGetValue((symbolName, language), out var locations)
+            ? locations.ToList()
             : new List<SymbolLocation>();
     }
 
@@ -277,6 +309,7 @@ public class GlobalSymbolIndex
         {
             _symbolsByFile.Clear();
             _symbolsByName.Clear();
+            _symbolsByNameAndLanguage.Clear();
             _fileDependencies.Clear();
         }
     }

@@ -264,7 +264,7 @@ public class DiagnosticHandlerTests
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         // Should have at least 2 typo errors (UnkownVariable and UnkownFunction)
-        var typoDiagnostics = report.Items.Where(d => d.Code?.String == "MQL4001").ToList();
+        var typoDiagnostics = report.Items.Where(d => d.Code?.String == "1001").ToList();
         Assert.NotEmpty(typoDiagnostics);
         Assert.True(typoDiagnostics.Count >= 2, $"Expected at least 2 typo diagnostics, got {typoDiagnostics.Count}");
         // All should be errors
@@ -295,7 +295,7 @@ public class DiagnosticHandlerTests
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         // Should have warning for empty OnInit
-        var onInitWarning = report.Items.FirstOrDefault(d => d.Code?.String == "MQL4002");
+        var onInitWarning = report.Items.FirstOrDefault(d => d.Code?.String == "1002");
         Assert.NotNull(onInitWarning);
         Assert.Equal(DiagnosticSeverity.Warning, onInitWarning.Severity);
         Assert.Contains("OnInit", onInitWarning.Message);
@@ -325,7 +325,7 @@ public class DiagnosticHandlerTests
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         // Should have hint for underscore variable
-        var underscoreHint = report.Items.FirstOrDefault(d => d.Code?.String == "MQL4003");
+        var underscoreHint = report.Items.FirstOrDefault(d => d.Code?.String == "1003");
         Assert.NotNull(underscoreHint);
         Assert.Equal(DiagnosticSeverity.Hint, underscoreHint.Severity);
         Assert.Contains("_internalVar", underscoreHint.Message);
@@ -355,10 +355,11 @@ public class DiagnosticHandlerTests
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         // Verify all diagnostic codes are present (DiagnosticCode has String property)
+        // A-007: codes are now numeric (MQL4 base 1000, MQL5 base 5000).
         var codes = report.Items.Select(d => d.Code?.String).Distinct().ToList();
-        Assert.Contains("MQL4001", codes); // Typo errors
-        Assert.Contains("MQL4002", codes); // Empty OnInit warning
-        Assert.Contains("MQL4003", codes); // Underscore variable hint
+        Assert.Contains("1001", codes); // Typo errors
+        Assert.Contains("1002", codes); // Empty OnInit warning
+        Assert.Contains("1003", codes); // Underscore variable hint
         // Verify we have diagnostics of different severities
         Assert.Contains(DiagnosticSeverity.Error, report.Items.Select(d => d.Severity));
         Assert.Contains(DiagnosticSeverity.Warning, report.Items.Select(d => d.Severity));

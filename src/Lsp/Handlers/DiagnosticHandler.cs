@@ -25,6 +25,14 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
     private readonly ILogger<DiagnosticHandler> _logger;
     private readonly IServiceProvider? _serviceProvider;
 
+    // A-007: LSP 3.17 diagnostic codes are string|number. We emit numeric codes in
+    // dedicated ranges so clients can route/interpret them without parsing prefixes.
+    //   MQL4 diagnostics: 1000-1999
+    //   MQL5 diagnostics: 5000-5999
+    // Offsets are shared across both languages (001 typo, 002 empty OnInit, 003 underscore).
+    private const int Mql4DiagnosticBase = 1000;
+    private const int Mql5DiagnosticBase = 5000;
+
     public DiagnosticHandler(
         ILogger<DiagnosticHandler> logger,
         MqlLanguageService languageService,
@@ -153,7 +161,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
     {
         var diagnostics = new List<Diagnostic>();
         var lines = content.Split('\n');
-        var prefix = language == MqlLanguage.Mql5 ? "MQL5" : "MQL4";
+        var baseCode = language == MqlLanguage.Mql5 ? Mql5DiagnosticBase : Mql4DiagnosticBase;
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -168,7 +176,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                     Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
                     Severity = DiagnosticSeverity.Error,
                     Message = "Potential typo: 'Unkown' should be 'Unknown'",
-                    Code = $"{prefix}001",
+                    Code = (baseCode + 1).ToString(),
                     Source = "mql-lsp"
                 });
             }
@@ -183,7 +191,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                         Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
                         Severity = DiagnosticSeverity.Warning,
                         Message = "OnInit function appears to be empty.",
-                        Code = $"{prefix}002",
+                        Code = (baseCode + 2).ToString(),
                         Source = "mql-lsp"
                     });
                 }
@@ -203,7 +211,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                         Range = symbol.Range,
                         Severity = DiagnosticSeverity.Hint,
                         Message = $"Variable '{symbol.Name}' starts with underscore",
-                        Code = $"{prefix}003",
+                        Code = (baseCode + 3).ToString(),
                         Source = "mql-lsp"
                     });
                 }

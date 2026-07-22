@@ -94,6 +94,16 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 GlobalSymbolIndex.Instance.AddFile(filePath, language, mqlFile.Symbols);
 
                 // D2 include resolution: parse included .mqh files under the includer's language key.
+                //
+                // DESIGN WARNING (D2 — intentional, do not change without revisiting the design):
+                // Shared `.mqh` headers are parsed with the includer's parser (Mql4AntlrParser when the
+                // includer is an .mq4 file). This means a `.mqh` that uses MQL5-only syntax (nullptr,
+                // union, enum class, etc.) will produce silent parse errors when included from an MQL4
+                // source. This is an accepted constraint of the dual-key coexistence model: shared
+                // headers MUST be written in the MQL4-compatible subset of MQL5. Do NOT switch the
+                // include parser based on content sniffing here — that would break the single-language
+                // symbol keying that D2 relies on. If a header needs MQL5-only constructs, it must be
+                // included only from MQL5 sources.
                 foreach (var include in mqlFile.Includes)
                 {
                     var includePath = ExtractIncludePath(include);
@@ -153,26 +163,9 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
     /// <summary>
     /// Guards against path traversal in #include resolution: the resolved include path
     /// must remain within the directory tree of the including file. Rejects escapes
-    /// such as <c>#include "../../../etc/passwd"</c>.
+    /// such as <c>#include "../../../etc/passwd"</c> and symlink chains whose real
+    /// target resolves outside the including file's directory.
     /// </summary>
     private static bool IsContainedInWorkspace(string includingFile, string resolvedPath)
-    {
-        if (string.IsNullOrEmpty(includingFile) || string.IsNullOrEmpty(resolvedPath))
-        {
-            return false;
-        }
-
-        var includingDir = Path.GetDirectoryName(Path.GetFullPath(includingFile));
-        var resolvedFull = Path.GetFullPath(resolvedPath);
-        if (includingDir == null)
-        {
-            return false;
-        }
-
-        // Ensure the resolved path is the same as or a descendant of the including file's directory.
-        var normalizedBase = includingDir.EndsWith(Path.DirectorySeparatorChar)
-            ? includingDir
-            : includingDir + Path.DirectorySeparatorChar;
-        return resolvedFull.StartsWith(normalizedBase, StringComparison.OrdinalIgnoreCase);
-    }
+        => PathSecurity.IsContainedInWorkspace(includingFile, resolvedPath);
 }

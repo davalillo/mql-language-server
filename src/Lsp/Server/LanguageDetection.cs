@@ -38,24 +38,24 @@ public static class LanguageDetection
         if (languageId == Constants.Languages.Mql4)
             return MqlLanguage.Mql4;
 
-        if (string.IsNullOrEmpty(languageId))
+        // Unknown or null languageId: fall through to extension/content sniff.
+        // A non-null but unrecognized languageId (e.g. "mqh") must NOT short-circuit
+        // to the MQL4 default; the extension and content carry the real signal.
+        var extension = Path.GetExtension(uri.AbsolutePath);
+
+        if (extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase))
+            return MqlLanguage.Mql5;
+
+        if (extension.Equals(".mq4", StringComparison.OrdinalIgnoreCase))
+            return MqlLanguage.Mql4;
+
+        // Only sniff content for include files (.mqh) regardless of languageId.
+        if (extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
         {
-            var extension = Path.GetExtension(uri.AbsolutePath);
-
-            if (extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase))
-                return MqlLanguage.Mql5;
-
-            if (extension.Equals(".mq4", StringComparison.OrdinalIgnoreCase))
-                return MqlLanguage.Mql4;
-
-            // Only sniff content for include files when the client did not provide a languageId.
-            if (extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
+            foreach (var token in Mql5Tokens)
             {
-                foreach (var token in Mql5Tokens)
-                {
-                    if (content.Contains(token, StringComparison.Ordinal))
-                        return MqlLanguage.Mql5;
-                }
+                if (content.Contains(token, StringComparison.Ordinal))
+                    return MqlLanguage.Mql5;
             }
         }
 

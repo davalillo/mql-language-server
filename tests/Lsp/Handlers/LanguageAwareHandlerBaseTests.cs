@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -84,5 +85,45 @@ public class LanguageAwareHandlerBaseTests
         var handler = new TestHandler(languageService, store, builtins);
 
         Assert.Equal(MqlLanguage.Mql5, handler.ExposeResolveLanguage(uri));
+    }
+
+    [Fact]
+    public void ResolveLanguage_UnopenedMql5File_DetectsFromDiskContent()
+    {
+        // A-003: a file not opened via didOpen must still be detected from its on-disk
+        // content so that MQL5-only tokens (.mqh with nullptr) route to the MQL5 parser.
+        var tempDir = Path.Combine(Path.GetTempPath(), "mql-lsp-langbase-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var filePath = Path.Combine(tempDir, "unopened.mqh");
+        File.WriteAllText(filePath, "void f() { int* p = nullptr; }");
+
+        try
+        {
+            var loggerMock = new Mock<ILogger<MqlLanguageService>>();
+            var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock.Object);
+            var store = new OpenDocumentStore();
+            var builtins = Array.Empty<IMqlBuiltins>();
+            var handler = new TestHandler(languageService, store, builtins);
+
+            var uri = new Uri(filePath);
+            Assert.Equal(MqlLanguage.Mql5, handler.ExposeResolveLanguage(uri));
+        }
+        finally
+        {
+            try { if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true); } catch { }
+        }
+    }
+
+    [Fact]
+    public void ResolveLanguage_NonExistentFile_FallsBackToMql4()
+    {
+        var loggerMock = new Mock<ILogger<MqlLanguageService>>();
+        var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock.Object);
+        var store = new OpenDocumentStore();
+        var builtins = Array.Empty<IMqlBuiltins>();
+        var handler = new TestHandler(languageService, store, builtins);
+
+        var uri = new Uri("file:///nonexistent/path.mqh");
+        Assert.Equal(MqlLanguage.Mql4, handler.ExposeResolveLanguage(uri));
     }
 }

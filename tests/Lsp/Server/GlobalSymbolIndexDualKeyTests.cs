@@ -46,4 +46,54 @@ public class GlobalSymbolIndexDualKeyTests
         Assert.Contains(results, r => r.Language == MqlLanguage.Mql4);
         Assert.Contains(results, r => r.Language == MqlLanguage.Mql5);
     }
+
+    [Fact]
+    public void FindSymbol_ByLanguage_DoesNotLeak_AfterReAdd()
+    {
+        // A-010: re-adding a file for the same (file, language) must replace, not duplicate,
+        // entries in the secondary (name, language) index.
+        var sym1 = new MqlSymbol { Name = "Foo", FilePath = "/x.mq4" };
+        GlobalSymbolIndex.Instance.AddFile("/x.mq4", MqlLanguage.Mql4, new List<MqlSymbol> { sym1 });
+        var sym2 = new MqlSymbol { Name = "Foo", FilePath = "/x.mq4" };
+        GlobalSymbolIndex.Instance.AddFile("/x.mq4", MqlLanguage.Mql4, new List<MqlSymbol> { sym2 });
+
+        var results = GlobalSymbolIndex.Instance.FindSymbol("Foo", MqlLanguage.Mql4);
+        Assert.Single(results);
+    }
+
+    [Fact]
+    public void FindSymbol_ByLanguage_UnknownName_ReturnsEmpty()
+    {
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("DoesNotExist", MqlLanguage.Mql4));
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("DoesNotExist", MqlLanguage.Mql5));
+    }
+
+    [Fact]
+    public void FindSymbol_NameOverload_UnknownName_ReturnsEmpty()
+    {
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("DoesNotExist"));
+    }
+
+    [Fact]
+    public void Clear_RemovesSecondaryIndexEntries()
+    {
+        var sym = new MqlSymbol { Name = "Bar", FilePath = "/clear.mq4" };
+        GlobalSymbolIndex.Instance.AddFile("/clear.mq4", MqlLanguage.Mql4, new List<MqlSymbol> { sym });
+        Assert.NotEmpty(GlobalSymbolIndex.Instance.FindSymbol("Bar", MqlLanguage.Mql4));
+
+        GlobalSymbolIndex.Instance.Clear();
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("Bar", MqlLanguage.Mql4));
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("Bar"));
+    }
+
+    [Fact]
+    public void RemoveFile_RemovesSecondaryIndexEntries()
+    {
+        var sym = new MqlSymbol { Name = "Qux", FilePath = "/rm.mq4" };
+        GlobalSymbolIndex.Instance.AddFile("/rm.mq4", MqlLanguage.Mql4, new List<MqlSymbol> { sym });
+        Assert.NotEmpty(GlobalSymbolIndex.Instance.FindSymbol("Qux", MqlLanguage.Mql4));
+
+        GlobalSymbolIndex.Instance.RemoveFile("/rm.mq4", MqlLanguage.Mql4);
+        Assert.Empty(GlobalSymbolIndex.Instance.FindSymbol("Qux", MqlLanguage.Mql4));
+    }
 }

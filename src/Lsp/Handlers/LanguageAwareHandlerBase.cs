@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,12 +56,29 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
 
     /// <summary>
     /// Resolve the language for a document URI, defaulting to MQL4.
+    /// For files not yet opened via didOpen, reads the file from disk (when it exists)
+    /// so that content sniffing on .mqh headers routes to the correct parser.
     /// </summary>
     protected MqlLanguage ResolveLanguage(Uri uri)
     {
-        return _documentStore.TryGetLanguage(uri, out var language)
-            ? language
-            : LanguageDetection.Detect(uri, null, string.Empty);
+        if (_documentStore.TryGetLanguage(uri, out var language))
+            return language;
+
+        // For files not yet opened via didOpen, read content from disk for accurate sniffing.
+        if (uri.IsFile && File.Exists(uri.AbsolutePath))
+        {
+            try
+            {
+                var content = File.ReadAllText(uri.AbsolutePath);
+                return LanguageDetection.Detect(uri, null, content);
+            }
+            catch
+            {
+                // Fall through to default detection if the file cannot be read.
+            }
+        }
+
+        return LanguageDetection.Detect(uri, null, string.Empty);
     }
 
     /// <summary>

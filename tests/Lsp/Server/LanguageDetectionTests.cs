@@ -71,4 +71,27 @@ public class LanguageDetectionTests
         var result = LanguageDetection.Detect(uri, null, "using System;");
         Assert.Equal(MqlLanguage.Mql4, result);
     }
+
+    [Fact]
+    public void Detect_WithUnknownLanguageId_FallsBackToExtension()
+    {
+        // Unknown languageId ("mqh" or anything else) must still trigger extension sniff.
+        var mq5Uri = new Uri("file:///x.mq5");
+        Assert.Equal(MqlLanguage.Mql5, LanguageDetection.Detect(mq5Uri, "unknown-id", "int start(){}"));
+
+        var mq4Uri = new Uri("file:///x.mq4");
+        Assert.Equal(MqlLanguage.Mql4, LanguageDetection.Detect(mq4Uri, "unknown-id", "int start(){}"));
+    }
+
+    [Fact]
+    public void Detect_WithMqhLanguageId_SniffsContent()
+    {
+        // languageId "mqh" is unknown to the server; content sniff must still apply.
+        var uri = new Uri("file:///x.mqh");
+        var mql5Content = "void f() { int* p = nullptr; }";
+        Assert.Equal(MqlLanguage.Mql5, LanguageDetection.Detect(uri, "mqh", mql5Content));
+
+        var mql4Content = "int start() { return(0); }";
+        Assert.Equal(MqlLanguage.Mql4, LanguageDetection.Detect(uri, "mqh", mql4Content));
+    }
 }
