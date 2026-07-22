@@ -1,4 +1,5 @@
 using Xunit;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
@@ -10,9 +11,17 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
     /// <summary>
     /// Tests for editing handlers (Rename, DocumentFormatting, RangeFormatting, OnTypeFormatting).
+    /// S-003: added behavior tests (file-not-found + happy path) for RenameHandler (17.5%).
     /// </summary>
     public class EditingHandlersTests
     {
+        private static string WriteTempFile(string fileName, string content)
+        {
+            var path = Path.Combine(Path.GetTempPath(), fileName);
+            File.WriteAllText(path, content);
+            return path;
+        }
+
         #region RenameHandlerTests
 
         [Fact]
@@ -26,6 +35,65 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
 
             // Assert
             Assert.NotNull(handler);
+        }
+
+        [Fact]
+        public async Task RenameHandler_ReturnsNull_WhenFileNotFoundAsync()
+        {
+            // Arrange
+            var handler = new RenameHandler(
+                Mock.Of<ILogger<RenameHandler>>(),
+                new Mql4AntlrParser(),
+                new OpenDocumentStore());
+
+            var request = new RenameParams
+            {
+                TextDocument = new TextDocumentIdentifier("/nonexistent/file.mq4"),
+                Position = new Position(0, 0),
+                NewName = "NewName"
+            };
+
+            // Act
+            var result = await handler.Handle(request, CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task RenameHandler_ReturnsWorkspaceEdit_WhenSymbolFoundAsync()
+        {
+            // Arrange - a file with a function that can be renamed
+            var content = "double CalculateSMA(int period)\n{\n    return 0.0;\n}\n\nvoid OnTick()\n{\n    double sma = CalculateSMA(20);\n}\n";
+            var path = WriteTempFile("TestRename.mq4", content);
+
+            try
+            {
+                var handler = new RenameHandler(
+                    Mock.Of<ILogger<RenameHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Position on CalculateSMA declaration (line 0)
+                var request = new RenameParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(0, 10),
+                    NewName = "ComputeSMA"
+                };
+
+                // Act
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Assert - should return a WorkspaceEdit with at least one TextEdit
+                Assert.NotNull(result);
+                Assert.NotNull(result.Changes);
+                Assert.True(result.Changes.Count > 0, "Should have at least one document change");
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         #endregion
