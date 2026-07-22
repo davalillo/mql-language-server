@@ -136,7 +136,7 @@ namespace MqlLanguageServer
                         // Esto está bien para forzar la configuración de sync
                         .OnTextDocumentSync(
                             TextDocumentSyncKind.Full,
-                            uri => new TextDocumentAttributes(uri, uri.Path.EndsWith(".mq5") ? "mql5" : "mql4"),
+                            uri => new TextDocumentAttributes(uri, LanguageDetection.GetLanguageIdFromUri(uri.ToUri())),
                             _ => { }, _ => { }, _ => { }, _ => { },
                             new TextDocumentSyncRegistrationOptions())
                         

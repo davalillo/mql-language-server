@@ -94,4 +94,17 @@ public class LanguageDetectionTests
         var mql4Content = "int start() { return(0); }";
         Assert.Equal(MqlLanguage.Mql4, LanguageDetection.Detect(uri, "mqh", mql4Content));
     }
+
+    [Theory]
+    [InlineData("file:///x.mq5", "mql5")]
+    [InlineData("file:///x.MQ5", "mql5")]
+    [InlineData("file:///x.mq4", "mql4")]
+    [InlineData("file:///x.mqh", "mql4")]
+    [InlineData("file:///backup.mq5.bak", "mql4")]
+    [InlineData("file:///noext", "mql4")]
+    public void GetLanguageIdFromUri_UsesExtensionOnly(string uriString, string expectedLanguageId)
+    {
+        var uri = new Uri(uriString);
+        Assert.Equal(expectedLanguageId, LanguageDetection.GetLanguageIdFromUri(uri));
+    }
 }

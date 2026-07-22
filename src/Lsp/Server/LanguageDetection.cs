@@ -61,4 +61,24 @@ public static class LanguageDetection
 
         return MqlLanguage.Mql4; // default per REQ-LD-03
     }
+
+    /// <summary>
+    /// Resolve the LSP languageId string ("mql4" or "mql5") for a document URI based on
+    /// its file extension only. Used by the text-document sync registration to route
+    /// documents to the correct language without inspecting content.
+    /// </summary>
+    /// <remarks>
+    /// Uses <see cref="Path.GetExtension(string)"/> rather than <see cref="string.EndsWith(string)"/>
+    /// so that a file like <c>backup.mq5.bak</c> is NOT misclassified as MQL5 — only a real
+    /// <c>.mq5</c> extension routes to MQL5. The <c>.mqh</c> include extension and any other
+    /// extension default to MQL4; <c>.mqh</c> content sniffing is handled separately by
+    /// <see cref="Detect(Uri, string?, string)"/> once the document is opened.
+    /// </remarks>
+    public static string GetLanguageIdFromUri(Uri uri)
+    {
+        var extension = Path.GetExtension(uri.AbsolutePath);
+        return extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase)
+            ? Constants.Languages.Mql5
+            : Constants.Languages.Mql4;
+    }
 }
