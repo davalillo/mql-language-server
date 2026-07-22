@@ -4,6 +4,7 @@ using MqlLanguageServer.Parser;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime;
 
 namespace MqlLanguageServer.Tests.Performance;
 
@@ -142,46 +143,44 @@ public class PerformanceTests
     }
 
     /// <summary>
-    /// Test memory usage with large file parsing
+    /// Test that parsing a large file multiple times does not leak memory.
+    /// Deterministic: uses WeakReference to verify that parse artifacts are
+    /// collectible after strong references are dropped. This is immune to
+    /// heap state from other tests (unlike GC.GetTotalMemory delta, which
+    /// includes LOH fragmentation and live statics from the rest of the suite).
+    /// The parser is stateless (constructor: "No state"), so parse trees
+    /// should be fully collectible once the caller drops its reference.
     /// </summary>
     [Fact]
     public void LargeFile_MemoryUsage_ShouldBeReasonable()
     {
-        // Arrange
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        var memoryBefore = GC.GetTotalMemory(false);
-
-        // Act - Parse large file multiple times
+        // Act - Parse the large file multiple times, keeping a weak reference
+        // to each result. We use a helper method so the JIT cannot extend the
+        // lifetime of local parse artifacts across the GC.Collect boundary.
         const int iterations = 5;
-        for (int i = 0; i < iterations; i++)
-        {
-            var file = _parser.ParseFile(_largeTestFileContent, _largeTestFilePath);
-            Assert.NotNull(file);
-        }
+        var (weakRefs, lastSymbolCount) = ParseFileAndTrackWeakRefs(iterations);
 
-        // Force cleanup
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+        // Sanity check: the parser should have actually parsed symbols
+        Assert.True(lastSymbolCount > 0, "Should have parsed symbols from large file");
 
-        var memoryAfter = GC.GetTotalMemory(false);
-        var memoryUsed = memoryAfter - memoryBefore;
-        var memoryUsedMB = memoryUsed / (1024.0 * 1024.0);
+        // Drop any implicit references and force a compacting GC.
+        // LOH compaction is needed because the 1.4MB fixture string lives in the LOH.
+        ForceGarbageCollection();
 
-        // Assert - Memory usage should be reasonable
-        // Less than 70MB for 5 iterations of large file parsing
-        var maxAcceptableMemoryMB = 70.0;
-        Assert.True(memoryUsedMB < maxAcceptableMemoryMB,
-            $"Memory usage {memoryUsedMB:F2}MB should be < {maxAcceptableMemoryMB}MB");
+        // Assert - all parse artifacts should be dead. If any weak reference
+        // is still alive, the parser is retaining references to parsed files
+        // (a real memory leak). This is deterministic: either the objects are
+        // reachable from a root, or they are not.
+        var aliveCount = weakRefs.Count(wr => wr.IsAlive);
+        Assert.True(aliveCount == 0,
+            $"{aliveCount}/{iterations} parsed files survived GC. " +
+            "The parser is retaining references to parse artifacts — a memory leak. " +
+            $"Symbols in last parse: {lastSymbolCount}");
 
-        Console.WriteLine($"\nMemory Performance:");
-        Console.WriteLine($"  Memory before: {memoryBefore / (1024.0 * 1024.0):F2}MB");
-        Console.WriteLine($"  Memory after: {memoryAfter / (1024.0 * 1024.0):F2}MB");
-        Console.WriteLine($"  Memory used: {memoryUsedMB:F2}MB");
+        Console.WriteLine($"\nMemory Leak Check (deterministic, WeakReference):");
         Console.WriteLine($"  Iterations: {iterations}");
+        Console.WriteLine($"  All artifacts collected: ✓");
+        Console.WriteLine($"  Symbols parsed (last): {lastSymbolCount}");
     }
 
     #endregion
@@ -367,6 +366,41 @@ public class PerformanceTests
     #endregion
 
     #region Helper Methods
+
+    /// <summary>
+    /// Forces a compacting garbage collection to reclaim all unreachable objects,
+    /// including large objects in the LOH. The 1.4MB fixture string lives in the
+    /// LOH, which is NOT compacted by default — we must opt in via
+    /// GCSettings.LargeObjectHeapCompactionMode = CompactOnce before collecting.
+    /// </summary>
+    private static void ForceGarbageCollection()
+    {
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+        GC.WaitForPendingFinalizers();
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+    }
+
+    /// <summary>
+    /// Parses the large test file multiple times, returning weak references to
+    /// each result plus the symbol count from the last parse. Extracted as a
+    /// separate method so the JIT cannot extend the lifetime of local parse
+    /// artifacts across the GC.Collect boundary in the calling test.
+    /// </summary>
+    private (List<WeakReference> weakRefs, int lastSymbolCount) ParseFileAndTrackWeakRefs(int iterations)
+    {
+        var weakRefs = new List<WeakReference>(iterations);
+        var symbolCount = 0;
+        for (int i = 0; i < iterations; i++)
+        {
+            var file = _parser.ParseFile(_largeTestFileContent, _largeTestFilePath);
+            Assert.NotNull(file);
+            symbolCount = file.Symbols.Count;
+            weakRefs.Add(new WeakReference(file));
+        }
+        return (weakRefs, symbolCount);
+    }
 
     private double MeasureParseTime(string content, string filePath)
     {
