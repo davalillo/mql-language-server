@@ -8,7 +8,6 @@ using Mql5Grammar;
 using MqlLanguageServer.Models;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using LspPosition = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
-using LspSymbolKind = OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind;
 
 namespace MqlLanguageServer.Mql5.Parser;
 
@@ -125,7 +124,7 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         var symbol = new MqlSymbol
         {
             Name = name,
-            Kind = LspSymbolKind.Enum,
+            Kind = SymbolType.Enum.ToLspSymbolKind(),
             SymbolType = SymbolType.Enum,
             Range = range,
             SelectionRange = range,
@@ -151,7 +150,7 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
             var symbol = new MqlSymbol
             {
                 Name = name,
-                Kind = LspSymbolKind.Function,
+                Kind = SymbolType.Function.ToLspSymbolKind(),
                 SymbolType = SymbolType.Function,
                 Range = fullRange,
                 Detail = $"function {context.type().GetText()} {name}",
@@ -199,7 +198,7 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
                 var symbol = new MqlSymbol
                 {
                     Name = name,
-                    Kind = LspSymbolKind.Variable,
+                    Kind = SymbolType.Variable.ToLspSymbolKind(),
                     SymbolType = SymbolType.Variable,
                     Range = range,
                     SelectionRange = range,
@@ -269,9 +268,7 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         return new MqlSymbol
         {
             Name = name,
-            Kind = symbolType == SymbolType.Class ? LspSymbolKind.Class
-                : symbolType == SymbolType.Interface ? LspSymbolKind.Interface
-                : LspSymbolKind.Struct,
+            Kind = symbolType.ToLspSymbolKind(),
             SymbolType = symbolType,
             Range = range,
             SelectionRange = range,

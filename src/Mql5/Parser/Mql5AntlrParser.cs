@@ -9,7 +9,6 @@ using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Parser;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using LspPosition = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
-using LspSymbolKind = OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind;
 
 namespace MqlLanguageServer.Mql5.Parser;
 
@@ -164,7 +163,7 @@ public class Mql5AntlrParser : IMqlParser
             return new MqlSymbol
             {
                 Name = identifier,
-                Kind = LspSymbolKind.Function,
+                Kind = SymbolType.Function.ToLspSymbolKind(),
                 SymbolType = SymbolType.Function,
                 Detail = "MQL5 Built-in",
                 Range = new LspRange(
