@@ -115,6 +115,12 @@ public class Mql5GrammarTests
         ParseWithoutErrors("void f() { int* p = new int; delete p; }");
     }
 
+    [Fact]
+    public void Parses_PointerDerefWithParens()
+    {
+        ParseWithoutErrors("class C { public: void f() {} }; void g() { C* p = new C(); (*p).f(); delete p; }");
+    }
+
     private sealed class FailOnSyntaxErrorListener : IAntlrErrorListener<IToken>
     {
         private readonly List<string> _errors;

@@ -416,7 +416,7 @@ expression
     | expression LPAREN argumentList? RPAREN                # functionCallExpr
     | expression (INC | DEC)                                # postfixExpr
     | (INC | DEC) expression                                # prefixExpr
-    | (ADD | SUB | BIT_NOT | LOG_NOT) expression            # unaryExpr
+    | (ADD | SUB | BIT_NOT | LOG_NOT | MUL) expression        # unaryExpr
     | LPAREN type RPAREN expression                         # castExpr
     | K_SIZEOF LPAREN (type | expression) RPAREN            # sizeofExpr
     | K_NEW type (LPAREN argumentList? RPAREN)?             # newExpr
