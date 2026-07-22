@@ -23,7 +23,7 @@
     <Authors>MQL Language Server Team</Authors>
     <Description>Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5)</Description>
     <PackageTags>lsp;mql4;mql5;metatrader;language-server</PackageTags>
-    <RepositoryUrl>https://github.com/davalillo/mql4-language-server</RepositoryUrl>
+    <RepositoryUrl>https://github.com/davalillo/mql-language-server</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 

@@ -1,3 +1,32 @@
+## [Unreleased]
+
+### Added
+- feat: MQL5 language support (first-class .mq5/.mqh parsing and LSP features)
+  - Dual ANTLR grammars for MQL4 and MQL5 with isolated generated namespaces
+  - MQL5 syntax coverage: classes, structs, interfaces, inheritance, templates, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, references, `using`, `#resource`, init lists, `new`/`delete`
+  - MQL5 built-in functions and predefined variables registry (`PositionGetSymbol`, `_Digits`, `_Point`, `_Symbol`, `_Period`, etc.)
+  - MQL5 LSP handlers: hover, definition, completion, diagnostics, document symbol, references, signature help, folding, formatting, and all registered sync handlers
+  - MQL5 diagnostic code range (`5000-5999`) so users and CI can distinguish MQL4 (`4000-4999`) from MQL5 issues
+  - End-to-end integration test covering didOpen → hover → definition → completion → diagnostics for a `.mq5` file
+  - Fixture suite with real MQL5 constructs for parser regression testing
+
+### Changed
+- **BREAKING**: Project, package, and binary renamed from `mql4-language-server` to `mql-language-server`
+  - Binary: `mql-lsp-server`
+  - Log file: `mql-lsp-server.log`
+  - Package id: `mql-language-server`
+  - Update editor configuration and CI scripts accordingly when upgrading from pre-1.x releases
+
+### Fixed
+- fix: DiagnosticHandler re-enabled in `Program.cs` (was commented out); MQL4 diagnostics are now published as well as MQL5 diagnostics
+- fix: GlobalSymbolIndex uses dual-key `(filePath, MqlLanguage)` so MQL4 and MQL5 files with the same include path coexist without collision
+
+### Technical Details
+- Build: 0 Warnings, 0 Errors
+- Tests: full suite green (MQL4 regression tests unchanged + new MQL5 tests)
+- Parser: Mql4AntlrParser and Mql5AntlrParser share `IMqlParser` via `MqlLanguageService`
+- Compatibility: breaking rename documented above; no behavioral regressions for MQL4
+
 ## [1.11.4] - 2026-01-16
 
 ### Fixed

@@ -4,16 +4,38 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
 
-Language Server Protocol (LSP) implementation for MQL and MQL5 (MetaTrader 4/5). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.. Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
+Language Server Protocol (LSP) implementation for MQL4 and MQL5 (MetaTrader 4/5). Provides IDE features like auto-completion, go-to-definition, hover info, and symbol navigation.
 
 ## Features
 
-- Symbol extraction (functions, variables, includes)
+- Symbol extraction (functions, variables, classes, structs, interfaces, enums, includes)
 - Go to Definition
 - Find All References
 - Document Symbols
 - Completion
 - Hover
+- Diagnostics
+
+## MQL5 Support
+
+This release adds first-class MQL5 support while keeping MQL4 behavior intact:
+
+- `.mq5` and `.mqh` files are recognized automatically.
+- MQL5-specific syntax is parsed: classes, structs, interfaces, inheritance, templates, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, reference parameters, `using`, `#resource`, initialization lists, and heap `new`/`delete`.
+- MQL5 built-in functions and predefined variables are included in completion and hover.
+- Diagnostics for MQL5 files use a distinct `MQL5xxx` code range so CI filters can separate MQL4 and MQL5 issues.
+
+## Breaking Rename
+
+The project, package, and binary were renamed from `mql4-language-server` to `mql-language-server` to reflect dual MQL4/MQL5 support.
+
+| Before | After |
+|--------|-------|
+| Binary | `mql4-lsp-server` → `mql-lsp-server` |
+| Package | `mql4-language-server` → `mql-language-server` |
+| Log file | `mql4-lsp-server.log` → `mql-lsp-server.log` |
+
+If you are upgrading from a pre-1.x release, update your editor configuration and CI scripts to use the new binary/package name.
 
 ## Decisiones Tecnológicas
 
@@ -173,32 +195,39 @@ Un parser simple que funciona es mejor que uno complejo que falla.
 ### Reconstruir Parser ANTLR
 
 ```bash
-# Build completo (regenera parser automáticamente)
+# Build completo (regenera parsers automáticamente)
 dotnet build -c Release
 
 # Los archivos se generan en Parser/Generated/:
+# MQL4 namespace Mql4Grammar:
 # - Mql4GrammarParser.cs
 # - Mql4GrammarLexer.cs
 # - Mql4GrammarBaseVisitor.cs
 # - Mql4GrammarListener.cs
 # - Mql4GrammarVisitor.cs
+# MQL5 namespace Mql5Grammar:
+# - Mql5GrammarParser.cs
+# - Mql5GrammarLexer.cs
+# - Mql5GrammarBaseVisitor.cs
+# - Mql5GrammarListener.cs
+# - Mql5GrammarVisitor.cs
 ```
 
 No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 
 ### Estado Actual
 
-- ✅ Parser ANTLR funcionando al 100%
-- ✅ 13 símbolos parseados correctamente
-- ✅ 98 completions disponibles (builtins + símbolos locales)
-- ✅ LSP Server Core (Fases 3.5-3.8 COMPLETADAS)
+- ✅ Parsers ANTLR duales funcionando para MQL4 y MQL5
+- ✅ Símbolos parseados: funciones, variables, includes, clases, structs, interfaces, enums (MQL5)
+- ✅ Completions disponibles: builtins MQL4/MQL5 + símbolos locales
+- ✅ LSP Server Core
   - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
-  - CompletionHandler, HoverHandler
+  - CompletionHandler, HoverHandler, DiagnosticHandler
   - TextDocumentSync handlers (Open/Close/Change)
 - ✅ Program Entry Point con stdio transport
-- ✅ Tests Unitarios (Fase 4): 11 tests implementados y pasando
-- ✅ Standalone Compilation (Fase 5)
-  - Binarios: Linux x64 (71MB), macOS x64 (71MB), Windows x64 (72MB)
+- ✅ Tests Unitarios: suite MQL4 intacta + tests MQL5 de handlers, integración y fixtures
+- ✅ Standalone Compilation
+  - Binarios: Linux x64, macOS x64, Windows x64
   - Build scripts: build.sh (Linux/macOS), build.ps1 (Windows)
 - ✅ CI/CD: GitHub Actions con matrix builds
 - ✅ NuGet Packaging: pack.ps1 script disponible
