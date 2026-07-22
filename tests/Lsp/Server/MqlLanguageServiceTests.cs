@@ -9,20 +9,20 @@ namespace MqlLanguageServer.Tests.Lsp.Server;
 public class MqlLanguageServiceTests
 {
     [Fact]
-    public void GetParser_Mql4_Returns_Mql4AntlrParser_Instance()
+    public void ResolveParser_Mql4_Returns_Mql4AntlrParser_Instance()
     {
         var service = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser());
-        var parser = service.GetParser(MqlLanguage.Mql4);
+        var parser = service.ResolveParser(MqlLanguage.Mql4);
 
         Assert.NotNull(parser);
         Assert.IsType<Mql4AntlrParser>(parser);
     }
 
     [Fact]
-    public void GetParser_Mql5_Returns_Mql5AntlrParser_Instance()
+    public void ResolveParser_Mql5_Returns_Mql5AntlrParser_Instance()
     {
         var service = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser());
-        var parser = service.GetParser(MqlLanguage.Mql5);
+        var parser = service.ResolveParser(MqlLanguage.Mql5);
 
         Assert.NotNull(parser);
         Assert.IsType<Mql5AntlrParser>(parser);

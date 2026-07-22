@@ -37,7 +37,7 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
     /// </summary>
     protected IMqlParser ResolveParser(MqlLanguage language)
     {
-        return _languageService.GetParser(language);
+        return _languageService.ResolveParser(language);
     }
 
     /// <summary>

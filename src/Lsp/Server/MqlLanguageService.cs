@@ -8,7 +8,9 @@ namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
 /// Resolves the correct parser for a given MQL language.
-/// Slice 1 skeleton: MQL4 parser is wired; MQL5 parser returns null until Slice 2.
+/// Both MQL4 and MQL5 parsers are required (constructor throws ArgumentNullException on null);
+/// the transient null-guard that existed during Slice 1 was removed once Slice 2 wired the real
+/// <see cref="Mql5AntlrParser"/>.
 /// </summary>
 public class MqlLanguageService
 {
@@ -24,10 +26,11 @@ public class MqlLanguageService
     }
 
     /// <summary>
-    /// Get the parser for the requested language.
-    /// Slice 2: MQL5 parser is now registered.
+    /// Resolve the parser for the requested language.
     /// </summary>
-    public IMqlParser GetParser(MqlLanguage language)
+    /// <param name="language">MQL language variant to resolve a parser for.</param>
+    /// <returns>The <see cref="IMqlParser"/> for <paramref name="language"/>.</returns>
+    public IMqlParser ResolveParser(MqlLanguage language)
     {
         if (language == MqlLanguage.Mql5)
         {
