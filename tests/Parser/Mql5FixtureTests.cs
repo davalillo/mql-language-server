@@ -33,6 +33,8 @@ public class Mql5FixtureTests
 
         Assert.NotNull(file);
         Assert.Equal(MqlLanguage.Mql5, file.Language);
+        // A clean fixture must not produce any ANTLR syntax errors.
+        Assert.Empty(file.SyntaxErrors);
         return file;
     }
 

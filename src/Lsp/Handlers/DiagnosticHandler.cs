@@ -163,6 +163,28 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         var lines = content.Split('\n');
         var baseCode = language == MqlLanguage.Mql5 ? Mql5DiagnosticBase : Mql4DiagnosticBase;
 
+        // Publish real syntax errors from the parser.
+        // ANTLR uses 1-based lines and 0-based columns; LSP uses 0-based for both.
+        if (mqlFile?.SyntaxErrors != null)
+        {
+            foreach (var syntaxError in mqlFile.SyntaxErrors)
+            {
+                token.ThrowIfCancellationRequested();
+
+                var length = syntaxError.OffendingSymbol?.Length ?? 1;
+                diagnostics.Add(new Diagnostic
+                {
+                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                        syntaxError.Line - 1, syntaxError.Column,
+                        syntaxError.Line - 1, syntaxError.Column + length),
+                    Severity = DiagnosticSeverity.Error,
+                    Message = syntaxError.Message,
+                    Code = (baseCode + 100).ToString(),  // 1100 for MQL4, 5100 for MQL5
+                    Source = "mql-lsp"
+                });
+            }
+        }
+
         for (int i = 0; i < lines.Length; i++)
         {
             if (i % 100 == 0) token.ThrowIfCancellationRequested();

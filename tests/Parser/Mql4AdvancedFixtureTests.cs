@@ -36,6 +36,8 @@ public class Mql4AdvancedFixtureTests
         var file = parser.ParseFileFromPath(path);
 
         Assert.NotNull(file);
+        // A clean fixture must not produce any ANTLR syntax errors.
+        Assert.Empty(file.SyntaxErrors);
         return file;
     }
 

@@ -32,6 +32,8 @@ public class Mql5AntlrParser : IMqlParser
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
         var symbolsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
 
+        var errorListener = new Mql5SyntaxErrorListener();
+
         try
         {
             var inputStream = new AntlrInputStream(content);
@@ -40,7 +42,7 @@ public class Mql5AntlrParser : IMqlParser
             var parser = new Mql5GrammarParser(tokenStream);
 
             parser.RemoveErrorListeners();
-            parser.AddErrorListener(new Mql5SyntaxErrorListener());
+            parser.AddErrorListener(errorListener);
 
             var tree = parser.compilationUnit();
             var visitor = new Mql5SymbolVisitor(filePath);
@@ -53,11 +55,14 @@ public class Mql5AntlrParser : IMqlParser
 
             BuildSymbolIndex(parsedFile, symbolsByName);
 
+            parsedFile.SyntaxErrors = errorListener.Errors;
             return parsedFile;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error parsing MQL5 file: {ex.Message}");
+            // Preserve any syntax errors collected before the exception
+            parsedFile.SyntaxErrors = errorListener.Errors;
             return parsedFile;
         }
     }
@@ -613,8 +618,20 @@ public class Mql5AntlrParser : IMqlParser
 
     private sealed class Mql5SyntaxErrorListener : IAntlrErrorListener<IToken>
     {
+        /// <summary>
+        /// Collected syntax errors. Available after parsing completes.
+        /// </summary>
+        public List<SyntaxError> Errors { get; } = new();
+
         public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
         {
+            Errors.Add(new SyntaxError
+            {
+                Line = line,
+                Column = charPositionInLine,
+                Message = msg,
+                OffendingSymbol = offendingSymbol?.Text
+            });
             Console.Error.WriteLine($"MQL5 syntax error at line {line}:{charPositionInLine} - {msg}");
         }
     }

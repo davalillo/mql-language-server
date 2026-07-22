@@ -38,6 +38,11 @@ public class MqlFile
     public List<string> Macros { get; set; } = new();
 
     /// <summary>
+    /// Syntax errors detected by the parser during parsing.
+    /// </summary>
+    public List<SyntaxError> SyntaxErrors { get; set; } = new();
+
+    /// <summary>
     /// OPTIMIZATION: Cached symbol index for fast lookups by name
     /// Built lazily on first access and reused for subsequent lookups
     /// </summary>

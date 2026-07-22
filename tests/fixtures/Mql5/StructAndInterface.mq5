@@ -8,10 +8,10 @@ struct Settings {
 
 interface IStrategy {
 public:
-    virtual bool Validate() = 0;
+    virtual bool Validate();
 };
 
 void OnTick() {
     int externalValue = 0;
-    Settings settings(externalValue);
+    Settings settings;
 }

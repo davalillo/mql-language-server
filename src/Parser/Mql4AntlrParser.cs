@@ -37,6 +37,8 @@ namespace MqlLanguageServer.Parser
             var parsedFile = new Mql4File();
             var symbolsByName = new Dictionary<string, List<Mql4Symbol>>(StringComparer.OrdinalIgnoreCase);
 
+            var errorListener = new SyntaxErrorListener();
+
             try
             {
                 // Create input stream from content
@@ -53,7 +55,7 @@ namespace MqlLanguageServer.Parser
 
                 // Add error listener
                 parser.RemoveErrorListeners();
-                parser.AddErrorListener(new SyntaxErrorListener());
+                parser.AddErrorListener(errorListener);
 
                 // Parse the compilation unit
                 var tree = parser.compilationUnit();
@@ -74,12 +76,15 @@ namespace MqlLanguageServer.Parser
                 // Build index of symbols by name
                 BuildSymbolIndex(parsedFile, symbolsByName);
 
+                parsedFile.SyntaxErrors = errorListener.Errors;
                 return parsedFile;
             }
             catch (Exception ex)
             {
                 // Log error but continue - return file with any symbols found before error
                 Console.WriteLine($"Error parsing MQL4 file: {ex.Message}");
+                // Preserve any syntax errors collected before the exception
+                parsedFile.SyntaxErrors = errorListener.Errors;
                 return parsedFile;
             }
         }
@@ -904,8 +909,20 @@ namespace MqlLanguageServer.Parser
     /// </summary>
     public class SyntaxErrorListener : IAntlrErrorListener<IToken>
     {
+        /// <summary>
+        /// Collected syntax errors. Available after parsing completes.
+        /// </summary>
+        public List<SyntaxError> Errors { get; } = new();
+
         public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
         {
+            Errors.Add(new SyntaxError
+            {
+                Line = line,
+                Column = charPositionInLine,
+                Message = msg,
+                OffendingSymbol = offendingSymbol?.Text
+            });
             Console.Error.WriteLine($"Syntax error at line {line}:{charPositionInLine} - {msg}");
         }
     }
