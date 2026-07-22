@@ -27,4 +27,18 @@ public class MqlLanguageServiceTests
         Assert.NotNull(parser);
         Assert.IsType<Mql5AntlrParser>(parser);
     }
+
+    [Theory]
+    [InlineData(MqlLanguage.Mql4)]
+    [InlineData((MqlLanguage)999)] // unknown/invalid language defaults to MQL4
+    public void ResolveParser_NonMql5_Returns_Mql4AntlrParser_Instance(MqlLanguage language)
+    {
+        // REQ-PA-03: unknown language defaults to MQL4 parser.
+        // ResolveParser only branches on Mql5; everything else falls through to Mql4.
+        var service = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser());
+        var parser = service.ResolveParser(language);
+
+        Assert.NotNull(parser);
+        Assert.IsType<Mql4AntlrParser>(parser);
+    }
 }
