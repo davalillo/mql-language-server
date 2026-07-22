@@ -25,7 +25,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 namespace MqlLanguageServer
 {
     /// <summary>
-    /// Entry point for the MQL4 Language Server
+    /// Entry point for the MQL Language Server
     ///
     /// Phase 3.7: Complete LSP Server with stdio connection and all handlers
     /// </summary>
@@ -159,7 +159,7 @@ namespace MqlLanguageServer
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "MQL4 Language Server terminated unexpectedly");
+                Log.Fatal(ex, "MQL Language Server terminated unexpectedly");
                 return 1;
             }
             finally

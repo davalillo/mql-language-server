@@ -1,4 +1,4 @@
-# MQL4 Language Server - Coverage Report Generator (Windows PowerShell)
+# MQL Language Server - Coverage Report Generator (Windows PowerShell)
 #Requires -Version 5.1
 
 param(
@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "MQL4 Language Server - Coverage Report Generator" -ForegroundColor Cyan
+Write-Host "MQL Language Server - Coverage Report Generator" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -80,9 +80,9 @@ Write-Host ""
 
 # Run tests with coverage (JSON format)
 Write-Host "🧪 Running tests with coverage analysis..." -ForegroundColor Yellow
-& coverlet "./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll" `
+& coverlet "./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll" `
     --target "dotnet" `
-    --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" `
+    --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" `
     --format json `
     --output "./coverage/coverage.json"
 
@@ -96,9 +96,9 @@ Write-Host ""
 
 # Generate OpenCover format
 Write-Host "📊 Generating OpenCover report..." -ForegroundColor Yellow
-& coverlet "./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll" `
+& coverlet "./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll" `
     --target "dotnet" `
-    --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" `
+    --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" `
     --format opencover `
     --output "./coverage/coverage.xml"
 
@@ -159,7 +159,7 @@ Write-Host ""
 # Generate Markdown report
 Write-Host "📝 Creating Markdown report for LLM..." -ForegroundColor Yellow
 $mdContent = @"
-# 📊 Reporte de Cobertura de Código - MQL4 Language Server
+# 📊 Reporte de Cobertura de Código - MQL Language Server
 
 **Fecha**: 2025-11-21
 **Tests Totales**: 91 (✅ 91 Passing, ❌ 0 Failing, ⏭️ 0 Skipped)
@@ -249,7 +249,7 @@ Write-Host ""
 
 # Get test results
 Write-Host "🧪 Getting test results..." -ForegroundColor Yellow
-$testOutput = dotnet test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet
+$testOutput = dotnet test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet
 $passed = [regex]::Matches($testOutput, '(\d+)\s+passed') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Last 1
 $failed = [regex]::Matches($testOutput, '(\d+)\s+failed') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Last 1
 $skipped = [regex]::Matches($testOutput, '(\d+)\s+skipped') | ForEach-Object { $_.Groups[1].Value } | Select-Object -Last 1
@@ -279,14 +279,14 @@ Write-Host "   - LLM (CSV):     Get-Content .\coverage\coverage_summary.csv" -Fo
 Write-Host ""
 Write-Host "⚡ Quick Commands:" -ForegroundColor Yellow
 Write-Host "   # Generate with custom threshold (fails if < 80%)" -ForegroundColor Gray
-Write-Host "   coverlet .\tests\bin\Release\net10.0\Mql4LanguageServer.Tests.dll \" + " -ForegroundColor White
+Write-Host "   coverlet .\tests\bin\Release\net10.0\MqlLanguageServer.Tests.dll \" + " -ForegroundColor White
 Write-Host "     --target ""dotnet"" " + " -ForegroundColor White
-Write-Host "     --targetargs ""test .\tests\Mql4LanguageServer.Tests.csproj --configuration Release --no-build"" " + " -ForegroundColor White
+Write-Host "     --targetargs ""test .\tests\MqlLanguageServer.Tests.csproj --configuration Release --no-build"" " + " -ForegroundColor White
 Write-Host "     --threshold 80 --threshold-type line --threshold-stat total" -ForegroundColor Gray
 Write-Host ""
 Write-Host "   # Exclude generated ANTLR files" -ForegroundColor Gray
-Write-Host "   coverlet .\tests\bin\Release\net10.0\Mql4LanguageServer.Tests.dll \" + " -ForegroundColor White
+Write-Host "   coverlet .\tests\bin\Release\net10.0\MqlLanguageServer.Tests.dll \" + " -ForegroundColor White
 Write-Host "     --target ""dotnet"" " + " -ForegroundColor White
-Write-Host "     --targetargs ""test .\tests\Mql4LanguageServer.Tests.csproj --configuration Release --no-build"" " + " -ForegroundColor White
+Write-Host "     --targetargs ""test .\tests\MqlLanguageServer.Tests.csproj --configuration Release --no-build"" " + " -ForegroundColor White
 Write-Host "     --exclude-by-file ""**\Mql4Grammar*.cs""" -ForegroundColor White
 Write-Host "==================================================" -ForegroundColor Cyan

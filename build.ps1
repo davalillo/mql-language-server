@@ -1,8 +1,8 @@
 #!/usr/bin/env pwsh
-# MQL4 Language Server - Build Script (Windows)
+# MQL Language Server - Build Script (Windows)
 
 Write-Host "=================================================" -ForegroundColor Cyan
-Write-Host "MQL4 Language Server - Build Script (Windows)"  -ForegroundColor Cyan
+Write-Host "MQL Language Server - Build Script (Windows)"  -ForegroundColor Cyan
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -29,7 +29,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
   -p:DebugType=None `
   -p:DebugSymbols=false `
   -o "./bin/Release/net10.0/publish/win-x64"
-Write-Host "✅ Windows x64 build complete: ./bin/Release/net10.0/publish/win-x64/mql4-lsp-server.exe" -ForegroundColor Green
+Write-Host "✅ Windows x64 build complete: ./bin/Release/net10.0/publish/win-x64/mql-lsp-server.exe" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "=================================================" -ForegroundColor Cyan
@@ -37,8 +37,8 @@ Write-Host "✅ Build complete!" -ForegroundColor Green
 Write-Host "=================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "📦 Build outputs:" -ForegroundColor White
-Write-Host "   - Windows x64: .\src\bin\Release\net10.0\publish\win-x64\mql4-lsp-server.exe"
+Write-Host "   - Windows x64: .\src\bin\Release\net10.0\publish\win-x64\mql-lsp-server.exe"
 Write-Host ""
 Write-Host "🚀 To test the server, run:" -ForegroundColor White
-Write-Host "   .\src\bin\Release\net10.0\publish\win-x64\mql4-lsp-server.exe --stdio"
+Write-Host "   .\src\bin\Release\net10.0\publish\win-x64\mql-lsp-server.exe --stdio"
 Write-Host "=================================================" -ForegroundColor Cyan

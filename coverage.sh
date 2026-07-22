@@ -2,7 +2,7 @@
 set -e
 
 echo "=================================================="
-echo "MQL4 Language Server - Coverage Report Generator"
+echo "MQL Language Server - Coverage Report Generator"
 echo "=================================================="
 echo ""
 
@@ -37,9 +37,9 @@ echo ""
 
 # Run tests with coverage (JSON format)
 echo "🧪 Running tests with coverage analysis..."
-coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \
     --target "dotnet" \
-    --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
+    --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" \
     --format json \
     --output ./coverage/coverage.json
 
@@ -48,9 +48,9 @@ echo ""
 
 # Generate OpenCover format
 echo "📊 Generating OpenCover report..."
-coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \
     --target "dotnet" \
-    --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
+    --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" \
     --format opencover \
     --output ./coverage/coverage.xml
 
@@ -72,13 +72,13 @@ echo ""
 echo "📈 Extracting metrics from coverage data..."
 
 # Extract line and branch coverage percentages
-LINE_COV=$(grep -oP 'mql4-lsp-server \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
-BRANCH_COV=$(grep -oP 'mql4-lsp-server \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
-METHOD_COV=$(grep -oP 'mql4-lsp-server \| [0-9.]+% \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+LINE_COV=$(grep -oP 'mql-lsp-server \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+BRANCH_COV=$(grep -oP 'mql-lsp-server \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
+METHOD_COV=$(grep -oP 'mql-lsp-server \| [0-9.]+% \| [0-9.]+% \| \K[0-9.]+(?=%)' ./coverage/coverage.json | head -1)
 
 # Create a simple summary file for LLM consumption
 cat > ./coverage/coverage_summary.txt << EOF
-MQL4 Language Server - Coverage Summary
+MQL Language Server - Coverage Summary
 ========================================
 
 Line Coverage: ${LINE_COV:-56.8}%
@@ -90,7 +90,7 @@ For detailed analysis, use:
 - HTML: ./coverage/html/index.html (visual report)
 
 To extract specific metrics programmatically:
-  jq '.["mql4-lsp-server.dll"] | keys' ./coverage/coverage.json
+  jq '.["mql-lsp-server.dll"] | keys' ./coverage/coverage.json
 EOF
 
 echo "✅ Coverage summary extracted"
@@ -100,14 +100,14 @@ echo ""
 echo "📝 Generating Markdown report..."
 
 # Get test results
-TEST_OUTPUT=$(dotnet test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet 2>&1)
+TEST_OUTPUT=$(dotnet test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build --verbosity quiet 2>&1)
 PASSED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= passed)' | tail -1)
 FAILED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= failed)' | tail -1)
 SKIPPED=$(echo "$TEST_OUTPUT" | grep -oP '\d+(?= skipped)' | tail -1)
 
 # Create a simple informational Markdown
 cat > ./coverage/coverage_report.md << EOF
-# 📊 Coverage Report - MQL4 Language Server
+# 📊 Coverage Report - MQL Language Server
 
 **Generated**: $(date '+%Y-%m-%d %H:%M:%S')
 **Tests**: $PASSED passed, $FAILED failed, $SKIPPED skipped
@@ -124,7 +124,7 @@ cat > ./coverage/coverage_report.md << EOF
 
 ### For Analysis (Machine-Readable)
 - **JSON** (\`coverage/coverage.json\`): Complete structured data
-  - Use \`jq\` to query: \`jq '.["mql4-lsp-server.dll"]' coverage/coverage.json\`
+  - Use \`jq\` to query: \`jq '.["mql-lsp-server.dll"]' coverage/coverage.json\`
   - Contains line-by-line hit counts
 
 ### For Visualization (Human-Readable)
@@ -140,16 +140,16 @@ cat > ./coverage/coverage_report.md << EOF
 ### Query specific class coverage
 \`\`\`bash
 # List all classes
-jq '.["mql4-lsp-server.dll"] | keys' coverage/coverage.json
+jq '.["mql-lsp-server.dll"] | keys' coverage/coverage.json
 
 # Get coverage for a specific class
-jq '.["mql4-lsp-server.dll"]["/path/to/File.cs"]' coverage/coverage.json
+jq '.["mql-lsp-server.dll"]["/path/to/File.cs"]' coverage/coverage.json
 \`\`\`
 
 ### Filter uncovered lines
 \`\`\`bash
 # Find completely uncovered files
-jq -r '.["mql4-lsp-server.dll"] | to_entries[] | select(.value | all(. == 0)) | .key' coverage/coverage.json
+jq -r '.["mql-lsp-server.dll"] | to_entries[] | select(.value | all(. == 0)) | .key' coverage/coverage.json
 \`\`\`
 
 ### Integration with LLM
@@ -197,14 +197,14 @@ echo "   - Quick Stats:    cat ./coverage/coverage_summary.txt"
 echo ""
 echo "⚡ Quick Commands:"
 echo "   # Generate with custom threshold (fails if < 80%)"
-echo "   coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \\"
+echo "   coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \\"
 echo "     --target \"dotnet\" \\"
-echo "     --targetargs \"test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build\" \\"
+echo "     --targetargs \"test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build\" \\"
 echo "     --threshold 80 --threshold-type line --threshold-stat total"
 echo ""
 echo "   # Exclude generated ANTLR files"
-echo "   coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \\"
+echo "   coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \\"
 echo "     --target \"dotnet\" \\"
-echo "     --targetargs \"test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build\" \\"
+echo "     --targetargs \"test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build\" \\"
 echo "     --exclude-by-file \"**/Mql4Grammar*.cs\""
 echo "=================================================="

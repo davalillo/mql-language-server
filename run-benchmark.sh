@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ================================================================
-# MQL4 Language Server - Benchmark Runner
+# MQL Language Server - Benchmark Runner
 # ================================================================
 # Usage: ./run-benchmark.sh <milestone> [options]
 #
@@ -32,7 +32,7 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-DOTNET_PROJECT="tests/Mql4LanguageServer.Tests.csproj"
+DOTNET_PROJECT="tests/MqlLanguageServer.Tests.csproj"
 FILTER="BaselineBenchmark"
 BASELINE_FILE="benchmarks/baseline-initial.json"
 MAX_BACKUPS=5
@@ -43,7 +43,7 @@ MAX_BACKUPS=5
 
 print_header() {
     echo -e "${CYAN}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}${BOLD}║${NC}  MQL4 Language Server - Benchmark Runner${NC}"
+    echo -e "${CYAN}${BOLD}║${NC}  MQL Language Server - Benchmark Runner${NC}"
     echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
@@ -94,8 +94,8 @@ check_environment() {
     print_step "Checking environment..."
 
     # Check if we're in a .NET project
-    if [ ! -f "Mql4LanguageServer.sln" ]; then
-        print_error "Not in a MQL4 Language Server project directory"
+    if [ ! -f "MqlLanguageServer.sln" ]; then
+        print_error "Not in a MQL Language Server project directory"
         print_info "Run this script from the project root directory"
         exit 1
     fi

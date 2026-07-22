@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script para ejecutar los tests de Memory Profiling del MQL4 Language Server
+# Script para ejecutar los tests de Memory Profiling del MQL Language Server
 #
 # USO:
 #   ./run-memory-test.sh                    # Ejecutar con milestone por defecto: "memory-test"

@@ -1,6 +1,6 @@
 # 📊 Coverage Report Scripts
 
-Este directorio contiene scripts para generar reportes completos de cobertura de código para el MQL4 Language Server.
+Este directorio contiene scripts para generar reportes completos de cobertura de código para el MQL Language Server.
 
 ## 🎯 Scripts Disponibles
 
@@ -79,17 +79,17 @@ cat coverage/coverage_summary.csv
 
 ### Coverage con Thresholds (Falla si < 80%)
 ```bash
-coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \
   --target "dotnet" \
-  --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
+  --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" \
   --threshold 80 --threshold-type line --threshold-stat total
 ```
 
 ### Excluir Archivos Generados (ANTLR)
 ```bash
-coverlet ./tests/bin/Release/net10.0/Mql4LanguageServer.Tests.dll \
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \
   --target "dotnet" \
-  --targetargs "test ./tests/Mql4LanguageServer.Tests.csproj --configuration Release --no-build" \
+  --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" \
   --exclude-by-file "**/Mql4Grammar*.cs"
 ```
 
@@ -194,4 +194,4 @@ Para mejorar la cobertura:
 
 ---
 **Generado automáticamente por coverage.sh/.ps1**
-**MQL4 Language Server v1.0**
+**MQL Language Server v1.0**

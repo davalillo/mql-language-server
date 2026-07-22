@@ -277,7 +277,7 @@
 - feat(phase-4): Implement complete unit testing framework
 - feat(phase-3.8): Complete compilation and verification phase
 - feat(phase-3.7): Implement complete Program Entry Point for MQL4 LSP
-- feat(phase-3.6): Implement all LSP Handlers for MQL4 Language Server
+- feat(phase-3.6): Implement all LSP Handlers for MQL Language Server
 
 ### Fixed
 - fix: Corregir error CS0136 - variables duplicadas en Program.cs

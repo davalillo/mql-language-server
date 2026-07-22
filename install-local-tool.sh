@@ -50,8 +50,8 @@ DOTNET_VERSION=$(dotnet --version)
 print_success ".NET SDK version: $DOTNET_VERSION"
 
 # Check if we're in the right directory
-if [ ! -f "Mql4LanguageServer.sln" ]; then
-    print_error "Mql4LanguageServer.sln not found!"
+if [ ! -f "MqlLanguageServer.sln" ]; then
+    print_error "MqlLanguageServer.sln not found!"
     echo "Please run this script from the mql-language-server repository root"
     exit 1
 fi

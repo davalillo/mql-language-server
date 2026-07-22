@@ -1,4 +1,4 @@
-# MQL4 Language Server — Architecture
+# MQL Language Server — Architecture
 
 Generated from GitNexus knowledge graph (2607 nodes, 5664 edges, 89 clusters, 153 processes).
 
@@ -293,10 +293,10 @@ Four-layer test pyramid under `tests/` (counts from `dotnet test --no-build -c R
 src/
 ├── bin/
 │   ├── Debug/net10.0/                        # dotnet build (default)
-│   │   ├── mql4-lsp-server.dll
-│   │   └── mql4-lsp-server.runtimeconfig.json
+│   │   ├── mql-lsp-server.dll
+│   │   └── mql-lsp-server.runtimeconfig.json
 │   └── Release/net10.0/                      # dotnet build -c Release
-│       └── mql4-lsp-server.dll
+│       └── mql-lsp-server.dll
 ├── obj/                                      # MSBuild intermediates (per-TFM)
 └── Parser/Generated/                         # ANTLR-generated (committed-build outputs)
     ├── Mql4GrammarLexer.cs
@@ -306,12 +306,12 @@ src/
 
 # After dotnet publish -c Release -r <rid> --self-contained:
 src/bin/Release/net10.0/publish/<rid>/
-├── mql4-lsp-server[.exe]                     # single-file, self-contained (~71-72 MB)
-└── mql4-lsp-server.runtimeconfig.json
+├── mql-lsp-server[.exe]                     # single-file, self-contained (~71-72 MB)
+└── mql-lsp-server.runtimeconfig.json
 
 # Test outputs:
 tests/bin/Release/net10.0/
-└── Mql4LanguageServer.Tests.dll
+└── MqlLanguageServer.Tests.dll
 ```
 
 `<rid>` ∈ { `linux-x64`, `osx-x64`, `win-x64` }. ANTLR-generated files land in `src/Parser/Generated/` via `AntOutDir` — they are checked into source control as committed-build outputs.

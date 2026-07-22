@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace MqlLanguageServer;
 
 /// <summary>
-/// Constants used throughout the MQL4 Language Server
+/// Constants used throughout the MQL Language Server
 /// Central location for all magic strings and shared constants
 /// </summary>
 public static class Constants

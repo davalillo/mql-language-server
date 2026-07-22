@@ -384,7 +384,7 @@ public class BaselineBenchmark
         var currentDir = Directory.GetCurrentDirectory();
         while (currentDir != null)
         {
-            if (File.Exists(Path.Combine(currentDir, "Mql4LanguageServer.sln")))
+            if (File.Exists(Path.Combine(currentDir, "MqlLanguageServer.sln")))
             {
                 return currentDir;
             }

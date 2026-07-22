@@ -8,7 +8,7 @@ echo "=================================================="
 echo ""
 
 # Check if we're in the right directory
-if [ ! -f "src/Mql4LanguageServer.Server.csproj" ]; then
+if [ ! -f "src/MqlLanguageServer.Server.csproj" ]; then
     echo "❌ Error: Run this script from the project root directory"
     exit 1
 fi

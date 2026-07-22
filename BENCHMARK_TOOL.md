@@ -1,6 +1,6 @@
 > **HISTORICAL — content not maintained; see [ARCHITECTURE.md](ARCHITECTURE.md) for current architecture.**
 
-# Benchmark Tool - MQL4 Language Server
+# Benchmark Tool - MQL Language Server
 
 ## 📋 Overview
 
@@ -182,13 +182,13 @@ The script automatically detects:
 
 ## 🛠️ Troubleshooting
 
-### "Not in a MQL4 Language Server project directory"
+### "Not in a MQL Language Server project directory"
 
 Make sure you're in the project root directory:
 
 ```bash
 # Must contain these files:
-ls Mql4LanguageServer.sln
+ls MqlLanguageServer.sln
 ls run-benchmark.sh
 ```
 
