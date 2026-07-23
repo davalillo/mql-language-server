@@ -178,6 +178,78 @@ public class Mql4RealWorldParsingTests
         _output.WriteLine($"  CreateVisualElements at line {createVisualElements!.Range.Start.Line + 1}");
     }
 
+    /// <summary>
+    /// Account Protector (EarnForex/Account-Protector, Apache-2.0) is a 462-line EA
+    /// that includes a 6082-line CAppDialog-derived class header
+    /// (Account_Protector.mqh, 313KB) and a 244-line Defines header. The #include
+    /// paths in the .mq4 and .mqh were rewritten to use the underscore filenames
+    /// shipped in this fixture directory so <see cref="Mql4AntlrParser.ParseFileWithIncludes"/>
+    /// can resolve them locally.
+    ///
+    /// This is the only fixture whose cross-file include chain resolves to files
+    /// actually present in the fixture tree, which makes it the canonical test for
+    /// cross-file include resolution (G5).
+    /// </summary>
+    [Fact]
+    public void Account_Protector_ParsesAndExtractsSymbols()
+    {
+        const string fileName = "Account_Protector.mq4";
+        var file = ParseFixture(fileName);
+        AssertRealWorldFixture(file, fileName);
+
+        var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
+        Assert.NotNull(onInit);
+        _output.WriteLine($"  OnInit at line {onInit!.Range.Start.Line + 1}");
+
+        var onTick = file.Symbols.FirstOrDefault(s => s.Name == "OnTick");
+        Assert.NotNull(onTick);
+        _output.WriteLine($"  OnTick at line {onTick!.Range.Start.Line + 1}");
+
+        var onChartEvent = file.Symbols.FirstOrDefault(s => s.Name == "OnChartEvent");
+        Assert.NotNull(onChartEvent);
+        _output.WriteLine($"  OnChartEvent at line {onChartEvent!.Range.Start.Line + 1}");
+
+        Assert.NotEmpty(file.Includes);
+        _output.WriteLine($"  Includes: {string.Join(", ", file.Includes)}");
+    }
+
+    /// <summary>
+    /// G2 — parse-time budget for the 313KB Account_Protector.mqh header.
+    /// Real-world MQL4 headers of this size must parse in well under the 2-second
+    /// LSP responsiveness budget. The grammar produces some syntax errors on
+    /// ON_EVENT macro blocks and template helpers (see Account_Protector.mqh
+    /// README entry), but it must not crash or hang — this is the parse-path
+    /// stress test for the largest fixture in the tree.
+    /// </summary>
+    [Fact]
+    public void Account_Protector_Header_ParsesWithinLargeFileBudget()
+    {
+        const string fileName = "Account_Protector.mqh";
+        var path = GetFixtureFilePath(fileName);
+        var content = File.ReadAllText(path);
+        var fileSizeKb = content.Length / 1024.0;
+        _output.WriteLine($"  {fileName}: {fileSizeKb:F1} KB, {content.Split('\n').Length} lines");
+
+        var stopwatch = Stopwatch.StartNew();
+        var file = _parser.ParseFile(content, path);
+        stopwatch.Stop();
+
+        _output.WriteLine(
+            $"  Parsed: {file.Symbols.Count} symbols, {file.Includes.Count} includes, " +
+            $"{file.SyntaxErrors.Count} syntax errors, {stopwatch.ElapsedMilliseconds}ms");
+
+        // The header must yield a large symbol table — this is what makes it the
+        // fixture that stresses WorkspaceSymbolHandler's 100-result cap (G1).
+        Assert.True(file.Symbols.Count > 100,
+            $"Account_Protector.mqh should yield >100 symbols for G1 coverage, got {file.Symbols.Count}");
+
+        // Budget: 313KB / 6082 lines must parse in under 2 seconds on any reasonable
+        // CI host. A regression that pushes this over the budget is a parser
+        // performance bug to investigate, not a flaky threshold.
+        Assert.True(stopwatch.ElapsedMilliseconds < 2000,
+            $"Account_Protector.mqh parsed in {stopwatch.ElapsedMilliseconds}ms — exceeds 2000ms budget");
+    }
+
     [Fact]
     public void AllRealWorldMql4Fixtures_ParseWithinAcceptableTime()
     {
@@ -188,6 +260,7 @@ public class Mql4RealWorldParsingTests
             "SetFixedSLTP_EA.mq4",
             "gold_expert_advisor.mq4",
             "monkey_attack_visual_ea.mq4",
+            "Account_Protector.mq4",
         };
 
         long totalMs = 0L;

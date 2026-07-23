@@ -148,8 +148,20 @@ namespace MqlLanguageServer.Parser
             // Parse all included files recursively
             foreach (var include in mainFile.Includes)
             {
-                // Extract include path (simple parsing for now)
-                var includePath = ExtractIncludePath(include);
+                // `Includes` entries are stored by VisitDirective as the extracted
+                // path: a bare relative path for `#include "file.mqh"` (e.g.
+                // "Account_Protector.mqh") or an angle-bracket-wrapped path for
+                // `#include <file.mqh>` (e.g. "<WinUser32.mqh>"). System includes
+                // (angle-bracket form) reference the MQL4 standard library which
+                // is not present in the fixture tree, so they are skipped here;
+                // only local quoted includes can be resolved relative to the
+                // including file's directory.
+                var includePath = include;
+                if (includePath.StartsWith("<"))
+                {
+                    continue;
+                }
+
                 if (!string.IsNullOrEmpty(includePath))
                 {
                     // Resolve relative paths

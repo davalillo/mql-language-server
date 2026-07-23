@@ -31,6 +31,9 @@ counts, include counts and parse times via `ITestOutputHelper`.
 | `SetFixedSLTP_EA.mq4` | [EarnForex/SetFixedSLandTPEA](https://github.com/EarnForex/SetFixedSLandTPEA) | EarnForex.com | Apache-2.0 | 578 | `#include <MQLTA ErrorHandling.mqh>`/`<MQLTA Utils.mqh>`, 4 custom `enum`s (`ENUM_PRICE_TYPE`, `ENUM_ORDER_TYPES`, `ENUM_TP_TYPE`, `ENUM_SL_TYPE`), `input` params (27), `OnInit`/`OnDeinit`/`OnChartEvent`/`OnTimer`, `OrderSelect`/`OrderModify`, `ObjectCreate`, SL/TP filter groups |
 | `gold_expert_advisor.mq4` | [RoyluxuryTrading/Super-trading](https://github.com/RoyluxuryTrading/Super-trading) | RoyluxuryTrading | MIT | 936 | `#property strict`, `extern` params (38), `OnInit`/`OnTick`/`OnDeinit`, `OrderSend`/`OrderModify`/`OrderSelect`, `iMA`/`iRSI`/`iATR`/`iMACD`, `MarketInfo` (6), dynamic range/pivot/fractal calc, session filters |
 | `monkey_attack_visual_ea.mq4` | [RoyluxuryTrading/Super-trading](https://github.com/RoyluxuryTrading/Super-trading) | RoyluxuryTrading | MIT | 1255 | `#property strict` + `#property description`, `input` params (53), `OnInit`/`OnTick`/`OnDeinit`, `OrderSend` (4)/`OrderModify`/`OrderSelect`, `iMA`/`iRSI`/`iATR`/`iMACD`, `ObjectCreate` (5) visual overlays, `MarketInfo` (8), pivot levels, buy/sell zones |
+| `Account_Protector.mq4` | [EarnForex/Account-Protector](https://github.com/EarnForex/Account-Protector) | EarnForex.com | Apache-2.0 | 462 | `#property strict`, `#include "Account_Protector.mqh"` (local, renamed from space), `input` params, `OnInit`/`OnDeinit`/`OnChartEvent`/`OnTick`/`OnTimer`, cross-file include resolution (G5), per-function body ranges (G8) |
+| `Account_Protector.mqh` | [EarnForex/Account-Protector](https://github.com/EarnForex/Account-Protector) | EarnForex.com | Apache-2.0 | 6082 | 313KB header (LOH fixture, G3), `class CAccountProtector : public CAppDialog` (G4), `#include "Account_Protector_Defines.mqh"`/`<WinUser32.mqh>`/`<Arrays\ArrayLong.mqh>`, `#import "user32.dll"` with `GetAncestor` (G6), `template<typename T>` helpers, `ON_EVENT` macro block (grammar recovers with syntax errors), 675 symbols (WorkspaceSymbolHandler 100-cap fixture, G1), large-file parse budget (G2), handler performance fixture (G7) |
+| `Account_Protector_Defines.mqh` | [EarnForex/Account-Protector](https://github.com/EarnForex/Account-Protector) | EarnForex.com | Apache-2.0 | 244 | `#include <Controls\*.mqh>` (6 standard-library panels), 5 custom `enum`s (`TABS`, `Type_of_Order`, `Day_of_Week`, `Position_Status`, `ENUM_CONDITIONS`, `ENUM_CLOSE_TRADES`), `struct Settings`, `#resource` bitmaps |
 
 ## Running the tests
 
@@ -57,8 +60,8 @@ can parse real production MQL4 code without crashing, without syntax errors,
 and with correct symbol extraction.
 
 - **EarnForex** EAs (`Trailing_Stop_on_Profit`, `Move_Stop_To_Breakeven`,
-  `SetFixedSLTP_EA`) are © EarnForex.com and licensed under the
-  Apache License 2.0. EarnForex is a professional EA maintainer with a
+  `SetFixedSLTP_EA`, `Account_Protector`) are © EarnForex.com and licensed
+  under the Apache License 2.0. EarnForex is a professional EA maintainer with a
   long-running catalog of open-source MetaTrader EAs. See each repo's
   `LICENSE` file for the full Apache-2.0 text.
   - `Trailing_Stop_on_Profit.mq4` is a renamed copy (spaces → underscores) of
@@ -67,6 +70,16 @@ and with correct symbol extraction.
     `MQL4/Experts/MQLTA MT4 Move Stop To Breakeven.mq4`.
   - `SetFixedSLTP_EA.mq4` is an unchanged copy of
     `MQL4/Experts/SetFixedSLTP_EA.mq4`.
+  - `Account_Protector.mq4`, `Account_Protector.mqh`, and
+    `Account_Protector_Defines.mqh` are copies of
+    `MQL4/Experts/Account Protector.mq4`, `MQL4/Include/Account Protector.mqh`,
+    and `MQL4/Include/Defines.mqh` from the `Account-Protector` repo. The local
+    `#include` directives were rewritten to use the underscore filenames
+    (`Account_Protector.mqh`, `Account_Protector_Defines.mqh`) so the parser's
+    cross-file include resolution can resolve them within the fixture tree
+    (the originals used spaces). The `#include <...>` system headers
+    (`WinUser32.mqh`, `Arrays\ArrayLong.mqh`, `Controls\*.mqh`) are left as-is;
+    they reference the MQL4 standard library, which is not shipped here.
 - **RoyluxuryTrading** EAs (`gold_expert_advisor`, `monkey_attack_visual_ea`)
   are © RoyluxuryTrading and licensed under the MIT License. Both files are
   unchanged copies from the `Librery/` directory of the `Super-trading` repo.

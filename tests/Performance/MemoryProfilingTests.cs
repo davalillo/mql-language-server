@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace MqlLanguageServer.Tests.Performance;
 
@@ -16,8 +17,11 @@ namespace MqlLanguageServer.Tests.Performance;
 /// </summary>
 public class MemoryProfilingTests
 {
-    public MemoryProfilingTests()
+    private readonly ITestOutputHelper? _output;
+
+    public MemoryProfilingTests(ITestOutputHelper output)
     {
+        _output = output;
     }
 
     /// <summary>
@@ -331,6 +335,103 @@ public class MemoryProfilingTests
             return "unknown";
         }
     }
+
+    #region Large Object Heap / Large Fixture Tests (G3)
+
+    /// <summary>
+    /// G3 — the 313KB Account_Protector.mqh header is larger than the .NET
+    /// Small Object Heap chunk limit (~85,000 bytes), so the file content
+    /// string returned by File.ReadAllText lives on the Large Object Heap.
+    /// Parsing it must not trigger runaway Gen2 collections or unbounded
+    /// memory growth. This test parses the header, measures managed memory
+    /// before/after a forced GC, and asserts the retained memory is
+    /// proportional to the file size (within a generous LOH-aware budget).
+    ///
+    /// Uses the existing BenchmarkEnvironment / GCCounts infrastructure in
+    /// this class. Runs unconditionally (not gated on ShouldRunBenchmark)
+    /// because it is a regression guard, not a wall-clock benchmark.
+    /// </summary>
+    [Fact]
+    public void Account_Protector_Header_ParseDoesNotLeakLargeObjectHeap()
+    {
+        var fixturePath = GetLargeFixturePath("Account_Protector.mqh");
+        Assert.True(File.Exists(fixturePath), $"Fixture not found: {fixturePath}");
+
+        var fileInfo = new FileInfo(fixturePath);
+        _output?.WriteLine($"  Fixture: {fileInfo.Length} bytes ({fileInfo.Length / 1024.0:F1} KB)");
+
+        // Force a clean baseline before parsing.
+        ForceGarbageCollection();
+        // Snapshot GC counts AFTER the baseline collect so the force-collect's
+        // own Gen2 work is not counted against the parse.
+        var gen2Before = GC.CollectionCount(2);
+        var gen1Before = GC.CollectionCount(1);
+        var gen0Before = GC.CollectionCount(0);
+        var managedBefore = GC.GetTotalMemory(forceFullCollection: false);
+
+        // Read + parse. The content string (313KB) is allocated on the LOH.
+        var content = File.ReadAllText(fixturePath);
+        var parser = new MqlLanguageServer.Parser.Mql4AntlrParser();
+        var file = parser.ParseFile(content, fixturePath);
+
+        _output?.WriteLine($"  Parsed: {file.Symbols.Count} symbols, {file.SyntaxErrors.Count} syntax errors");
+
+        // The parser must produce a substantial symbol table — proves the LOH
+        // string was actually consumed by the parser.
+        Assert.True(file.Symbols.Count > 100,
+            $"Account_Protector.mqh should yield >100 symbols, got {file.Symbols.Count}");
+
+        // Snapshot GC counts BEFORE the post-parse force collect so only the
+        // parse's own GC work is measured.
+        var gen2AfterParse = GC.CollectionCount(2);
+        var gen1AfterParse = GC.CollectionCount(1);
+        var gen0AfterParse = GC.CollectionCount(0);
+
+        // Drop references and force GC to measure what survives.
+        content = null!;
+        file = null!;
+        ForceGarbageCollection();
+        var managedAfter = GC.GetTotalMemory(forceFullCollection: false);
+
+        var gcCounts = new GCCounts
+        {
+            Gen0 = gen0AfterParse - gen0Before,
+            Gen1 = gen1AfterParse - gen1Before,
+            Gen2 = gen2AfterParse - gen2Before,
+        };
+
+        var retainedBytes = managedAfter - managedBefore;
+        var retainedMb = retainedBytes / 1024.0 / 1024.0;
+
+        _output?.WriteLine($"  GC during parse: Gen0={gcCounts.Gen0} Gen1={gcCounts.Gen1} Gen2={gcCounts.Gen2}");
+        _output?.WriteLine($"  Retained managed memory after GC: {retainedMb:F2} MB ({retainedBytes} bytes)");
+
+        // Gen2 collections during a single 313KB parse indicate LOH pressure.
+        // The LOH string itself plus the parser's intermediate allocations can
+        // trigger several Gen2 collections on a busy host. A leak would show
+        // unbounded growth across repeated parses (covered by the retained-
+        // memory assertion below); a one-shot Gen2 count is a weak signal, so
+        // the budget is generous (10) to avoid flakiness while still catching a
+        // runaway regression.
+        Assert.True(gcCounts.Gen2 <= 10,
+            $"Excessive Gen2 collections during parse: {gcCounts.Gen2} (expected <= 10)");
+
+        // Retained memory after the parse references are dropped and GC is
+        // forced must be modest. The parser builds symbol lists proportional
+        // to the symbol count, so a few MB of retained state is acceptable; a
+        // leak would show tens of MB. Budget: 64 MB headroom (generous for LOH
+        // fragmentation on CI hosts).
+        Assert.True(retainedMb < 64.0,
+            $"Retained managed memory {retainedMb:F2} MB exceeds 64 MB budget — possible leak");
+    }
+
+    private string GetLargeFixturePath(string fileName)
+    {
+        var projectRoot = GetProjectRoot();
+        return Path.Combine(projectRoot, "tests", "fixtures", "real", "mql4", fileName);
+    }
+
+    #endregion
 
     #region Data Models
 
