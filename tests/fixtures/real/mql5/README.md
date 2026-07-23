@@ -7,10 +7,11 @@ and OOP code — not minimal snippets.
 
 ## Purpose
 
-The existing `tests/fixtures/real/` directory contains a single massive MQL4
-file (Ducibus Pro, 20k+ lines). This `mql5/` subdirectory mirrors that approach
-for MQL5: real code authored by community authors, covering constructs the
-minimal `tests/fixtures/Mql5/` snippets cannot exercise at scale.
+The `mql4/` subdirectory holds real MQL4 Expert Advisors from
+permissively licensed open-source repositories. This `mql5/` subdirectory
+mirrors that approach for MQL5: real code authored by community authors,
+covering constructs the minimal `tests/fixtures/Mql5/` snippets cannot
+exercise at scale.
 
 These fixtures back `tests/Parser/Mql5RealWorldParsingTests.cs`, which asserts
 that each file parses without crashing, is detected as `MqlLanguage.Mql5`, and

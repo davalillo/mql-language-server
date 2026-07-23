@@ -269,7 +269,7 @@ public class AdvancedFeaturesTests
         var code = @"
             #define VERSION_MAJOR 2
             #define VERSION_MINOR 90
-            #define PRODUCT_NAME ""Ducibus Pro""
+            #define PRODUCT_NAME ""Sample EA""
             
             int OnInit()
             {
@@ -856,7 +856,7 @@ public class AdvancedFeaturesTests
     [Fact]
     public void ParseCompoundAssign_RealWorldPattern_ParsesSuccessfully()
     {
-        // Arrange - Pattern from Ducibus Pro
+        // Arrange - Real-world compound-assignment pattern
         var code = @"
             void OnTick()
             {

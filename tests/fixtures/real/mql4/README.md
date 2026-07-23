@@ -11,11 +11,10 @@ event handlers (`OnInit`, `OnTick`, `OnDeinit`, `OnChartEvent`, `OnTimer`).
 
 ## Purpose
 
-The existing `tests/fixtures/real/` directory already contains a single
-massive MQL4 file (Ducibus Pro, 20k+ lines) and the `mql5/` subdirectory holds
-real MQL5 article code. This `mql4/` subdirectory extends the real-world
-approach to MQL4 with five smaller-but-representative EAs from professional
-maintainers and the open-source community, covering constructs the minimal
+The `mql5/` subdirectory holds real MQL5 article code. This `mql4/`
+subdirectory extends the real-world approach to MQL4 with five
+smaller-but-representative EAs from professional maintainers and the
+open-source community, covering constructs the minimal
 `tests/fixtures/Mql4/` snippets cannot exercise at scale.
 
 These fixtures back `tests/Parser/Mql4RealWorldParsingTests.cs`, which asserts

@@ -5,9 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
-using System.Threading.Tasks;
-using Xunit;
-using MqlLanguageServer.Parser;
 
 namespace MqlLanguageServer.Tests.Performance;
 
@@ -17,17 +14,8 @@ namespace MqlLanguageServer.Tests.Performance;
 /// </summary>
 public class BaselineBenchmark
 {
-    private readonly Mql4AntlrParser _parser;
-    private readonly string _testFilePath;
-    private readonly string _testFileContent;
-    private const int WarmupRuns = 10;
-    private const int BenchmarkRuns = 20;
-
     public BaselineBenchmark()
     {
-        _parser = new Mql4AntlrParser();
-        _testFilePath = GetFixtureFilePath("Ducibus_Pro_ver_2_90.mq4");
-        _testFileContent = File.ReadAllText(_testFilePath);
     }
 
     #region Environment Detection
@@ -138,91 +126,6 @@ public class BaselineBenchmark
     #endregion
 
     #region Benchmark Methods
-
-    /// <summary>
-    /// Main benchmark method that measures all operations
-    /// Only runs if ENABLE_BENCHMARK=true environment variable is set
-    /// </summary>
-    [SkippableFact]
-    public async Task Baseline_BenchmarkAllOperationsAsync()
-    {
-        Skip.IfNot(ShouldRunBenchmark(), "Benchmark disabled. Set ENABLE_BENCHMARK=true to run.");
-
-        var env = DetectEnvironment();
-        LogEnvironment(env);
-
-        // Warm-up phase: execute operations without measuring
-        Console.WriteLine("\n=== WARM-UP PHASE ===");
-        Console.WriteLine($"Running {WarmupRuns} warm-up iterations...");
-        for (int i = 0; i < WarmupRuns; i++)
-        {
-            _parser.ParseFile(_testFileContent, _testFilePath);
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-            await Task.Delay(10); // Small delay between runs
-        }
-        Console.WriteLine("Warm-up complete.\n");
-
-        // Benchmark phase: measure performance
-        Console.WriteLine("=== BENCHMARK PHASE ===");
-        Console.WriteLine($"Running {BenchmarkRuns} benchmark iterations...\n");
-
-        var parsingTimes = new List<double>();
-        var symbolCounts = new List<int>();
-        var completionCounts = new List<int>();
-
-        for (int i = 0; i < BenchmarkRuns; i++)
-        {
-            // Measure parsing
-            var sw = Stopwatch.StartNew();
-            var file = _parser.ParseFile(_testFileContent, _testFilePath);
-            sw.Stop();
-
-            parsingTimes.Add(sw.Elapsed.TotalMilliseconds);
-            symbolCounts.Add(file.Symbols.Count);
-
-            // Measure completion
-            // Measure completion
-            var completions = _parser.GetCompletions(file, 1, 1).ToList();
-            completionCounts.Add(completions.Count);
-            // Force GC between iterations
-            if (i < BenchmarkRuns - 1)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                await Task.Delay(10);
-            }
-
-            Console.WriteLine($"  Iteration {i + 1}/{BenchmarkRuns}: {sw.Elapsed.TotalMilliseconds:F2}ms, {file.Symbols.Count} symbols");
-        }
-
-        Console.WriteLine("\n=== RESULTS ===");
-
-        // Calculate statistics (using median for robustness)
-        var results = new BenchmarkResults
-        {
-            Environment = env,
-            Parsing = CalculateStats(parsingTimes),
-            SymbolCount = CalculateStats(symbolCounts.Select(x => (double)x).ToList()),
-            CompletionCount = CalculateStats(completionCounts.Select(x => (double)x).ToList()),
-            CommitHash = GetCurrentGitCommit()!
-        };
-
-        PrintResults(results);
-
-        // Save results
-        var milestoneName = Environment.GetEnvironmentVariable("BENCHMARK_MILESTONE") ?? "baseline";
-        SaveResults(results, milestoneName);
-
-        // Verify basic expectations
-        Assert.True(results.Parsing.Median > 0, "Parsing time should be > 0");
-        Assert.True(results.Parsing.Median < 10000, "Parsing time should be < 10 seconds");
-        Assert.True(results.SymbolCount.Median > 0, "Should parse at least 1 symbol");
-        Assert.True(results.CompletionCount.Median > 100, "Should have > 100 completions (builtins + symbols)");
-
-        Console.WriteLine($"\n✅ Benchmark complete. Results saved to benchmarks/{milestoneName}.json");
-    }
 
     /// <summary>
     /// Checks if the benchmark should run based on environment variables
@@ -371,28 +274,6 @@ public class BaselineBenchmark
         // Also print the JSON to console
         Console.WriteLine($"\n=== JSON OUTPUT ({milestoneName}.json) ===");
         Console.WriteLine(json);
-    }
-
-    private string GetFixtureFilePath(string fileName)
-    {
-        var projectRoot = GetProjectRoot();
-        return Path.Combine(projectRoot, "tests", "fixtures", "real", fileName);
-    }
-
-    private string GetProjectRoot()
-    {
-        var currentDir = Directory.GetCurrentDirectory();
-        while (currentDir != null)
-        {
-            if (File.Exists(Path.Combine(currentDir, "MqlLanguageServer.sln")))
-            {
-                return currentDir;
-            }
-            var parent = Directory.GetParent(currentDir);
-            if (parent == null) break;
-            currentDir = parent.FullName;
-        }
-        return Directory.GetCurrentDirectory();
     }
 
     #endregion
