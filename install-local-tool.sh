@@ -42,7 +42,7 @@ print_error() {
 print_step "Checking prerequisites..."
 if ! command -v dotnet &> /dev/null; then
     print_error ".NET SDK is not installed!"
-    echo "Please install .NET 8 SDK from: https://dotnet.microsoft.com/download"
+    echo "Please install .NET 10 SDK from: https://dotnet.microsoft.com/download"
     exit 1
 fi
 
