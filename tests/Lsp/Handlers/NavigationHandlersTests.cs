@@ -1,8 +1,10 @@
+using System.Linq;
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -230,6 +232,137 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
 
                 // Assert - should find OnTick as a function implementation
                 Assert.NotNull(result);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        #endregion
+
+        #region ReferencesHandlerTests (REQ-HD-04, D7)
+
+        private const string ReferencesFixtureContent =
+            "// MySignal mentioned in a comment\n" +
+            "int MySignal = 1;\n" +
+            "string s = \"MySignal in a string\";\n" +
+            "#property MySignal\n" +
+            "int use = MySignal;\n";
+
+        /// <summary>
+        /// Creates a ReferencesHandler with the MQL4 backward-compatible
+        /// constructor and indexes the fixture file into GlobalSymbolIndex
+        /// (as didOpen would: symbols + token occurrences).
+        /// </summary>
+        private static ReferencesHandler CreateReferencesHandler(OpenDocumentStore documentStore)
+        {
+            return new ReferencesHandler(
+                Substitute.For<ILogger<ReferencesHandler>>(),
+                new Mql4AntlrParser(),
+                documentStore,
+                GlobalSymbolIndex.Instance);
+        }
+
+        [Fact]
+        public async Task ReferencesHandler_ExcludesCommentStringAndPreprocessorPositionsAsync()
+        {
+            // REQ-HD-04: token-backed references, no regex over raw text.
+            var path = WriteTempFile("TestReferencesToken.mq4", ReferencesFixtureContent);
+
+            try
+            {
+                // Parse + index the file exactly as didOpen does.
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(ReferencesFixtureContent, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = path,
+                    Language = MqlLanguage.Mql4,
+                    Text = o.Text,
+                    Line = o.Line,
+                    Column = o.Column,
+                    Length = o.Length
+                }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, ReferencesFixtureContent, MqlLanguage.Mql4);
+
+                var handler = CreateReferencesHandler(documentStore);
+
+                // Position on "MySignal" in the declaration (line 1, col 4).
+                var request = new ReferenceParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(1, 4),
+                    Context = new ReferenceContext { IncludeDeclaration = false }
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Assert - only code positions: declaration (line 1) excluded by
+                // includeDeclaration=false; use at line 4 present. No location on
+                // the comment line (0), string line (2), or preprocessor line (3).
+                Assert.NotNull(result);
+                var locations = result!.ToList();
+                Assert.Contains(locations, l =>
+                    l.Range.Start.Line == 4 && l.Range.Start.Character == 10);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 0);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 2);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 3);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task ReferencesHandler_IncludeDeclarationTrue_IncludesDefinitionAsync()
+        {
+            var path = WriteTempFile("TestReferencesIncl.mq4", ReferencesFixtureContent);
+
+            try
+            {
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(ReferencesFixtureContent, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = path,
+                    Language = MqlLanguage.Mql4,
+                    Text = o.Text,
+                    Line = o.Line,
+                    Column = o.Column,
+                    Length = o.Length
+                }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, ReferencesFixtureContent, MqlLanguage.Mql4);
+
+                var handler = CreateReferencesHandler(documentStore);
+
+                var request = new ReferenceParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(1, 4),
+                    Context = new ReferenceContext { IncludeDeclaration = true }
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Assert - definition (line 1) present plus the reference (line 4).
+                Assert.NotNull(result);
+                var locations = result!.ToList();
+                Assert.Contains(locations, l =>
+                    l.Range.Start.Line == 1 && l.Range.Start.Character == 4);
+                Assert.Contains(locations, l =>
+                    l.Range.Start.Line == 4 && l.Range.Start.Character == 10);
             }
             finally
             {

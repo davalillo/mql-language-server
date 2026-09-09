@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
@@ -23,7 +21,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
-/// Handler for references requests (find all references)
+/// Handler for references requests (find all references).
+/// REQ-HD-04: locations come from token occurrences stored in
+/// GlobalSymbolIndex, not from regex matching over raw file text.
 /// </summary>
 public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, LocationContainer?>, IReferencesHandler
 {
@@ -97,47 +97,39 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
                 return null;
             }
 
-            var allReferences = GlobalSymbolIndex.Instance.FindAllReferences(symbol.Name);
+            // REQ-HD-04: token-backed lookup. Occurrences are name-keyed by
+            // design (OCC-05): same-name symbols across files and builtin-name
+            // collisions (e.g. Period) are a documented ambiguity, not
+            // heuristically filtered — only comment/string/preprocessor noise
+            // is removed by construction, because occurrences are captured
+            // from default-channel IDENTIFIER tokens only.
+            var occurrences = GlobalSymbolIndex.Instance.FindOccurrences(symbol.Name);
+
+            // D7 (corrected): on OmniSharp 0.19.9 IncludeDeclaration lives on
+            // ReferenceContext, not as a top-level ReferenceParams property.
+            var includeDeclaration = request.Context?.IncludeDeclaration ?? true;
+
             var references = new List<Location>();
 
-            foreach (var refLocation in allReferences)
+            foreach (var occurrence in occurrences)
             {
-                if (!File.Exists(refLocation.FilePath))
+                if (!File.Exists(occurrence.FilePath))
                 {
                     continue;
                 }
 
-                try
+                if (!includeDeclaration && occurrence.IsDefinition && occurrence.FilePath == filePath)
                 {
-                    var refContent = File.ReadAllText(refLocation.FilePath);
-                    var refLines = refContent.Split('\n');
-
-                    for (int i = 0; i < refLines.Length; i++)
-                    {
-                        var currentLine = refLines[i];
-
-                        var matches = System.Text.RegularExpressions.Regex.Matches(
-                            currentLine,
-                            @"\b" + System.Text.RegularExpressions.Regex.Escape(symbol.Name) + @"\b"
-                        );
-
-                        foreach (System.Text.RegularExpressions.Match match in matches)
-                        {
-                            references.Add(new Location
-                            {
-                                Uri = DocumentUri.File(refLocation.FilePath),
-                                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                                    new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index),
-                                    new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(i, match.Index + match.Length)
-                                )
-                            });
-                        }
-                    }
+                    continue;
                 }
-                catch (Exception ex)
+
+                references.Add(new Location
                 {
-                    _logger.LogWarning(ex, "Error reading file for references: {FilePath}", refLocation.FilePath);
-                }
+                    Uri = DocumentUri.File(occurrence.FilePath),
+                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                        new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(occurrence.Line, occurrence.Column),
+                        new OmniSharp.Extensions.LanguageServer.Protocol.Models.Position(occurrence.Line, occurrence.Column + occurrence.Length))
+                });
             }
 
             _logger.LogDebug("Found {ReferenceCount} references to symbol '{SymbolName}'",
