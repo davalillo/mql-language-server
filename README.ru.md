@@ -460,7 +460,7 @@ chmod +x mql-lsp-server
 ### Через инструмент .NET (NuGet)
 
 ```bash
-dotnet tool install -g mql-language-server --version 1.11.4
+dotnet tool install -g mql-language-server
 ```
 
 Либо установите из локальной сборки:
