@@ -13,13 +13,9 @@ Welcome to the MQL4 Language Server documentation. This repository is organized 
 ### 🔧 Development
 - **[Architecture Reference](../ARCHITECTURE.md)** - Canonical architecture doc (handler surface, DI, LSP capabilities, test pyramid, build layout)
 - **[Build Instructions](../README.md#from-source)** - How to build from source
-- **[Build Fixes](references/BUILD_FIXES.md)** - Build script issues and solutions
 - **[Security Analysis](references/SECURITY.md)** - NuGet vulnerabilities analysis
-- **[Implementation Guide](instrucciones_agente.md)** - Detailed implementation instructions
 
-### 📊 Project Management
-- **[Implementation Plan](PLAN_IMPLEMENTACION.md)** - Complete project phases
-- **[Verification Report](VERIFICATION_REPORT.md)** - Final verification results
+### 📦 Project Management
 - **[Distribution Guide](guides/DISTRIBUTION.md)** - How to distribute the LSP
 - **[Release Notes](references/RELEASE_NOTES.md)** - Version history
 
@@ -65,14 +61,6 @@ dotnet tool install --global mql4-language-server --version 1.0.0
 ✅ **Hover Information** - Symbol details  
 ✅ **Cross-platform** - Linux, macOS, Windows  
 ✅ **Standalone** - No .NET runtime required  
-
-## 📊 Project Status
-
-- **Version**: v1.0.0
-- **Status**: Production Ready ✅
-- **Tests**: 11/11 passing
-- **Build**: 0 warnings, 0 errors
-- **Documentation**: Complete
 
 ## 🔗 Links
 
