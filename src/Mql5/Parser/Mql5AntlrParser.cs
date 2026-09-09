@@ -53,6 +53,10 @@ public class Mql5AntlrParser : IMqlParser
             parsedFile.FilePath = filePath;
             parsedFile.Macros = ExtractMacros(tokenStream);
 
+            // OCC-01: capture default-channel IDENTIFIER tokens as occurrences.
+            parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
+                tokenStream, Mql5GrammarLexer.IDENTIFIER);
+
             BuildSymbolIndex(parsedFile, symbolsByName);
 
             parsedFile.SyntaxErrors = errorListener.Errors;
