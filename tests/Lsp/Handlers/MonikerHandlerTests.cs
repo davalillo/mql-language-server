@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using System.IO;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
@@ -19,10 +19,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void MonikerHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<MonikerHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<MonikerHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new MonikerHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new MonikerHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -32,10 +32,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task MonikerHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<MonikerHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<MonikerHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new MonikerHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new MonikerHandler(loggerMock, parserMock, documentStore);
 
             var request = new MonikerParams
             {
@@ -54,10 +54,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task MonikerHandler_ReturnsNull_WhenNoSymbolAtPositionAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<MonikerHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<MonikerHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new MonikerHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new MonikerHandler(loggerMock, parserMock, documentStore);
 
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestMoniker.mq4");
             var testCode = "// Just a comment";

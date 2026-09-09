@@ -10,7 +10,7 @@
 // using MqlLanguageServer.Models;
 // using MqlLanguageServer.Parser;
 // using Microsoft.Extensions.Logging;
-// using Moq;
+// using NSubstitute;
 // using System.IO;
 // using System.Threading;
 // using System.Threading.Tasks;
@@ -30,10 +30,10 @@
 //     public void CompletionHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<CompletionHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
-//         var handler = new CompletionHandler(loggerMock.Object, parserMock.Object, documentStore);
+//         var handler = new CompletionHandler(loggerMock, parserMock, documentStore);
 
 //         var capability = new CompletionCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -54,11 +54,11 @@
 //     public void DefinitionHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<DefinitionHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<DefinitionHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
 //         var globalSymbolIndex = new GlobalSymbolIndex();
-//         var handler = new DefinitionHandler(loggerMock.Object, parserMock.Object, documentStore, globalSymbolIndex);
+//         var handler = new DefinitionHandler(loggerMock, parserMock, documentStore, globalSymbolIndex);
 
 //         var capability = new DefinitionCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -79,10 +79,10 @@
 //     public void HoverHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<HoverHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<HoverHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
-//         var handler = new HoverHandler(loggerMock.Object, parserMock.Object, documentStore);
+//         var handler = new HoverHandler(loggerMock, parserMock, documentStore);
 
 //         var capability = new HoverCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -103,11 +103,11 @@
 //     public void ReferencesHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<ReferencesHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<ReferencesHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
 //         var globalSymbolIndex = new GlobalSymbolIndex();
-//         var handler = new ReferencesHandler(loggerMock.Object, parserMock.Object, documentStore, globalSymbolIndex);
+//         var handler = new ReferencesHandler(loggerMock, parserMock, documentStore, globalSymbolIndex);
 
 //         var capability = new ReferenceCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -128,11 +128,11 @@
 //     public void DidOpenTextDocumentHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<DidOpenTextDocumentHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
 //         var globalSymbolIndex = new GlobalSymbolIndex();
-//         var handler = new DidOpenTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, globalSymbolIndex);
+//         var handler = new DidOpenTextDocumentHandler(loggerMock, parserMock, documentStore, globalSymbolIndex);
 
 //         var capability = new TextSynchronizationCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -157,10 +157,10 @@
 //     public void DidChangeTextDocumentHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<DidChangeTextDocumentHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
-//         var handler = new DidChangeTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore);
+//         var handler = new DidChangeTextDocumentHandler(loggerMock, parserMock, documentStore);
 
 //         var capability = new TextSynchronizationCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -181,10 +181,10 @@
 //     public void DocumentSymbolHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<DocumentSymbolHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<DocumentSymbolHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
-//         var handler = new DocumentSymbolHandler(loggerMock.Object, parserMock.Object, documentStore);
+//         var handler = new DocumentSymbolHandler(loggerMock, parserMock, documentStore);
 
 //         var capability = new DocumentSymbolCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -205,11 +205,11 @@
 //     public void RenameHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<RenameHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<RenameHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
 //         var globalSymbolIndex = new GlobalSymbolIndex();
-//         var handler = new RenameHandler(loggerMock.Object, parserMock.Object, documentStore, globalSymbolIndex);
+//         var handler = new RenameHandler(loggerMock, parserMock, documentStore, globalSymbolIndex);
 
 //         var capability = new RenameCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -230,10 +230,10 @@
 //     public void CodeActionHandler_GetRegistrationOptions_ReturnsValidOptions()
 //     {
 //         // Arrange
-//         var loggerMock = new Mock<ILogger<CodeActionHandler>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<CodeActionHandler>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
-//         var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+//         var handler = new CodeActionHandler(loggerMock, parserMock, documentStore);
 
 //         var capability = new CodeActionCapability();
 //         var clientCapabilities = new ClientCapabilities();
@@ -267,8 +267,8 @@
 //         // by checking that GetRegistrationOptions returns valid DocumentSelector
 
 //         // Create handler using reflection (since we need different constructors)
-//         var loggerMock = new Mock<ILogger<object>>();
-//         var parserMock = new Mock<Mql4AntlrParser>();
+//         var loggerMock = Substitute.For<ILogger<object>>();
+//         var parserMock = new Mql4AntlrParser();
 //         var documentStore = new OpenDocumentStore();
 //         var globalSymbolIndex = new GlobalSymbolIndex();
 
@@ -276,19 +276,19 @@
 //         try
 //         {
 //             handler = Activator.CreateInstance(handlerType,
-//                 loggerMock.Object, parserMock.Object, documentStore, globalSymbolIndex);
+//                 loggerMock, parserMock, documentStore, globalSymbolIndex);
 //         }
 //         catch
 //         {
 //             try
 //             {
 //                 handler = Activator.CreateInstance(handlerType,
-//                     loggerMock.Object, parserMock.Object, documentStore);
+//                     loggerMock, parserMock, documentStore);
 //             }
 //             catch
 //             {
 //                 handler = Activator.CreateInstance(handlerType,
-//                     loggerMock.Object, parserMock.Object);
+//                     loggerMock, parserMock);
 //             }
 //         }
 

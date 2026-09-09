@@ -1,6 +1,6 @@
 using Xunit;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Models;
@@ -44,12 +44,12 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidOpenTextDocumentHandler_Constructor_ShouldInitialize()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, mockParser, mockStore, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -59,11 +59,11 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidCloseTextDocumentHandler_Constructor_ShouldInitialize()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
-        var mockStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<DidCloseTextDocumentHandler>>();
+        var mockStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new DidCloseTextDocumentHandler(mockLogger.Object, mockStore.Object);
+        var handler = new DidCloseTextDocumentHandler(mockLogger, mockStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -73,12 +73,12 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidChangeTextDocumentHandler_Constructor_ShouldInitialize()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, mockParser, mockStore, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -88,10 +88,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidOpenTextDocumentHandler_Handle_WithValidDocument_ShouldParseAndStoreAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var content = @"void OnInit()
@@ -124,10 +124,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidOpenTextDocumentHandler_Handle_WithNullContent_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, mockParser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -149,10 +149,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidOpenTextDocumentHandler_Handle_WithEmptyDocument_ShouldParseAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///empty.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -176,10 +176,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidOpenTextDocumentHandler_Handle_WithMqhFile_ShouldParseAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mqh");
         var content = "#define MYCONSTANT 100";
@@ -205,9 +205,9 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidCloseTextDocumentHandler_Handle_WithValidDocument_ShouldRemoveAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidCloseTextDocumentHandler>>();
         var store = new OpenDocumentStore();
-        var handler = new DidCloseTextDocumentHandler(mockLogger.Object, store);
+        var handler = new DidCloseTextDocumentHandler(mockLogger, store);
 
         var documentUri = new Uri("file:///test.mq4");
         store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
@@ -229,9 +229,9 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidCloseTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidCloseTextDocumentHandler>>();
         var store = new OpenDocumentStore();
-        var handler = new DidCloseTextDocumentHandler(mockLogger.Object, store);
+        var handler = new DidCloseTextDocumentHandler(mockLogger, store);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didCloseParams = new DidCloseTextDocumentParams
@@ -248,10 +248,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidChangeTextDocumentHandler_Handle_WithValidChanges_ShouldUpdateDocumentAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var initialContent = "void OnInit() {}";
@@ -287,10 +287,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidChangeTextDocumentHandler_Handle_WithNoChanges_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, mockParser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///test.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -312,10 +312,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public async Task DidChangeTextDocumentHandler_Handle_WithNonExistentDocument_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -339,10 +339,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidOpenTextDocumentHandler_GetRegistrationOptions_ShouldReturnCorrectPatterns()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockStore = new Mock<OpenDocumentStore>();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockStore = Substitute.For<OpenDocumentStore>();
+        var handler = new DidOpenTextDocumentHandler(mockLogger, mockParser, mockStore, GlobalSymbolIndex.Instance);
 
         // Act
         var options = handler.GetRegistrationOptions(
@@ -365,9 +365,9 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidCloseTextDocumentHandler_GetRegistrationOptions_ShouldReturnCorrectPatterns()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
-        var mockStore = new Mock<OpenDocumentStore>();
-        var handler = new DidCloseTextDocumentHandler(mockLogger.Object, mockStore.Object);
+        var mockLogger = Substitute.For<ILogger<DidCloseTextDocumentHandler>>();
+        var mockStore = Substitute.For<OpenDocumentStore>();
+        var handler = new DidCloseTextDocumentHandler(mockLogger, mockStore);
 
         // Act
         var options = handler.GetRegistrationOptions(
@@ -390,10 +390,10 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
     public void DidChangeTextDocumentHandler_GetRegistrationOptions_ShouldReturnCorrectPatterns()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockStore = new Mock<OpenDocumentStore>();
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, mockParser.Object, mockStore.Object, GlobalSymbolIndex.Instance);
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockStore = Substitute.For<OpenDocumentStore>();
+        var handler = new DidChangeTextDocumentHandler(mockLogger, mockParser, mockStore, GlobalSymbolIndex.Instance);
 
         // Act
         var options = handler.GetRegistrationOptions(
@@ -423,7 +423,7 @@ public class TextDocumentSyncAndErrorHandlingTests : IDisposable
         var store = new OpenDocumentStore();
         var parser = new Mql4AntlrParser();
         var openHandler = new DidOpenTextDocumentHandler(
-            Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
             store,
             GlobalSymbolIndex.Instance
@@ -468,7 +468,7 @@ void OnTick()
         var store = new OpenDocumentStore();
         var parser = new Mql4AntlrParser();
         var openHandler = new DidOpenTextDocumentHandler(
-            Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
             store,
             GlobalSymbolIndex.Instance
@@ -509,13 +509,13 @@ void OnTick()
         var store = new OpenDocumentStore();
         var parser = new Mql4AntlrParser();
         var openHandler = new DidOpenTextDocumentHandler(
-            Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
             store,
             GlobalSymbolIndex.Instance
         );
         var changeHandler = new DidChangeTextDocumentHandler(
-            Mock.Of<ILogger<DidChangeTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidChangeTextDocumentHandler>>(),
             parser,
             store,
             GlobalSymbolIndex.Instance
@@ -569,13 +569,13 @@ void OnTick()
         var store = new OpenDocumentStore();
         var parser = new Mql4AntlrParser();
         var openHandler = new DidOpenTextDocumentHandler(
-            Mock.Of<ILogger<DidOpenTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidOpenTextDocumentHandler>>(),
             parser,
             store,
             GlobalSymbolIndex.Instance
         );
         var closeHandler = new DidCloseTextDocumentHandler(
-            Mock.Of<ILogger<DidCloseTextDocumentHandler>>(),
+            Substitute.For<ILogger<DidCloseTextDocumentHandler>>(),
             store
         );
 
@@ -613,10 +613,10 @@ void OnTick()
     public async Task DidOpenTextDocumentHandler_Handle_WithParserException_ShouldLogErrorAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///error.mq4");
         var didOpenParams = new DidOpenTextDocumentParams
@@ -638,11 +638,11 @@ void OnTick()
     public async Task DidCloseTextDocumentHandler_Handle_WithException_ShouldLogErrorAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidCloseTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidCloseTextDocumentHandler>>();
         var store = new OpenDocumentStore();
         // Store documents that don't exist will cause Remove to not find them
         // but the implementation catches all exceptions
-        var handler = new DidCloseTextDocumentHandler(mockLogger.Object, store);
+        var handler = new DidCloseTextDocumentHandler(mockLogger, store);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didCloseParams = new DidCloseTextDocumentParams
@@ -659,11 +659,11 @@ void OnTick()
     public async Task DidChangeTextDocumentHandler_Handle_WithException_ShouldLogErrorAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
         // Document doesn't exist in store - will not try to parse
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var documentUri = new Uri("file:///nonexistent.mq4");
         var didChangeParams = new DidChangeTextDocumentParams
@@ -687,12 +687,12 @@ void OnTick()
     public async Task DidChangeTextDocumentHandler_Handle_WithNullChangeText_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
         var documentUri = new Uri("file:///test.mq4");
         store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var didChangeParams = new DidChangeTextDocumentParams
         {
@@ -713,10 +713,10 @@ void OnTick()
     public async Task DidOpenTextDocumentHandler_Handle_WithMalformedUri_ShouldLogErrorAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidOpenTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
-        var handler = new DidOpenTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidOpenTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var didOpenParams = new DidOpenTextDocumentParams
         {
@@ -737,12 +737,12 @@ void OnTick()
     public async Task DidChangeTextDocumentHandler_Handle_WithEmptyChangeList_ShouldNotThrowAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
         var documentUri = new Uri("file:///test.mq4");
         store.AddOrUpdate(documentUri, new Mql4File { Content = "original" }, "");
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         var didChangeParams = new DidChangeTextDocumentParams
         {
@@ -767,12 +767,12 @@ void OnTick()
     public async Task DidChangeTextDocumentHandler_Handle_WithConcurrentUpdates_ShouldHandleGracefullyAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DidChangeTextDocumentHandler>>();
+        var mockLogger = Substitute.For<ILogger<DidChangeTextDocumentHandler>>();
         var parser = new Mql4AntlrParser();
         var store = new OpenDocumentStore();
         var documentUri = new Uri("file:///concurrent.mq4");
         store.AddOrUpdate(documentUri, new Mql4File { Content = "test" }, "");
-        var handler = new DidChangeTextDocumentHandler(mockLogger.Object, parser, store, GlobalSymbolIndex.Instance);
+        var handler = new DidChangeTextDocumentHandler(mockLogger, parser, store, GlobalSymbolIndex.Instance);
 
         // Act: Multiple concurrent updates
         var tasks = new List<Task<Unit>>();

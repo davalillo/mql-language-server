@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using System.IO;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
@@ -21,11 +21,11 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void DidSaveTextDocumentHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
             GlobalSymbolIndex.Instance.Clear();
-            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+            var handler = new DidSaveTextDocumentHandler(loggerMock, parserMock, documentStore, GlobalSymbolIndex.Instance);
 
             // Assert
             Assert.NotNull(handler);
@@ -36,11 +36,11 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task DidSaveTextDocumentHandler_Completes_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
             GlobalSymbolIndex.Instance.Clear();
-            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+            var handler = new DidSaveTextDocumentHandler(loggerMock, parserMock, documentStore, GlobalSymbolIndex.Instance);
 
             var request = new DidChangeTextDocumentParams
             {
@@ -62,11 +62,11 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task DidSaveTextDocumentHandler_ProcessesFile_WhenFileSavedAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<DidSaveTextDocumentHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DidSaveTextDocumentHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
             GlobalSymbolIndex.Instance.Clear();
-            var handler = new DidSaveTextDocumentHandler(loggerMock.Object, parserMock.Object, documentStore, GlobalSymbolIndex.Instance);
+            var handler = new DidSaveTextDocumentHandler(loggerMock, parserMock, documentStore, GlobalSymbolIndex.Instance);
 
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestDidSave.mq4");
             var testCode = "void OnTick() { int x = 10; }";

@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -30,10 +30,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void DeclarationHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<DeclarationHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DeclarationHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new DeclarationHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new DeclarationHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -43,8 +43,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task DeclarationHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<DeclarationHandler>>();
-            var handler = new DeclarationHandler(loggerMock.Object, new Mql4AntlrParser(), new OpenDocumentStore());
+            var loggerMock = Substitute.For<ILogger<DeclarationHandler>>();
+            var handler = new DeclarationHandler(loggerMock, new Mql4AntlrParser(), new OpenDocumentStore());
 
             var request = new DeclarationParams
             {
@@ -69,7 +69,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             try
             {
                 var handler = new DeclarationHandler(
-                    Mock.Of<ILogger<DeclarationHandler>>(),
+                    Substitute.For<ILogger<DeclarationHandler>>(),
                     new Mql4AntlrParser(),
                     new OpenDocumentStore());
 
@@ -100,10 +100,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void TypeDefinitionHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<TypeDefinitionHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<TypeDefinitionHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new TypeDefinitionHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new TypeDefinitionHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -114,7 +114,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         {
             // Arrange
             var handler = new TypeDefinitionHandler(
-                Mock.Of<ILogger<TypeDefinitionHandler>>(),
+                Substitute.For<ILogger<TypeDefinitionHandler>>(),
                 new Mql4AntlrParser(),
                 new OpenDocumentStore());
 
@@ -141,7 +141,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             try
             {
                 var handler = new TypeDefinitionHandler(
-                    Mock.Of<ILogger<TypeDefinitionHandler>>(),
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
                     new Mql4AntlrParser(),
                     new OpenDocumentStore());
 
@@ -172,10 +172,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void ImplementationHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<ImplementationHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<ImplementationHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new ImplementationHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new ImplementationHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -186,7 +186,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         {
             // Arrange
             var handler = new ImplementationHandler(
-                Mock.Of<ILogger<ImplementationHandler>>(),
+                Substitute.For<ILogger<ImplementationHandler>>(),
                 new Mql4AntlrParser(),
                 new OpenDocumentStore());
 
@@ -214,7 +214,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             try
             {
                 var handler = new ImplementationHandler(
-                    Mock.Of<ILogger<ImplementationHandler>>(),
+                    Substitute.For<ILogger<ImplementationHandler>>(),
                     new Mql4AntlrParser(),
                     new OpenDocumentStore());
 
@@ -245,10 +245,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void DocumentHighlightHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<DocumentHighlightHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DocumentHighlightHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new DocumentHighlightHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new DocumentHighlightHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -258,10 +258,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task DocumentHighlightHandler_ReturnsEmptyContainer_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<DocumentHighlightHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<DocumentHighlightHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new DocumentHighlightHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new DocumentHighlightHandler(loggerMock, parserMock, documentStore);
 
             var request = new DocumentHighlightParams
             {

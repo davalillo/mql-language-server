@@ -4,7 +4,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -17,10 +17,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void SignatureHelpHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<SignatureHelpHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SignatureHelpHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SignatureHelpHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SignatureHelpHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -30,10 +30,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SignatureHelpHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SignatureHelpHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SignatureHelpHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SignatureHelpHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SignatureHelpHandler(loggerMock, parserMock, documentStore);
 
             var request = new SignatureHelpParams
             {
@@ -52,10 +52,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SignatureHelpHandler_ReturnsSignatureHelp_WhenFunctionAtPositionAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SignatureHelpHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SignatureHelpHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SignatureHelpHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SignatureHelpHandler(loggerMock, parserMock, documentStore);
 
             // Create a test file with a function
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestSignatureHelp.mq4");

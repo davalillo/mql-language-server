@@ -2,7 +2,7 @@ using Xunit;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Parser;
 using MqlLanguageServer.Lsp.Server;
@@ -159,12 +159,12 @@ public class LspIntegrationTests : IDisposable
     public void DocumentSymbolHandler_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<DocumentSymbolHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
+        var handler = new DocumentSymbolHandler(mockLogger, mockParser, mockDocumentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -174,10 +174,10 @@ public class LspIntegrationTests : IDisposable
     public async Task DocumentSymbolHandler_Handle_ReturnsDocumentSymbolsAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
+        var mockLogger = Substitute.For<ILogger<DocumentSymbolHandler>>();
         var parser = new Mql4AntlrParser();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
-        var handler = new DocumentSymbolHandler(mockLogger.Object, parser, mockDocumentStore.Object);
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
+        var handler = new DocumentSymbolHandler(mockLogger, parser, mockDocumentStore);
 
         // Create a temporary test file
         var testFile = Path.Combine(Path.GetTempPath(), $"test-{Guid.NewGuid():N}.mq4");
@@ -227,10 +227,10 @@ public class LspIntegrationTests : IDisposable
     public async Task DocumentSymbolHandler_Handle_ReturnsNullForNonExistentFileAsync()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DocumentSymbolHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
-        var handler = new DocumentSymbolHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
+        var mockLogger = Substitute.For<ILogger<DocumentSymbolHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
+        var handler = new DocumentSymbolHandler(mockLogger, mockParser, mockDocumentStore);
 
         // Create request with non-existent file
         var documentUri = new Uri("file:///non/existent/file.mq4");
@@ -250,12 +250,12 @@ public class LspIntegrationTests : IDisposable
     public void DefinitionHandler_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<DefinitionHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<DefinitionHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new DefinitionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object, GlobalSymbolIndex.Instance);
+        var handler = new DefinitionHandler(mockLogger, mockParser, mockDocumentStore, GlobalSymbolIndex.Instance);
 
         // Assert
         Assert.NotNull(handler);
@@ -265,12 +265,12 @@ public class LspIntegrationTests : IDisposable
     public void CompletionHandler_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<CompletionHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<CompletionHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new CompletionHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
+        var handler = new CompletionHandler(mockLogger, mockParser, mockDocumentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -280,12 +280,12 @@ public class LspIntegrationTests : IDisposable
     public void HoverHandler_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<HoverHandler>>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var mockDocumentStore = new Mock<OpenDocumentStore>();
+        var mockLogger = Substitute.For<ILogger<HoverHandler>>();
+        var mockParser = new Mql4AntlrParser();
+        var mockDocumentStore = Substitute.For<OpenDocumentStore>();
 
         // Act
-        var handler = new HoverHandler(mockLogger.Object, mockParser.Object, mockDocumentStore.Object);
+        var handler = new HoverHandler(mockLogger, mockParser, mockDocumentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -315,12 +315,12 @@ public class LspIntegrationTests : IDisposable
     public void MqlLspServer_CanBeCreated()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
-        var mockParser = new Mock<Mql4AntlrParser>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
+        var mockParser = new Mql4AntlrParser();
 
         // Act
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
+        var server = new MqlLspServer(mockLogger, mockServer, mockParser);
 
         // Assert
         Assert.NotNull(server);
@@ -330,10 +330,10 @@ public class LspIntegrationTests : IDisposable
     public void MqlLspServer_Initialize_DoesNotThrow()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
-        var mockParser = new Mock<Mql4AntlrParser>();
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, mockParser.Object);
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
+        var mockParser = new Mql4AntlrParser();
+        var server = new MqlLspServer(mockLogger, mockServer, mockParser);
 
         // Act & Assert
         var exception = Record.Exception(() => server.Initialize());

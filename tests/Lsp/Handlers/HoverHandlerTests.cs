@@ -2,7 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using MqlLanguageServer.Lsp.Handlers;
@@ -20,7 +20,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers;
 /// </summary>
 public class HoverHandlerTests
 {
-    private static ILogger<T> MockLogger<T>() where T : class => Mock.Of<ILogger<T>>();
+    private static ILogger<T> MockLogger<T>() where T : class => Substitute.For<ILogger<T>>();
 
     [Fact]
     public async Task HoverHandler_Mql4_Returns_MarkupContent_ShapeAsync()

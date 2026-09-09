@@ -11,7 +11,7 @@ using MqlLanguageServer.Mql4.Builtins;
 using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
-using Moq;
+using NSubstitute;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
@@ -42,10 +42,10 @@ public class LanguageAwareHandlerBaseTests
     public void Base_Resolves_Mql5_Parser_And_Builtins()
     {
         // RED: LanguageAwareHandlerBase does not exist yet.
-        var loggerMock = new Mock<ILogger<MqlLanguageService>>();
+        var loggerMock = Substitute.For<ILogger<MqlLanguageService>>();
         var mql4Parser = new Mql4AntlrParser();
         var mql5Parser = new Mql5AntlrParser();
-        var languageService = new MqlLanguageService(mql4Parser, mql5Parser, loggerMock.Object);
+        var languageService = new MqlLanguageService(mql4Parser, mql5Parser, loggerMock);
         var store = new OpenDocumentStore();
         var builtins = new IMqlBuiltins[] { new Mql4BuiltinsAdapter(), new Mql5Builtins() };
 
@@ -58,10 +58,10 @@ public class LanguageAwareHandlerBaseTests
     [Fact]
     public void Base_Resolves_Mql4_Parser_And_Builtins()
     {
-        var loggerMock = new Mock<ILogger<MqlLanguageService>>();
+        var loggerMock = Substitute.For<ILogger<MqlLanguageService>>();
         var mql4Parser = new Mql4AntlrParser();
         var mql5Parser = new Mql5AntlrParser();
-        var languageService = new MqlLanguageService(mql4Parser, mql5Parser, loggerMock.Object);
+        var languageService = new MqlLanguageService(mql4Parser, mql5Parser, loggerMock);
         var store = new OpenDocumentStore();
         var builtins = new IMqlBuiltins[] { new Mql4BuiltinsAdapter(), new Mql5Builtins() };
 
@@ -74,8 +74,8 @@ public class LanguageAwareHandlerBaseTests
     [Fact]
     public void Base_Resolves_Language_From_Store()
     {
-        var loggerMock = new Mock<ILogger<MqlLanguageService>>();
-        var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock.Object);
+        var loggerMock = Substitute.For<ILogger<MqlLanguageService>>();
+        var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock);
         var store = new OpenDocumentStore();
         var uri = new Uri("file:///test.mq5");
         var mqlFile = new MqlFile { FilePath = uri.AbsolutePath, Language = MqlLanguage.Mql5 };
@@ -99,8 +99,8 @@ public class LanguageAwareHandlerBaseTests
 
         try
         {
-            var loggerMock = new Mock<ILogger<MqlLanguageService>>();
-            var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<MqlLanguageService>>();
+            var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock);
             var store = new OpenDocumentStore();
             var builtins = Array.Empty<IMqlBuiltins>();
             var handler = new TestHandler(languageService, store, builtins);
@@ -117,8 +117,8 @@ public class LanguageAwareHandlerBaseTests
     [Fact]
     public void ResolveLanguage_NonExistentFile_FallsBackToMql4()
     {
-        var loggerMock = new Mock<ILogger<MqlLanguageService>>();
-        var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock.Object);
+        var loggerMock = Substitute.For<ILogger<MqlLanguageService>>();
+        var languageService = new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser(), loggerMock);
         var store = new OpenDocumentStore();
         var builtins = Array.Empty<IMqlBuiltins>();
         var handler = new TestHandler(languageService, store, builtins);

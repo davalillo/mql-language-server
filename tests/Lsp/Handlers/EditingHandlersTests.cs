@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -28,10 +28,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void RenameHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<RenameHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<RenameHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new RenameHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new RenameHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -42,7 +42,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         {
             // Arrange
             var handler = new RenameHandler(
-                Mock.Of<ILogger<RenameHandler>>(),
+                Substitute.For<ILogger<RenameHandler>>(),
                 new Mql4AntlrParser(),
                 new OpenDocumentStore());
 
@@ -70,7 +70,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             try
             {
                 var handler = new RenameHandler(
-                    Mock.Of<ILogger<RenameHandler>>(),
+                    Substitute.For<ILogger<RenameHandler>>(),
                     new Mql4AntlrParser(),
                     new OpenDocumentStore());
 
@@ -104,8 +104,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void DocumentFormattingHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<DocumentFormattingHandler>>();
-            var handler = new DocumentFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<DocumentFormattingHandler>>();
+            var handler = new DocumentFormattingHandler(loggerMock);
 
             // Assert
             Assert.NotNull(handler);
@@ -115,8 +115,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task DocumentFormattingHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<DocumentFormattingHandler>>();
-            var handler = new DocumentFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<DocumentFormattingHandler>>();
+            var handler = new DocumentFormattingHandler(loggerMock);
 
             var request = new DocumentFormattingParams
             {
@@ -138,8 +138,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void RangeFormattingHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<RangeFormattingHandler>>();
-            var handler = new RangeFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<RangeFormattingHandler>>();
+            var handler = new RangeFormattingHandler(loggerMock);
 
             // Assert
             Assert.NotNull(handler);
@@ -149,8 +149,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task RangeFormattingHandler_ReturnsEmptyContainer_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<RangeFormattingHandler>>();
-            var handler = new RangeFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<RangeFormattingHandler>>();
+            var handler = new RangeFormattingHandler(loggerMock);
 
             var request = new DocumentRangeFormattingParams
             {
@@ -174,8 +174,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void OnTypeFormattingHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<OnTypeFormattingHandler>>();
-            var handler = new OnTypeFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<OnTypeFormattingHandler>>();
+            var handler = new OnTypeFormattingHandler(loggerMock);
 
             // Assert
             Assert.NotNull(handler);
@@ -185,8 +185,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task OnTypeFormattingHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<OnTypeFormattingHandler>>();
-            var handler = new OnTypeFormattingHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<OnTypeFormattingHandler>>();
+            var handler = new OnTypeFormattingHandler(loggerMock);
 
             var request = new DocumentOnTypeFormattingParams
             {

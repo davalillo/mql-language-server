@@ -4,7 +4,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -17,10 +17,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void FoldingRangeHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<FoldingRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<FoldingRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new FoldingRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new FoldingRangeHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -30,10 +30,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task FoldingRangeHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<FoldingRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<FoldingRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new FoldingRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new FoldingRangeHandler(loggerMock, parserMock, documentStore);
 
             var request = new FoldingRangeRequestParam
             {
@@ -51,10 +51,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task FoldingRangeHandler_ReturnsFoldingRanges_WhenValidFileAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<FoldingRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<FoldingRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new FoldingRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new FoldingRangeHandler(loggerMock, parserMock, documentStore);
 
             // Create a test file with functions
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestFoldingRange.mq4");

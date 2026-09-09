@@ -4,7 +4,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -17,10 +17,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void SelectionRangeHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<SelectionRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SelectionRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SelectionRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SelectionRangeHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -30,10 +30,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SelectionRangeHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SelectionRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SelectionRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SelectionRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SelectionRangeHandler(loggerMock, parserMock, documentStore);
 
             var request = new SelectionRangeParams
             {
@@ -52,10 +52,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SelectionRangeHandler_ReturnsRanges_WhenValidFileAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SelectionRangeHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SelectionRangeHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SelectionRangeHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SelectionRangeHandler(loggerMock, parserMock, documentStore);
 
             // Create a test file
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestSelectionRange.mq4");
