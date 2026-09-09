@@ -107,7 +107,7 @@ dotnet nuget push ./nupkg/*.nupkg \
   --source nuget.org
 
 # Instalación para usuarios:
-dotnet tool install -g mql-language-server --version 1.0.0
+dotnet tool install -g mql-language-server
 ```
 
 **Opción B: GitHub Packages (Recomendado)**
@@ -130,7 +130,6 @@ dotnet nuget push ./nupkg/*.nupkg \
 
 # 4. Para usuarios (instalar desde GitHub Packages):
 dotnet tool install -g mql-language-server \
-  --version 1.0.0 \
   --add-source "https://nuget.pkg.github.com/davalillo/index.json"
 
 # Configurar source permanente:
@@ -140,7 +139,7 @@ dotnet nuget add source "https://nuget.pkg.github.com/davalillo/index.json" \
   --password "$GITHUB_TOKEN"
 
 # Ahora instalación simple:
-dotnet tool install -g mql-language-server --version 1.0.0
+dotnet tool install -g mql-language-server
 ```
 
 ### 3. Distribución Privada/Local
@@ -157,7 +156,6 @@ zip -r mql-language-server-nupkg.zip nupkg/
 
 # Para usuarios (instalar desde source local):
 dotnet tool install -g mql-language-server \
-  --version 1.0.0 \
   --add-source ./nupkg
 ```
 

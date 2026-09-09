@@ -33,7 +33,7 @@ chmod +x mql-lsp-server
 
 ### .NET Tool (Requires .NET 10 SDK)
 ```bash
-dotnet tool install --global mql-language-server --version 1.11.4
+dotnet tool install --global mql-language-server
 ```
 
 ## 🎯 Use Cases

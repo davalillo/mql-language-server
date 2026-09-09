@@ -33,7 +33,7 @@ cd mql-language-server
 ### Option 3: .NET Tool
 ```bash
 # Requires .NET 10 SDK
-dotnet tool install --global mql-language-server --version 1.0.0
+dotnet tool install --global mql-language-server
 
 # Verify installation
 mql-lsp-server --version
