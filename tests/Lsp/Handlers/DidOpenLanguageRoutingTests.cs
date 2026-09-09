@@ -14,6 +14,8 @@ using Xunit;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
+// Serializes access to the GlobalSymbolIndex singleton with other collections that mutate it.
+[Collection("GlobalSymbolIndex Tests")]
 public class DidOpenLanguageRoutingTests
 {
     private readonly Mock<ILogger<DidOpenTextDocumentHandler>> _logger = new();

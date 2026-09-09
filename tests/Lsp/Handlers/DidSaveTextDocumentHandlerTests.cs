@@ -13,6 +13,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
     /// <summary>
     /// Tests for DidSaveTextDocumentHandler.
     /// </summary>
+    // Serializes access to the GlobalSymbolIndex singleton with other collections that mutate it.
+    [Collection("GlobalSymbolIndex Tests")]
     public class DidSaveTextDocumentHandlerTests
     {
         [Fact]
