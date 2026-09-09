@@ -16,6 +16,7 @@ using Serilog;
 
 using OmniSharp.Extensions.LanguageServer.Server;
 
+using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -31,6 +32,10 @@ namespace MqlLanguageServer
     /// </summary>
     class Program
     {
+        // Captured in OnInitialize (WI-01/D6) and consumed after LanguageServer.From
+        // completes, so the initialize response is never delayed by the scan.
+        private static List<string> workspaceFoldersSnapshot = new();
+
         static async Task<int> Main(string[] args)
         {
             // Get build date from BuildConstants (immutable, embedded at compile time)
@@ -84,6 +89,7 @@ namespace MqlLanguageServer
                             services.AddSingleton<MetricsCollector>();
                             services.AddSingleton<MqlLspServer>();
                             services.AddSingleton<MqlLanguageService>();
+                            services.AddSingleton<WorkspaceIndexer>();
 
                             // Per-language built-in registries (IMqlBuiltins[]) are injected into handlers.
                             services.AddSingleton<IMqlBuiltins, Mql4BuiltinsAdapter>();
@@ -121,6 +127,24 @@ namespace MqlLanguageServer
                         .OnInitialize((server, request, token) =>
                         {
                             Log.Information("MQL Language Server initialized for client: {ClientName}", request.ClientInfo?.Name ?? "unknown");
+
+                            // WI-01/D6: capture workspace folders during OnInitialize;
+                            // the scan starts AFTER InitializeResult is computed so the
+                            // response is never delayed (WI-02). Fire-and-forget.
+                            workspaceFoldersSnapshot = new List<string>();
+                            var foldersContainer = request.WorkspaceFolders;
+                            if (foldersContainer is not null)
+                            {
+                                foreach (var folder in foldersContainer)
+                                {
+                                    var path = folder.Uri.ToUri().AbsolutePath;
+                                    if (!string.IsNullOrEmpty(path))
+                                    {
+                                        workspaceFoldersSnapshot.Add(path);
+                                    }
+                                }
+                            }
+
                             return Task.FromResult(new InitializeResult
                             {
                                 Capabilities = new ServerCapabilities
@@ -128,7 +152,7 @@ namespace MqlLanguageServer
                                     // Forzamos que aparezca True (o el objeto de opciones)
                                     WorkspaceSymbolProvider = true,
 
-                                    
+
                                 }
                             });
                         })
@@ -145,8 +169,34 @@ namespace MqlLanguageServer
 
                 Log.Information("Language Server started and listening on stdio...");
 
+                // WI-01/D6: start the workspace scan after initialization so the
+                // initialize response was never delayed (WI-02). Fire-and-forget.
+                try
+                {
+                    var workspaceFolders = workspaceFoldersSnapshot;
+                    if (workspaceFolders.Count > 0)
+                    {
+                        server.GetRequiredService<WorkspaceIndexer>().StartIndexing(workspaceFolders);
+                        Log.Information("Workspace scan started for {FolderCount} folder(s)", workspaceFolders.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed to start workspace scan; server continues without it.");
+                }
+
                 // CAMBIO 4: Esperar a que termine
                 await server.WaitForExit;
+
+                // Cancel the workspace scan on shutdown (D6).
+                try
+                {
+                    server.GetRequiredService<WorkspaceIndexer>().StopIndexing();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // server already disposed during shutdown — nothing to cancel
+                }
 
                 // Log metrics summary before shutdown
                 var metrics = MetricsCollector.Instance.GetSummaryReport();

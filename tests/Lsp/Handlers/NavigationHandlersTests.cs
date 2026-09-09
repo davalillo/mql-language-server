@@ -8,6 +8,7 @@ using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using MqlLanguageServer.Tests.Lsp;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -16,7 +17,11 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
     /// S-003: added behavior tests (file-not-found + happy path) to lift coverage
     /// for DeclarationHandler (19.1%), TypeDefinitionHandler (17.3%), and
     /// ImplementationHandler (15.5%).
+    /// REQ-HD-04: the references tests below share the GlobalSymbolIndex
+    /// singleton, so they run inside the GlobalSymbolIndex Tests collection
+    /// (serialized with the other index users, like HandlerCoverageTests).
     /// </summary>
+    [Collection("GlobalSymbolIndex Tests")]
     public class NavigationHandlersTests
     {
         private static string WriteTempFile(string fileName, string content)
