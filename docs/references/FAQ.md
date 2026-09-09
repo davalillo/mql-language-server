@@ -68,12 +68,12 @@ Yes! The MQL4 LSP v1.0.0 is:
 
 **Standalone Binary**: Yes! Just download and run from any directory.
 ```bash
-./mql4-lsp-server --stdio
+./mql-lsp-server --stdio
 ```
 
 **.NET Tool**: Requires `dotnet` command which may need admin rights for global install. Use local install instead:
 ```bash
-dotnet tool install --local mql4-language-server --add-source ./nupkg
+dotnet tool install --local mql-language-server --add-source ./nupkg
 ```
 
 ## Editor Integration
@@ -109,7 +109,7 @@ No, LSP support is required. If your favorite editor doesn't support LSP, consid
 
 1. **Command line test**:
    ```bash
-   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' | mql4-lsp-server --stdio
+   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' | mql-lsp-server --stdio
    ```
    
    You should see initialization logs and the server should start.
@@ -153,19 +153,19 @@ Check for syntax errors in your code that might prevent parsing.
 
 **Check binary location**:
 ```bash
-which mql4-lsp-server
+which mql-lsp-server
 # Or run directly
-/usr/local/bin/mql4-lsp-server --stdio
+/usr/local/bin/mql-lsp-server --stdio
 ```
 
 **Check permissions**:
 ```bash
-chmod +x /usr/local/bin/mql4-lsp-server
+chmod +x /usr/local/bin/mql-lsp-server
 ```
 
 **Test manually**:
 ```bash
-echo '{}' | mql4-lsp-server --stdio
+echo '{}' | mql-lsp-server --stdio
 # Should start without crashing
 ```
 
@@ -236,7 +236,7 @@ ldd --version
 uname -m
 
 # Try running with explicit loader
-./mql4-lsp-server --version
+./mql-lsp-server --version
 ```
 
 ## Development
@@ -244,8 +244,8 @@ uname -m
 ### Can I contribute?
 
 Yes! Contributions welcome:
-- 🐛 Bug reports: https://github.com/davalillo/mql4-language-server/issues
-- ✨ Feature requests: https://github.com/davalillo/mql4-language-server/issues
+- 🐛 Bug reports: https://github.com/davalillo/mql-language-server/issues
+- ✨ Feature requests: https://github.com/davalillo/mql-language-server/issues
 - 🔧 Code contributions: Submit PRs to main branch
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
@@ -255,8 +255,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 **Prerequisites**: .NET 10 SDK
 
 ```bash
-git clone https://github.com/davalillo/mql4-language-server.git
-cd mql4-language-server
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
 
 # Build
 dotnet build -c Release
@@ -341,10 +341,10 @@ ANTLR 4.13.1 was chosen for:
 
 ### Where can I download binaries?
 
-**GitHub Releases**: https://github.com/davalillo/mql4-language-server/releases
-- Linux: `mql4-lsp-server` (71MB)
-- macOS: `mql4-lsp-server` (71MB)  
-- Windows: `mql4-lsp-server.exe` (72MB)
+**GitHub Releases**: https://github.com/davalillo/mql-language-server/releases
+- Linux: `mql-lsp-server` (71MB)
+- macOS: `mql-lsp-server` (71MB)  
+- Windows: `mql-lsp-server.exe` (72MB)
 
 ### Can I redistribute?
 
@@ -361,8 +361,8 @@ See [LICENSE](LICENSE) for full license text.
 All releases include SHA256 checksums:
 ```bash
 # Download binary and checksums
-wget https://github.com/davalillo/mql4-language-server/releases/download/v1.0.0/mql4-lsp-server
-wget https://github.com/davalillo/mql4-language-server/releases/download/v1.0.0/SHA256SUMS.txt
+wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
+wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/SHA256SUMS.txt
 
 # Verify
 sha256sum -c SHA256SUMS.txt
@@ -378,7 +378,7 @@ sha256sum -c SHA256SUMS.txt
    - docs/guides/EDITOR_INTEGRATION.md
    - docs/guides/DISTRIBUTION.md
 3. **Search existing issues** 🔍
-   - https://github.com/davalillo/mql4-language-server/issues
+   - https://github.com/davalillo/mql-language-server/issues
 4. **Create new issue** ✍️
    - Bug report
    - Feature request
@@ -387,7 +387,7 @@ sha256sum -c SHA256SUMS.txt
 ### How to report bugs?
 
 Please include:
-1. MQL4 LSP version (`mql4-lsp-server --version`)
+1. MQL4 LSP version (`mql-lsp-server --version`)
 2. Operating system and version
 3. Editor name and version
 4. Steps to reproduce
@@ -408,8 +408,8 @@ Open an issue with:
 
 If your question isn't answered here:
 1. Check the [documentation](README.md)
-2. Search [existing issues](https://github.com/davalillo/mql4-language-server/issues)
-3. [Create a new issue](https://github.com/davalillo/mql4-language-server/issues/new)
+2. Search [existing issues](https://github.com/davalillo/mql-language-server/issues)
+3. [Create a new issue](https://github.com/davalillo/mql-language-server/issues/new)
 
 We'll be happy to help! 💙
 

@@ -9,34 +9,34 @@ Choose one installation method:
 ### Option 1: Standalone Binary (Recommended)
 ```bash
 # Download from GitHub Releases
-wget https://github.com/davalillo/mql4-language-server/releases/latest/download/mql4-lsp-server-linux-x64.tar.gz
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
 
 # Extract and make executable
-tar -xzf mql4-lsp-server-linux-x64.tar.gz
-chmod +x mql4-lsp-server
+tar -xzf mql-lsp-server-linux-x64.tar.gz
+chmod +x mql-lsp-server
 
 # Test binary
-./mql4-lsp-server --version
+./mql-lsp-server --version
 ```
 
 ### Option 2: From Source Build
 ```bash
 # Build the project
-git clone https://github.com/davalillo/mql4-language-server.git
-cd mql4-language-server
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
 ./build.sh
 
 # Binary location
-./src/bin/linux-x64/publish/mql4-lsp-server --version
+./src/bin/linux-x64/publish/mql-lsp-server --version
 ```
 
 ### Option 3: .NET Tool
 ```bash
 # Requires .NET 10 SDK
-dotnet tool install --global mql4-language-server --version 1.0.0
+dotnet tool install --global mql-language-server --version 1.0.0
 
 # Verify installation
-mql4-lsp-server --version
+mql-lsp-server --version
 ```
 
 ## 🧪 Testing Setup
@@ -122,7 +122,7 @@ cat > test-request.json << 'EOF'
 EOF
 
 # Send request to LSP server
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp/mql4-test","capabilities":{}}}' | ./mql4-lsp-server --stdio
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp/mql4-test","capabilities":{}}}' | ./mql-lsp-server --stdio
 
 # Expected: JSON-RPC response with server capabilities
 ```
@@ -137,7 +137,7 @@ Create `.vscode/settings.json` in your MQL4 project:
 {
   "languageServers": {
     "MQL4": {
-      "command": "./mql4-lsp-server",
+      "command": "./mql-lsp-server",
       "args": ["--stdio"],
       "languages": ["mql4"],
       " filetypes": ["mq4", "mqh"]
@@ -186,7 +186,7 @@ Create `.vscode/settings.json` in your MQL4 project:
 ```lua
 -- Install nvim-lspconfig
 require('lspconfig').mql4_lsp = {
-    cmd = {'./mql4-lsp-server', '--stdio'},
+    cmd = {'./mql-lsp-server', '--stdio'},
     filetypes = {'mql4'},
 }
 
@@ -216,7 +216,7 @@ nvim test.mq4
 
 ```bash
 # Count parsed symbols
-./mql4-lsp-server --stdio <<EOF
+./mql-lsp-server --stdio <<EOF
 {"jsonrpc":"2.0","id":1,"method":"textDocument/documentSymbol","params":{"textDocument":{"uri":"file:///tmp/test.mq4"}}}
 EOF
 
@@ -227,7 +227,7 @@ EOF
 
 ```bash
 # Test keyword completion
-./mql4-lsp-server --stdio <<EOF
+./mql-lsp-server --stdio <<EOF
 {"jsonrpc":"2.0","id":1,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///tmp/test.mq4"},"position":{"line":0,"character":0}}}
 EOF
 
@@ -238,7 +238,7 @@ EOF
 
 ```bash
 # Test MQL4 built-ins completion
-./mql4-lsp-server --stdio <<EOF
+./mql-lsp-server --stdio <<EOF
 {"jsonrpc":"2.0","id":1,"method":"textDocument/completion","params":{"textDocument":{"uri":"file:///tmp/test.mq4"},"position":{"line":30,"character":5}}}
 EOF
 
@@ -251,16 +251,16 @@ EOF
 
 ```bash
 # Check if binary is executable
-./mql4-lsp-server --help
+./mql-lsp-server --help
 
 # Check stdio mode
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' | ./mql4-lsp-server --stdio
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' | ./mql-lsp-server --stdio
 ```
 
 ### No Completion Suggestions
 
 1. Verify file is associated with MQL4 language
-2. Check LSP server is running: `ps aux | grep mql4-lsp-server`
+2. Check LSP server is running: `ps aux | grep mql-lsp-server`
 3. Check LSP logs in editor's output panel
 
 ### Parse Errors
@@ -291,7 +291,7 @@ MQL4 parser is ANTLR-based. If parsing fails:
 
 ```bash
 # Test with larger file (1000+ lines)
-time ./mql4-lsp-server --stdio < large-test-request.json
+time ./mql-lsp-server --stdio < large-test-request.json
 
 # Expected: < 500ms for initialization
 # Expected: < 100ms for completion
@@ -330,10 +330,10 @@ time ./mql4-lsp-server --stdio < large-test-request.json
 
 ### Issue: "Commands not responding"
 
-**Solution**: Check LSP server is running: `ps aux | grep mql4-lsp-server`
+**Solution**: Check LSP server is running: `ps aux | grep mql-lsp-server`
 
 ---
 
 **Test File Location**: `/tmp/test.mq4` (as referenced in examples)
 
-**Binary Location**: `./mql4-lsp-server` (adjust path as needed)
+**Binary Location**: `./mql-lsp-server` (adjust path as needed)

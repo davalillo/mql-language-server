@@ -28,39 +28,39 @@ Esta guía documenta todos los métodos de distribución disponibles para el MQL
 # .\build.ps1  # Windows
 
 # 2. Binarios generados en:
-# src/bin/linux-x64/mql4-lsp-server
-# src/bin/osx-x64/mql4-lsp-server
-# src/bin/win-x64/mql4-lsp-server.exe
+# src/bin/linux-x64/mql-lsp-server
+# src/bin/osx-x64/mql-lsp-server
+# src/bin/win-x64/mql-lsp-server.exe
 
 # 3. Crear checksums
-sha256sum mql4-lsp-server > SHA256SUMS.txt
-sha256sum mql4-lsp-server.exe >> SHA256SUMS.txt
+sha256sum mql-lsp-server > SHA256SUMS.txt
+sha256sum mql-lsp-server.exe >> SHA256SUMS.txt
 
 # 4. Subir a GitHub Releases
-# Manual: https://github.com/davalillo/mql4-language-server/releases
+# Manual: https://github.com/davalillo/mql-language-server/releases
 # Automático: GitHub Actions (configurado en .github/workflows/build.yml)
 ```
 
 **Para usuarios finales**:
 ```bash
 # Descargar desde GitHub Releases
-wget https://github.com/davalillo/mql4-language-server/releases/download/v1.0.0/mql4-lsp-server
-chmod +x mql4-lsp-server
+wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
+chmod +x mql-lsp-server
 
 # Ejecutar
-./mql4-lsp-server --stdio
+./mql-lsp-server --stdio
 ```
 
 ### 2. .NET Global Tool (NuGet)
 
 **¿Qué es?**
 - Paquete NuGet distribuido via nuget.org o GitHub Packages
-- Se instala globalmente con: `dotnet tool install -g mql4-language-server`
+- Se instala globalmente con: `dotnet tool install -g mql-language-server`
 - Requiere .NET 10 SDK (framework-dependent)
 
 **Ventajas**:
-- ✅ Instalación moderna: `dotnet tool install -g mql4-language-server`
-- ✅ Actualizaciones via `dotnet tool update -g mql4-language-server`
+- ✅ Instalación moderna: `dotnet tool install -g mql-language-server`
+- ✅ Actualizaciones via `dotnet tool update -g mql-language-server`
 - ✅ Gestión de dependencias automática
 - ✅ Ideal para desarrolladores .NET
 
@@ -75,8 +75,8 @@ chmod +x mql4-lsp-server
 <PropertyGroup>
   <!-- NuGet Tool Configuration -->
   <PackAsTool>true</PackAsTool>
-  <ToolCommandName>mql4-lsp-server</ToolCommandName>
-  <PackageId>mql4-language-server</PackageId>
+  <ToolCommandName>mql-lsp-server</ToolCommandName>
+  <PackageId>mql-language-server</PackageId>
   <Version>1.0.0</Version>
   <Authors>MQL4 Language Server Team</Authors>
   <Description>Language Server Protocol implementation for MQL4</Description>
@@ -107,7 +107,7 @@ dotnet nuget push ./nupkg/*.nupkg \
   --source nuget.org
 
 # Instalación para usuarios:
-dotnet tool install -g mql4-language-server --version 1.0.0
+dotnet tool install -g mql-language-server --version 1.0.0
 ```
 
 **Opción B: GitHub Packages (Recomendado)**
@@ -129,7 +129,7 @@ dotnet nuget push ./nupkg/*.nupkg \
   --source "github"
 
 # 4. Para usuarios (instalar desde GitHub Packages):
-dotnet tool install -g mql4-language-server \
+dotnet tool install -g mql-language-server \
   --version 1.0.0 \
   --add-source "https://nuget.pkg.github.com/davalillo/index.json"
 
@@ -140,7 +140,7 @@ dotnet nuget add source "https://nuget.pkg.github.com/davalillo/index.json" \
   --password "$GITHUB_TOKEN"
 
 # Ahora instalación simple:
-dotnet tool install -g mql4-language-server --version 1.0.0
+dotnet tool install -g mql-language-server --version 1.0.0
 ```
 
 ### 3. Distribución Privada/Local
@@ -153,10 +153,10 @@ dotnet pack src/Mql4LanguageServer.Server.csproj \
   -c Release -o ./nupkg /p:SelfContained=false
 
 # Distribuir vía ZIP, email, etc.
-zip -r mql4-language-server-nupkg.zip nupkg/
+zip -r mql-language-server-nupkg.zip nupkg/
 
 # Para usuarios (instalar desde source local):
-dotnet tool install -g mql4-language-server \
+dotnet tool install -g mql-language-server \
   --version 1.0.0 \
   --add-source ./nupkg
 ```
@@ -172,19 +172,19 @@ dotnet tool install -g mql4-language-server \
 **Ejemplo de uso**:
 ```bash
 # Developer (crear checksums)
-sha256sum mql4-lsp-server > SHA256SUMS.txt
-sha256sum mql4-lsp-server.exe >> SHA256SUMS.txt
+sha256sum mql-lsp-server > SHA256SUMS.txt
+sha256sum mql-lsp-server.exe >> SHA256SUMS.txt
 
 # Subir SHA256SUMS.txt junto con binarios a GitHub Releases
 
 # Usuario (verificar)
-wget https://github.com/davalillo/mql4-language-server/releases/download/v1.0.0/mql4-lsp-server
-wget https://github.com/davalillo/mql4-language-server/releases/download/v1.0.0/SHA256SUMS.txt
+wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
+wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/SHA256SUMS.txt
 sha256sum -c SHA256SUMS.txt
 
 # Output si es válido:
-# mql4-lsp-server: OK
-# mql4-lsp-server.exe: OK
+# mql-lsp-server: OK
+# mql-lsp-server.exe: OK
 ```
 
 ## 📊 Comparación de Métodos
@@ -236,15 +236,15 @@ git push origin v1.2.0
 # - Validar binarios en producción
 
 # 3. Resultado (~15-20 min):
-# https://github.com/davalillo/mql4-language-server/releases/tag/v1.2.0
-# → mql4-lsp-server (70MB)
-# → mql4-lsp-server.exe (71MB)
-# → mql4-language-server.1.0.0.nupkg (2MB)
+# https://github.com/davalillo/mql-language-server/releases/tag/v1.2.0
+# → mql-lsp-server (70MB)
+# → mql-lsp-server.exe (71MB)
+# → mql-language-server.1.0.0.nupkg (2MB)
 # → SHA256SUMS.txt
 ```
 
 **Proceso MANUAL (alternativo, ya no necesario)**:
-- Crear release en https://github.com/davalillo/mql4-language-server/releases
+- Crear release en https://github.com/davalillo/mql-language-server/releases
 - Subir binarios manualmente
 - Generar checksums
 - ⚠️ **Recomendado usar proceso automático**

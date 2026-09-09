@@ -15,8 +15,8 @@ dotnet --version
 
 ### 2. Clonar Repositorio
 ```bash
-git clone https://github.com/davalillo/mql4-language-server.git
-cd mql4-language-server
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
 ```
 
 ---
@@ -46,11 +46,11 @@ cd mql4-language-server
 dotnet pack -c Release -o ./nupkg-local
 ```
 
-**Resultado**: Se crea `./nupkg-local/mql4-language-server.1.0.0.nupkg`
+**Resultado**: Se crea `./nupkg-local/mql-language-server.1.0.0.nupkg`
 
 ### Paso 2: Instalar como herramienta global
 ```bash
-dotnet tool install --global mql4-language-server \
+dotnet tool install --global mql-language-server \
   --version 1.0.0 \
   --add-source ./nupkg-local
 ```
@@ -61,7 +61,7 @@ dotnet tool install --global mql4-language-server \
 dotnet tool list -g
 
 # Debería mostrar:
-# mql4-language-server    1.0.0    ~/.dotnet/tools/mql4-lsp-server
+# mql-language-server    1.0.0    ~/.dotnet/tools/mql-lsp-server
 ```
 
 ### Paso 4: Configurar PATH (si es necesario)
@@ -83,21 +83,21 @@ source ~/.bashrc
 ### Descargar binario
 ```bash
 # Desde GitHub Releases
-wget https://github.com/davalillo/mql4-language-server/releases/latest/download/mql4-lsp-server-linux-x64.tar.gz
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
 
 # Extraer
-tar -xzf mql4-lsp-server-linux-x64.tar.gz
+tar -xzf mql-lsp-server-linux-x64.tar.gz
 
 # Hacer ejecutable
-chmod +x mql4-lsp-server
+chmod +x mql-lsp-server
 
 # Copiar a ubicación permanente
-sudo mv mql4-lsp-server /usr/local/bin/
+sudo mv mql-lsp-server /usr/local/bin/
 ```
 
 ### Verificar
 ```bash
-mql4-lsp-server --stdio
+mql-lsp-server --stdio
 ```
 
 ---
@@ -111,7 +111,7 @@ mql4-lsp-server --stdio
 {
   "languageServers": {
     "MQL4": {
-      "command": "mql4-lsp-server",
+      "command": "mql-lsp-server",
       "args": ["--stdio"]
     }
   }
@@ -123,7 +123,7 @@ mql4-lsp-server --stdio
 {
   "languageServers": {
     "MQL4": {
-      "command": "mql4-lsp-server",
+      "command": "mql-lsp-server",
       "args": ["--stdio"]
     }
   },
@@ -142,7 +142,7 @@ mql4-lsp-server --stdio
 local lspconfig = require('lspconfig')
 
 lspconfig.mql4_lsp.setup {
-  cmd = {'mql4-lsp-server', '--stdio'},
+  cmd = {'mql-lsp-server', '--stdio'},
   filetypes = {'mql4'},
 }
 ```
@@ -152,7 +152,7 @@ lspconfig.mql4_lsp.setup {
 {
   "languageserver": {
     "mql4": {
-      "command": "mql4-lsp-server",
+      "command": "mql-lsp-server",
       "args": ["--stdio"],
       "filetypes": ["mql4"]
     }
@@ -166,20 +166,20 @@ lspconfig.mql4_lsp.setup {
 
 ### 1. Verificar comando disponible
 ```bash
-which mql4-lsp-server
-# Debe mostrar ruta: /home/user/.dotnet/tools/mql4-lsp-server
+which mql-lsp-server
+# Debe mostrar ruta: /home/user/.dotnet/tools/mql-lsp-server
 ```
 
 ### 2. Test manual del servidor
 ```bash
-echo '{}' | mql4-lsp-server --stdio
+echo '{}' | mql-lsp-server --stdio
 # Debe iniciar sin errores
 ```
 
 ### 3. Test de inicialización LSP
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' \
-  | mql4-lsp-server --stdio
+  | mql-lsp-server --stdio
 
 # Debe mostrar logs de inicialización
 ```
@@ -210,12 +210,12 @@ void OnTick()
 
 ### Desinstalar herramienta .NET
 ```bash
-dotnet tool uninstall --global mql4-language-server
+dotnet tool uninstall --global mql-language-server
 ```
 
 ### Eliminar binario standalone
 ```bash
-sudo rm /usr/local/bin/mql4-lsp-server
+sudo rm /usr/local/bin/mql-lsp-server
 ```
 
 ### Limpiar archivos temporales
@@ -263,7 +263,7 @@ dotnet pack -c Release -o ./nupkg-local
 3. **Verificar logs del LSP**
 4. **Probar comando manualmente**
    ```bash
-   mql4-lsp-server --stdio
+   mql-lsp-server --stdio
    ```
 
 ---
@@ -291,14 +291,14 @@ dotnet pack -c Release -o ./nupkg-local
 1. **Crear paquete en máquina con internet**
    ```bash
    ./install-local-tool.sh
-   # Copia: nupkg-local/mql4-language-server.1.0.0.nupkg
+   # Copia: nupkg-local/mql-language-server.1.0.0.nupkg
    ```
 
 2. **Transferir a máquina objetivo** (USB, scp, etc.)
 
 3. **Instalar en máquina objetivo**
    ```bash
-   dotnet tool install --global mql4-language-server \
+   dotnet tool install --global mql-language-server \
      --version 1.0.0 \
      --add-source ./path/to/nupkg
    ```
@@ -318,7 +318,7 @@ dotnet pack -c Release -o ./nupkg-local
 
 3. **Instalar**
    ```bash
-   dotnet tool install --global mql4-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server --version 1.0.0
    ```
 
 ---

@@ -1,6 +1,6 @@
-# Documentation - MQL4 Language Server
+# Documentation - MQL Language Server
 
-Welcome to the MQL4 Language Server documentation. This repository is organized to help you find what you need quickly.
+Welcome to the MQL Language Server documentation. This repository is organized to help you find what you need quickly.
 
 ## 📚 Documentation Structure
 
@@ -26,14 +26,14 @@ Welcome to the MQL4 Language Server documentation. This repository is organized 
 
 ### Standalone Binary (Recommended)
 ```bash
-wget https://github.com/davalillo/mql4-language-server/releases/latest/download/mql4-lsp-server-linux-x64.tar.gz
-tar -xzf mql4-lsp-server-linux-x64.tar.gz
-chmod +x mql4-lsp-server
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
+tar -xzf mql-lsp-server-linux-x64.tar.gz
+chmod +x mql-lsp-server
 ```
 
 ### .NET Tool (Requires .NET 10 SDK)
 ```bash
-dotnet tool install --global mql4-language-server --version 1.0.0
+dotnet tool install --global mql-language-server --version 1.11.4
 ```
 
 ## 🎯 Use Cases
@@ -64,9 +64,9 @@ dotnet tool install --global mql4-language-server --version 1.0.0
 
 ## 🔗 Links
 
-- **Repository**: https://github.com/davalillo/mql4-language-server
-- **Releases**: https://github.com/davalillo/mql4-language-server/releases
-- **Issues**: https://github.com/davalillo/mql4-language-server/issues
+- **Repository**: https://github.com/davalillo/mql-language-server
+- **Releases**: https://github.com/davalillo/mql-language-server/releases
+- **Issues**: https://github.com/davalillo/mql-language-server/issues
 
 ## 📄 License
 

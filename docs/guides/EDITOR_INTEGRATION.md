@@ -17,15 +17,15 @@ The MQL4 LSP is compatible with any editor that supports the Language Server Pro
 
 ## Visual Studio Code
 
-### Method 1: Using the mql4-lsp-server binary
+### Method 1: Using the mql-lsp-server binary
 
 1. **Install the binary**:
    ```bash
    # Download from GitHub Releases
-   wget https://github.com/davalillo/mql4-language-server/releases/latest/download/mql4-lsp-server-linux-x64.tar.gz
-   tar -xzf mql4-lsp-server-linux-x64.tar.gz
-   chmod +x mql4-lsp-server
-   sudo mv mql4-lsp-server /usr/local/bin/
+   wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
+   tar -xzf mql-lsp-server-linux-x64.tar.gz
+   chmod +x mql-lsp-server
+   sudo mv mql-lsp-server /usr/local/bin/
    ```
 
 2. **Install VSCode MQL4 extension** (optional, for syntax highlighting):
@@ -37,7 +37,7 @@ The MQL4 LSP is compatible with any editor that supports the Language Server Pro
    {
      "languageServers": {
        "MQL4": {
-         "command": "mql4-lsp-server",
+         "command": "mql-lsp-server",
          "args": ["--stdio"],
          "languages": [
            {
@@ -60,7 +60,7 @@ The MQL4 LSP is compatible with any editor that supports the Language Server Pro
 **Option A: From Published Package**
 1. **Install as global tool**:
    ```bash
-   dotnet tool install --global mql4-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server --version 1.0.0
    ```
 
 2. **Configure VSCode** (`settings.json`):
@@ -68,7 +68,7 @@ The MQL4 LSP is compatible with any editor that supports the Language Server Pro
    {
      "languageServers": {
        "MQL4": {
-         "command": "mql4-lsp-server",
+         "command": "mql-lsp-server",
          "args": ["--stdio"]
        }
      },
@@ -91,13 +91,13 @@ If you have the .nupkg file locally:
 
 2. **Create the package** (if not already created):
    ```bash
-   cd /path/to/mql4-language-server
+   cd /path/to/mql-language-server
    dotnet pack -c Release -o ./nupkg --include-symbols
    ```
 
 3. **Install from local source**:
    ```bash
-   dotnet tool install --global mql4-language-server \
+   dotnet tool install --global mql-language-server \
      --version 1.0.0 \
      --add-source ./nupkg
    ```
@@ -120,7 +120,7 @@ If published to GitHub Packages:
 
 2. **Install**:
    ```bash
-   dotnet tool install --global mql4-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server --version 1.0.0
    ```
 
 ### Method 3: Standalone Binary (Recommended)
@@ -145,7 +145,7 @@ If published to GitHub Packages:
    local lspconfig = require('lspconfig')
    
    lspconfig.mql4_lsp.setup {
-     cmd = {'mql4-lsp-server', '--stdio'},
+     cmd = {'mql-lsp-server', '--stdio'},
      filetypes = {'mql4'},
      root_dir = lspconfig.util.root_pattern('.git', '*.mq4'),
    }
@@ -160,7 +160,7 @@ If published to GitHub Packages:
    {
      "languageserver": {
        "mql4": {
-         "command": "mql4-lsp-server",
+         "command": "mql-lsp-server",
          "args": ["--stdio"],
          "filetypes": ["mql4"]
        }
@@ -186,7 +186,7 @@ If published to GitHub Packages:
    
    (lsp-register-client
     (make-lsp-client
-     :new-connection (lsp-stdio-connection '("mql4-lsp-server" "--stdio"))
+     :new-connection (lsp-stdio-connection '("mql-lsp-server" "--stdio"))
      :activation-fn (lsp-activate-on "mql4")
      :server-id "mql4-lsp"))
    ```
@@ -199,15 +199,15 @@ If published to GitHub Packages:
 
 2. **Configure in .vimrc**:
    ```vim
-   if executable('mql4-lsp-server')
+   if executable('mql-lsp-server')
      augroup lsp_mql4
        autocmd!
        autocmd BufRead,BufNewFile *.mq4 setlocal filetype=mql4
      augroup END
    
      let g:lsp_settings = {
-       \ 'mql4-lsp-server': {
-       \   'cmd': ['mql4-lsp-server', '--stdio'],
+       \ 'mql-lsp-server': {
+       \   'cmd': ['mql-lsp-server', '--stdio'],
        \   'root_uri': {'*': {&runtimepath}},
        \ }
        \ }
@@ -223,7 +223,7 @@ If published to GitHub Packages:
    {
      "clients": {
        "mql4-lsp": {
-         "command": ["mql4-lsp-server", "--stdio"],
+         "command": ["mql-lsp-server", "--stdio"],
          "env": {},
          "enabled": true,
          "languages": [
@@ -279,14 +279,14 @@ Once configured, the MQL4 LSP provides:
 
 **Check if the binary is executable**:
 ```bash
-chmod +x /usr/local/bin/mql4-lsp-server
-mql4-lsp-server --stdio
+chmod +x /usr/local/bin/mql-lsp-server
+mql-lsp-server --stdio
 ```
 
 **Verify installation**:
 ```bash
-which mql4-lsp-server
-mql4-lsp-server --version
+which mql-lsp-server
+mql-lsp-server --version
 ```
 
 ### No auto-completion
@@ -322,7 +322,7 @@ Most editors allow disabling specific LSP features in settings:
 **VSCode**:
 ```json
 {
-  "mql4-lsp-server": {
+  "mql-lsp-server": {
     "completion": true,
     "definition": true,
     "references": true,
@@ -334,7 +334,7 @@ Most editors allow disabling specific LSP features in settings:
 
 ## Getting Help
 
-- **GitHub Issues**: https://github.com/davalillo/mql4-language-server/issues
+- **GitHub Issues**: https://github.com/davalillo/mql-language-server/issues
 - **Documentation**: See README.md
 - **Build from Source**: See BUILD_INSTRUCTIONS.md
 
