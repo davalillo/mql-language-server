@@ -141,11 +141,10 @@ jobs:
       #       nupkg/
       #     retention-days: 1  # Auto-delete after 1 day
 
-      - name: Create/Update release público
+      - name: Create/Update release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.PUBLIC_RELEASES_TOKEN }}
-          repository: davalillo/mql-language-server-releases
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ needs.get-effective-tag.outputs.effective_tag }}
           name: "MQL Language Server ${{ needs.get-effective-tag.outputs.effective_tag }}"
           body: |
@@ -158,7 +157,7 @@ jobs:
             - **macOS (M1/M2/M3):** `mql-lsp-server-osx-arm64`
             - **Checksums:** `CHECKSUMS.txt` (verifica integridad de archivos)
 
-            _El código fuente adjunto abajo (Source code zip) solo contiene el README de este repositorio, el código real es privado._
+            _El código fuente adjunto abajo (Source code zip) contiene el código completo de este repositorio._
 
             ### Verificación de integridad:
             ```bash
