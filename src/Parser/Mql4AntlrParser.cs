@@ -73,6 +73,10 @@ namespace MqlLanguageServer.Parser
                 // This is needed because #define, #ifdef, etc. are hidden from the parser
                 parsedFile.Macros = ExtractMacros(tokenStream);
 
+                // OCC-01: capture default-channel IDENTIFIER tokens as occurrences.
+                parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
+                    tokenStream, Mql4GrammarLexer.IDENTIFIER);
+
                 // Build index of symbols by name
                 BuildSymbolIndex(parsedFile, symbolsByName);
 
