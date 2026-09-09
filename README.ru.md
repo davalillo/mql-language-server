@@ -1,0 +1,525 @@
+# MQL Language Server
+
+[English](README.md) | [Español](README.es.md) | Русский
+
+[![Build Status](https://github.com/davalillo/mql-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql-language-server/actions)
+[![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
+
+Реализация Language Server Protocol (LSP) для MQL4 и MQL5 (MetaTrader 4/5). Обеспечивает функциональность уровня IDE: автодополнение, переход к определению, справку при наведении курсора и навигацию по символам.
+
+## Возможности
+
+- Извлечение символов (функции, переменные, классы, structs, interfaces, enums, includes)
+- Переход к определению
+- Поиск всех ссылок
+- Символы документа
+- Автодополнение
+- Hover
+- Диагностика
+
+## Поддержка MQL5
+
+В этом выпуске добавлена полноценная поддержка MQL5 без изменения поведения MQL4:
+
+- Файлы `.mq5` и `.mqh` распознаются автоматически.
+- Разбирается специфичный для MQL5 синтаксис: классы, structs, interfaces, наследование, шаблоны, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, параметры по ссылке, `using`, `#resource`, списки инициализации и `new`/`delete` в куче.
+- Встроенные функции и предопределённые переменные MQL5 включены в автодополнение и hover.
+- Диагностика файлов MQL5 использует отдельный диапазон кодов `MQL5xxx`, чтобы фильтры CI могли разделять проблемы MQL4 и MQL5.
+
+## Важное переименование
+
+Проект, пакет и исполняемый файл переименованы из `mql4-language-server` в `mql-language-server` в связи с добавлением поддержки MQL4 и MQL5.
+
+| Было | Стало |
+|--------|-------|
+| Бинарный файл | `mql4-lsp-server` → `mql-lsp-server` |
+| Пакет | `mql4-language-server` → `mql-language-server` |
+| Файл журнала | `mql4-lsp-server.log` → `mql-lsp-server.log` |
+
+Если вы обновляетесь с релиза до версии 1.x, обновите конфигурацию редактора и сценарии CI, чтобы использовать новое имя бинарного файла и пакета.
+
+## Технические решения
+
+В этом разделе описаны ключевые технические решения, принятые в ходе разработки, чтобы упростить освоение проекта новыми разработчиками.
+
+### 1. Стратегия парсера: ANTLR 4.13.1
+
+**Выбрано**: ANTLR 4.13.1 с Antlr4BuildTasks 12.10
+
+**Рассмотренные альтернативы**:
+- Regex (отклонено — недостаточно для разбора сложного кода MQL)
+- Sprache (отклонено — комбинатор парсеров, менее надёжен для сложных грамматик)
+- Superpower (отклонено — более новый проект, меньше документации)
+- Irony (отклонено — не поддерживается)
+
+**Основная причина**:
+Первоначальное решение использовать regex было пересмотрено после того, как проявились ограничения при разборе реального кода MQL. ANTLR предоставляет:
+- Формальную и поддерживаемую грамматику
+- Точное абстрактное синтаксическое дерево (AST)
+- Лучшую поддержку сценариев использования LSP
+- Устойчивость к сложному синтаксису
+
+**Полученный урок**: для LSP, которому нужно разбирать сложный код, возможностей regex недостаточно. ANTLR предлагает идеальный баланс между надёжностью и простотой использования.
+
+### 2. Инструментарий ANTLR: Antlr4BuildTasks 12.10
+
+**Выбрано**: Antlr4BuildTasks 12.10 (автоматически загружает JRE)
+
+**Альтернатива**: ручная установка ANTLR + Java JDK
+
+**Основная причина**:
+Избежать ручных зависимостей в среде разработки. Antlr4BuildTasks:
+- Автоматически загружает JRE и JAR-файл инструмента ANTLR
+- Не требует предварительной установки Java
+- Работает кроссплатформенно (Windows, Linux, macOS)
+- Выполняется во время сборки MSBuild/dotnet
+
+**Конфигурация в .csproj**:
+```xml
+<PackageReference Include="Antlr4BuildTasks" Version="12.10" PrivateAssets="All" />
+<Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
+  <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
+</Antlr4>
+```
+
+**Полученный урок**: Antlr4BuildTasks — оптимальное решение для связки .NET + ANTLR без ручной настройки Java. Версия 12.10 стабильна и надёжна.
+
+### 3. Библиотеки LSP: OmniSharp.Extensions
+
+**Выбрано**: OmniSharp.Extensions.LanguageProtocol 0.19.9
+
+**Рассмотренная альтернатива**: Microsoft.LanguageServer.Protocol (не существует)
+
+**Обнаруженная проблема**:
+Пакета `Microsoft.LanguageServer.Protocol` нет в NuGet. Было распространённой ошибкой предполагать, что Microsoft поддерживает официальные библиотеки LSP для .NET.
+
+**Выполненная миграция**:
+- Изначально: `Microsoft.LanguageServer.Protocol` (не существует)
+- Итог: `OmniSharp.Extensions.LanguageProtocol` 0.19.9
+- Связанные пакеты: `OmniSharp.Extensions.JsonRpc`, `OmniSharp.Extensions.LanguageServer.Shared`
+
+**Полученный урок**: фактическим стандартом для LSP в .NET является OmniSharp, а не Microsoft. Библиотека активно поддерживается и широко используется.
+
+### 4. Стратегия грамматики: прагматичное упрощение
+
+**Выбрано**: упрощённая, но функциональная грамматика MQL
+
+**Альтернатива**: полная грамматика со всеми возможностями MQL
+
+**Основная причина**:
+LSP не нужно разбирать всю семантику языка — достаточно синтаксической структуры, позволяющей:
+- Извлекать символы (функции, переменные)
+- Находить определения и ссылки
+- Предоставлять автодополнение и hover
+
+**Принятый подход**:
+```antlr
+// Пример: упрощённая, но функциональная грамматика
+variableDeclaration
+    : dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
+    ;
+```
+
+vs
+
+```antlr
+// Сложная альтернатива: для LSP не нужна
+variableDeclaration
+    : storageClass? dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
+    | storageClass? dataType IDENTIFIER LBRACKET expression? RBRACKET SEMICOLON
+    ;
+```
+
+**Полученный урок**: эффективному LSP не требуется разбор всего языка. Ключ к успеху — прагматичное упрощение.
+
+### 5. Конфигурация сборки: AntlrOutDir
+
+**Конфигурация**: `<AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>`
+
+**Решённая проблема**:
+По умолчанию ANTLR генерирует файлы в `obj/Debug/net10.0/`. Без AntOutDir потребовалось бы вручную копировать их в `src/Parser/Generated/`.
+
+**Полная конфигурация**:
+```xml
+<Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
+  <Generator>MSBuild:Compile</Generator>
+  <Listener>true</Listener>
+  <Visitor>true</Visitor>
+  <Package>Mql4Grammar</Package>
+  <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
+</Antlr4>
+```
+
+**Преимущества**:
+- Автоматическая генерация в нужном расположении
+- Никакого ручного копирования после сборки
+- Файлы видны в системе контроля версий
+
+### 6. Ключевые уроки
+
+#### Префикс K_ для токенов
+Исключает конфликты между ключевыми словами и токенами:
+```antlr
+// ПЛОХО - конфликт с токеном DOUBLE
+DOUBLE : 'double';
+
+// ХОРОШО - префикс для ключевых слов
+K_DOUBLE : 'double';
+dataType : K_DOUBLE | IDENTIFIER;
+```
+
+#### Методы контекста в верхнем регистре
+ANTLR генерирует методы с точными именами токенов:
+```csharp
+// ПЛОХО - ошибка компиляции
+var nameToken = context.identifier();
+
+// ХОРОШО - работает
+var nameToken = context.IDENTIFIER();
+```
+
+#### Видимость комментариев
+Для `-> skip` требуется специальный канал:
+```antlr
+// ПЛОХО - ошибка компиляции ANTLR
+COMMENT : '/*' .*? '*/' -> skip;
+
+// ХОРОШО - работает
+COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
+// Или отдельные правила:
+COMMENT_BLOCK : '/*' .*? '*/' -> skip;
+```
+
+#### Простота против сложности
+Простой парсер, который работает, лучше сложного, который не работает.
+
+### Пересборка ANTLR-парсера
+
+```bash
+# Full build (regenerates parsers automatically)
+dotnet build -c Release
+
+# Files are generated in Parser/Generated/:
+# MQL4 namespace Mql4Grammar:
+# - Mql4GrammarParser.cs
+# - Mql4GrammarLexer.cs
+# - Mql4GrammarBaseVisitor.cs
+# - Mql4GrammarListener.cs
+# - Mql4GrammarVisitor.cs
+# MQL5 namespace Mql5Grammar:
+# - Mql5GrammarParser.cs
+# - Mql5GrammarLexer.cs
+# - Mql5GrammarBaseVisitor.cs
+# - Mql5GrammarListener.cs
+# - Mql5GrammarVisitor.cs
+```
+
+Дополнительные шаги не требуются — Antlr4BuildTasks выполняет всё автоматически.
+
+### Текущее состояние
+
+- ✅ Два парсера ANTLR работают для MQL4 и MQL5
+- ✅ Разбираемые символы: функции, переменные, includes, классы, structs, interfaces, enums (MQL5)
+- ✅ Доступное автодополнение: встроенные элементы MQL4/MQL5 + локальные символы
+- ✅ Ядро LSP-сервера
+  - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
+  - CompletionHandler, HoverHandler, DiagnosticHandler
+  - Обработчики TextDocumentSync (Open/Close/Change)
+- ✅ Точка входа программы с транспортом stdio
+- ✅ Модульные тесты: набор тестов MQL4 без изменений + тесты MQL5 для обработчиков, интеграции и фикстур
+- ✅ Автономная компиляция
+  - Бинарные файлы: Linux x64, macOS x64, Windows x64
+  - Сценарии сборки: build.sh (Linux/macOS), build.ps1 (Windows)
+- ✅ CI/CD: GitHub Actions с матричными сборками
+- ✅ Упаковка NuGet: доступен сценарий pack.ps1
+- ✅ Репозиторий: https://github.com/davalillo/mql-language-server
+
+## ⚠️ Уязвимости пакетов NuGet
+
+Предупреждения сборки: в проекте отображаются 4 предупреждения об уязвимостях NuGet из транзитивных зависимостей:
+
+- `System.Net.Http` 4.3.0 (HIGH)
+- `Microsoft.Build.Utilities.Core` 17.8.3 (HIGH)
+- `System.Private.Uri` 4.3.0 (HIGH/MODERATE)
+
+**Оценка**: ✅ **Влияния на функциональность нет**
+
+Это уязвимости в **транзитивных зависимостях** (зависимостях зависимостей), которые:
+- Глубоко встроены в экосистему .NET
+- Не используются нашим кодом напрямую
+- Не могут быть легко обновлены без несовместимых изменений
+- **Не затрагивают наш LSP-сервер**, поскольку он:
+  - Работает как самостоятельный процесс (а не как библиотека)
+  - Не выполняет HTTP-запросов
+  - Не разбирает внешние URI
+  - Читает только локальные файлы MQL
+
+Подробный анализ и обоснование см. в [SECURITY_ANALYSIS.md](docs/references/SECURITY.md).
+
+## Тестирование
+
+Запуск модульных тестов:
+```bash
+dotnet test
+```
+
+Покрытие тестами: 91 комплексный тест, охватывающий парсер, обработчики LSP и граничные случаи.
+
+### Покрытие кода с помощью Coverlet
+
+В проекте используется **Coverlet** для измерения покрытия кода. Coverlet — кроссплатформенная библиотека измерения покрытия кода для .NET, предоставляющая подробные отчёты о покрытии.
+
+#### Установка Coverlet
+
+Установите Coverlet как глобальный инструмент .NET:
+```bash
+dotnet tool install --global coverlet.console
+```
+
+Либо используйте его напрямую через dotnet без установки:
+```bash
+dotnet tool install --tool-path . coverlet.console
+```
+
+#### Запуск тестов с измерением покрытия
+
+**Вариант 1: Coverlet как глобальный инструмент**
+```bash
+# Basic coverage report
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build"
+
+# Generate detailed coverage report in OpenCover format
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" --format opencover --output ./coverage/coverage.xml
+
+# Generate JSON coverage report
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" --format json --output ./coverage/coverage.json
+
+# Set coverage thresholds (fails build if below threshold)
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" --threshold 80 --threshold-type line --threshold-stat total
+```
+
+**Вариант 2: Использование Coverlet.MSBuild (ссылка на пакет)**
+Добавьте в тестовый проект (.csproj):
+```xml
+<PackageReference Include="coverlet.collector" Version="6.0.0">
+  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+  <PrivateAssets>all</PrivateAssets>
+</PackageReference>
+```
+
+Затем выполните:
+```bash
+dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+```
+
+**Вариант 3: Простой локальный отчёт**
+```bash
+# Build the project
+dotnet build -c Release
+
+# Run tests with coverage
+coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll --target "dotnet" --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build"
+```
+
+#### Отчёты о покрытии
+
+Coverlet поддерживает несколько форматов вывода:
+
+1. **Консоль** (по умолчанию): выводит сводку в терминал
+2. **JSON**: структурированные данные для интеграции с CI/CD
+   ```bash
+   --format json --output ./coverage/coverage.json
+   ```
+3. **OpenCover**: отраслевой стандарт
+   ```bash
+   --format opencover --output ./coverage/coverage.xml
+   ```
+4. **Cobertura**: ещё один распространённый формат
+   ```bash
+   --format cobertura --output ./coverage/cobertura.xml
+   ```
+5. **LCov**: для интеграции с системами CI
+   ```bash
+   --format lcov --output ./coverage/lcov.info
+   ```
+
+#### Пороговые значения покрытия
+
+Настройте минимальные пороговые значения покрытия, чтобы обеспечить качество кода:
+```bash
+# Fail if total line coverage is below 80%
+--threshold 80 --threshold-type line --threshold-stat total
+
+# Fail if any assembly falls below 70%
+--threshold 70 --threshold-type line --threshold-stat assembly
+
+# Fail if any class falls below 60%
+--threshold 60 --threshold-type line --threshold-stat class
+```
+
+Комбинированные пороговые значения:
+```bash
+--threshold 80 --threshold-type line --threshold-stat total
+--threshold 90 --threshold-type method --threshold-stat total
+```
+
+#### Интеграция с CI/CD
+
+Добавьте в свой workflow GitHub Actions:
+```yaml
+- name: Run tests with coverage
+  run: |
+    dotnet tool install --global coverlet.console
+    coverlet ./tests/bin/Release/net10.0/MqlLanguageServer.Tests.dll \
+      --target "dotnet" \
+      --targetargs "test ./tests/MqlLanguageServer.Tests.csproj --configuration Release --no-build" \
+      --format opencover \
+      --output ./coverage/coverage.xml
+
+- name: Upload coverage to Codecov
+  uses: codecov/codecov-action@v3
+  with:
+    file: ./coverage/coverage.xml
+```
+
+#### Просмотр отчётов о покрытии
+
+1. **Терминал**: мгновенная обратная связь после запуска тестов
+2. **Visual Studio**: откройте `coverage.json` или `coverage.xml` в Visual Studio
+3. **Веб**: используйте такие инструменты, как [ReportGenerator](https://github.com/danielpalme/ReportGenerator), для генерации HTML-отчётов:
+   ```bash
+   dotnet tool install --global dotnet-reportgenerator-globaltool
+   reportgenerator -reports:./coverage/coverage.xml -targetdir:./coverage/html -reporttypes:Html
+   open ./coverage/html/index.html
+   ```
+
+#### Лучшие практики измерения покрытия
+
+- **Цель**: стремитесь к покрытию строк 80% и выше для критических путей выполнения
+- **Качество важнее количества**: содержательные тесты лучше высокого покрытия тривиального кода
+- **Интеграционные тесты**: покрывайте взаимодействие между компонентами
+- **Граничные случаи**: тестируйте обработку ошибок и граничные условия
+- **Исключения**: исключайте сгенерированный код и тестовые утилиты:
+  ```bash
+  --exclude-by-file "**/Generated/**" \
+  --exclude-by-attribute "*GeneratedCodeAttribute*"
+  ```
+
+## CI/CD
+
+Автоматическая сборка и выпуск через GitHub Actions:
+
+### Триггеры workflow:
+
+**Ветка main** (быстрый CI):
+- ✅ Мультиплатформенные сборки (Ubuntu, Windows, macOS)
+- ✅ Автоматическое тестирование (модульные тесты)
+- ⚡ Без генерации артефактов (быстрее)
+
+**Теги v\*** (релизы):
+- ✅ Мультиплатформенные сборки
+- ✅ Автоматическое тестирование
+- ✅ Выпуск бинарных файлов (GitHub Releases)
+- ✅ Упаковка NuGet
+- ✅ Контрольные суммы (SHA256)
+- ✅ Тесты проверки бинарных файлов
+
+### Процесс выпуска:
+
+```bash
+# Development (main branch)
+git commit -am "feature: new capability"
+git push origin main
+# → Build + Tests (~3-5 minutes)
+
+# Release
+git tag v1.2.0
+git push origin v1.2.0
+# → Build + Tests + Release + Artifacts (~15-20 minutes)
+# → All artifacts uploaded to GitHub Releases automatically
+```
+
+Подробнее см. в [.github/workflows/build.yml](.github/workflows/build.yml).
+
+## Установка
+
+### Автономные бинарные файлы (рекомендуется)
+
+Скачайте готовый бинарный файл со страницы [GitHub Releases](https://github.com/davalillo/mql-language-server/releases):
+
+- **Linux**: `mql-lsp-server` (71MB, самодостаточный)
+- **macOS**: `mql-lsp-server` (71MB, самодостаточный)
+- **Windows**: `mql-lsp-server.exe` (72MB, самодостаточный)
+
+Сделайте файл исполняемым (Linux/macOS):
+```bash
+chmod +x mql-lsp-server
+```
+
+### Через инструмент .NET (NuGet)
+
+```bash
+dotnet tool install -g mql-language-server --version 1.11.4
+```
+
+Либо установите из локальной сборки:
+```bash
+./pack.ps1
+dotnet tool install -g mql-language-server --add-source ./nupkg
+```
+
+### Из исходного кода
+
+**Предварительные требования**: .NET 10 SDK
+
+**Linux/macOS**:
+```bash
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
+./build.sh
+
+# Test the binary
+./src/bin/linux-x64/mql-lsp-server --stdio
+```
+
+**Windows**:
+```powershell
+git clone https://github.com/davalillo/mql-language-server.git
+cd mql-language-server
+.\build.ps1
+
+# Test the binary
+.\src\bin\win-x64\mql-lsp-server.exe --stdio
+```
+
+### Результаты сборки
+
+После сборки бинарные файлы находятся здесь:
+- `src/bin/linux-x64/mql-lsp-server`
+- `src/bin/osx-x64/mql-lsp-server`
+- `src/bin/win-x64/mql-lsp-server.exe`
+
+## Использование
+
+### Командная строка
+```bash
+mql-lsp-server --stdio
+```
+
+### VSCode
+Добавьте в settings.json:
+```json
+{
+  "languageServers": {
+    "MQL": {
+      "command": "mql-lsp-server",
+      "args": ["--stdio"]
+    }
+  }
+}
+```
+
+## Лицензия
+
+MIT
