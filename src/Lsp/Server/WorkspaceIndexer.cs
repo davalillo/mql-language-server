@@ -74,10 +74,16 @@ public class WorkspaceIndexer
     }
 
     /// <summary>
-    /// StartIndexing overload with an optional completion callback, used by
-    /// tests to await deterministic scan completion without polling.
+    /// StartIndexing overload with optional test hooks, used by tests to
+    /// observe the scan without polling. <paramref name="onScanCompleted"/>
+    /// fires in the scan's finally block; <paramref name="onFileIndexed"/>
+    /// fires synchronously on the scan thread after each IndexFile attempt
+    /// (success or failure), before the next file. Both are null in
+    /// production (Program.cs calls the 1-arg overload), so the production
+    /// path is identical to today.
     /// </summary>
-    public void StartIndexing(IEnumerable<string> workspaceFolders, Action? onScanCompleted)
+    public void StartIndexing(IEnumerable<string> workspaceFolders,
+        Action? onScanCompleted, Action<string>? onFileIndexed = null)
     {
         var folders = (workspaceFolders ?? Array.Empty<string>()).ToArray();
         _cts = new CancellationTokenSource();
@@ -92,7 +98,7 @@ public class WorkspaceIndexer
                     if (token.IsCancellationRequested)
                         break;
 
-                    ScanWorkspaceFolder(folder, token);
+                    ScanWorkspaceFolder(folder, token, onFileIndexed);
                 }
             }
             catch (OperationCanceledException)
@@ -121,7 +127,8 @@ public class WorkspaceIndexer
     /// <summary>
     /// Scan a single workspace folder: enumerate, filter, parse, and index.
     /// </summary>
-    private void ScanWorkspaceFolder(string folder, CancellationToken token)
+    private void ScanWorkspaceFolder(string folder, CancellationToken token,
+        Action<string>? onFileIndexed)
     {
         if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
         {
@@ -156,6 +163,11 @@ public class WorkspaceIndexer
             {
                 _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", path);
             }
+
+            // Test seam (WI-02): per-file hook invoked on the scan thread
+            // after each IndexFile attempt. Null in production; no locks,
+            // D5 untouched.
+            onFileIndexed?.Invoke(path);
         }
 
         _logger.LogInformation("Workspace scan finished: {Folder} ({IndexedCount}/{FileCount} files indexed)", folder, indexed, files.Count);

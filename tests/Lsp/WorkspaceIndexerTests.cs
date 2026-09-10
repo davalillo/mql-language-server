@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using OmniSharp.Extensions.LanguageServer.Protocol;
+using OmniSharp.Extensions.LanguageServer.Protocol.Document;
+using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Xunit;
 
 namespace MqlLanguageServer.Tests.Lsp;
@@ -212,6 +217,93 @@ public class WorkspaceIndexerTests : IDisposable
 
         // StartIndexing returns without waiting for the scan (WI-02).
         CreateIndexer().StartIndexing(new[] { _workspace });
+    }
+
+    // ------------------------------------------------------------------
+    // WI-02: requests answered during scan (mid-scan window)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// WI-02 "Requests answered during scan": a references request issued
+    /// while the startup scan is still running must be answered (possibly
+    /// with partial results) from GlobalSymbolIndex, and the results must
+    /// grow monotonically until the scan completes.
+    ///
+    /// Deterministic handshake (no sleeps): the onFileIndexed callback parks
+    /// the scan thread right after file1 is indexed. Being parked inside the
+    /// per-file loop proves the scan is mid-flight (onScanCompleted cannot
+    /// have fired). While parked, the test issues a references request
+    /// through ReferencesHandler.Handle (the production path), asserts the
+    /// request is answered, then releases the scan and awaits completion.
+    /// Every wait is timeout-bounded (30s, matching StartIndexingAndWaitForIdle).
+    /// </summary>
+    [Fact]
+    public async Task MidScan_ReferencesRequestAnswered()
+    {
+        // Fixtures: file1 declares Alpha; file2 uses Alpha and declares Beta;
+        // file3 is filler. Enumeration order is unspecified, but the
+        // parked-in-callback invariant holds for any order: parked implies
+        // the scan is provably incomplete.
+        var file1 = Path.Combine(_workspace, "mid1.mq4");
+        File.WriteAllText(file1, "int Alpha = 1;\n");
+        var file2 = Path.Combine(_workspace, "mid2.mq4");
+        File.WriteAllText(file2, "int AlphaUse = Alpha;\nint Beta = 2;\n");
+        var file3 = Path.Combine(_workspace, "mid3.mq4");
+        File.WriteAllText(file3, "int Filler = 3;\n");
+
+        var midSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseScan = new SemaphoreSlim(0, 1);
+        var scanCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // Production path: references go through ReferencesHandler.Handle.
+        var references = new ReferencesHandler(
+            Substitute.For<ILogger<ReferencesHandler>>(),
+            new Mql4AntlrParser(),
+            new OpenDocumentStore(),
+            _index);
+
+        var indexer = CreateIndexer();
+        indexer.StartIndexing(
+            new[] { _workspace },
+            () => scanCompleted.TrySetResult(),
+            path =>
+            {
+                if (Path.GetFileName(path) == "mid1.mq4")
+                {
+                    midSignal.TrySetResult();
+                    // Park the scan thread mid-scan; the test resumes it.
+                    releaseScan.Wait(TimeSpan.FromSeconds(30));
+                }
+            });
+
+        var parked = await Task.WhenAny(midSignal.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        Assert.True(parked == midSignal.Task, "Scan never reached file1 (onFileIndexed did not fire).");
+
+        // Position on "Alpha" in the declaration (line 0, 0-based col 4).
+        var request = new ReferenceParams
+        {
+            TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(file1)),
+            Position = new Position(0, 4),
+            Context = new ReferenceContext { IncludeDeclaration = true }
+        };
+        var response = await references.Handle(request, CancellationToken.None);
+
+        // The request must be answered mid-scan: file1's declaration of Alpha.
+        var locations = response?.ToList() ?? new List<Location>();
+        Assert.True(locations.Count >= 1, "References request was not answered during the scan.");
+        Assert.Contains(locations, l =>
+            l.Range.Start.Line == 0 && l.Range.Start.Character == 4);
+
+        var midScanCount = _index.FindOccurrences("Alpha").Count;
+        Assert.True(midScanCount >= 1, "Mid-scan occurrence lookup returned no Alpha occurrences.");
+
+        releaseScan.Release();
+        var completed = await Task.WhenAny(scanCompleted.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        Assert.True(completed == scanCompleted.Task, "Scan did not complete after the gate was released.");
+
+        // Monotonic growth: final results never shrink below the mid-scan count.
+        var finalCount = _index.FindOccurrences("Alpha").Count;
+        Assert.True(finalCount >= midScanCount, "Occurrence results shrank after scan completion.");
     }
 }
 
