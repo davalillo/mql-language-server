@@ -38,6 +38,14 @@ public class GlobalSymbolIndex
     private GlobalSymbolIndex() { }
 
     /// <summary>
+    /// Isolated instance for instrumentation (OCC-06 measurement harness):
+    /// allows the test assembly to create a fresh, non-singleton index so a
+    /// measurement pass cannot mutate or observe production singleton state.
+    /// Internal by design; production code always uses <see cref="Instance"/>.
+    /// </summary>
+    internal GlobalSymbolIndex(bool ctorBypass) { }
+
+    /// <summary>
     /// Singleton instance (thread-safe)
     /// </summary>
     public static GlobalSymbolIndex Instance
