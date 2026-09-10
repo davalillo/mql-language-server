@@ -1,4 +1,4 @@
-> **HISTORICAL — content not maintained; see [ARCHITECTURE.md](ARCHITECTURE.md) for current architecture.**
+> **HISTORICAL — content not maintained.**
 
 # Benchmark Tool - MQL Language Server
 
