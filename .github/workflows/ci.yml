@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: "10.0.x"
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore MqlLanguageServer.sln
+
+      - name: Build
+        run: dotnet build MqlLanguageServer.sln --no-restore --configuration Release
+
+      - name: Test
+        run: >
+          dotnet test MqlLanguageServer.sln
+          --no-build
+          --configuration Release
+          --filter "FullyQualifiedName!~Performance&FullyQualifiedName!~FpMeasurement"

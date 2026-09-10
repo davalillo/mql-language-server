@@ -412,10 +412,11 @@ Automated builds and releases via GitHub Actions:
 
 ### Workflow Triggers:
 
-**main branch** (fast CI):
-- ✅ Multi-platform builds (Ubuntu, Windows, macOS)
-- ✅ Automated testing (unit tests)
+**main branch & PRs** (fast CI, `.github/workflows/ci.yml`):
+- ✅ Build + unit tests on every push to `main` and every PR
+- ✅ Ubuntu only (multi-platform validation happens at release time)
 - ⚡ No artifact generation (faster)
+- ⚡ Performance and FpMeasurement tests excluded (timing-sensitive; run locally)
 
 **Tags v\*** (releases):
 - ✅ Multi-platform builds
@@ -519,6 +520,22 @@ Add to your settings.json:
   }
 }
 ```
+
+## Documentation
+
+More guides and references live in the [`docs/`](docs/README.md) directory:
+
+- [Editor Integration](docs/guides/EDITOR_INTEGRATION.md) — VSCode, Neovim, Emacs, Vim, Sublime Text setup
+- [Local Installation](docs/guides/LOCAL_INSTALLATION.md) — Install as a .NET tool without publishing to NuGet
+- [Distribution](docs/guides/DISTRIBUTION.md) — GitHub Releases, NuGet, GitHub Packages, private feeds
+- [Manual Testing](docs/guides/MANUAL_TESTING.md) — Verify LSP features by hand
+- [FAQ](docs/references/FAQ.md) — Frequently asked questions and troubleshooting
+- [Security Policy](SECURITY.md) — How to report vulnerabilities (canonical, referenced by GitHub)
+- [Dependency Security Analysis](docs/references/SECURITY.md) — Historical NuGet vulnerability audit (RESOLVED)
+- Architecture: see `docs/` and the architecture overview below. A detailed architecture wiki can be generated from the GitNexus knowledge graph with `npx gitnexus analyze && npx gitnexus wiki` (output in `.gitnexus/wiki/`, not published in the repository).
+- [Changelog](CHANGELOG.md) — Version history
+- [Contributing](CONTRIBUTING.md) — How to build, test, and submit changes
+- [Code of Conduct](CODE_OF_CONDUCT.md) — Community standards and enforcement
 
 ## License
 
