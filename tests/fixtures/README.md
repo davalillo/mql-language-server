@@ -1,183 +1,119 @@
-# MQL4/MQH Test Fixtures
+# MQL4/MQL5 Test Fixtures
 
-Este directorio contiene archivos MQL4 y MQH reales para probar el parser LSP.
+This directory contains MQL4 and MQL5 code used by the test suite to exercise
+the LSP parser, symbol visitors, and workspace handlers.
 
-## Estructura
+See [TESTING.md](TESTING.md) for how to reference fixtures from tests, the
+language-detection rules for `.mqh` files, and the test-category filters.
+
+## Structure
 
 ```
 fixtures/
-├── mq4/           # Expert Advisors (.mq4)
-│   ├── basic/     # Archivos básicos para parsing simple
-│   ├── advanced/  # Archivos complejos con sintaxis avanzada
-│   └── complete/  # EAs completos y funcionales
-├── mqh/           # Include files (.mqh)
-│   ├── simple/    # Headers básicos
-│   └── complex/   # Headers con clases y funciones avanzadas
-└── samples/       # Archivos reales de ejemplo (¡ALTA CALIDAD!)
-    ├── ExpertAdvisor.mq4       # EA completo con indicadores técnicos
-    ├── Include/CustomIndicators.mqh  # Header con enums y estructuras
-    ├── Indicators/MyIndicator.mq4   # Indicador técnico personalizado
-    └── Scripts/TradeManager.mq4     # Script de gestión de posiciones
+├── mq4/                  # MQL4 (.mq4)
+│   ├── basic/            # Minimal snippets for simple parsing
+│   ├── advanced/         # Advanced syntax cases (classes, templates, operator overloads, ...)
+│   └── complete/         # (empty — see real-world corpus below)
+├── mqh/                  # Include files (.mqh)
+│   ├── simple/           # Basic headers
+│   └── complex/          # Headers with classes and advanced functions
+├── Mql5/                 # Minimal MQL5 snippets, one construct per file
+├── samples/              # Hand-written, high-quality MQL4 sample files
+└── real/                 # Real-world corpus (permissively licensed, attributed)
+    ├── mql4/             # Real Expert Advisors from open-source repos
+    └── mql5/             # Real MQL5 code from mql5.com articles
 ```
 
-## Archivos de Muestra (samples/) - ¡Altamente Recomendados para Tests!
+Each `real/` subdirectory has its own README with per-file provenance,
+licensing, and the constructs each fixture exercises. Those licensing rules
+are binding — see [Contributing](#contributing) below.
 
-**Archivos reales de alta calidad que cubren sintaxis MQL4 avanzada:**
+## MQL4 (`mq4/`, `mqh/`)
 
-### 1. **ExpertAdvisor.mq4** (207 líneas) ⭐⭐⭐
-- ✅ Expert Advisor completo y funcional
-- ✅ **Includes**: `#include <Include/CustomIndicators.mqh>`
-- ✅ **Inputs**: Múltiples parámetros de entrada
-- ✅ **Enums**: `ENUM_POSITION_TYPE`
-- ✅ **Estructuras**: `MqlTradeRequest`, `MqlTradeResult`
-- ✅ **Arrays**: `fastEMA[]`, `slowEMA[]` con `ArraySetAsSeries`
-- ✅ **Built-ins**: `iMA()`, `SymbolInfoDouble()`, `OrderSend()`, `PositionsTotal()`
-- ✅ **Sintaxis compleja**: ternarios, múltiples if/else, bucles for
+- `mq4/basic/` — small files for simple parse tests (`basic_functions.mq4`)
+- `mq4/advanced/` — one file per advanced construct:
+  `advanced_class_inheritance.mq4`, `advanced_templates.mq4`,
+  `advanced_operator_overload.mq4`, `advanced_new_delete_sizeof.mq4`,
+  `advanced_preprocessor.mq4`, and more
+- `mqh/simple/` — basic headers (`test_trading.mqh`)
+- `mqh/complex/` — headers with classes (`complex_class_header.mqh`)
 
-### 2. **Include/CustomIndicators.mqh** (222 líneas) ⭐⭐⭐
-- ✅ Header file con **header guards** (`#ifndef`/`#define`)
-- ✅ **Enum**: `ENUM_INDICATOR_TYPE`
-- ✅ **Struct**: `IndicatorParams`
-- ✅ **Funciones múltiples**: SMA, EMA, RSI, Bollinger Bands
-- ✅ **Built-ins**: `iRSI()`, `iMACD()`, `iBands()`, `MathPow()`, `MathSqrt()`
-- ✅ **Validación de parámetros**
-- ✅ **Switches/case**
+## MQL5 (`Mql5/`)
 
-### 3. **Indicators/MyIndicator.mq4** (274 líneas) ⭐⭐⭐
-- ✅ **Indicador personalizado** completo
-- ✅ **Propiedades indicator**: `#property indicator_separate_window`, buffers, plots
-- ✅ **OnInit()** con validación de parámetros
-- ✅ **OnCalculate()** con parámetros múltiples
-- ✅ **Buffer management**: `SetIndexBuffer()`, `SetIndexLabel()`
-- ✅ **Built-ins complejos**: `IndicatorSetString()`, `EMPTY_VALUE`
-- ✅ **Cálculos estadísticos**: desviación estándar
+Hand-written MQL5 files that each exercise a specific language construct the
+MQL4 grammar does not have or handles differently:
 
-### 4. **Scripts/TradeManager.mq4** (335 líneas) ⭐⭐⭐
-- ✅ **Script** con función `OnStart()`
-- ✅ **Gestión de posiciones**: abrir, cerrar, modificar
-- ✅ **Trailing stops**: cálculo dinámico
-- ✅ **Cálculo de riesgo**: análisis de posición
-- ✅ **Built-ins**: `AccountInfoDouble()`, `SymbolInfoDouble()`
-- ✅ **Enums y estructuras avanzadas**
+- `ClassInheritance.mq5` — classes, inheritance, virtual methods
+- `TemplateAndReferences.mq5` — templates, pass-by-reference
+- `NewDelete.mq5` — `new`/`delete`, pointer dereference
+- `NullptrUnionEnumClass.mq5` — `nullptr`, `union`, `enum class`
+- `ResourceAndPragma.mq5` — `#resource`, `#pragma`
+- `StructAndInterface.mq5` — structs and interfaces
+- `FunctionBodyAndIncludes.mq5` — function bodies with `#include`
 
----
+## Samples (`samples/`)
 
-## ✅ ¿Por qué usar samples/ en Tests?
+Hand-written MQL4 files, curated to cover a broad syntax surface. These are
+the go-to fixtures for integration tests:
 
-Estos archivos son **EXCELENTES** para validación porque:
+### 1. **ExpertAdvisor.mq4** (~206 lines) ⭐⭐⭐
+Complete, functional EA: `#include` of a custom header, multiple `input`
+parameters, enums and structs, indicator buffers with `ArraySetAsSeries`,
+built-ins (`iMA()`, `SymbolInfoDouble()`, `OrderSend()`), ternaries,
+multiple `if/else` branches, `for` loops.
 
-1. **Sintaxis completa**: Cubren 95% de la sintaxis MQL4
-2. **Casos reales**: Código funcional real, no ejemplos toy
-3. **Complejidad progresiva**: Desde básico (samples) hasta avanzado
-4. **Built-ins**: Incluyen casi todas las funciones built-in de MQL4
-5. **Estructuras**: Enums, structs, arrays, punteros
-6. **Sin errores**: Código bien formateado y documentado
+### 2. **Include/CustomIndicators.mqh** (~221 lines) ⭐⭐⭐
+Header file with include guards (`#ifndef`/`#define`), an enum, a struct,
+multiple functions (SMA, EMA, RSI, Bollinger Bands), built-in calls
+(`iRSI()`, `iMACD()`, `iBands()`), parameter validation, `switch/case`.
 
-**Recomendación**: ¡Mueve estos archivos a `mq4/complete/` y úsalos como tests principales!
+### 3. **Indicators/MyIndicator.mq4** (~273 lines) ⭐⭐⭐
+Custom indicator: `#property indicator_*` properties, `OnInit()` with
+parameter validation, `OnCalculate()` with multiple parameters, buffer
+management (`SetIndexBuffer()`, `SetIndexLabel()`), statistical calculations
+(standard deviation).
 
-## Convenciones de Nombres
+### 4. **Scripts/TradeManager.mq4** (~334 lines) ⭐⭐⭐
+Script with `OnStart()`: position management (open, close, modify), dynamic
+trailing-stop calculation, position-risk analysis, built-ins
+(`AccountInfoDouble()`, `SymbolInfoDouble()`).
 
-- **basic_*.mq4**: Casos de prueba específicos (ej: `basic_functions.mq4`)
-- **advanced_*.mq4**: Sintaxis compleja (ej: `advanced_classes.mq4`)
-- **complete_*.mq4**: EAs completos (ej: `expert_advisor.mq4`)
-- **test_*.mqh**: Headers de prueba (ej: `test_trading.mqh`)
+### 5. **WithDiagnostics.mq4** (minimal)
+Small file used by diagnostic-related tests.
 
-## Uso en Tests
+## Real-World Corpus (`real/`)
 
-```csharp
-[Fact]
-public void ParseCompleteEA()
-{
-    var code = File.ReadAllText("fixtures/mq4/complete/expert_advisor.mq4");
-    var file = parser.ParseFile(code, "expert_advisor.mq4");
-    // ...
-}
-```
+Production-grade code used by the `Category=RealWorld` tests:
 
-## Uso Recomendado en Tests
+- `real/mql4/` — real Expert Advisors from permissively licensed open-source
+  repositories. See [real/mql4/README.md](real/mql4/README.md).
+- `real/mql5/` — real MQL5 code harvested from mql5.com articles, with
+  per-file construct matrices. See [real/mql5/README.md](real/mql5/README.md).
 
-### Ejemplo 1: Test con Expert Advisor Completo
+These fixtures stress the parsers against production constructs (OOP classes,
+state machines, `CTrade`, `CopyBuffer`, `ObjectCreate`, multi-timeframe
+logic) that the minimal snippets cannot exercise at scale.
 
-```csharp
-[Fact]
-public void ParseCompleteExpertAdvisor_ExtractsAllSymbols()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/ExpertAdvisor.mq4");
+## Naming Conventions
 
-    // Act
-    var file = parser.ParseFile(code, "ExpertAdvisor.mq4");
-
-    // Assert
-    Assert.NotNull(file);
-    Assert.True(file.Symbols.Count >= 10, "Expected multiple symbols");
-
-    // Verify OnInit, OnTick, OnDeinit
-    Assert.Contains(file.Symbols, s => s.Name == "OnInit");
-    Assert.Contains(file.Symbols, s => s.Name == "OnTick");
-    Assert.Contains(file.Symbols, s => s.Name == "OnDeinit");
-
-    // Verify includes
-    Assert.Contains(file.Includes, i => i.Contains("CustomIndicators.mqh"));
-}
-```
-
-### Ejemplo 2: Test con Header File (MQH)
-
-```csharp
-[Fact]
-public void ParseCustomIndicatorsHeader_ExtractsEnumsAndStructs()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/Include/CustomIndicators.mqh");
-
-    // Act
-    var file = parser.ParseFile(code, "CustomIndicators.mqh");
-
-    // Assert
-    Assert.NotNull(file);
-    Assert.True(file.Symbols.Count >= 8, "Expected multiple functions");
-
-    // Verify functions
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateSMA");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateEMA");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateRSI");
-}
-```
-
-### Ejemplo 3: Test con Indicador Técnico
-
-```csharp
-[Fact]
-public void ParseIndicator_ParsesOnCalculateCorrectly()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/Indicators/MyIndicator.mq4");
-
-    // Act
-    var file = parser.ParseFile(code, "MyIndicator.mq4");
-
-    // Assert
-    var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
-    Assert.NotNull(onInit);
-
-    var onCalculate = file.Symbols.FirstOrDefault(s => s.Name == "OnCalculate");
-    Assert.NotNull(onCalculate);
-
-    // Verify buffer arrays
-    Assert.Contains(file.Symbols, s => s.Name == "UpperBandBuffer");
-    Assert.Contains(file.Symbols, s => s.Name == "LowerBandBuffer");
-}
-```
+- `basic_*.mq4` — targeted basic-syntax cases (e.g. `basic_functions.mq4`)
+- `advanced_*.mq4` — one file per advanced construct
+- `complex_*.mqh` — headers with classes (e.g. `complex_class_header.mqh`)
+- `test_*.mqh` — basic test headers (e.g. `test_trading.mqh`)
+- PascalCase files under `Mql5/` and `samples/` are named after their content
+  (`ClassInheritance.mq5`, `ExpertAdvisor.mq4`)
 
 ## Contributing
 
-Al añadir archivos:
-1. Usar comentarios para explicar la sintaxis específica
-2. Nombrar archivos descriptivamente
-3. Clasificar por complejidad (basic/advanced/complete)
-4. Evitar archivos binarios o dependencias externas
-5. **¡参考samples/ como ejemplo de calidad!** (These files set the quality standard)
+When adding fixture files:
+
+1. Explain the specific syntax exercised with comments in the file
+2. Name files descriptively and follow the naming conventions above
+3. Place the file in the appropriate directory (see the structure tree)
+4. Avoid binary files and external dependencies (except `.mqh` includes
+   within fixtures)
+5. **Licensing**: real-world code is only acceptable with a permissive
+   license and must be attributed in the corresponding `real/` README.
+   Never add proprietary or otherwise-licensed code. The curated
+   hand-written files in `mq4/`, `Mql5/`, and `samples/` set the quality
+   standard.

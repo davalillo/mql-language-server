@@ -1,271 +1,177 @@
-# Guía para Tests con Fixtures
+# Guide to Testing with Fixtures
 
-## Cómo Usar Archivos MQL4/MQH en Tests
+This directory contains MQL4 and MQL5 code used by the test suite. There are
+four fixture families, each with a different purpose:
 
-### ⭐ Usando Archivos de samples/ (Recomendado)
+| Directory | Contents | Used by |
+|-----------|----------|---------|
+| `Mql5/` | Minimal MQL5 snippets (classes, templates, new/delete, resources, ...) | `Mql5AntlrParserTests`, `Mql5SymbolVisitorTests`, `Mql5FixtureTests` |
+| `real/mql4/` | Real-world MQL4 Expert Advisors from permissively licensed repos | `Mql4RealWorldParsingTests` (Category `RealWorld`) |
+| `real/mql5/` | Real-world MQL5 code harvested from mql5.com articles | `Mql5RealWorldParsingTests` (Category `RealWorld`) |
+| `samples/` | Curated MQL4 sample EA, indicator, script and header files | Parser integration tests |
+| `mq4/`, `mqh/` | Small basic MQL4/`.mqh` files | Basic parser tests |
 
-**Los archivos en `samples/` son de ALTA CALIDAD y cubren sintaxis MQL4 completa.**
+Per-fixture provenance and licensing notes live in the READMEs of each
+directory (`real/mql4/README.md`, `real/mql5/README.md`).
 
-#### Ejemplo 1: Expert Advisor Completo
+## How to Reference Fixtures in Tests
+
+Fixtures are copied to the test output directory (`CopyToOutputDirectory`
+is set in `MqlLanguageServer.Tests.csproj`), so simple relative paths work:
+
+```csharp
+// ✅ Works: fixtures are copied to the output directory
+var code = File.ReadAllText("fixtures/samples/ExpertAdvisor.mq4");
+
+// ❌ NOT recommended: absolute, machine-specific paths
+var code = File.ReadAllText("/home/you/source/mql-language-server/tests/fixtures/...");
+```
+
+For robustness regardless of the test runner's working directory, resolve
+paths from the assembly location. This is the pattern used by the real-world
+test classes:
+
+```csharp
+private static readonly string FixturesDirectory = Path.Combine(
+    Path.GetDirectoryName(typeof(Mql5RealWorldParsingTests).Assembly.Location)!,
+    "..", "..", "..", "..", "tests", "fixtures", "real", "mql5");
+
+private static string GetFixtureFilePath(string fileName)
+{
+    var path = Path.GetFullPath(Path.Combine(FixturesDirectory, fileName));
+    Assert.True(File.Exists(path), $"Fixture not found: {path}");
+    return path;
+}
+```
+
+Some tests locate the repository root by walking up until they find
+`MqlLanguageServer.sln` and then join `tests`, `fixtures`, and the relative
+fixture path — this pattern is used by the harness in
+`tests/FpMeasurement/` and by workspace scan tests:
+
+```csharp
+Path.Combine(projectRoot, "tests", "fixtures", "real", fileName);
+```
+
+## MQL5 Fixtures
+
+### Minimal snippets (`fixtures/Mql5/`)
+
+Hand-written MQL5 files that each exercise a specific language construct:
+
+- `ClassInheritance.mq5` — classes, inheritance, virtual methods
+- `TemplateAndReferences.mq5` — templates, pass-by-reference
+- `NewDelete.mq5` — `new`/`delete`, pointer dereference
+- `NullptrUnionEnumClass.mq5` — `nullptr`, `union`, `enum class`
+- `ResourceAndPragma.mq5` — `#resource`, `#pragma`
+- `StructAndInterface.mq5` — structs and interfaces
+- `FunctionBodyAndIncludes.mq5` — function bodies with `#include`
+
+Parse them with `Mql5AntlrParser`:
+
+```csharp
+var parser = new Mql5AntlrParser();
+var code = File.ReadAllText("fixtures/Mql5/ClassInheritance.mq5");
+var file = parser.ParseFile(code, "ClassInheritance.mq5");
+Assert.NotNull(file);
+Assert.True(file.Symbols.Count > 0);
+```
+
+### Real-world MQL5 (`fixtures/real/mql5/`)
+
+Production-grade code from mql5.com article authors: OOP classes and state
+machines, `CTrade`, `CopyBuffer`/`CopyRates`, `ObjectCreate` overlays,
+multi-timeframe logic, deep nested loops. See `real/mql5/README.md` for the
+per-file construct matrix and article attribution.
+
+These files back `tests/Parser/Mql5RealWorldParsingTests.cs`, which asserts
+each file parses without crashing, is detected as `MqlLanguage.Mql5`, and
+yields at least one symbol.
+
+## MQL4 Fixtures
+
+### Real-world MQL4 (`fixtures/real/mql4/`)
+
+Real Expert Advisors from permissively licensed open-source repositories
+(EarnForex — Apache-2.0, RoyluxuryTrading — MIT). See `real/mql4/README.md`
+for the per-file matrix and licensing rules.
+
+### Curated samples (`fixtures/samples/`)
+
+Hand-written, high-quality MQL4 files that cover a broad syntax surface:
+
+- `samples/ExpertAdvisor.mq4` — complete EA: inputs, enums, structs,
+  indicator handles, `iMA`/`OrderSend`, ternaries, loops
+- `samples/Include/CustomIndicators.mqh` — header with include guards,
+  enums, structs, SMA/EMA/RSI/Bollinger functions
+- `samples/Indicators/MyIndicator.mq4` — indicator with
+  `#property indicator_*` properties, `OnCalculate`, buffer management
+- `samples/Scripts/TradeManager.mq4` — script with `OnStart`, position
+  management, trailing stops
 
 ```csharp
 [Fact]
 public void ParseExpertAdvisor_ExtractsCompleteSymbolSet()
 {
-    // Arrange
     var parser = new Mql4AntlrParser();
     var code = File.ReadAllText("fixtures/samples/ExpertAdvisor.mq4");
 
-    // Act
     var file = parser.ParseFile(code, "ExpertAdvisor.mq4");
 
-    // Assert
     Assert.NotNull(file);
-    Assert.True(file.Symbols.Count >= 15, "Expert Advisor should have many symbols");
-
-    // Verify required functions exist
     Assert.Contains(file.Symbols, s => s.Name == "OnInit");
     Assert.Contains(file.Symbols, s => s.Name == "OnTick");
-    Assert.Contains(file.Symbols, s => s.Name == "OnDeinit");
-    Assert.Contains(file.Symbols, s => s.Name == "CheckForTradeSignals");
-    Assert.Contains(file.Symbols, s => s.Name == "OpenPosition");
-
-    // Verify includes
     Assert.Contains(file.Includes, i => i.Contains("CustomIndicators.mqh"));
-
-    // Verify global variables
-    Assert.Contains(file.Symbols, s => s.Name == "handleFastEMA");
-    Assert.Contains(file.Symbols, s => s.Name == "handleSlowEMA");
-    Assert.Contains(file.Symbols, s => s.Name == "fastEMA");
-    Assert.Contains(file.Symbols, s => s.Name == "slowEMA");
 }
 ```
 
-#### Ejemplo 2: Header con Enums y Structs
+### Basic files (`fixtures/mq4/`, `fixtures/mqh/`)
+
+Small files for basic parsing and include-detection tests:
 
 ```csharp
-[Fact]
-public void ParseCustomIndicatorsHeader_ExtractsAdvancedTypes()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/Include/CustomIndicators.mqh");
-
-    // Act
-    var file = parser.ParseFile(code, "CustomIndicators.mqh");
-
-    // Assert
-    Assert.NotNull(file);
-    Assert.True(file.Symbols.Count >= 10, "Should have multiple functions");
-
-    // Verify functions exist
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateSMA");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateEMA");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateRSI");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateBollingerUpper");
-    Assert.Contains(file.Symbols, s => s.Name == "GetCustomIndicatorHandle");
-
-    // Verify global constants
-    Assert.Contains(file.Symbols, s => s.Name == "TRADE_MAGIC");
-}
-```
-
-#### Ejemplo 3: Indicador Técnico con OnCalculate
-
-```csharp
-[Fact]
-public void ParseIndicator_ParsesComplexOnCalculate()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/Indicators/MyIndicator.mq4");
-
-    // Act
-    var file = parser.ParseFile(code, "MyIndicator.mq4");
-
-    // Assert
-    var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
-    Assert.NotNull(onInit);
-    Assert.Contains(onInit.Detail ?? "", "indicator", StringComparison.OrdinalIgnoreCase);
-
-    var onCalculate = file.Symbols.FirstOrDefault(s => s.Name == "OnCalculate");
-    Assert.NotNull(onCalculate);
-
-    // Verify indicator buffers
-    Assert.Contains(file.Symbols, s => s.Name == "UpperBandBuffer");
-    Assert.Contains(file.Symbols, s => s.Name == "LowerBandBuffer");
-    Assert.Contains(file.Symbols, s => s.Name == "MiddleBandBuffer");
-    Assert.Contains(file.Symbols, s => s.Name == "SignalBuffer");
-
-    // Verify calculation functions
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateSMA");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculateBollingerBands");
-    Assert.Contains(file.Symbols, s => s.Name == "GenerateSignals");
-}
-```
-
-#### Ejemplo 4: Script con OnStart
-
-```csharp
-[Fact]
-public void ParseTradeManagerScript_ParsesScriptCorrectly()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/samples/Scripts/TradeManager.mq4");
-
-    // Act
-    var file = parser.ParseFile(code, "TradeManager.mq4");
-
-    // Assert
-    Assert.NotNull(file);
-
-    // Verify OnStart function exists
-    var onStart = file.Symbols.FirstOrDefault(s => s.Name == "OnStart");
-    Assert.NotNull(onStart);
-
-    // Verify trading functions
-    Assert.Contains(file.Symbols, s => s.Name == "CloseAllOpenPositions");
-    Assert.Contains(file.Symbols, s => s.Name == "ClosePosition");
-    Assert.Contains(file.Symbols, s => s.Name == "ManageTrailingStops");
-    Assert.Contains(file.Symbols, s => s.Name == "CalculatePositionRisk");
-
-    // Verify input parameters are parsed as variables
-    Assert.Contains(file.Symbols, s => s.Name == "MagicNumber");
-    Assert.Contains(file.Symbols, s => s.Name == "LotSize");
-    Assert.Contains(file.Symbols, s => s.Name == "TrailingStopEnabled");
-}
-```
-
-### 📝 Usando Archivos Básicos (mq4/basic/)
-
-#### Ejemplo 5: Test Básico de Funciones
-
-```csharp
-[Fact]
-public void ParseBasicFunctions_ParsesSuccessfully()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/mq4/basic/basic_functions.mq4");
-
-    // Act
-    var file = parser.ParseFile(code, "basic_functions.mq4");
-
-    // Assert
-    Assert.NotNull(file);
-    Assert.True(file.Symbols.Count > 0);
-    
-    var onInit = file.Symbols.FirstOrDefault(s => s.Name == "OnInit");
-    Assert.NotNull(onInit);
-}
-```
-
-### Ejemplo 2: Test de Includes
-
-```csharp
-[Fact]
-public void ParseWithInclude_DetectsIncludeDirective()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/mq4/basic/basic_functions.mq4");
-
-    // Act
-    var file = parser.ParseFile(code, "basic_functions.mq4");
-
-    // Assert
-    Assert.NotNull(file.Includes);
-    Assert.NotEmpty(file.Includes);
-}
-```
-
-### Ejemplo 3: Test con Archivos MQH
-
-```csharp
-[Fact]
-public void ParseMqhFile_ExtractsFunctions()
-{
-    // Arrange
-    var parser = new Mql4AntlrParser();
-    var code = File.ReadAllText("fixtures/mqh/simple/test_trading.mqh");
-
-    // Act
-    var file = parser.ParseFile(code, "test_trading.mqh");
-
-    // Assert
-    Assert.NotNull(file);
-    Assert.True(file.Symbols.Count >= 2); // PlaceMarketOrder, GetSymbolPoint
-}
-```
-
-## Rutas Relativas desde Tests
-
-### Desde tests en modo Debug/Release
-
-```csharp
-// ✅ Funciona: fixtures se copian al output directory
-var code = File.ReadAllText("fixtures/samples/ExpertAdvisor.mq4");
-
-// ✅ También funciona:
 var code = File.ReadAllText("fixtures/mq4/basic/basic_functions.mq4");
-
-// ❌ NO recomendado (rutas absolutas)
-var code = File.ReadAllText("/home/guillermo/source/mql4-language-server/tests/fixtures/samples/ExpertAdvisor.mq4");
+var code = File.ReadAllText("fixtures/mqh/simple/test_trading.mqh");
 ```
 
-### Verificar que fixtures estén disponibles
+## Language Detection for `.mqh` Files
+
+`.mqh` headers are ambiguous: they can be MQL4 or MQL5. Tests that care about
+language must sniff the content with `LanguageDetection.Detect` instead of
+trusting the extension — this mirrors what the server does:
 
 ```csharp
-[Fact]
-public void FixturesDirectoryExists()
-{
-    string fixturePath = Path.Combine(
-        AppDomain.CurrentDomain.BaseDirectory,
-        "fixtures",
-        "samples",
-        "ExpertAdvisor.mq4"
-    );
-
-    Assert.True(File.Exists(fixturePath), $"Fixture not found at: {fixturePath}");
-}
+var isMql5 = ext == ".mq5" ||
+    (ext == ".mqh" && LanguageDetection.Detect(new Uri(path), null, content) == MqlLanguage.Mql5);
 ```
 
-## Checklist para Archivos de Prueba
+## Test Categories and Filters
 
-Al añadir archivos MQL4/MQH:
+Fixtures back tests in several `Trait("Category", ...)` buckets:
 
-- [ ] Archivo tiene extensión correcta (`.mq4` o `.mqh`)
-- [ ] Nombrado descriptivamente (`basic_functions.mq4`, `advanced_classes.mq4`)
-- [ ] Clasificado en directorio apropiado (`basic/`, `advanced/`, `complete/`)
-- [ ] Contiene comentarios explicativos
-- [ ] Sintaxis válida de MQL4
-- [ ] No depende de archivos externos (excepto .mqh en fixtures)
-- [ ] Tamaño razonable (< 500 líneas)
-- [ ] Evita código binario o compilado
+- Default suite (no category): parser, handler, and integration tests
+- `RealWorld` — the real-world fixture corpus (`real/mql4/`, `real/mql5/`)
+- `FpMeasurement` — temporary measurement harness in `tests/FpMeasurement/`
 
-## Categorías de Archivos
+```bash
+dotnet test                                  # everything
+dotnet test --filter "Category=RealWorld"    # only real-world corpus tests
+dotnet test --filter "Category!=RealWorld"   # skip the real-world corpus
+```
 
-### 🟢 basic/
-- Funciones simples sin complejidad
-- Sintaxis básica de MQL4
-- Sin clases ni estructuras complejas
-- Ejemplo: `basic_functions.mq4`
+Measurement reports written by the `FpMeasurement` harness are written to
+`tests/TestResults/` (gitignored).
 
-### 🟡 advanced/
-- Sintaxis avanzada
-- Estructuras de control complejas
-- Clases (si aplica)
-- Ejemplo: `advanced_indicators.mq4`
+## Checklist for Adding Fixture Files
 
-### 🔴 complete/
-- Expert Advisors completos
-- Código funcional real
-- Multiple archivos .mqh incluidos
-- Ejemplo: `scalping_ea.mq4`
-
-### 📁 mqh/
-- Include files
-- Headers de librerías
-- Definiciones de constantes
-- Funciones reutilizables
+- [ ] Correct extension (`.mq4`, `.mq5`, or `.mqh`)
+- [ ] Descriptive name (`basic_functions.mq4`, `ClassInheritance.mq5`)
+- [ ] Placed in the appropriate directory (see table above)
+- [ ] Contains explanatory comments
+- [ ] Valid MQL4/MQL5 syntax
+- [ ] Does not depend on external files (except `.mqh` within fixtures)
+- [ ] Reasonable size (< 500 lines)
+- [ ] No binary or compiled code
+- [ ] **Real-world code only with a permissive license** — see the licensing
+      rules in `real/mql4/README.md` and `real/mql5/README.md`. Never add
+      proprietary or otherwise-licensed code.
