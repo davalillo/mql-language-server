@@ -2,9 +2,9 @@
 
 ## General Questions
 
-### What is MQL4 Language Server?
+### What is MQL Language Server?
 
-MQL4 Language Server is a Language Server Protocol (LSP) implementation that provides IDE features for MQL4 (MetaTrader 4) development. It enables intelligent code editing features like auto-completion, go-to-definition, and hover information in any LSP-compatible editor.
+MQL Language Server is a Language Server Protocol (LSP) implementation that provides IDE features for MQL4 and MQL5 (MetaTrader 4/5) development. It enables intelligent code editing features like auto-completion, go-to-definition, and hover information in any LSP-compatible editor.
 
 ### Why use a Language Server?
 
@@ -13,31 +13,27 @@ Before LSP, each editor needed its own integration for each language. LSP standa
 - ✅ One implementation, multiple editors
 - ✅ Active development in the LSP ecosystem
 
-### What MQL4 features are supported?
+### What features are supported?
 
 Currently supported:
-- ✅ Symbol extraction (functions, variables, includes)
+- ✅ Symbol extraction (functions, variables, classes, structs, interfaces, enums, includes)
 - ✅ Go to Definition
-- ✅ Find All References
+- ✅ Find All References (token-backed, cross-file)
 - ✅ Document Symbols (outline view)
 - ✅ Auto-completion (keywords, built-ins, user symbols)
 - ✅ Hover information
-- ✅ 50+ built-in MQL4 functions (OrderSend, Ask, Bid, etc.)
-
-Planned:
-- 🔄 Cross-file symbol resolution
-- 🔄 Advanced type inference
-- 🔄 Code formatting
-- 🔄 Error diagnostics
+- ✅ Diagnostics (MQL4 range `4000-4999`, MQL5 range `5000-5999`)
+- ✅ Cross-file symbol resolution via `#include` tracking and workspace indexing
+- ✅ MQL4 and MQL5 built-in functions and predefined variables
 
 ### Is it production-ready?
 
-Yes! The MQL4 LSP v1.0.0 is:
-- ✅ Used by developers worldwide
+The server is actively developed and tested:
 - ✅ Built on proven technologies (ANTLR 4.13.1, .NET 10)
-- ✅ Fully tested (11 unit tests)
-- ✅ Cross-platform (Linux, Windows, macOS)
+- ✅ Fully tested (714 tests as of v2.0.0-rc.1)
+- ✅ Cross-platform (Linux, Windows, macOS Intel and Apple Silicon)
 - ✅ Standalone (no .NET runtime required)
+- ℹ️ v2.0.0 is currently a release candidate (`2.0.0-rc.1`); the stable channel points to the previous 1.x release
 
 ## Installation
 
@@ -86,11 +82,10 @@ Any editor that supports LSP:
 - Emacs
 - Vim
 - Sublime Text
-- Atom
 - Kate
 - Qt Creator
 
-See [docs/guides/EDITOR_INTEGRATION.md](docs/guides/EDITOR_INTEGRATION.md) for detailed setup instructions.
+See the [Editor Integration Guide](../guides/EDITOR_INTEGRATION.md) for detailed setup instructions.
 
 ### I use VSCode. Is there an extension?
 
@@ -186,12 +181,10 @@ echo '{}' | mql-lsp-server --stdio
 
 ### "Symbol not found" errors
 
-This is expected! The LSP currently:
-- ✅ Parses the current file only
-- ❌ Does NOT parse included files (.mqh)
-- ❌ Does NOT resolve cross-file symbols
-
-**Solution**: Keep related code in the same file, or future versions will add cross-file support.
+Cross-file symbol resolution is supported since v1.5.0 and improved in v2.0.0:
+- ✅ `#include` directives are tracked
+- ✅ The workspace is indexed asynchronously at startup (files you never opened are included)
+- ℹ️ If a symbol is still not found, wait for the workspace scan to finish or check for syntax errors in the source file
 
 ### Parser errors in logs
 
@@ -248,7 +241,7 @@ Yes! Contributions welcome:
 - ✨ Feature requests: https://github.com/davalillo/mql-language-server/issues
 - 🔧 Code contributions: Submit PRs to main branch
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup.
 
 ### How do I build from source?
 
@@ -280,22 +273,29 @@ Yes! The parser uses ANTLR 4.13.1:
 2. **Regenerate parser**: Run `dotnet build -c Release` (auto-generates)
 3. **Update visitor**: Modify `src/Parser/Mql4AntlrParser.cs`
 
+Binaries will be in `src/bin/<rid>/` (e.g., `src/bin/linux-x64/mql-lsp-server`)
+
+### Can I extend the parser?
+
+Yes! The parsers use ANTLR 4.13.1:
+
+1. **Modify grammar**: Edit `src/Mql4/Grammar/Mql4Grammar.g4` or `src/Mql5/Grammar/Mql5Grammar.g4`
+2. **Regenerate parser**: Run `dotnet build -c Release` (auto-generates)
+3. **Update visitor**: Modify `src/Parser/Mql4AntlrParser.cs` or `src/Mql5/Parser/Mql5AntlrParser.cs`
+
 ### What's the roadmap?
 
-**v1.1.0** (Planned):
-- Cross-file symbol resolution
-- Improved variable type inference
-- Code formatting
+See [CHANGELOG.md](../../CHANGELOG.md) for the full version history. Recent highlights:
 
-**v1.2.0** (Planned):
-- Error diagnostics and linting
-- Signature help for functions
-- Enhanced hover with parameter info
+**v2.0.0-rc.1** (current):
+- MQL5 support (first-class `.mq5`/`.mqh` parsing and LSP features)
+- Token-backed references (false-positive rate 15.52% → 0.00%)
+- Workspace indexing at startup
+- Breaking rename: `mql4-language-server` → `mql-language-server`
 
-**v2.0.0** (Future):
-- MQL5 support
-- Debugging integration
-- Advanced refactorings
+**Earlier (v1.5.0 – v1.11.x)**:
+- Cross-file symbol resolution (GlobalSymbolIndex)
+- Diagnostics, signature help, folding, formatting
 
 ## Technical
 
@@ -323,28 +323,29 @@ ANTLR 4.13.1 was chosen for:
 **Symbol lookup**: O(log n) for local symbols
 **Startup time**: ~200-500ms
 
-### Supported MQL4 features
+### Supported MQL features
 
-**Parsing support**:
+**Parsing support (MQL4 and MQL5)**:
 - ✅ Functions (int, double, string, bool, void)
 - ✅ Variables (global and local)
 - ✅ Preprocessor directives (#include, #property)
 - ✅ Control flow (if/else, for, while)
 - ✅ Comments (single-line and multi-line)
+- ✅ Classes, structs, interfaces, enums (MQL5)
 
 **Known limitations**:
-- ❌ Array declarations (e.g., `int arr[10]`)
-- ❌ Struct/class definitions
 - ❌ Advanced preprocessor macros
+- ❌ Full semantic type inference
 
 ## Distribution
 
 ### Where can I download binaries?
 
 **GitHub Releases**: https://github.com/davalillo/mql-language-server/releases
-- Linux: `mql-lsp-server` (71MB)
-- macOS: `mql-lsp-server` (71MB)  
-- Windows: `mql-lsp-server.exe` (72MB)
+- Linux: `mql-lsp-server-linux-x64` (~71MB)
+- macOS (Intel): `mql-lsp-server-osx-x64` (~71MB)
+- macOS (Apple Silicon): `mql-lsp-server-osx-arm64` (~71MB)
+- Windows: `mql-lsp-server-win-x64.exe` (~72MB)
 
 ### Can I redistribute?
 
@@ -358,14 +359,14 @@ See [LICENSE](LICENSE) for full license text.
 
 ### How do I verify downloads?
 
-All releases include SHA256 checksums:
+All releases include a `CHECKSUMS.txt` file with SHA256 checksums:
 ```bash
 # Download binary and checksums
-wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
-wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/SHA256SUMS.txt
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/CHECKSUMS.txt
 
 # Verify
-sha256sum -c SHA256SUMS.txt
+sha256sum -c CHECKSUMS.txt
 ```
 
 ## Support
@@ -374,9 +375,9 @@ sha256sum -c SHA256SUMS.txt
 
 1. **Check this FAQ** ✅
 2. **Read the documentation** 📚
-   - README.md
-   - docs/guides/EDITOR_INTEGRATION.md
-   - docs/guides/DISTRIBUTION.md
+   - [docs index](../README.md)
+   - [Editor Integration Guide](../guides/EDITOR_INTEGRATION.md)
+   - [Distribution Guide](../guides/DISTRIBUTION.md)
 3. **Search existing issues** 🔍
    - https://github.com/davalillo/mql-language-server/issues
 4. **Create new issue** ✍️
@@ -407,7 +408,7 @@ Open an issue with:
 ## Still have questions?
 
 If your question isn't answered here:
-1. Check the [documentation](README.md)
+1. Check the [documentation](../README.md)
 2. Search [existing issues](https://github.com/davalillo/mql-language-server/issues)
 3. [Create a new issue](https://github.com/davalillo/mql-language-server/issues/new)
 
@@ -415,4 +416,4 @@ We'll be happy to help! 💙
 
 ---
 
-**MQL4 Language Server v1.0.0** - Making MQL4 development easier
+**MQL Language Server** - Making MQL4/MQL5 development easier

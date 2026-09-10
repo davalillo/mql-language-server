@@ -1,6 +1,6 @@
-# Guía de Distribución - MQL4 Language Server
+# Guía de Distribución - MQL Language Server
 
-Esta guía documenta todos los métodos de distribución disponibles para el MQL4 Language Server.
+Esta guía documenta todos los métodos de distribución disponibles para el MQL Language Server (MQL4/MQL5).
 
 ## 📦 Métodos de Distribución
 
@@ -9,16 +9,16 @@ Esta guía documenta todos los métodos de distribución disponibles para el MQL
 **¿Qué son?**
 - Binarios ejecutables auto-contenidos
 - NO requieren .NET runtime instalado
-- Incluyen todo lo necesario (71-72MB cada uno)
+- Incluyen todo lo necesario (~71-72MB cada uno)
 
 **Ventajas**:
 - ✅ Instalación simple (descargar + ejecutar)
 - ✅ No dependencias externas
-- ✅ Multiplataforma (Linux, Windows, macOS)
+- ✅ Multiplataforma (Linux, Windows, macOS Intel y Apple Silicon)
 - ✅ Ideal para usuarios finales
 
 **Desventajas**:
-- ❌ Tamaño grande (71-72MB por binario)
+- ❌ Tamaño grande (~71-72MB por binario)
 - ❌ Updates manuales
 
 **Cómo distribuir**:
@@ -32,24 +32,28 @@ Esta guía documenta todos los métodos de distribución disponibles para el MQL
 # src/bin/osx-x64/mql-lsp-server
 # src/bin/win-x64/mql-lsp-server.exe
 
-# 3. Crear checksums
-sha256sum mql-lsp-server > SHA256SUMS.txt
-sha256sum mql-lsp-server.exe >> SHA256SUMS.txt
-
-# 4. Subir a GitHub Releases
-# Manual: https://github.com/davalillo/mql-language-server/releases
+# 3. Subir a GitHub Releases
 # Automático: GitHub Actions (configurado en .github/workflows/build.yml)
+# El workflow genera CHECKSUMS.txt con los SHA256 de todos los binarios
 ```
 
 **Para usuarios finales**:
 ```bash
-# Descargar desde GitHub Releases
-wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
-chmod +x mql-lsp-server
+# Descargar desde GitHub Releases (Linux x64)
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
+chmod +x mql-lsp-server-linux-x64
 
 # Ejecutar
-./mql-lsp-server --stdio
+./mql-lsp-server-linux-x64 --stdio
 ```
+
+**Artefactos publicados por el CI** (ver `.github/workflows/build.yml`):
+- `mql-lsp-server-linux-x64`
+- `mql-lsp-server-osx-x64`
+- `mql-lsp-server-osx-arm64` (Apple Silicon)
+- `mql-lsp-server-win-x64.exe`
+- `CHECKSUMS.txt`
+- `mql-language-server.<versión>.nupkg`
 
 ### 2. .NET Global Tool (NuGet)
 
@@ -69,7 +73,7 @@ chmod +x mql-lsp-server
 - ❌ Tamaño menor pero necesita runtime
 - ❌ Registro en nuget.org o GitHub Packages
 
-**Configuración del Proyecto**:
+**Configuración del Proyecto** (ver `src/MqlLanguageServer.Server.csproj`):
 ```xml
 <!-- En .csproj -->
 <PropertyGroup>
@@ -77,21 +81,16 @@ chmod +x mql-lsp-server
   <PackAsTool>true</PackAsTool>
   <ToolCommandName>mql-lsp-server</ToolCommandName>
   <PackageId>mql-language-server</PackageId>
-  <Version>1.0.0</Version>
-  <Authors>MQL4 Language Server Team</Authors>
-  <Description>Language Server Protocol implementation for MQL4</Description>
-  <PackageTags>lsp;mql4;metatroder;language-server</PackageTags>
+  <Authors>MQL Language Server Team</Authors>
+  <Description>Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5)</Description>
+  <PackageTags>lsp;mql4;mql5;metatrader;language-server</PackageTags>
 </PropertyGroup>
 ```
 
 **Crear Paquete**:
 ```bash
-# Método 1: Con flags
-dotnet pack src/Mql4LanguageServer.Server.csproj \
-  -c Release \
-  -o ./nupkg \
-  /p:SelfContained=false \
-  /p:PublishSingleFile=false
+# Método 1: Con dotnet pack
+dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg
 
 # Método 2: pack.ps1 script (PowerShell)
 .\pack.ps1
@@ -148,8 +147,7 @@ Para empresas o distribución limitada sin repositorios públicos:
 
 ```bash
 # Crear paquete local
-dotnet pack src/Mql4LanguageServer.Server.csproj \
-  -c Release -o ./nupkg /p:SelfContained=false
+dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg
 
 # Distribuir vía ZIP, email, etc.
 zip -r mql-language-server-nupkg.zip nupkg/
@@ -169,20 +167,16 @@ dotnet tool install -g mql-language-server \
 
 **Ejemplo de uso**:
 ```bash
-# Developer (crear checksums)
-sha256sum mql-lsp-server > SHA256SUMS.txt
-sha256sum mql-lsp-server.exe >> SHA256SUMS.txt
-
-# Subir SHA256SUMS.txt junto con binarios a GitHub Releases
+# El CI genera CHECKSUMS.txt automáticamente en cada release
+# (ver .github/workflows/build.yml, step "Generate CHECKSUMS.txt")
 
 # Usuario (verificar)
-wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/mql-lsp-server
-wget https://github.com/davalillo/mql-language-server/releases/download/v1.0.0/SHA256SUMS.txt
-sha256sum -c SHA256SUMS.txt
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/CHECKSUMS.txt
+sha256sum -c CHECKSUMS.txt
 
 # Output si es válido:
-# mql-lsp-server: OK
-# mql-lsp-server.exe: OK
+# mql-lsp-server-linux-x64: OK
 ```
 
 ## 📊 Comparación de Métodos
@@ -212,7 +206,7 @@ sha256sum -c SHA256SUMS.txt
 
 **¿Por qué GitHub Releases?**
 
-1. **Versionado**: Tags semánticos (v1.0.0, v1.1.0)
+1. **Versionado**: Tags semánticos (v2.0.0, v2.1.0)
 2. **Changelog**: Release notes automáticas
 3. **Assets**: Binarios, checksums, packages
 4. **Downloads**: Analytics de descarga
@@ -221,24 +215,26 @@ sha256sum -c SHA256SUMS.txt
 **Proceso AUTOMÁTICO (Recomendado)**:
 ```bash
 # 1. Tag y push
-git tag v1.2.0
-git push origin v1.2.0
+git tag v2.0.0
+git push origin v2.0.0
 
 # 2. GitHub Actions automáticamente:
-# - Build para las 3 plataformas (Ubuntu, Windows, macOS)
+# - Build para las 4 plataformas (Linux, Windows, macOS Intel, macOS Apple Silicon)
 # - Ejecutar tests unitarios
+# - Verificar que el tag coincide con la versión del .csproj
 # - Crear release en GitHub
 # - Upload binarios standalone
 # - Upload NuGet package
-# - Generar y upload checksums SHA256
-# - Validar binarios en producción
+# - Generar y upload CHECKSUMS.txt (SHA256)
 
 # 3. Resultado (~15-20 min):
-# https://github.com/davalillo/mql-language-server/releases/tag/v1.2.0
-# → mql-lsp-server (70MB)
-# → mql-lsp-server.exe (71MB)
-# → mql-language-server.1.0.0.nupkg (2MB)
-# → SHA256SUMS.txt
+# https://github.com/davalillo/mql-language-server/releases/tag/v2.0.0
+# → mql-lsp-server-linux-x64 (~71MB)
+# → mql-lsp-server-osx-x64 (~71MB)
+# → mql-lsp-server-osx-arm64 (~71MB)
+# → mql-lsp-server-win-x64.exe (~72MB)
+# → mql-language-server.<versión>.nupkg (~2MB)
+# → CHECKSUMS.txt
 ```
 
 **Proceso MANUAL (alternativo, ya no necesario)**:
@@ -249,25 +245,25 @@ git push origin v1.2.0
 
 ## ✅ Checklist de Release
 
-Para cada release (v1.2.0, v1.3.0, etc.):
+Para cada release (v2.0.0, v2.1.0, etc.):
 
 ### Proceso AUTOMÁTICO (GitHub Actions):
 - [ ] Tests pasan: `dotnet test` (en main branch)
-- [ ] Git tag creado: `git tag v1.2.0`
-- [ ] Git tag push: `git push origin v1.2.0`
+- [ ] Git tag creado: `git tag v2.0.0`
+- [ ] Git tag push: `git push origin v2.0.0`
 - [ ] ✅ **TODO LO DEMÁS ES AUTOMÁTICO:**
-  - ✅ Build para las 3 plataformas
+  - ✅ Build para las 4 plataformas
   - ✅ Ejecutar tests unitarios
+  - ✅ Verificación tag ↔ versión del .csproj
   - ✅ Crear GitHub Release
   - ✅ Upload binarios standalone
   - ✅ Upload NuGet package
-  - ✅ Generar checksums SHA256
-  - ✅ Validar binarios en producción
+  - ✅ Generar CHECKSUMS.txt (SHA256)
 
 ### Proceso MANUAL (alternativo, no recomendado):
 - [ ] Tests pasan: `dotnet test`
 - [ ] Binarios compilados: `build.sh` / `build.ps1`
-- [ ] Checksums generados: `sha256sum * > SHA256SUMS.txt`
+- [ ] Checksums generados: `sha256sum * > CHECKSUMS.txt`
 - [ ] NuGet package creado: `dotnet pack ...`
 - [ ] GitHub Release creado manualmente
 - [ ] Binarios subidos manualmente
@@ -285,6 +281,5 @@ Para cada release (v1.2.0, v1.3.0, etc.):
 
 ---
 
-**Versión**: 1.0.12
-**Fecha**: 2025-11-18
-**Autor**: MQL4 Language Server Team
+**Versión**: 2.0.0-rc.1
+**Autor**: MQL Language Server Team

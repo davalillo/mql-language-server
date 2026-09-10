@@ -1,6 +1,6 @@
-# Instalación Local - MQL4 Language Server
+# Instalación Local - MQL Language Server
 
-Esta guía explica cómo instalar MQL4 LSP localmente **SIN** publicar en nuget.org.
+Esta guía explica cómo instalar el LSP para MQL4/MQL5 localmente **SIN** publicar en nuget.org.
 
 ## 📋 Requisitos Previos
 
@@ -9,8 +9,8 @@ Esta guía explica cómo instalar MQL4 LSP localmente **SIN** publicar en nuget.
 # Verificar instalación
 dotnet --version
 
-# Debe mostrar versión 8.x.x
-# Si no está instalado: https://dotnet.microsoft.com/download
+# Debe mostrar versión 10.x.x
+# Si no está instalado: https://dotnet.microsoft.com/download/dotnet/10.0
 ```
 
 ### 2. Clonar Repositorio
@@ -43,10 +43,10 @@ cd mql-language-server
 ### Paso 1: Crear paquete NuGet
 ```bash
 # Desde directorio raíz del proyecto
-dotnet pack -c Release -o ./nupkg-local
+dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg-local
 ```
 
-**Resultado**: Se crea `./nupkg-local/mql-language-server.1.0.0.nupkg`
+**Resultado**: Se crea `./nupkg-local/mql-language-server.<versión>.nupkg` (la versión coincide con la del `.csproj`).
 
 ### Paso 2: Instalar como herramienta global
 ```bash
@@ -60,7 +60,7 @@ dotnet tool install --global mql-language-server \
 dotnet tool list -g
 
 # Debería mostrar:
-# mql-language-server    1.0.0    ~/.dotnet/tools/mql-lsp-server
+# mql-language-server    <versión>    ~/.dotnet/tools/mql-lsp-server
 ```
 
 ### Paso 4: Configurar PATH (si es necesario)
@@ -77,22 +77,21 @@ source ~/.bashrc
 ## 🎯 Método 3: Instalación desde Binario (Sin .NET)
 
 **Ventajas**: No requiere .NET SDK
-**Desventajas**: Binario más grande (71MB)
+**Desventajas**: Binario más grande (~71MB)
 
 ### Descargar binario
 ```bash
-# Desde GitHub Releases
-wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
-
-# Extraer
-tar -xzf mql-lsp-server-linux-x64.tar.gz
+# Desde GitHub Releases (Linux x64)
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
 
 # Hacer ejecutable
-chmod +x mql-lsp-server
+chmod +x mql-lsp-server-linux-x64
 
 # Copiar a ubicación permanente
-sudo mv mql-lsp-server /usr/local/bin/
+sudo mv mql-lsp-server-linux-x64 /usr/local/bin/mql-lsp-server
 ```
+
+Otros binarios disponibles en Releases: `mql-lsp-server-osx-x64`, `mql-lsp-server-osx-arm64` (Apple Silicon), `mql-lsp-server-win-x64.exe`.
 
 ### Verificar
 ```bash
@@ -103,61 +102,7 @@ mql-lsp-server --stdio
 
 ## 🔧 Configuración de Editor
 
-### VSCode
-
-#### Opción A: Con binario standalone
-```json
-{
-  "languageServers": {
-    "MQL4": {
-      "command": "mql-lsp-server",
-      "args": ["--stdio"]
-    }
-  }
-}
-```
-
-#### Opción B: Con herramienta .NET
-```json
-{
-  "languageServers": {
-    "MQL4": {
-      "command": "mql-lsp-server",
-      "args": ["--stdio"]
-    }
-  },
-  "files.associations": {
-    "*.mq4": "mql4",
-    "*.mqh": "mql4"
-  }
-}
-```
-
-### Neovim
-
-#### Con nvim-lspconfig
-```lua
--- ~/.config/nvim/init.lua
-local lspconfig = require('lspconfig')
-
-lspconfig.mql4_lsp.setup {
-  cmd = {'mql-lsp-server', '--stdio'},
-  filetypes = {'mql4'},
-}
-```
-
-#### Con coc.nvim
-```json
-{
-  "languageserver": {
-    "mql4": {
-      "command": "mql-lsp-server",
-      "args": ["--stdio"],
-      "filetypes": ["mql4"]
-    }
-  }
-}
-```
+La configuración de editores (VSCode, Neovim, Emacs, Vim, Sublime Text) está centralizada en la [Guía de Integración con Editores](EDITOR_INTEGRATION.md) para evitar duplicación. Allí encontrarás la configuración completa para MQL4 y MQL5.
 
 ---
 
@@ -241,7 +186,7 @@ export PATH="$PATH:$HOME/.dotnet/tools"
 dotnet --version
 
 # Si no está instalado, descargar desde:
-# https://dotnet.microsoft.com/download/dotnet/8.0
+# https://dotnet.microsoft.com/download/dotnet/10.0
 ```
 
 ### Error: "Cannot find package"
@@ -250,12 +195,12 @@ dotnet --version
 ls -lh ./nupkg-local/*.nupkg
 
 # Si no existe, recrear
-dotnet pack -c Release -o ./nupkg-local
+dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg-local
 ```
 
 ### LSP no funciona en editor
 
-1. **Verificar configuración del editor**
+1. **Verificar configuración del editor** (ver [EDITOR_INTEGRATION.md](EDITOR_INTEGRATION.md))
 2. **Reiniciar LSP server**
    - VSCode: `Cmd/Ctrl+Shift+P` → "Reload Window"
    - Neovim: `:LspRestart`
@@ -290,7 +235,7 @@ dotnet pack -c Release -o ./nupkg-local
 1. **Crear paquete en máquina con internet**
    ```bash
    ./install-local-tool.sh
-   # Copia: nupkg-local/mql-language-server.1.0.0.nupkg
+   # Copia: nupkg-local/mql-language-server.<versión>.nupkg
    ```
 
 2. **Transferir a máquina objetivo** (USB, scp, etc.)
@@ -323,11 +268,11 @@ dotnet pack -c Release -o ./nupkg-local
 
 ## 📚 Recursos Adicionales
 
-- **Documentación completa**: [README.md](README.md)
-- **Integración con editores**: [docs/guides/EDITOR_INTEGRATION.md](docs/guides/EDITOR_INTEGRATION.md)
-- **Preguntas frecuentes**: [FAQ.md](FAQ.md)
-- **Guía de distribución**: [docs/guides/DISTRIBUTION.md](docs/guides/DISTRIBUTION.md)
+- **Documentación completa**: [README.md](../../README.md)
+- **Integración con editores**: [EDITOR_INTEGRATION.md](EDITOR_INTEGRATION.md)
+- **Preguntas frecuentes**: [FAQ.md](../references/FAQ.md)
+- **Guía de distribución**: [DISTRIBUTION.md](DISTRIBUTION.md)
 
 ---
 
-**MQL4 Language Server v1.0.0** - Instalación local sin publicación
+**MQL Language Server** - Instalación local sin publicación

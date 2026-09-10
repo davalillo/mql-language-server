@@ -1,6 +1,6 @@
-# Manual Testing Guide - MQL4 Language Server
+# Manual Testing Guide - MQL Language Server
 
-This guide provides step-by-step instructions to manually test the MQL4 Language Server functionality.
+This guide provides step-by-step instructions to manually test the MQL Language Server (MQL4 and MQL5) functionality.
 
 ## 📋 Prerequisites
 
@@ -8,15 +8,12 @@ Choose one installation method:
 
 ### Option 1: Standalone Binary (Recommended)
 ```bash
-# Download from GitHub Releases
-wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
-
-# Extract and make executable
-tar -xzf mql-lsp-server-linux-x64.tar.gz
-chmod +x mql-lsp-server
+# Download from GitHub Releases (Linux x64)
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
+chmod +x mql-lsp-server-linux-x64
 
 # Test binary
-./mql-lsp-server --version
+./mql-lsp-server-linux-x64 --version
 ```
 
 ### Option 2: From Source Build
@@ -27,7 +24,7 @@ cd mql-language-server
 ./build.sh
 
 # Binary location
-./src/bin/linux-x64/publish/mql-lsp-server --version
+./src/bin/linux-x64/mql-lsp-server --version
 ```
 
 ### Option 3: .NET Tool
@@ -131,24 +128,25 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"
 
 #### Install VSCode Extension Configuration
 
-Create `.vscode/settings.json` in your MQL4 project:
+Create `.vscode/settings.json` in your MQL project:
 
 ```json
 {
   "languageServers": {
-    "MQL4": {
+    "MQL": {
       "command": "./mql-lsp-server",
-      "args": ["--stdio"],
-      "languages": ["mql4"],
-      " filetypes": ["mq4", "mqh"]
+      "args": ["--stdio"]
     }
   },
   "files.associations": {
     "*.mq4": "mql4",
-    "*.mqh": "mql4"
+    "*.mq5": "mql5",
+    "*.mqh": "mql5"
   }
 }
 ```
+
+> **Note**: Full editor configuration (VSCode, Neovim, Emacs, Vim, Sublime Text) is centralized in the [Editor Integration Guide](EDITOR_INTEGRATION.md).
 
 #### Test Steps in VSCode
 
@@ -184,16 +182,18 @@ Create `.vscode/settings.json` in your MQL4 project:
 #### Configuration (init.lua)
 
 ```lua
--- Install nvim-lspconfig
-require('lspconfig').mql4_lsp = {
+-- Register the LSP server (see EDITOR_INTEGRATION.md for full setup)
+local lspconfig = require('lspconfig')
+
+lspconfig.mql_lsp.setup {
     cmd = {'./mql-lsp-server', '--stdio'},
-    filetypes = {'mql4'},
+    filetypes = {'mql4', 'mql5'},
 }
 
 -- Keybindings
 vim.api.nvim_set_keymap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', {noremap = true})
 vim.api.nvim_set_keymap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', {noremap = true})
-vim.apinvim_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', {noremap = true})
+vim.api.nvim_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', {noremap = true})
 ```
 
 #### Test Commands
@@ -259,20 +259,20 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"
 
 ### No Completion Suggestions
 
-1. Verify file is associated with MQL4 language
+1. Verify file is associated with MQL4 or MQL5 language
 2. Check LSP server is running: `ps aux | grep mql-lsp-server`
 3. Check LSP logs in editor's output panel
 
 ### Parse Errors
 
-MQL4 parser is ANTLR-based. If parsing fails:
+MQL4 and MQL5 parsers are ANTLR-based. If parsing fails:
 - Check syntax: Missing semicolons, braces
 - Verify `#include` paths are correct
 - Restart LSP server
 
 ### Feature Not Working
 
-1. **Check Language ID**: Ensure file has `.mq4` or `.mqh` extension
+1. **Check Language ID**: Ensure file has `.mq4`, `.mq5`, or `.mqh` extension
 2. **Restart LSP**: Close and reopen file
 3. **Check Capabilities**: Run with `--verbose` flag
 
@@ -322,15 +322,52 @@ time ./mql-lsp-server --stdio < large-test-request.json
 
 ### Issue: "No completion suggestions"
 
-**Solution**: Verify file extension is `.mq4` or language is set to `mql4`
+**Solution**: Verify file extension is `.mq4`, `.mq5`, or `.mqh` and language is set to `mql4` or `mql5`
 
-### Issue: "Parse error on valid MQL4 code"
+### Issue: "Parse error on valid MQL code"
 
-**Solution**: Parser supports simplified MQL4 grammar. See ANTLR grammar limitations.
+**Solution**: Parsers use simplified MQL4/MQL5 grammars. See ANTLR grammar limitations.
 
 ### Issue: "Commands not responding"
 
 **Solution**: Check LSP server is running: `ps aux | grep mql-lsp-server`
+
+## 🧩 Testing MQL5
+
+Repeat the steps above with a `.mq5` file to validate MQL5 support:
+
+```mql5
+// test.mq5
+class CStrategy
+{
+private:
+    double m_lotSize;
+public:
+    CStrategy(double lotSize) : m_lotSize(lotSize) {}
+    double GetLotSize() const { return m_lotSize; }
+};
+
+int OnInit()
+{
+    CStrategy strategy(0.1);
+    Print("Lot size: ", strategy.GetLotSize());
+    Print("Digits: ", _Digits);
+    return(INIT_SUCCEEDED);
+}
+
+void OnTick()
+{
+    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    if(bid > 0)
+        Print("Bid: ", bid);
+}
+```
+
+**Verify MQL5-specific features**:
+- ✅ Document symbols show the class `CStrategy` and its members
+- ✅ Hover over `_Digits` shows predefined variable info
+- ✅ Completion shows MQL5 built-ins (`PositionGetSymbol`, `_Point`, `_Symbol`, etc.)
+- ✅ Diagnostics use the MQL5 code range (`5000-5999`)
 
 ---
 

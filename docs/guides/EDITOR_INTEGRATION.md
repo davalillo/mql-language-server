@@ -1,349 +1,215 @@
 # LSP Integration Guide
 
-This guide explains how to integrate the MQL4 Language Server with various LSP-compatible editors.
+This guide explains how to integrate the MQL Language Server with LSP-compatible editors. The server supports both MQL4 (`.mq4`) and MQL5 (`.mq5`, `.mqh`) files.
 
 ## Supported Editors
 
-The MQL4 LSP is compatible with any editor that supports the Language Server Protocol (LSP):
+The LSP server is compatible with any editor that supports the Language Server Protocol (LSP):
 
-- ✅ **Visual Studio Code** (vscode)
-- ✅ **Neovim** (via nvim-lspconfig)
+- ✅ **Visual Studio Code**
+- ✅ **Neovim** (via nvim-lspconfig or coc.nvim)
 - ✅ **Emacs** (via lsp-mode)
-- ✅ **Vim/Neovim** (via coc.nvim)
+- ✅ **Vim** (via vim-lsp)
 - ✅ **Sublime Text** (via LSP package)
-- ✅ **Atom** (via atom-ide-base)
 - ✅ **Kate** (built-in LSP support)
 - ✅ **Qt Creator** (built-in LSP support)
 
 ## Visual Studio Code
 
-### Method 1: Using the mql-lsp-server binary
+### 1. Install the server
 
-1. **Install the binary**:
-   ```bash
-   # Download from GitHub Releases
-   wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
-   tar -xzf mql-lsp-server-linux-x64.tar.gz
-   chmod +x mql-lsp-server
-   sudo mv mql-lsp-server /usr/local/bin/
-   ```
+**Option A: Standalone binary (recommended, no .NET required)**
 
-2. **Install VSCode MQL4 extension** (optional, for syntax highlighting):
-   - Search for "MQL4" in the Extensions marketplace
-   - Install any MQL4 syntax highlighting extension
+```bash
+# Download from GitHub Releases (Linux example)
+wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64
+chmod +x mql-lsp-server-linux-x64
+sudo mv mql-lsp-server-linux-x64 /usr/local/bin/mql-lsp-server
+```
 
-3. **Configure VSCode** (`settings.json`):
-   ```json
-   {
-     "languageServers": {
-       "MQL4": {
-         "command": "mql-lsp-server",
-         "args": ["--stdio"],
-         "languages": [
-           {
-             "id": "mql4",
-             "extensions": [".mq4", ".mqh"],
-             "aliases": ["MQL4", "mql4"]
-           }
-         ]
-       }
-     }
-   }
-   ```
+**Option B: .NET tool (requires .NET 10 SDK)**
 
-### Method 2: As .NET Tool (NuGet Feed Required)
+```bash
+dotnet tool install --global mql-language-server
+```
 
-⚠️ **Important**: This method requires the package to be published to a NuGet feed (nuget.org, GitHub Packages, or a local feed). For local installations without publishing, see Method 3 below.
+### 2. Configure VSCode (`settings.json`)
 
-**Prerequisites**: Package must be available in a NuGet feed.
+```json
+{
+  "languageServers": {
+    "MQL": {
+      "command": "mql-lsp-server",
+      "args": ["--stdio"]
+    }
+  },
+  "files.associations": {
+    "*.mq4": "mql4",
+    "*.mq5": "mql5",
+    "*.mqh": "mql5"
+  }
+}
+```
 
-**Option A: From Published Package**
-1. **Install as global tool**:
-   ```bash
-   dotnet tool install --global mql-language-server
-   ```
-
-2. **Configure VSCode** (`settings.json`):
-   ```json
-   {
-     "languageServers": {
-       "MQL4": {
-         "command": "mql-lsp-server",
-         "args": ["--stdio"]
-       }
-     },
-     "files.associations": {
-       "*.mq4": "mql4",
-       "*.mqh": "mql4"
-     }
-   }
-   ```
-
-**Option B: From Local Package (No Publication Required)**
-
-If you have the .nupkg file locally:
-
-1. **Create local NuGet source**:
-   ```bash
-   # Create a directory for local packages
-   mkdir -p ~/.nuget/packages
-   ```
-
-2. **Create the package** (if not already created):
-   ```bash
-   cd /path/to/mql-language-server
-   dotnet pack -c Release -o ./nupkg --include-symbols
-   ```
-
-3. **Install from local source**:
-   ```bash
-   dotnet tool install --global mql-language-server \
-     --add-source ./nupkg
-   ```
-
-4. **Configure VSCode** (same as above)
-
-**Option C: GitHub Packages (No nuget.org)**
-
-If published to GitHub Packages:
-
-1. **Configure GitHub source**:
-   ```bash
-   # Add GitHub Packages as source
-   export GITHUB_TOKEN="ghp_your_token_here"
-   dotnet nuget add source "https://nuget.pkg.github.com/your_username/index.json" \
-     --name "GitHub" \
-     --username "your_username" \
-     --password "$GITHUB_TOKEN"
-   ```
-
-2. **Install**:
-   ```bash
-   dotnet tool install --global mql-language-server
-   ```
-
-### Method 3: Standalone Binary (Recommended)
-
-**Recommended for most users** - No .NET installation required:
-
-1. **Download binary** (see Method 1 above)
-2. **Configure VSCode** (same as Method 1)
+> **Note**: You may also want an MQL syntax highlighting extension from the marketplace. The LSP server provides the intelligent features (completion, definition, references, hover, diagnostics).
 
 ## Neovim
 
 ### Using nvim-lspconfig
 
-1. **Install nvim-lspconfig** (if not already installed):
-   ```vim
-   " In your init.lua or init.vim
-   require('lspconfig').mql4_lsp.setup{}
-   ```
+```lua
+local lspconfig = require('lspconfig')
 
-2. **Manual configuration** (`init.lua`):
-   ```lua
-   local lspconfig = require('lspconfig')
-   
-   lspconfig.mql4_lsp.setup {
-     cmd = {'mql-lsp-server', '--stdio'},
-     filetypes = {'mql4'},
-     root_dir = lspconfig.util.root_pattern('.git', '*.mq4'),
-   }
-   ```
+lspconfig.mql_lsp.setup {
+  cmd = { 'mql-lsp-server', '--stdio' },
+  filetypes = { 'mql4', 'mql5' },
+  root_dir = lspconfig.util.root_pattern('.git', '*.mq4', '*.mq5'),
+}
+```
+
+> **Note**: `mql_lsp` is not shipped with nvim-lspconfig yet; register it as a custom config as shown above.
 
 ### Using coc.nvim
 
-1. **Install coc.nvim** (if not already installed)
+Add to `coc-settings.json`:
 
-2. **Add to coc-settings.json**:
-   ```json
-   {
-     "languageserver": {
-       "mql4": {
-         "command": "mql-lsp-server",
-         "args": ["--stdio"],
-         "filetypes": ["mql4"]
-       }
-     }
-   }
-   ```
+```json
+{
+  "languageserver": {
+    "mql": {
+      "command": "mql-lsp-server",
+      "args": ["--stdio"],
+      "filetypes": ["mql4", "mql5"]
+    }
+  }
+}
+```
 
 ## Emacs
 
 ### Using lsp-mode
 
-1. **Install lsp-mode**:
-   ```elisp
-   (use-package lsp-mode
-     :ensure t
-     :commands lsp)
-   ```
+```elisp
+(require 'lsp-mode)
+(add-to-list 'lsp-language-id-configuration '(mql4-mode . "mql4"))
+(add-to-list 'lsp-language-id-configuration '(mql5-mode . "mql5"))
 
-2. **Configure MQL4 LSP**:
-   ```elisp
-   (require 'lsp-mode')
-   (add-to-list 'lsp-language-id-configuration '(mql4-mode . "mql4"))
-   
-   (lsp-register-client
-    (make-lsp-client
-     :new-connection (lsp-stdio-connection '("mql-lsp-server" "--stdio"))
-     :activation-fn (lsp-activate-on "mql4")
-     :server-id "mql4-lsp"))
-   ```
+(lsp-register-client
+ (make-lsp-client
+  :new-connection (lsp-stdio-connection '("mql-lsp-server" "--stdio"))
+  :activation-fn (lsp-activate-on "mql4" "mql5")
+  :server-id 'mql-lsp))
+```
 
 ## Vim
 
 ### Using vim-lsp
 
-1. **Install vim-lsp** (if not already installed)
+```vim
+if executable('mql-lsp-server')
+  augroup lsp_mql
+    autocmd!
+    autocmd BufRead,BufNewFile *.mq4 setlocal filetype=mql4
+    autocmd BufRead,BufNewFile *.mq5,*.mqh setlocal filetype=mql5
+  augroup END
 
-2. **Configure in .vimrc**:
-   ```vim
-   if executable('mql-lsp-server')
-     augroup lsp_mql4
-       autocmd!
-       autocmd BufRead,BufNewFile *.mq4 setlocal filetype=mql4
-     augroup END
-   
-     let g:lsp_settings = {
-       \ 'mql-lsp-server': {
-       \   'cmd': ['mql-lsp-server', '--stdio'],
-       \   'root_uri': {'*': {&runtimepath}},
-       \ }
-       \ }
-   endif
-   ```
+  let g:lsp_settings = {
+    \ 'mql-lsp-server': {
+    \   'cmd': ['mql-lsp-server', '--stdio'],
+    \   'allowlist': ['mql4', 'mql5'],
+    \ }
+    \ }
+endif
+```
 
 ## Sublime Text
 
-1. **Install LSP package** (via Package Control)
+Add to `LSP.sublime-settings`:
 
-2. **Add MQL4 LSP configuration** (`LSP.sublime-settings`):
-   ```json
-   {
-     "clients": {
-       "mql4-lsp": {
-         "command": ["mql-lsp-server", "--stdio"],
-         "env": {},
-         "enabled": true,
-         "languages": [
-           {
-             "selector": "source.mql4",
-             "priority": 0
-           }
-         ],
-         "settings": {}
-       }
-     }
-   }
-   ```
+```json
+{
+  "clients": {
+    "mql-lsp": {
+      "command": ["mql-lsp-server", "--stdio"],
+      "enabled": true,
+      "selector": "source.mql4 | source.mql5"
+    }
+  }
+}
+```
 
 ## Features Provided
 
-Once configured, the MQL4 LSP provides:
+Once configured, the LSP provides:
 
-- **Auto-completion**: MQL4 keywords, built-in functions (OrderSend, Ask, Bid, etc.), and user-defined symbols
-- **Go to Definition**: Navigate to function/variable declarations
-- **Find All References**: Locate all usages of symbols
-- **Hover Information**: Display symbol type and documentation
-- **Document Symbols**: Outline view showing all functions and variables
-- **Symbol Search**: Quick navigation through code structure
+- **Auto-completion**: MQL4/MQL5 keywords, built-in functions and predefined variables, and user-defined symbols
+- **Go to Definition**: Navigate to function/variable/class declarations
+- **Find All References**: Token-backed, cross-file symbol usages (workspace is indexed at startup)
+- **Hover Information**: Symbol type and documentation
+- **Document Symbols**: Outline view of functions, variables, classes, structs, interfaces, and enums
+- **Diagnostics**: Syntax and semantic hints (MQL4 range `4000-4999`, MQL5 range `5000-5999`)
+- **Cross-file support**: `#include` directives are tracked; symbols from included files resolve
 
 ## Testing Your Setup
 
 1. **Create a test file** (`test.mq4`):
-   ```mql4
-   int OnInit()
-   {
-       double price = Ask;
-       return(INIT_SUCCEEDED);
-   }
-   
-   void OnTick()
-   {
-       if(Bid > Ask)
-       {
-           Print("Spread detected");
-       }
-   }
-   ```
+
+```mql4
+int OnInit()
+{
+    double price = Ask;
+    return(INIT_SUCCEEDED);
+}
+
+void OnTick()
+{
+    if(Bid > Ask)
+    {
+        Print("Spread detected");
+    }
+}
+```
 
 2. **Verify features**:
    - Hover over `Ask` or `Bid` → should show built-in variable info
-   - Press Ctrl+Click (or Cmd+Click) on `OnInit` → should navigate to its declaration
+   - Ctrl+Click (or Cmd+Click) on `OnInit` → should navigate to its declaration
    - Type `Order` → should show auto-completion suggestions
+
+For MQL5, repeat with a `.mq5` file (e.g., hover over `_Digits` or `PositionGetSymbol`).
 
 ## Troubleshooting
 
 ### LSP server doesn't start
 
-**Check if the binary is executable**:
 ```bash
-chmod +x /usr/local/bin/mql-lsp-server
-mql-lsp-server --stdio
-```
-
-**Verify installation**:
-```bash
+# Check if the binary is executable and on PATH
 which mql-lsp-server
 mql-lsp-server --version
+
+# Test stdio mode manually
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":"file:///tmp","capabilities":{}}}' | mql-lsp-server --stdio
 ```
 
 ### No auto-completion
 
-**Check file association**:
-- Ensure the file has `.mq4` or `.mqh` extension
-- Verify the language is set to `mql4` in your editor
-
-**Restart LSP server**:
-- VSCode: Cmd/Ctrl+Shift+P → "Reload Window"
-- Neovim: `:LspRestart`
-- Emacs: `M-x lsp-restart-workspace`
+- Ensure the file has a `.mq4`, `.mq5`, or `.mqh` extension
+- Verify the language is set to `mql4` or `mql5` in your editor
+- Restart the LSP server:
+  - VSCode: `Cmd/Ctrl+Shift+P` → "Reload Window"
+  - Neovim: `:LspRestart`
+  - Emacs: `M-x lsp-restart-workspace`
 
 ### Symbols not found
 
-**Check MQL4 code syntax**:
-- Ensure proper function declaration: `int OnInit()`
-- Ensure proper variable declaration: `int myVar;`
 - Check for syntax errors that prevent parsing
-
-## Configuration
-
-### Custom MQL4 include paths
-
-The LSP server automatically detects `#include` directives. To provide additional include paths:
-
-**Note**: Currently, the LSP parses only the current file. Cross-file symbol resolution is planned for future versions.
-
-### Disable specific features
-
-Most editors allow disabling specific LSP features in settings:
-
-**VSCode**:
-```json
-{
-  "mql-lsp-server": {
-    "completion": true,
-    "definition": true,
-    "references": true,
-    "hover": true,
-    "documentSymbol": true
-  }
-}
-```
+- Cross-file symbols require the workspace scan to complete (it runs asynchronously after `initialize`)
 
 ## Getting Help
 
-- **GitHub Issues**: https://github.com/davalillo/mql-language-server/issues
-- **Documentation**: See README.md
-- **Build from Source**: See BUILD_INSTRUCTIONS.md
-
-## Next Steps
-
-- **Custom grammars**: Future versions will support custom syntax highlighting grammars
-- **Cross-file analysis**: Track symbols across multiple MQL4 files
-- **Debugging support**: Integration with MQL4 debuggers
-- **Code formatting**: Automatic code formatting according to MQL4 standards
+- **GitHub Issues**: <https://github.com/davalillo/mql-language-server/issues>
+- **Documentation**: [docs index](../README.md)
+- **Build from Source**: see the root [README](../../README.md#from-source)
 
 ---
 
-**MQL4 Language Server v1.0.0** - Bringing IDE features to MQL4 development
+**MQL Language Server** — Bringing IDE features to MQL4/MQL5 development
