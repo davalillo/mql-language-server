@@ -1,77 +1,33 @@
-# Documentation - MQL Language Server
+# Documentation — MQL Language Server
 
-Welcome to the MQL Language Server documentation. This repository is organized to help you find what you need quickly.
+Landing page for the `docs/` directory. For the project overview, installation, and features, see the [root README](../README.md).
 
-## 📚 Documentation Structure
+## Guides
 
-### 🎯 Quick Start
-- **[Installation Guide](../README.md#installation)** - Get started with MQL4 LSP
-- **[Editor Integration](guides/EDITOR_INTEGRATION.md)** - Configure VSCode, Neovim, Emacs, etc.
-- **[Local Installation](guides/LOCAL_INSTALLATION.md)** - Install without publishing to NuGet
-- **[Manual Testing Guide](guides/MANUAL_TESTING.md)** - Test LSP features manually
+| Document | What it covers |
+|----------|----------------|
+| [Editor Integration](guides/EDITOR_INTEGRATION.md) | Configure the LSP in VSCode, Neovim, Emacs, Vim, Sublime Text, and more |
+| [Local Installation](guides/LOCAL_INSTALLATION.md) | Install as a .NET tool without publishing to NuGet |
+| [Distribution](guides/DISTRIBUTION.md) | Distribution channels: GitHub Releases, NuGet, GitHub Packages, private feeds |
+| [Manual Testing](guides/MANUAL_TESTING.md) | Verify LSP features by hand, with or without an editor |
 
-### 🔧 Development
-- **[Architecture Reference](../ARCHITECTURE.md)** - Canonical architecture doc (handler surface, DI, LSP capabilities, test pyramid, build layout)
-- **[Build Instructions](../README.md#from-source)** - How to build from source
-- **[Security Analysis](references/SECURITY.md)** - NuGet vulnerabilities analysis
+## References
 
-### 📦 Project Management
-- **[Distribution Guide](guides/DISTRIBUTION.md)** - How to distribute the LSP
-- **[Release Notes](references/RELEASE_NOTES.md)** - Version history
+| Document | What it covers |
+|----------|----------------|
+| [FAQ](references/FAQ.md) | Frequently asked questions, troubleshooting, and known limitations |
+| [Dependency Security Analysis](references/SECURITY.md) | Historical NuGet vulnerability audit (RESOLVED, `NoWarn` suppression removed 2026-09-10) |
+| [Security Policy](../SECURITY.md) | How to report vulnerabilities, scope, and supported versions (canonical, referenced by GitHub) |
+| Architecture | No tracked document — generate locally with `npx gitnexus analyze && npx gitnexus wiki` (output in `.gitnexus/wiki/`, excluded from version control) |
+| [Changelog](../CHANGELOG.md) | Version history and release notes |
 
-### ❓ Help & Support
-- **[FAQ](references/FAQ.md)** - Frequently asked questions
+## Quick Links
 
-## 🚀 Quick Installation
-
-### Standalone Binary (Recommended)
-```bash
-wget https://github.com/davalillo/mql-language-server/releases/latest/download/mql-lsp-server-linux-x64.tar.gz
-tar -xzf mql-lsp-server-linux-x64.tar.gz
-chmod +x mql-lsp-server
-```
-
-### .NET Tool (Requires .NET 10 SDK)
-```bash
-dotnet tool install --global mql-language-server
-```
-
-## 🎯 Use Cases
-
-### For MQL4 Developers
-- Get intelligent code completion
-- Navigate to function definitions
-- Find all references to variables
-- Hover for symbol information
-- View document outline
-
-### For Editor Users
-- **VSCode**: Install MQL4 LSP server in settings
-- **Neovim**: Configure with nvim-lspconfig
-- **Emacs**: Use with lsp-mode
-- **Vim**: Integrate with vim-lsp
-
-## 📦 Features
-
-✅ **Symbol Extraction** - Functions, variables, includes  
-✅ **Go to Definition** - Navigate to declarations  
-✅ **Find All References** - Locate symbol usages  
-✅ **Document Symbols** - Outline view  
-✅ **Auto-completion** - Keywords, built-ins, user symbols  
-✅ **Hover Information** - Symbol details  
-✅ **Cross-platform** - Linux, macOS, Windows  
-✅ **Standalone** - No .NET runtime required  
-
-## 🔗 Links
-
-- **Repository**: https://github.com/davalillo/mql-language-server
-- **Releases**: https://github.com/davalillo/mql-language-server/releases
-- **Issues**: https://github.com/davalillo/mql-language-server/issues
-
-## 📄 License
-
-MIT License - See [LICENSE](../LICENSE) file
+- **Repository**: <https://github.com/davalillo/mql-language-server>
+- **Releases**: <https://github.com/davalillo/mql-language-server/releases>
+- **Issues**: <https://github.com/davalillo/mql-language-server/issues>
+- **License**: [MIT](../LICENSE)
 
 ---
 
-**Need help?** Check the [FAQ](references/FAQ.md) or open an issue.
+**Need help?** Check the [FAQ](references/FAQ.md) or [open an issue](https://github.com/davalillo/mql-language-server/issues/new).

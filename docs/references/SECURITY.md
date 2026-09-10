@@ -1,158 +1,82 @@
-# Security Analysis - NuGet Package Vulnerabilities
+# Dependency Security Analysis (Historical)
 
-## ⚠️ Vulnerabilidades Detectadas
+> **Status: RESOLVED.** This is a historical record. The NuGet audit
+> warnings analyzed here were detected on **2025-11-18** and were
+> subsequently eliminated by dependency updates (commit `0f5ca10`,
+> 2026-09-09: `Antlr4BuildTasks` 12.10 → 12.14 removed the High-severity
+> transitive vulnerability `Microsoft.Build.Utilities.Core` 17.8.3;
+> `Serilog` 4.0.0 → 4.4.0, `Serilog.Extensions.Hosting` 8.0.0 → 10.0.0).
+> Verified 2026-09-10:
+>
+> ```
+> dotnet list <project>.csproj package --vulnerable --include-transitive
+> → "does not have any vulnerable packages"
+> ```
+>
+> The remaining audit warnings (NU1902/NU1903 on legacy `System.*` 4.3.x
+> packages, unreachable from the server's runtime behavior) were
+> suppressed via `NoWarn` in the csproj between 2025-11-18 and 2026-09-10
+> with the rationale preserved in the original analysis below. The
+> suppression was removed on 2026-09-10 after verification showed zero
+> vulnerable packages and a clean build — the suppression is no longer
+> needed and audit warnings are again visible.
+>
+> For the current security policy (how to report a vulnerability, scope,
+> supported versions), see the root [SECURITY.md](../../SECURITY.md).
 
-El build del proyecto detecta 4 warnings de vulnerabilidades en dependencias:
+## Why this document exists
 
-1. **NU1903**: `System.Net.Http` 4.3.0 - HIGH severity
-2. **NU1903**: `Microsoft.Build.Utilities.Core` 17.8.3 - HIGH severity
-3. **NU1903**: `System.Private.Uri` 4.3.0 - HIGH severity
-4. **NU1902**: `System.Private.Uri` 4.3.0 - MODERATE severity
+This file records the dependency-audit decision made when the project
+first gained a NuGet vulnerability scanner in the build. It is kept as
+context for the `NoWarn` suppression in the `.csproj` — without it, a
+future contributor removing the suppression would have no way to know
+it was a deliberate, justified decision rather than an oversight.
 
-## 🔍 Análisis Detallado
+## Original analysis (2025-11-18)
 
-### ¿Qué son estas vulnerabilidades?
+The build detected 4 NuGet audit warnings in transitive dependencies:
 
-Estas son vulnerabilidades en **dependencias transitivas** (dependencias de dependencias). No están directamente en nuestro código ni en nuestros paquetes directos.
+1. **NU1903**: `System.Net.Http` 4.3.0 — HIGH severity
+2. **NU1903**: `Microsoft.Build.Utilities.Core` 17.8.3 — HIGH severity
+3. **NU1903**: `System.Private.Uri` 4.3.0 — HIGH severity
+4. **NU1902**: `System.Private.Uri` 4.3.0 — MODERATE severity
 
-**Origen**:
-- `System.Net.Http` 4.3.0 → Parte de .NET Standard 1.x
-- `Microsoft.Build.Utilities.Core` 17.8.3 → Parte de MSBuild 17.8
-- `System.Private.Uri` 4.3.0 → Parte de .NET Standard 1.x
+These were vulnerabilities in **transitive dependencies** (dependencies of
+dependencies), not in the project's own code or direct package references.
 
-### ¿Afectan a nuestro proyecto?
+**Origin**:
 
-**ANÁLISIS**: ✅ **NO AFECTAN LA FUNCIONALIDAD**
+- `System.Net.Http` 4.3.0 → part of .NET Standard 1.x
+- `Microsoft.Build.Utilities.Core` 17.8.3 → part of MSBuild 17.8
+- `System.Private.Uri` 4.3.0 → part of .NET Standard 1.x
 
-**Razones**:
+### Why they did not affect the project
 
-1. **Dependencias Transitivas**: Son incluidas transitivamente por otros paquetes
-2. **Runtime Isolation**: El LSP server es un proceso standalone, no se usa como librería
-3. **No Direct Exposure**: No exponemos endpoints HTTP ni procesamiento de URIs del usuario
-4. **Standalone Binaries**: Los binarios finales (71-72MB) incluyen .NET runtime empaquetado
-5. **Server-Only**: Solo actúa como LSP server via stdio, no acepta conexiones externas
+1. **Transitive dependencies**: included transitively by other packages
+2. **Runtime isolation**: the LSP server is a standalone process, not a library
+3. **No direct exposure**: no HTTP endpoints, no user-input URI processing
+4. **Standalone binaries**: the final binaries (~71-72 MB) bundle the .NET runtime
+5. **Server-only**: acts as an LSP server over stdio only, accepts no external connections
 
-**Contexto de Uso**:
 ```
-MQL4 LSP Server → Reads MQL4 files via LSP → Provides code intelligence
+MQL LSP Server → Reads MQL4/MQL5 files via LSP → Provides code intelligence
                    ↓
               No network access required
               No HTTP processing
               No URI parsing from user input
 ```
 
-### ¿Por qué aparecen si no afectan?
+### Why the scanner still reported them
 
-- Son warnings de **NuGet package scanner**
-- Scannean todas las dependencias (incluyendo transitivas)
-- No distinguen si son usadas en runtime por nuestro código
-- Son **conservadores** - reportan cualquier vulnerabilidad conocida
+- NuGet package scanners are **conservative**: they report any known
+  vulnerability in any transitive dependency, regardless of whether the
+  vulnerable code path is reachable at runtime
+- The flagged vulnerability types (HTTP request handling, URI parsing)
+  correspond to attack vectors the server never exercises
 
-## 🔧 Opciones de Mitigación
-
-### Opción 1: Ignorar (Recomendado)
-
-Para nuestro caso de uso, estas vulnerabilidades no representan riesgo real:
-
-```xml
-<!-- En .csproj -->
-<PropertyGroup>
-  <NoWarn>$(NoWarn);NU1903;NU1902</NoWarn>
-</PropertyGroup>
-```
-
-**Pros**:
-- Build limpio sin warnings
-- No afectan funcionalidad
-- Respaldado por análisis de contexto
-
-**Contras**:
-- Silencia warnings (debe documentarse bien)
-
-### Opción 2: Actualizar Dependencias
-
-Actualizar paquetes a versiones más nuevas puede resolver algunas vulnerabilidades:
-
-```bash
-dotnet add package Serilog --version 4.3.0
-dotnet add package Serilog.Extensions.Hosting --version 9.0.0
-```
-
-**Pros**:
-- Resuelve algunos warnings
-- Mantiene visibility de warnings
-
-**Contras**:
-- Puede introducir breaking changes
-- Las vulnerabilidades principales siguen siendo dependencias transitivas profundas
-- Requiere testing adicional
-
-### Opción 3: No Hacer Nada
-
-Mantener el estado actual y documentar que las vulnerabilidades son conocidas pero no afectan:
-
-**Pros**:
-- No hay cambios en el código
-- Transparente sobre el estado
-
-**Contras**:
-- Build warnings siempre visibles
-- Puede preocupa a usuarios que escaneen el código
-
-## ✅ Recomendación Final
-
-**IGNORAR las vulnerabilidades** con justificación clara:
-
-### Razón Principal
-El MQL4 LSP Server es un proceso standalone que:
-- ✅ No procesa inputs del usuario como HTTP
-- ✅ No expone servicios de red
-- ✅ Solo lee archivos MQL4 locales
-- ✅ No hace requests HTTP
-- ✅ Solo actúa como LSP server via stdio
-
-### Implementación
-
-1. **Documentar** esta decisión en SECURITY.md (este archivo)
-2. **Opcional**: Añadir `<NoWarn>` si se desea build limpio
-3. **NO ACTUALIZAR** dependencias que podrían introducir breaking changes
-4. **EXPLICAR** a usuarios que estas vulnerabilidades no afectan el uso del LSP
-
-### Justificación Técnica
-
-```
-Vulnerability Type: HTTP/URI parsing
-Attack Vector: Malicious HTTP requests / URIs
-Our Exposure: NONE (server doesn't make HTTP requests, doesn't parse user URIs)
-Risk Level: ZERO in this context
-```
-
-## 📋 Acciones Tomadas
-
-- ✅ **Análisis realizado** - Vulnerabilidades identificadas
-- ✅ **Contexto evaluado** - No afectan nuestro uso
-- ✅ **Recomendación formulada** - Ignorar con justificación
-- ✅ **Documentación creada** - Este archivo explica la decisión
-
-## 📚 Referencias
+### References
 
 - [GitHub Advisory for System.Net.Http](https://github.com/advisories/GHSA-7jgj-8wvc-jh57)
 - [GitHub Advisory for System.Private.Uri](https://github.com/advisories/GHSA-5f2m-466j-3848)
 - [NuGet Security Best Practices](https://learn.microsoft.com/en-us/nuget/concepts/security)
-- [Understanding Transitive Dependencies](https://learn.microsoft.com/en-us/dotnet/core/dependencies?tabs=net60%2Cnetcore30#transitive-dependencies)
-
-## 🏁 Conclusión
-
-**Estado**: ⚠️ Vulnerabilidades detectadas pero NO CRÍTICAS para este proyecto
-
-**Decisión**: ✅ Ignorar con documentación completa
-
-**Justificación**: El contexto de uso (LSP server standalone, sin HTTP, sin URIs de usuario) hace que estas vulnerabilidades no sean explotables en la práctica.
-
-**Próximo paso**: Incluir esta documentación en el README y verificar que el código funciona correctamente (ya verificado - 11 tests pasan).
-
----
-
-**Fecha de análisis**: 2025-11-18
-**Analista**: MQL4 Language Server Team
-**Proyecto**: MQL4 Language Server v1.0.0
+- [Understanding Transitive Dependencies](https://learn.microsoft.com/en-us/dotnet/core/dependencies#transitive-dependencies)
