@@ -88,7 +88,13 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
 
                 _documentStore.AddOrUpdate(documentUri, newMqlFile, newContent, language);
 
-                GlobalSymbolIndex.Instance.AddFile(filePath, language, newMqlFile.Symbols);
+                // OCC-03: re-index with the fresh parse's token occurrences so
+                // the wholesale per-file occurrence replacement swaps old for
+                // new instead of purging scan-indexed entries with an empty
+                // list (CRITICAL-2 fix; identical mapping to the workspace scan).
+                GlobalSymbolIndex.Instance.AddFile(
+                    filePath, language, newMqlFile.Symbols,
+                    SymbolOccurrenceMapper.Map(newMqlFile, filePath, language));
 
                 UpdateIncludes(newMqlFile, filePath);
 
