@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Removed
+- refactor: removed dead `DidSaveTextDocumentHandler` (never registered). LSP 3.17 makes `didSave` optional and the server does not advertise `save` under `TextDocumentSyncKind.Full`, so conforming clients never send it; `didChange` already re-indexes on every edit under Full sync. The handler also implemented `IDidChangeTextDocumentHandler`, so registering it would have double-handled `didChange` and re-read stale disk content over fresher parses.
+
 ### Added
 - feat: MQL5 language support (first-class .mq5/.mqh parsing and LSP features)
   - Dual ANTLR grammars for MQL4 and MQL5 with isolated generated namespaces

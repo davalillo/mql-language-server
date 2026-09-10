@@ -4,7 +4,7 @@ Generated from GitNexus knowledge graph (2607 nodes, 5664 edges, 89 clusters, 15
 
 ## Overview
 
-LSP 3.17 implementation for **MQL4** (MetaTrader 4) targeting **.NET 10.0**. Source parsing is delegated to **ANTLR 4.13.1** via a formal grammar (`Mql4Grammar.g4`), with the generated lexer/parser/visitor living under `src/Parser/Generated/`. The server speaks JSON-RPC over stdio through a custom `LspStreamMiddleware`, then dispatches requests to **27 specialized `*Handler` classes** under `src/Lsp/Handlers/`. State is held in two hot structures — `OpenDocumentStore` (per-document buffers) and `GlobalSymbolIndex` (cross-file symbol map) — with `MetricsCollector` and `PerformanceMonitor` providing observability and a `BaselineBenchmark` test pinning perf budgets in CI.
+LSP 3.17 implementation for **MQL4** (MetaTrader 4) targeting **.NET 10.0**. Source parsing is delegated to **ANTLR 4.13.1** via a formal grammar (`Mql4Grammar.g4`), with the generated lexer/parser/visitor living under `src/Parser/Generated/`. The server speaks JSON-RPC over stdio through a custom `LspStreamMiddleware`, then dispatches requests to **26 specialized `*Handler` classes** under `src/Lsp/Handlers/`. State is held in two hot structures — `OpenDocumentStore` (per-document buffers) and `GlobalSymbolIndex` (cross-file symbol map) — with `MetricsCollector` and `PerformanceMonitor` providing observability and a `BaselineBenchmark` test pinning perf budgets in CI.
 
 **Stack:** .NET 10.0 · LSP 3.17 · ANTLR 4.13.1 · Antlr4BuildTasks 12.10
 
@@ -18,7 +18,7 @@ Detected as Leiden communities over the call graph. Symbols = AST nodes (functio
 |---|---:|---:|---|
 | **Parser** | ~286 | 0.67 | ANTLR-driven parse pipeline, macro pre-processing, symbol index, AST visitor. Hub: `src/Parser/Mql4AntlrParser.cs`. |
 | **Lsp** | ~163 | 0.81 | Transport, server capabilities, request/response shaping, JSON-RPC plumbing. |
-| **Handlers** | ~158 | 0.98 | 27 LSP request handlers under `src/Lsp/Handlers/` (one per feature: `Completion`, `Definition`, `References`, `Hover`, `Rename`, `SemanticTokens`, `CodeAction`, `Formatting`, etc.). |
+| **Handlers** | ~158 | 0.98 | 26 LSP request handlers under `src/Lsp/Handlers/` (one per feature: `Completion`, `Definition`, `References`, `Hover`, `Rename`, `SemanticTokens`, `CodeAction`, `Formatting`, etc.). |
 | **Server** | ~30 | 0.59 | `Mql4LspServer` orchestration + stateful services (`OpenDocumentStore`, `GlobalSymbolIndex`, `MetricsCollector`, `PerformanceMonitor`, `CorrelationIdProvider`, `Mql4ServerCapabilities`). |
 | **Performance** | ~50 | 0.92 | `BaselineBenchmark` + perf/memory tests in `tests/Performance/`. |
 | **Tests** (parser/LSP/cross-file) | — | — | `tests/Parser/`, `tests/Lsp/`, `tests/CrossFile/`, `tests/Performance/`. |
@@ -48,7 +48,7 @@ flowchart TB
         Server --> CorrId[CorrelationIdProvider]
     end
 
-    subgraph Handlers["LSP Handlers (src/Lsp/Handlers, 27)"]
+    subgraph Handlers["LSP Handlers (src/Lsp/Handlers, 26)"]
         H_Completion[CompletionHandler]
         H_Definition[DefinitionHandler]
         H_Declaration[DeclarationHandler]
@@ -63,7 +63,6 @@ flowchart TB
         H_SignatureHelp[SignatureHelpHandler]
         H_DidOpen[DidOpenTextDocumentHandler]
         H_DidChange[DidChangeTextDocumentHandler]
-        H_DidSave[DidSaveTextDocumentHandler]
         H_DidClose[DidCloseTextDocumentHandler]
         H_Moniker[MonikerHandler]
         H_Implementation[ImplementationHandler]
@@ -84,8 +83,6 @@ flowchart TB
     H_DidOpen --> Index
     H_DidChange --> Store
     H_DidChange --> Index
-    H_DidSave --> Store
-    H_DidSave --> Index
 
     H_Definition --> Parser
     H_Declaration --> Parser
@@ -164,15 +161,15 @@ Three handlers (`DefinitionHandler`, `DeclarationHandler`, `ReferencesHandler`) 
 | 4 | `Mql4AntlrParser.EnsureSymbolIndex` | `src/Parser/Mql4AntlrParser.cs` |
 | 5 | `Mql4AntlrParser.CreateSymbolIndex` | `src/Parser/Mql4AntlrParser.cs` |
 
-### 3. Document sync → global symbol index — 3 steps, 3 entry handlers
+### 3. Document sync → global symbol index — 3 steps, 2 entry handlers
 
 `Handle → SymbolLocation` (Server community)
 
-Every text-document change (`DidOpen`, `DidChange`, `DidSave`) feeds the in-memory `GlobalSymbolIndex`, which is the read-side complement to the parser's `CreateSymbolIndex`. Keeps cross-file navigation correct as files are edited.
+Every text-document change (`DidOpen`, `DidChange`) feeds the in-memory `GlobalSymbolIndex`, which is the read-side complement to the parser's `CreateSymbolIndex`. Keeps cross-file navigation correct as files are edited.
 
 | # | Symbol | File |
 |---|---|---|
-| 1 | `*.Handle` (DidOpen / DidChange / DidSave) | `src/Lsp/Handlers/Did*Handler.cs` |
+| 1 | `*.Handle` (DidOpen / DidChange) | `src/Lsp/Handlers/Did*Handler.cs` |
 | 2 | `GlobalSymbolIndex.AddFile` | `src/Lsp/Server/GlobalSymbolIndex.cs` |
 | 3 | `GlobalSymbolIndex.SymbolLocation` | `src/Lsp/Server/GlobalSymbolIndex.cs` |
 
@@ -206,7 +203,7 @@ CI-facing benchmark. Detects the host environment and power state (battery vs. m
 
 ## Architectural Notes
 
-- **Two parallel symbol indexes, by design.** `Mql4AntlrParser.CreateSymbolIndex` is the **build** path (lazy, on demand, from a parsed file). `GlobalSymbolIndex` is the **live** path (always in sync with editor state, fed by `Did*` handlers). The 27 handlers read from whichever is appropriate for their feature.
+- **Two parallel symbol indexes, by design.** `Mql4AntlrParser.CreateSymbolIndex` is the **build** path (lazy, on demand, from a parsed file). `GlobalSymbolIndex` is the **live** path (always in sync with editor state, fed by `Did*` handlers). The 26 handlers read from whichever is appropriate for their feature.
 - **ANTLR is the only parser.** No fallback, no hybrid. Grammar lives in `src/Mql4/Grammar/Mql4Grammar.g4`; generated artifacts in `src/Parser/Generated/` are committed-build outputs from `Antlr4BuildTasks`.
 - **Cross-cutting observability.** `CorrelationIdProvider`, `MetricsCollector`, and `PerformanceMonitor` are injected into the server, not bolted on. The `BaselineBenchmark` pins budgets and is part of CI.
 - **Handler fan-out is uniform.** Most read-side handlers (`Definition`, `Declaration`, `References`, `Hover`, `Rename`, `Completion`, `DocumentSymbol`, `SemanticTokens`, `Formatting`, `SignatureHelp`) all go through `Mql4AntlrParser` — there is one true source of truth for symbols.
@@ -234,7 +231,7 @@ src/
     │   ├── MetricsCollector.cs
     │   ├── PerformanceMonitor.cs
     │   └── CorrelationIdProvider.cs
-    └── Handlers/                       # 27 LSP request handlers (one file per feature)
+    └── Handlers/                       # 26 LSP request handlers (one file per feature)
 ```
 
 ## Dependency Injection Surface
@@ -269,7 +266,7 @@ Defined declaratively in `src/Lsp/Server/Mql4ServerCapabilities.cs` (LSP 3.17 co
 - **Semantic token types**: `namespace`, `class`, `enum`, `interface`, `struct`, `typeParameter`, `parameter`, `variable`, `property`, `enumMember`, `event`, `function`, `method`, `macro`, `keyword`, `modifier`, `comment`, `string`, `number`, `operator`
 - **Semantic token modifiers**: `declaration`, `definition`, `readonly`, `static`, `deprecated`
 
-The 27 handlers under `src/Lsp/Handlers/` are the *implementation* side of these capabilities.
+The 26 handlers under `src/Lsp/Handlers/` are the *implementation* side of these capabilities.
 
 ## Test Surface
 
