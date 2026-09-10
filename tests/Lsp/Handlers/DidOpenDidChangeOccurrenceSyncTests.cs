@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,6 +82,21 @@ public class DidOpenDidChangeOccurrenceSyncTests : IDisposable
                 {
                     Text = newContent
                 })
+        };
+    }
+
+    private static DidChangeTextDocumentParams CreateSaveParams(Uri uri)
+    {
+        // DidSaveTextDocumentHandler implements IDidChangeTextDocumentHandler:
+        // the save notification arrives as a DidChangeTextDocumentParams with
+        // an empty content-changes container (the handler re-reads from disk).
+        return new DidChangeTextDocumentParams
+        {
+            TextDocument = new OptionalVersionedTextDocumentIdentifier
+            {
+                Uri = uri,
+                Version = 3
+            }
         };
     }
 
@@ -187,6 +203,47 @@ public class DidOpenDidChangeOccurrenceSyncTests : IDisposable
         Assert.Equal(2, results.Count);
         Assert.Contains(results, o => o.IsDefinition && o.Line == 1);
         Assert.Contains(results, o => !o.IsDefinition && o.Line == 2);
+    }
+
+    [Fact]
+    public async Task DidSave_DoesNotPurge_ScanIndexedOccurrencesAsync()
+    {
+        // Occurrence purge class: didSave re-indexes the file on every save.
+        // Calling the occurrence-less AddFile overload there wipes the file's
+        // scan-indexed occurrences (before=2 after=0), exactly like the
+        // fixed didOpen/didChange defect (CRITICAL-2).
+        var tempDir = Path.Combine(Path.GetTempPath(), "did-save-occ-sync");
+        Directory.CreateDirectory(tempDir);
+        var savePath = Path.Combine(tempDir, "save.mq4");
+        File.WriteAllText(savePath, FixtureContent);
+
+        try
+        {
+            var uri = new Uri(savePath);
+            var parser = new Mql4AntlrParser();
+            var store = new OpenDocumentStore();
+            var saveLogger = Substitute.For<ILogger<DidSaveTextDocumentHandler>>();
+            var saveHandler = new DidSaveTextDocumentHandler(
+                saveLogger, parser, store, GlobalSymbolIndex.Instance);
+
+            // Arrange: index the file scan-style (with occurrences) under the
+            // SAME (file, language) key the didSave handler re-indexes, so the
+            // purge is observable exactly as in production.
+            var scanned = parser.ParseFile(FixtureContent, savePath);
+            IndexWithOccurrences(savePath, MqlLanguage.Mql4, scanned);
+            var before = CountInIndex("MySignal");
+            Assert.Equal(2, before);
+
+            // Act: didSave re-parses the file from disk and re-indexes it.
+            await saveHandler.Handle(CreateSaveParams(uri), CancellationToken.None);
+
+            // Assert: occurrences survive the save re-index.
+            Assert.Equal(before, CountInIndex("MySignal"));
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
     }
 
     [Fact]
