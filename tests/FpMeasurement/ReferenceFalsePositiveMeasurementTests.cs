@@ -48,8 +48,8 @@ public class ReferenceFalsePositiveMeasurementTests
     private static readonly string RepoRoot = FindRepoRoot();
     private static readonly string FixturesRoot = Path.Combine(RepoRoot, "tests", "fixtures");
 
-    private static readonly string ReportMdPath = "/tmp/nix-shell.EGzmYS/opencode/fp-report.md";
-    private static readonly string ReportJsonPath = "/tmp/nix-shell.EGzmYS/opencode/fp-report.json";
+    private static readonly string ReportMdPath = Path.Combine(RepoRoot, "tests", "TestResults", "fp-report.md");
+    private static readonly string ReportJsonPath = Path.Combine(RepoRoot, "tests", "TestResults", "fp-report.json");
 
     /// <summary>
     /// MQL keywords that should never be queried (identifiers in the grammar's
