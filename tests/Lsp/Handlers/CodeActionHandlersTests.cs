@@ -4,7 +4,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -19,10 +19,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void CodeActionHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<CodeActionHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new CodeActionHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -32,10 +32,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task CodeActionHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<CodeActionHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new CodeActionHandler(loggerMock, parserMock, documentStore);
 
             var request = new CodeActionParams
             {
@@ -66,10 +66,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task CodeActionHandler_ReturnsNull_WhenFileNotFoundWithNoDiagnosticsAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<CodeActionHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<CodeActionHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new CodeActionHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new CodeActionHandler(loggerMock, parserMock, documentStore);
 
             var request = new CodeActionParams
             {
@@ -96,8 +96,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void CodeActionResolveHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<CodeActionResolveHandler>>();
-            var handler = new CodeActionResolveHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<CodeActionResolveHandler>>();
+            var handler = new CodeActionResolveHandler(loggerMock);
 
             // Assert
             Assert.NotNull(handler);
@@ -107,8 +107,8 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task CodeActionResolveHandler_ReturnsActionAsIsAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<CodeActionResolveHandler>>();
-            var handler = new CodeActionResolveHandler(loggerMock.Object);
+            var loggerMock = Substitute.For<ILogger<CodeActionResolveHandler>>();
+            var handler = new CodeActionResolveHandler(loggerMock);
 
             var action = new CodeAction
             {

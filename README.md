@@ -1,5 +1,7 @@
 # MQL Language Server
 
+English | [Español](README.es.md) | [Русский](README.ru.md)
+
 [![Build Status](https://github.com/davalillo/mql-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql-language-server/actions)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
@@ -37,43 +39,43 @@ The project, package, and binary were renamed from `mql4-language-server` to `mq
 
 If you are upgrading from a pre-1.x release, update your editor configuration and CI scripts to use the new binary/package name.
 
-## Decisiones Tecnológicas
+## Technical Decisions
 
-Esta sección documenta las decisiones técnicas clave tomadas durante el desarrollo para facilitar el onboarding de nuevos desarrolladores.
+This section documents the key technical decisions made during development to ease the onboarding of new developers.
 
 ### 1. Parser Strategy: ANTLR 4.13.1
 
-**Elegido**: ANTLR 4.13.1 con Antlr4BuildTasks 12.10
+**Chosen**: ANTLR 4.13.1 with Antlr4BuildTasks 12.10
 
-**Alternativas consideradas**:
-- Regex (rechazado - insuficiente para código MQL complejo)
-- Sprache (rechazado - parser combinator, menos robusto para gramáticas complejas)
-- Superpower (rechazado - más nuevo, menos documentación)
-- Irony (rechazado - no mantenido)
+**Alternatives considered**:
+- Regex (rejected - insufficient for complex MQL code)
+- Sprache (rejected - parser combinator, less robust for complex grammars)
+- Superpower (rejected - newer, less documentation)
+- Irony (rejected - not maintained)
 
-**Razón principal**:
-La decisión inicial de usar regex se revirtió después de experimentar limitaciones al parsear código MQL real. ANTLR proporciona:
-- Gramática formal y mantenible
-- Abstract Syntax Tree (AST) preciso
-- Mejor soporte para casos de uso LSP
-- Robustez ante sintaxis compleja
+**Main reason**:
+The initial decision to use regex was reversed after experiencing limitations when parsing real MQL code. ANTLR provides:
+- A formal and maintainable grammar
+- An accurate Abstract Syntax Tree (AST)
+- Better support for LSP use cases
+- Robustness against complex syntax
 
-**Lección aprendida**: Para un LSP que necesita parsear código complejo, regex es insuficiente. ANTLR ofrece un balance perfecto entre robustez y facilidad de uso.
+**Lesson learned**: For an LSP that needs to parse complex code, regex is insufficient. ANTLR offers a perfect balance between robustness and ease of use.
 
 ### 2. ANTLR Tooling: Antlr4BuildTasks 12.10
 
-**Elegido**: Antlr4BuildTasks 12.10 (auto-descarga JRE)
+**Chosen**: Antlr4BuildTasks 12.10 (auto-downloads JRE)
 
-**Alternativa**: Instalación manual de ANTLR + Java JDK
+**Alternative**: Manual ANTLR installation + Java JDK
 
-**Razón principal**:
-Evitar dependencias manuales en el entorno de desarrollo. Antlr4BuildTasks:
-- Descarga automáticamente JRE y ANTLR tool jar
-- No requiere instalación previa de Java
-- Funciona cross-platform (Windows, Linux, macOS)
-- Se ejecuta durante el build de MSBuild/dotnet
+**Main reason**:
+Avoid manual dependencies in the development environment. Antlr4BuildTasks:
+- Automatically downloads the JRE and the ANTLR tool jar
+- Requires no prior Java installation
+- Works cross-platform (Windows, Linux, macOS)
+- Runs during the MSBuild/dotnet build
 
-**Configuración en .csproj**:
+**Configuration in .csproj**:
 ```xml
 <PackageReference Include="Antlr4BuildTasks" Version="12.10" PrivateAssets="All" />
 <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
@@ -81,39 +83,39 @@ Evitar dependencias manuales en el entorno de desarrollo. Antlr4BuildTasks:
 </Antlr4>
 ```
 
-**Lección aprendida**: Antlr4BuildTasks es la solución ideal para .NET + ANTLR sin configurar Java manualmente. La versión 12.10 es estable y confiable.
+**Lesson learned**: Antlr4BuildTasks is the ideal solution for .NET + ANTLR without manually configuring Java. Version 12.10 is stable and reliable.
 
 ### 3. LSP Libraries: OmniSharp.Extensions
 
-**Elegido**: OmniSharp.Extensions.LanguageProtocol 0.19.9
+**Chosen**: OmniSharp.Extensions.LanguageProtocol 0.19.9
 
-**Alternativa considerada**: Microsoft.LanguageServer.Protocol (no existe)
+**Alternative considered**: Microsoft.LanguageServer.Protocol (does not exist)
 
-**Problema encontrado**:
-`Microsoft.LanguageServer.Protocol` no existe en NuGet. Era un error común asumir que Microsoft mantenía librerías LSP oficiales para .NET.
+**Problem found**:
+`Microsoft.LanguageServer.Protocol` does not exist on NuGet. It was a common mistake to assume that Microsoft maintained official LSP libraries for .NET.
 
-**Migración realizada**:
-- Original: `Microsoft.LanguageServer.Protocol` (no existe)
+**Migration performed**:
+- Original: `Microsoft.LanguageServer.Protocol` (does not exist)
 - Final: `OmniSharp.Extensions.LanguageProtocol` 0.19.9
-- Paquetes relacionados: `OmniSharp.Extensions.JsonRpc`, `OmniSharp.Extensions.LanguageServer.Shared`
+- Related packages: `OmniSharp.Extensions.JsonRpc`, `OmniSharp.Extensions.LanguageServer.Shared`
 
-**Lección aprendida**: OmniSharp es el estándar de facto para LSP en .NET, no Microsoft. Es mantenida activamente y ampliamente usada.
+**Lesson learned**: OmniSharp is the de facto standard for LSP in .NET, not Microsoft. It is actively maintained and widely used.
 
-### 4. Grammar Strategy: Simplificación Pragmática
+### 4. Grammar Strategy: Pragmatic Simplification
 
-**Elegido**: Gramática MQL simplificada pero funcional
+**Chosen**: Simplified but functional MQL grammar
 
-**Alternativa**: Gramática completa con todas las características MQL
+**Alternative**: Full grammar with all MQL features
 
-**Razón principal**:
-LSP no necesita parsear toda la semántica del lenguaje, solo estructura sintáctica suficiente para:
-- Extraer símbolos (funciones, variables)
-- Encontrar definiciones y referencias
-- Proveer completions y hover
+**Main reason**:
+An LSP does not need to parse the entire language semantics, only enough syntactic structure to:
+- Extract symbols (functions, variables)
+- Find definitions and references
+- Provide completions and hover
 
-**Enfoque adoptado**:
+**Adopted approach**:
 ```antlr
-// Ejemplo: Gramática simplificada pero funcional
+// Example: Simplified but functional grammar
 variableDeclaration
     : dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
     ;
@@ -122,23 +124,23 @@ variableDeclaration
 vs
 
 ```antlr
-// Alternativa compleja: No necesaria para LSP
+// Complex alternative: Not needed for LSP
 variableDeclaration
     : storageClass? dataType IDENTIFIER (ASSIGN expression)? SEMICOLON
     | storageClass? dataType IDENTIFIER LBRACKET expression? RBRACKET SEMICOLON
     ;
 ```
 
-**Lección aprendida**: Un LSP efectivo no requiere parsear todo el lenguaje. La simplificación pragmática es clave.
+**Lesson learned**: An effective LSP does not require parsing the whole language. Pragmatic simplification is key.
 
 ### 5. Build Configuration: AntlrOutDir
 
-**Configuración**: `<AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>`
+**Configuration**: `<AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>`
 
-**Problema resuelto**:
-ANTLR genera archivos en `obj/Debug/net10.0/` por defecto. Sin AntOutDir, requeriría copy manual a `src/Parser/Generated/`.
+**Problem solved**:
+By default, ANTLR generates files in `obj/Debug/net10.0/`. Without AntOutDir, a manual copy to `src/Parser/Generated/` would be required.
 
-**Configuración completa**:
+**Full configuration**:
 ```xml
 <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
   <Generator>MSBuild:Compile</Generator>
@@ -149,56 +151,56 @@ ANTLR genera archivos en `obj/Debug/net10.0/` por defecto. Sin AntOutDir, requer
 </Antlr4>
 ```
 
-**Beneficio**:
-- Generación automática en ubicación correcta
-- Sin copy manual post-build
-- Archivos visibles en control de código fuente
+**Benefit**:
+- Automatic generation in the correct location
+- No manual post-build copy
+- Files visible in source control
 
-### 6. Lecciones Aprendidas Clave
+### 6. Key Lessons Learned
 
-#### Tokens con prefijo K_
-Evitar conflictos entre keywords y tokens:
+#### K_ token prefix
+Avoid conflicts between keywords and tokens:
 ```antlr
-// MAL - Conflicto con token DOUBLE
+// BAD - Conflict with token DOUBLE
 DOUBLE : 'double';
 
-// BIEN - Prefijo para keywords
+// GOOD - Prefix for keywords
 K_DOUBLE : 'double';
 dataType : K_DOUBLE | IDENTIFIER;
 ```
 
-#### Métodos de contexto en mayúsculas
-ANTLR genera métodos con nombres exactos de tokens:
+#### Uppercase context methods
+ANTLR generates methods with exact token names:
 ```csharp
-// MAL - compile error
+// BAD - compile error
 var nameToken = context.identifier();
 
-// BIEN - funciona
+// GOOD - works
 var nameToken = context.IDENTIFIER();
 ```
 
-#### Visibilidad de comentarios
-`-> skip` requiere canal específico:
+#### Comment visibility
+`-> skip` requires a specific channel:
 ```antlr
-// MAL - Error de compilación ANTLR
+// BAD - ANTLR compilation error
 COMMENT : '/*' .*? '*/' -> skip;
 
-// BIEN - Funciona
+// GOOD - Works
 COMMENT : '/*' .*? '*/' -> channel(HIDDEN);
-// O bien reglas separadas:
+// Or separate rules:
 COMMENT_BLOCK : '/*' .*? '*/' -> skip;
 ```
 
-#### Simplificación vs Complejidad
-Un parser simple que funciona es mejor que uno complejo que falla.
+#### Simplicity vs Complexity
+A simple parser that works is better than a complex one that fails.
 
-### Reconstruir Parser ANTLR
+### Rebuilding the ANTLR Parser
 
 ```bash
-# Build completo (regenera parsers automáticamente)
+# Full build (regenerates parsers automatically)
 dotnet build -c Release
 
-# Los archivos se generan en Parser/Generated/:
+# Files are generated in Parser/Generated/:
 # MQL4 namespace Mql4Grammar:
 # - Mql4GrammarParser.cs
 # - Mql4GrammarLexer.cs
@@ -213,24 +215,24 @@ dotnet build -c Release
 # - Mql5GrammarVisitor.cs
 ```
 
-No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
+No additional steps required. Antlr4BuildTasks handles everything automatically.
 
-### Estado Actual
+### Current Status
 
-- ✅ Parsers ANTLR duales funcionando para MQL4 y MQL5
-- ✅ Símbolos parseados: funciones, variables, includes, clases, structs, interfaces, enums (MQL5)
-- ✅ Completions disponibles: builtins MQL4/MQL5 + símbolos locales
+- ✅ Dual ANTLR parsers working for MQL4 and MQL5
+- ✅ Parsed symbols: functions, variables, includes, classes, structs, interfaces, enums (MQL5)
+- ✅ Completions available: MQL4/MQL5 builtins + local symbols
 - ✅ LSP Server Core
   - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
   - CompletionHandler, HoverHandler, DiagnosticHandler
   - TextDocumentSync handlers (Open/Close/Change)
-- ✅ Program Entry Point con stdio transport
-- ✅ Tests Unitarios: suite MQL4 intacta + tests MQL5 de handlers, integración y fixtures
+- ✅ Program Entry Point with stdio transport
+- ✅ Unit Tests: MQL4 suite intact + MQL5 handler, integration, and fixture tests
 - ✅ Standalone Compilation
-  - Binarios: Linux x64, macOS x64, Windows x64
+  - Binaries: Linux x64, macOS x64, Windows x64
   - Build scripts: build.sh (Linux/macOS), build.ps1 (Windows)
-- ✅ CI/CD: GitHub Actions con matrix builds
-- ✅ NuGet Packaging: pack.ps1 script disponible
+- ✅ CI/CD: GitHub Actions with matrix builds
+- ✅ NuGet Packaging: pack.ps1 script available
 - ✅ Repository: https://github.com/davalillo/mql-language-server
 
 ## ⚠️ NuGet Package Vulnerabilities
@@ -458,7 +460,7 @@ chmod +x mql-lsp-server
 ### Via .NET Tool (NuGet)
 
 ```bash
-dotnet tool install -g mql-language-server --version 1.11.4
+dotnet tool install -g mql-language-server
 ```
 
 Or install from local build:

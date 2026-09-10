@@ -9,7 +9,7 @@ using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
@@ -32,10 +32,10 @@ public class CompletionHandlerTests
     public void CompletionHandler_CanBeInstantiated()
     {
         // Arrange & Act
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
+        var parserMock = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new CompletionHandler(loggerMock, parserMock, documentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -45,27 +45,27 @@ public class CompletionHandlerTests
     public void CompletionHandler_ThrowsOnNullLogger()
     {
         // Arrange & Act & Assert
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var parserMock = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(null!, parserMock.Object, documentStore));
+        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(null!, parserMock, documentStore));
     }
 
     [Fact]
     public void CompletionHandler_ThrowsOnNullParser()
     {
         // Arrange & Act & Assert
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var documentStore = new OpenDocumentStore();
-        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(loggerMock.Object, null!, documentStore));
+        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(loggerMock, null!, documentStore));
     }
 
     [Fact]
     public void CompletionHandler_ThrowsOnNullDocumentStore()
     {
         // Arrange & Act & Assert
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
-        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(loggerMock.Object, parserMock.Object, null!));
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
+        var parserMock = new Mql4AntlrParser();
+        Assert.Throws<ArgumentNullException>(() => new CompletionHandler(loggerMock, parserMock, null!));
     }
 
     #endregion
@@ -76,10 +76,10 @@ public class CompletionHandlerTests
     public void GetRegistrationOptions_ReturnsValidOptions()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
+        var parserMock = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new CompletionHandler(loggerMock, parserMock, documentStore);
 
         var capability = new CompletionCapability();
         var clientCapability = new ClientCapabilities();
@@ -108,10 +108,10 @@ public class CompletionHandlerTests
     public async Task Handle_FileNotFound_ReturnsEmptyCompletionListAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
-        var parserMock = new Mock<Mql4AntlrParser>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
+        var parserMock = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parserMock.Object, documentStore);
+        var handler = new CompletionHandler(loggerMock, parserMock, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath("/nonexistent/file.mq4");
         var request = new CompletionParams
@@ -138,10 +138,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsCompletionListWithItemsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -166,10 +166,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsKeywordCompletionsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -193,10 +193,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsBuiltinFunctionCompletionsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -220,10 +220,10 @@ public class CompletionHandlerTests
     public async Task Handle_SameFileTwice_ReturnsConsistentResultsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -252,10 +252,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsIncompleteFalseAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -278,10 +278,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsMultipleCompletionTypesAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work
@@ -316,10 +316,10 @@ public class CompletionHandlerTests
     public async Task Handle_AfterDot_ReturnsCompletionsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function
@@ -347,10 +347,10 @@ public class CompletionHandlerTests
     public async Task Handle_ValidFile_ReturnsVariableCompletionsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<CompletionHandler>>();
+        var loggerMock = Substitute.For<ILogger<CompletionHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var handler = new CompletionHandler(loggerMock.Object, parser, documentStore);
+        var handler = new CompletionHandler(loggerMock, parser, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         // Use position inside OnInit function where we know completions work

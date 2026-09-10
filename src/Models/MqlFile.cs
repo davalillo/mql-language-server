@@ -43,6 +43,12 @@ public class MqlFile
     public List<SyntaxError> SyntaxErrors { get; set; } = new();
 
     /// <summary>
+    /// Identifier token occurrences captured during the last parse (OCC-01).
+    /// Replaced wholesale on every re-parse (OCC-02).
+    /// </summary>
+    public IReadOnlyList<TokenOccurrence> Occurrences { get; set; } = new List<TokenOccurrence>();
+
+    /// <summary>
     /// OPTIMIZATION: Cached symbol index for fast lookups by name
     /// Built lazily on first access and reused for subsequent lookups
     /// </summary>

@@ -60,7 +60,7 @@ The MQL4 LSP is compatible with any editor that supports the Language Server Pro
 **Option A: From Published Package**
 1. **Install as global tool**:
    ```bash
-   dotnet tool install --global mql-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server
    ```
 
 2. **Configure VSCode** (`settings.json`):
@@ -98,7 +98,6 @@ If you have the .nupkg file locally:
 3. **Install from local source**:
    ```bash
    dotnet tool install --global mql-language-server \
-     --version 1.0.0 \
      --add-source ./nupkg
    ```
 
@@ -120,7 +119,7 @@ If published to GitHub Packages:
 
 2. **Install**:
    ```bash
-   dotnet tool install --global mql-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server
    ```
 
 ### Method 3: Standalone Binary (Recommended)

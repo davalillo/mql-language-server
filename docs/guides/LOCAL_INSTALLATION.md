@@ -51,7 +51,6 @@ dotnet pack -c Release -o ./nupkg-local
 ### Paso 2: Instalar como herramienta global
 ```bash
 dotnet tool install --global mql-language-server \
-  --version 1.0.0 \
   --add-source ./nupkg-local
 ```
 
@@ -299,7 +298,6 @@ dotnet pack -c Release -o ./nupkg-local
 3. **Instalar en máquina objetivo**
    ```bash
    dotnet tool install --global mql-language-server \
-     --version 1.0.0 \
      --add-source ./path/to/nupkg
    ```
 
@@ -318,7 +316,7 @@ dotnet pack -c Release -o ./nupkg-local
 
 3. **Instalar**
    ```bash
-   dotnet tool install --global mql-language-server --version 1.0.0
+   dotnet tool install --global mql-language-server
    ```
 
 ---

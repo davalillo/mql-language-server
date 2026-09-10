@@ -6,7 +6,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
-using Moq;
+using NSubstitute;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -14,16 +14,18 @@ using Xunit;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
+// Serializes access to the GlobalSymbolIndex singleton with other collections that mutate it.
+[Collection("GlobalSymbolIndex Tests")]
 public class DidOpenLanguageRoutingTests
 {
-    private readonly Mock<ILogger<DidOpenTextDocumentHandler>> _logger = new();
+    private readonly ILogger<DidOpenTextDocumentHandler> _logger = Substitute.For<ILogger<DidOpenTextDocumentHandler>>();
     private readonly OpenDocumentStore _store = new();
     private readonly Mql4AntlrParser _parser = new();
 
     private DidOpenTextDocumentHandler CreateHandler()
     {
         return new DidOpenTextDocumentHandler(
-            _logger.Object,
+            _logger,
             _parser,
             _store,
             GlobalSymbolIndex.Instance);

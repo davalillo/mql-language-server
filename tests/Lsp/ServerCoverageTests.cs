@@ -1,7 +1,7 @@
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Parser;
@@ -216,12 +216,12 @@ public class ServerCoverageTests
     public void MqlLspServer_Constructor_ShouldInitialize()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
         var parser = new Mql4AntlrParser();
 
         // Act
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger, mockServer, parser);
 
         // Assert
         Assert.NotNull(server);
@@ -231,10 +231,10 @@ public class ServerCoverageTests
     public void MqlLspServer_HasInitializeMethod()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger, mockServer, parser);
 
         // Act
         var method = typeof(MqlLspServer).GetMethod("Initialize");
@@ -247,10 +247,10 @@ public class ServerCoverageTests
     public void MqlLspServer_HasDisposeMethod()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger, mockServer, parser);
 
         // Act
         var method = typeof(MqlLspServer).GetMethod("Dispose");
@@ -263,10 +263,10 @@ public class ServerCoverageTests
     public void MqlLspServer_Initialize_CanBeCalled()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger, mockServer, parser);
 
         // Act & Assert - should not throw
         server.Initialize();
@@ -276,10 +276,10 @@ public class ServerCoverageTests
     public void MqlLspServer_Initialize_DoesNotSendServerStatusNotification()
     {
         // Arrange
-        var mockLogger = new Mock<ILogger<MqlLspServer>>();
-        var mockServer = new Mock<ILanguageServer>();
+        var mockLogger = Substitute.For<ILogger<MqlLspServer>>();
+        var mockServer = Substitute.For<ILanguageServer>();
         var parser = new Mql4AntlrParser();
-        var server = new MqlLspServer(mockLogger.Object, mockServer.Object, parser);
+        var server = new MqlLspServer(mockLogger, mockServer, parser);
 
         // Note: experimental/serverStatus notification is now sent from Program.cs
         // after server.Initialize() completes, not from MqlLspServer.Initialize()
@@ -289,7 +289,7 @@ public class ServerCoverageTests
 
         // Assert - Verify that MqlLspServer.Initialize() does NOT send serverStatus
         // (it's handled in Program.cs after server.Initialize() completes)
-        mockServer.Verify(s => s.SendNotification("experimental/serverStatus", It.IsAny<object>()), Times.Never);
+        mockServer.DidNotReceive().SendNotification("experimental/serverStatus", Arg.Any<object>());
     }
 
     #endregion

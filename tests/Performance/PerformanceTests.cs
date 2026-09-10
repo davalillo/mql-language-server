@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
@@ -93,7 +93,7 @@ public class PerformanceTests
     {
         var (documentStore, _, mq4Path, _) = SetupLargeWorkspace();
         var handler = new CompletionHandler(
-            Mock.Of<ILogger<CompletionHandler>>(),
+            Substitute.For<ILogger<CompletionHandler>>(),
             _parser,
             documentStore);
 
@@ -123,7 +123,7 @@ public class PerformanceTests
     {
         var (documentStore, _, mq4Path, _) = SetupLargeWorkspace();
         var handler = new DefinitionHandler(
-            Mock.Of<ILogger<DefinitionHandler>>(),
+            Substitute.For<ILogger<DefinitionHandler>>(),
             _parser,
             documentStore,
             GlobalSymbolIndex.Instance);
@@ -155,7 +155,7 @@ public class PerformanceTests
     {
         var (documentStore, _, mq4Path, _) = SetupLargeWorkspace();
         var handler = new HoverHandler(
-            Mock.Of<ILogger<HoverHandler>>(),
+            Substitute.For<ILogger<HoverHandler>>(),
             _parser,
             documentStore);
 

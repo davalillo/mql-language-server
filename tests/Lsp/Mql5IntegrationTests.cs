@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -48,7 +48,7 @@ public class Mql5IntegrationTests
 
     private static ILogger<T> MockLogger<T>() where T : class
     {
-        return Mock.Of<ILogger<T>>();
+        return Substitute.For<ILogger<T>>();
     }
 
     private const string Mql5Source =

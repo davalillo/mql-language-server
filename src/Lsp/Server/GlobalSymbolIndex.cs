@@ -25,10 +25,25 @@ public class GlobalSymbolIndex
     // The primary _symbolsByName is kept for the cross-language FindSymbol(name) overload.
     private readonly ConcurrentDictionary<(string Name, MqlLanguage Language), List<SymbolLocation>> _symbolsByNameAndLanguage = new();
 
+    // OCC-03: occurrence index, name -> occurrences across all indexed files.
+    private readonly ConcurrentDictionary<string, List<SymbolOccurrence>> _occurrencesByName = new();
+
+    // OCC-03: per-file occurrence store, (file, language) -> occurrences.
+    // Re-AddFile replaces this file's list so stale entries never survive.
+    private readonly ConcurrentDictionary<(string FilePath, MqlLanguage Language), List<SymbolOccurrence>> _occurrencesByFile = new();
+
     // Track includes/dependencies between files
     private readonly ConcurrentDictionary<string, List<string>> _fileDependencies = new();
 
     private GlobalSymbolIndex() { }
+
+    /// <summary>
+    /// Isolated instance for instrumentation (OCC-06 measurement harness):
+    /// allows the test assembly to create a fresh, non-singleton index so a
+    /// measurement pass cannot mutate or observe production singleton state.
+    /// Internal by design; production code always uses <see cref="Instance"/>.
+    /// </summary>
+    internal GlobalSymbolIndex(bool ctorBypass) { }
 
     /// <summary>
     /// Singleton instance (thread-safe)
@@ -53,10 +68,38 @@ public class GlobalSymbolIndex
     /// </summary>
     public void AddFile(string filePath, MqlLanguage language, List<MqlSymbol> symbols)
     {
+        AddFile(filePath, language, symbols, null);
+    }
+
+    /// <summary>
+    /// Add or update symbols and identifier occurrences from a file
+    /// (OCC-03). Occurrences are upserted name-keyed alongside definitions;
+    /// the file's previous occurrence list is replaced wholesale so stale
+    /// entries do not survive content changes.
+    /// </summary>
+    public void AddFile(string filePath, MqlLanguage language, List<MqlSymbol> symbols, List<SymbolOccurrence>? occurrences)
+    {
         if (string.IsNullOrEmpty(filePath) || symbols == null)
             return;
 
         var key = (filePath, language);
+        var occList = occurrences ?? new List<SymbolOccurrence>();
+
+        // OCC-04/D2: mark occurrences that fall inside a definition's
+        // SelectionRange of the same name in the same file as definitions
+        // (fallback: inside Range). No query-time recomputation.
+        var definitionsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var symbol in symbols)
+        {
+            if (string.IsNullOrEmpty(symbol.Name))
+                continue;
+            if (!definitionsByName.TryGetValue(symbol.Name, out var list))
+            {
+                list = new List<MqlSymbol>();
+                definitionsByName[symbol.Name] = list;
+            }
+            list.Add(symbol);
+        }
 
         lock (_lock)
         {
@@ -67,6 +110,55 @@ public class GlobalSymbolIndex
                 existing.AddRange(symbols);
                 return existing;
             });
+
+            // OCC-03: replace the file's occurrence list wholesale.
+            _occurrencesByFile.AddOrUpdate(key, occList, (key, existing) =>
+            {
+                // Remove this file's occurrences from the name buckets.
+                foreach (var old in existing)
+                {
+                    if (string.IsNullOrEmpty(old.Text))
+                        continue;
+                    _occurrencesByName.AddOrUpdate(old.Text, new List<SymbolOccurrence>(), (k, bucket) =>
+                    {
+                        lock (bucket)
+                        {
+                            bucket.RemoveAll(o => o.FilePath == filePath && o.Language == language);
+                            if (!bucket.Any())
+                                _occurrencesByName.TryRemove(k, out _);
+                            return bucket;
+                        }
+                    });
+                }
+                existing.Clear();
+                existing.AddRange(occList);
+                return existing;
+            });
+
+            // Refresh name buckets for the new occurrences.
+            foreach (var occurrence in occList)
+            {
+                if (string.IsNullOrEmpty(occurrence.Text))
+                    continue;
+
+                // OCC-04: definition marking at index time via SelectionRange overlap.
+                occurrence.IsDefinition = definitionsByName.TryGetValue(occurrence.Text, out var defs) &&
+                    definitionsByName.ContainsKey(occurrence.Text) &&
+                    definitionsByName[occurrence.Text].Any(d => IsPositionInOverlap(occurrence.Line, occurrence.Column, d));
+
+                _occurrencesByName.AddOrUpdate(occurrence.Text, new List<SymbolOccurrence> { occurrence }, (k, bucket) =>
+                {
+                    lock (bucket)
+                    {
+                        bucket.RemoveAll(o => o.FilePath == filePath && o.Language == language && ReferenceEquals(o, occurrence) == false && o.Line == occurrence.Line && o.Column == occurrence.Column);
+                        if (!bucket.Any(o => ReferenceEquals(o, occurrence)))
+                        {
+                            bucket.Add(occurrence);
+                        }
+                        return bucket;
+                    }
+                });
+            }
 
             // Update symbol name index
             foreach (var symbol in symbols)
@@ -108,6 +200,61 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
+    /// OCC-04/D2: true when (line, column) falls inside the symbol's
+    /// SelectionRange (preferred) or its single-line Range fallback,
+    /// mirroring the FP harness definition-tagging logic.
+    /// </summary>
+    private static bool IsPositionInOverlap(int line, int column, MqlSymbol symbol)
+    {
+        var sel = symbol.SelectionRange;
+        if (sel?.Start != null && sel.End != null &&
+            sel.Start.Line == line && column >= sel.Start.Character && column <= sel.End.Character)
+        {
+            return true;
+        }
+
+        var range = symbol.Range;
+        if (range?.Start != null && range.End != null &&
+            range.Start.Line == line && line == range.End.Line &&
+            column >= range.Start.Character && column <= range.End.Character)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Find identifier occurrences of the given name across all languages
+    /// (OCC-03). Returns a snapshot copy; callers may hold it safely.
+    /// Name-keyed by design: same-name symbols and builtin-name collisions
+    /// are documented ambiguity, not heuristically filtered (OCC-05).
+    /// </summary>
+    public List<SymbolOccurrence> FindOccurrences(string symbolName)
+    {
+        if (string.IsNullOrEmpty(symbolName))
+            return new List<SymbolOccurrence>();
+
+        return _occurrencesByName.TryGetValue(symbolName, out var bucket)
+            ? bucket.ToList()
+            : new List<SymbolOccurrence>();
+    }
+
+    /// <summary>
+    /// Find identifier occurrences of the given name restricted to a
+    /// language (OCC-03/REQ-SM-04).
+    /// </summary>
+    public List<SymbolOccurrence> FindOccurrences(string symbolName, MqlLanguage language)
+    {
+        if (string.IsNullOrEmpty(symbolName))
+            return new List<SymbolOccurrence>();
+
+        return _occurrencesByName.TryGetValue(symbolName, out var bucket)
+            ? bucket.Where(o => o.Language == language).ToList()
+            : new List<SymbolOccurrence>();
+    }
+
+    /// <summary>
     /// Add or update symbols from a file (defaults to MQL4 for backward compatibility).
     /// </summary>
     public void AddFile(string filePath, List<MqlSymbol> symbols)
@@ -129,6 +276,28 @@ public class GlobalSymbolIndex
         {
             // Remove from symbols by (file, language)
             _symbolsByFile.TryRemove(key, out var removedSymbols);
+
+            // OCC-03: remove the file's occurrences symmetrically.
+            _occurrencesByFile.TryRemove(key, out var removedOccurrences);
+            if (removedOccurrences != null)
+            {
+                foreach (var occurrence in removedOccurrences)
+                {
+                    if (string.IsNullOrEmpty(occurrence.Text))
+                        continue;
+
+                    _occurrencesByName.AddOrUpdate(occurrence.Text, new List<SymbolOccurrence>(), (key, bucket) =>
+                    {
+                        lock (bucket)
+                        {
+                            bucket.RemoveAll(o => o.FilePath == filePath && o.Language == language);
+                            if (!bucket.Any())
+                                _occurrencesByName.TryRemove(key, out _);
+                            return bucket;
+                        }
+                    });
+                }
+            }
 
             // Remove from name index
             if (removedSymbols != null)
@@ -310,6 +479,8 @@ public class GlobalSymbolIndex
             _symbolsByFile.Clear();
             _symbolsByName.Clear();
             _symbolsByNameAndLanguage.Clear();
+            _occurrencesByName.Clear();
+            _occurrencesByFile.Clear();
             _fileDependencies.Clear();
         }
     }
@@ -351,6 +522,21 @@ public class SymbolLocation
     public string FilePath { get; set; } = string.Empty;
     public MqlLanguage Language { get; set; }
     public MqlSymbol Symbol { get; set; } = new();
+}
+
+/// <summary>
+/// OCC-04: index payload for a single identifier occurrence (code position).
+/// IsDefinition is marked at AddFile time via SelectionRange overlap (D2).
+/// </summary>
+public class SymbolOccurrence
+{
+    public string FilePath { get; set; } = string.Empty;
+    public MqlLanguage Language { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public int Line { get; set; }
+    public int Column { get; set; }
+    public int Length { get; set; }
+    public bool IsDefinition { get; set; }
 }
 
 /// <summary>

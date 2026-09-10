@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
@@ -28,9 +28,9 @@ public class WorkspaceSymbolHandlerTests
     public void WorkspaceSymbolHandler_CanBeInstantiated()
     {
         // Arrange & Act
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
 
         // Assert
         Assert.NotNull(handler);
@@ -44,11 +44,11 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_EmptyIndex_ReturnsEmptyContainerAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         var request = new WorkspaceSymbolParams { Query = "OnInit" };
 
         // Act
@@ -67,7 +67,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_IndexSampleFile_ReturnsSymbolsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -79,7 +79,7 @@ public class WorkspaceSymbolHandlerTests
         // Index the file
         globalIndex.AddFile(_testFilePath, mql4File.Symbols);
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         var request = new WorkspaceSymbolParams { Query = "" };
 
         // Act
@@ -96,7 +96,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_WithQuery_FiltersToMatchingSymbolsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -105,7 +105,7 @@ public class WorkspaceSymbolHandlerTests
         var mql4File = parser.ParseFile(content, _testFilePath);
         globalIndex.AddFile(_testFilePath, mql4File.Symbols);
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         var request = new WorkspaceSymbolParams { Query = "OnInit" };
 
         // Act
@@ -124,7 +124,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_WithQueryNoMatch_ReturnsEmptyContainerAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -133,7 +133,7 @@ public class WorkspaceSymbolHandlerTests
         var mql4File = parser.ParseFile(content, _testFilePath);
         globalIndex.AddFile(_testFilePath, mql4File.Symbols);
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         var request = new WorkspaceSymbolParams { Query = "NonExistentFunction12345XYZ" };
 
         // Act
@@ -152,7 +152,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_MultipleFiles_ReturnsSymbolsFromAllAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -164,7 +164,7 @@ public class WorkspaceSymbolHandlerTests
         globalIndex.AddFile(_testFilePath, sampleFile.Symbols);
         var sampleSymbolCount = sampleFile.Symbols.Count;
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         var request = new WorkspaceSymbolParams { Query = "" };
 
         // Act
@@ -179,7 +179,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_RemoveFile_RemovesSymbolsAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -190,7 +190,7 @@ public class WorkspaceSymbolHandlerTests
         var mql4File = parser.ParseFile(content, _testFilePath);
         globalIndex.AddFile(_testFilePath, mql4File.Symbols);
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
 
         // Act - query before removal
         var request = new WorkspaceSymbolParams { Query = "" };
@@ -226,7 +226,7 @@ public class WorkspaceSymbolHandlerTests
     public async Task Handle_LargeSymbolTable_CapsResultsAt100_Async()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<WorkspaceSymbolHandler>>();
+        var loggerMock = Substitute.For<ILogger<WorkspaceSymbolHandler>>();
         var globalIndex = GlobalSymbolIndex.Instance;
         globalIndex.Clear();
 
@@ -244,7 +244,7 @@ public class WorkspaceSymbolHandlerTests
 
         globalIndex.AddFile(headerPath, mql4File.Symbols);
 
-        var handler = new WorkspaceSymbolHandler(loggerMock.Object, globalIndex);
+        var handler = new WorkspaceSymbolHandler(loggerMock, globalIndex);
         // Empty query matches every symbol in the index.
         var request = new WorkspaceSymbolParams { Query = "" };
 

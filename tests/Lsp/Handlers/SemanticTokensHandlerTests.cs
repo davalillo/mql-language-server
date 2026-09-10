@@ -5,7 +5,7 @@ using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using System.IO;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
@@ -19,10 +19,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void SemanticTokensHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<SemanticTokensHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SemanticTokensHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SemanticTokensHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SemanticTokensHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -32,10 +32,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SemanticTokensHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SemanticTokensHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SemanticTokensHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SemanticTokensHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SemanticTokensHandler(loggerMock, parserMock, documentStore);
 
             var request = new SemanticTokensParams
             {
@@ -53,10 +53,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task SemanticTokensHandler_ReturnsTokens_WhenValidFileAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<SemanticTokensHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<SemanticTokensHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new SemanticTokensHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new SemanticTokensHandler(loggerMock, parserMock, documentStore);
 
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestSemanticTokens.mq4");
             var testCode = @"

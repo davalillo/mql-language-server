@@ -8,7 +8,7 @@ using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers;
 
@@ -31,10 +31,10 @@ public class DiagnosticHandlerTests
     public void DiagnosticHandler_CanBeInstantiated()
     {
         // Arrange & Act
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         // Assert
         Assert.NotNull(handler);
@@ -48,10 +48,10 @@ public class DiagnosticHandlerTests
     public async Task Handle_FileNotFound_ReturnsEmptyDiagnosticReportAsync()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         // Use a non-existent file path
         var documentUri = DocumentUri.FromFileSystemPath("/nonexistent/file.mq4");
@@ -78,12 +78,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var parser = new Mql4AntlrParser();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -106,12 +106,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var parser = new Mql4AntlrParser();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -136,12 +136,12 @@ public class DiagnosticHandlerTests
             "Skipping flaky test in CI environment");
 
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var parser = new Mql4AntlrParser();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var documentUri = DocumentUri.FromFileSystemPath(_testFilePath);
         var request = new DocumentDiagnosticParams { TextDocument = new TextDocumentIdentifier(documentUri) };
@@ -178,13 +178,13 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         
         var parser = new Mql4AntlrParser();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         // Verify file exists before making request
         Assert.True(File.Exists(_testFilePath), $"Test file should exist at: {_testFilePath}");
@@ -215,12 +215,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         Assert.True(File.Exists(fileWithDiagnosticsPath), $"Test file should exist at: {fileWithDiagnosticsPath}");
@@ -246,12 +246,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -277,12 +277,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -307,12 +307,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -337,12 +337,12 @@ public class DiagnosticHandlerTests
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
         var documentStore = new OpenDocumentStore();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var fileWithDiagnosticsPath = GetFixtureFilePath("samples/WithDiagnostics.mq4");
         var documentUri = DocumentUri.FromFileSystemPath(fileWithDiagnosticsPath);
@@ -374,10 +374,10 @@ public class DiagnosticHandlerTests
     public void GetRegistrationOptions_ReturnsValidDocumentSelector()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         var capability = new DiagnosticClientCapabilities();
         var clientCapabilities = new ClientCapabilities();
@@ -399,10 +399,10 @@ public class DiagnosticHandlerTests
     public void Handler_ImplementsIDocumentDiagnosticHandler()
     {
         // Arrange & Act
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         // Assert
         Assert.IsAssignableFrom<IDocumentDiagnosticHandler>(handler);
@@ -412,10 +412,10 @@ public class DiagnosticHandlerTests
     public void GetRegistrationOptions_NotNullForNullCapabilities()
     {
         // Arrange
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
         var documentStore = new OpenDocumentStore();
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
 
         // Act
         var options = handler.GetRegistrationOptions(null!, null!);

@@ -55,6 +55,19 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      # Fail the release if the pushed tag does not match the package version in the csproj,
+      # preventing a mismatched tag/package pair from being published.
+      - name: Verify tag matches package version
+        run: |
+          CS_VERSION=$(grep -oP '(?<=<Version>)[^<]+' src/MqlLanguageServer.Server.csproj | head -1)
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$TAG_VERSION" != "$CS_VERSION" ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' does not match csproj version '$CS_VERSION'."
+            echo "::error::Update <Version> in src/MqlLanguageServer.Server.csproj to '$TAG_VERSION' and tag again."
+            exit 1
+          fi
+          echo "Tag matches package version: $CS_VERSION"
+
       - name: Restore & Test
         run: |
           dotnet restore

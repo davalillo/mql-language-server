@@ -4,7 +4,7 @@ using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace MqlLanguageServer.Tests.Lsp.Handlers
 {
@@ -17,10 +17,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public void InlayHintHandler_CanBeInstantiated()
         {
             // Arrange & Act
-            var loggerMock = new Mock<ILogger<InlayHintHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<InlayHintHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new InlayHintHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new InlayHintHandler(loggerMock, parserMock, documentStore);
 
             // Assert
             Assert.NotNull(handler);
@@ -30,10 +30,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task InlayHintHandler_ReturnsNull_WhenFileNotFoundAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<InlayHintHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<InlayHintHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new InlayHintHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new InlayHintHandler(loggerMock, parserMock, documentStore);
 
             var request = new InlayHintParams
             {
@@ -52,10 +52,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         public async Task InlayHintHandler_ReturnsEmptyContainer_WhenValidFileAsync()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<InlayHintHandler>>();
-            var parserMock = new Mock<Mql4AntlrParser>();
+            var loggerMock = Substitute.For<ILogger<InlayHintHandler>>();
+            var parserMock = new Mql4AntlrParser();
             var documentStore = new OpenDocumentStore();
-            var handler = new InlayHintHandler(loggerMock.Object, parserMock.Object, documentStore);
+            var handler = new InlayHintHandler(loggerMock, parserMock, documentStore);
 
             var testFilePath = Path.Combine(Path.GetTempPath(), "TestInlayHint.mq4");
             var testCode = "void OnTick() { int x = 10; }";

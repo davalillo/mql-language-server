@@ -1,7 +1,7 @@
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
@@ -164,15 +164,15 @@ public class SyntaxErrorTests
         var parser = new Mql4AntlrParser();
         var file = parser.ParseFile(content, fileName);
 
-        var loggerMock = new Mock<ILogger<DiagnosticHandler>>();
-        var serviceProviderMock = new Mock<IServiceProvider>();
-        serviceProviderMock.Setup(sp => sp.GetService(typeof(Mql4AntlrParser))).Returns(parser);
+        var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
+        var serviceProviderMock = Substitute.For<IServiceProvider>();
+        serviceProviderMock.GetService(typeof(Mql4AntlrParser)).Returns(parser);
         var documentStore = new OpenDocumentStore();
 
         var uri = DocumentUri.FromFileSystemPath(fileName);
         documentStore.AddOrUpdate(uri.ToUri(), file, content, MqlLanguage.Mql4);
 
-        var handler = new DiagnosticHandler(loggerMock.Object, serviceProviderMock.Object, documentStore);
+        var handler = new DiagnosticHandler(loggerMock, serviceProviderMock, documentStore);
         return (handler, documentStore, uri);
     }
 

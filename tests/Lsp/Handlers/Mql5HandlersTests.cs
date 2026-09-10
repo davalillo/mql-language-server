@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -47,7 +47,7 @@ public class Mql5HandlersTests
 
     private static ILogger<T> MockLogger<T>() where T : class
     {
-        return Mock.Of<ILogger<T>>();
+        return Substitute.For<ILogger<T>>();
     }
 
     [Fact]
