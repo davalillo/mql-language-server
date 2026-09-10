@@ -223,19 +223,10 @@ public class WorkspaceIndexer
         var parsedFile = parser.ParseFile(content, path);
         parsedFile.Language = language;
 
-        var occurrences = parsedFile.Occurrences
-            .Select(o => new SymbolOccurrence
-            {
-                FilePath = path,
-                Language = language,
-                Text = o.Text,
-                Line = o.Line,
-                Column = o.Column,
-                Length = o.Length
-            })
-            .ToList();
-
-        // Index-only write: no OpenDocumentStore pollution (D6).
-        GlobalSymbolIndex.Instance.AddFile(path, language, parsedFile.Symbols, occurrences);
+        // Index-only write: no OpenDocumentStore pollution (D6). Occurrences
+        // are mapped by the shared helper (also used by didOpen/didChange).
+        GlobalSymbolIndex.Instance.AddFile(
+            path, language, parsedFile.Symbols,
+            SymbolOccurrenceMapper.Map(parsedFile, path, language));
     }
 }

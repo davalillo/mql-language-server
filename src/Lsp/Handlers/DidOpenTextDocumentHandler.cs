@@ -91,7 +91,13 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
 
                 _documentStore.AddOrUpdate(documentUri, mqlFile, content, language);
 
-                GlobalSymbolIndex.Instance.AddFile(filePath, language, mqlFile.Symbols);
+                // OCC-03: re-index with the fresh parse's token occurrences so
+                // the wholesale per-file occurrence replacement swaps old for
+                // new instead of purging scan-indexed entries with an empty
+                // list (CRITICAL-2 fix; identical mapping to the workspace scan).
+                GlobalSymbolIndex.Instance.AddFile(
+                    filePath, language, mqlFile.Symbols,
+                    SymbolOccurrenceMapper.Map(mqlFile, filePath, language));
 
                 // D2 include resolution: parse included .mqh files under the includer's language key.
                 //
@@ -120,7 +126,10 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
 
                             var includeFile = parser.ParseFile(includeContent, includeFullPath);
                             includeFile.Language = includeLanguage;
-                            GlobalSymbolIndex.Instance.AddFile(includeFullPath, includeLanguage, includeFile.Symbols);
+                            // OCC-03: occurrence-aware re-index, same rationale as above.
+                            GlobalSymbolIndex.Instance.AddFile(
+                                includeFullPath, includeLanguage, includeFile.Symbols,
+                                SymbolOccurrenceMapper.Map(includeFile, includeFullPath, includeLanguage));
                             GlobalSymbolIndex.Instance.AddDependency(filePath, includeFullPath);
                         }
                     }
