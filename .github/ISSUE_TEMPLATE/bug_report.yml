@@ -1,0 +1,103 @@
+name: Bug report
+description: Report a problem with the MQL language server
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in the details
+        below — the more context you provide, the faster it can be diagnosed.
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: Affected language
+      description: Which language does the bug involve?
+      options:
+        - MQL4
+        - MQL5
+        - Both
+        - Other (language detection, packaging, etc.)
+    validations:
+      required: true
+
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version
+      description: Output of `mql-lsp-server --version` (or the version you installed)
+      placeholder: "2.0.0-rc.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: editor
+    attributes:
+      label: Editor
+      description: Which editor/IDE are you using with the language server?
+      options:
+        - VS Code
+        - Neovim / Vim
+        - Emacs
+        - Sublime Text
+        - Helix
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: editor-version
+    attributes:
+      label: Editor version and LSP client
+      description: Editor version and, if relevant, the LSP client extension/plugin used
+      placeholder: "VS Code 1.92.0, built-in LSP client"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11, macOS 14.5, Ubuntu 24.04, ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Include a minimal MQL4/MQL5 snippet that triggers the bug if possible.
+        Code pasted here must be yours or permissively licensed — do not paste
+        proprietary code.
+      placeholder: |
+        1. Open file ...
+        2. Request hover/completion/definition on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Contents of the server log (`mql-lsp-server.log`) or editor console
+        output, if any. Redact anything sensitive before pasting.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues for a duplicate
+          required: true
+        - label: I am using the latest released version (or confirmed the bug exists on `main`)
+          required: true
