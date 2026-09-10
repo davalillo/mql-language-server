@@ -321,6 +321,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
             finally
             {
+                GlobalSymbolIndex.Instance.Clear();
                 if (File.Exists(path)) File.Delete(path);
             }
         }
@@ -371,6 +372,7 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
             finally
             {
+                GlobalSymbolIndex.Instance.Clear();
                 if (File.Exists(path)) File.Delete(path);
             }
         }

@@ -2,6 +2,9 @@
 
 Release candidate: prerelease for validating the release pipeline (tag/csproj verification, asset publishing) and the token-backed references implementation before sealing the stable 2.0.0. Not marked as `latest`; the stable channel continues pointing at the previous release until 2.0.0 is sealed.
 
+### Removed
+- refactor: removed dead `DidSaveTextDocumentHandler` (never registered). LSP 3.17 makes `didSave` optional and the server does not advertise `save` under `TextDocumentSyncKind.Full`, so conforming clients never send it; `didChange` already re-indexes on every edit under Full sync. The handler also implemented `IDidChangeTextDocumentHandler`, so registering it would have double-handled `didChange` and re-read stale disk content over fresher parses.
+
 ### Added
 - feat: Token-backed references (Find All References rewritten from regex to lexer tokens)
   - Identifier occurrences captured from the ANTLR token stream at parse time for both MQL4 and MQL5 (`TokenOccurrenceCapture`, `MqlFile.Occurrences`)
