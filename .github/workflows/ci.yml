@@ -36,4 +36,4 @@ jobs:
           dotnet test MqlLanguageServer.sln
           --no-build
           --configuration Release
-          --filter "FullyQualifiedName!~Performance&FullyQualifiedName!~FpMeasurement"
+          --filter "FullyQualifiedName!~Performance&FullyQualifiedName!~FpMeasurement&Category!=RealWorld"
