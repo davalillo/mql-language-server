@@ -1,6 +1,18 @@
-## [Unreleased]
+## [2.0.0-rc.1] - 2026-09-10
+
+Release candidate: prerelease for validating the release pipeline (tag/csproj verification, asset publishing) and the token-backed references implementation before sealing the stable 2.0.0. Not marked as `latest`; the stable channel continues pointing at the previous release until 2.0.0 is sealed.
 
 ### Added
+- feat: Token-backed references (Find All References rewritten from regex to lexer tokens)
+  - Identifier occurrences captured from the ANTLR token stream at parse time for both MQL4 and MQL5 (`TokenOccurrenceCapture`, `MqlFile.Occurrences`)
+  - `GlobalSymbolIndex` stores name-keyed occurrences with definition-vs-reference distinction (`FindOccurrences(name[, language])`, occurrence-aware `AddFile`)
+  - `ReferencesHandler` returns token-backed locations instead of raw-text regex matching; `includeDeclaration` filtering via `request.Context.IncludeDeclaration`
+  - Measured on the 45-file fixture corpus: **false-positive rate 15.52% → 0.00%**, recall unchanged at 100%
+  - FP measurement harness (`tests/FpMeasurement/`, tagged `Category=FpMeasurement`, excluded from normal CI runs) kept as a permanent diagnostic instrument with the pre-fix baseline preserved
+- feat: Workspace indexing at startup
+  - New `WorkspaceIndexer` scans workspace folders asynchronously after `initialize` so references resolve for files the client never opened
+  - Skips VCS/build directories (`.git`, `bin`, `obj`, `node_modules`, etc.); per-file error isolation so one unparseable file cannot stop the scan
+  - Requests are answered during the scan (per-file incremental indexing, no snapshot swap), covered by a deterministic mid-scan integration test (WI-02)
 - feat: MQL5 language support (first-class .mq5/.mqh parsing and LSP features)
   - Dual ANTLR grammars for MQL4 and MQL5 with isolated generated namespaces
   - MQL5 syntax coverage: classes, structs, interfaces, inheritance, templates, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, references, `using`, `#resource`, init lists, `new`/`delete`
@@ -16,15 +28,29 @@
   - Log file: `mql-lsp-server.log`
   - Package id: `mql-language-server`
   - Update editor configuration and CI scripts accordingly when upgrading from pre-1.x releases
+- test: migrate test mocking from Moq to NSubstitute
+- build: update vulnerable and outdated NuGet packages; Serilog sinks 6.x/7.x; test stack packages
+- ci: verify release tag matches the package version in the `.csproj` before publishing
 
 ### Fixed
+- fix: occurrence purge on document sync — `didOpen`/`didChange` re-indexed files with an empty occurrence list, wiping scan-indexed occurrences on every open/keystroke; both handlers (and the include-indexing path) now pass the fresh parse's occurrences via the shared `SymbolOccurrenceMapper`
+- fix: pre-existing shared `GlobalSymbolIndex` residue leak in handler tests — singleton state is now cleared in `finally` blocks
 - fix: DiagnosticHandler re-enabled in `Program.cs` (was commented out); MQL4 diagnostics are now published as well as MQL5 diagnostics
 - fix: GlobalSymbolIndex uses dual-key `(filePath, MqlLanguage)` so MQL4 and MQL5 files with the same include path coexist without collision
 
+### Documentation
+- docs: remove pinned install version from READMEs/guides; correct .NET 8 reference in `install-local-tool.sh` prerequisite message
+- chore: remove orphan `test_parser` fixtures from repo root
+- ARCHITECTURE.md: handler count updated to 26; dead `DidSaveTextDocumentHandler` node and edges removed
+
+### Removed
+- refactor: removed dead `DidSaveTextDocumentHandler` (never registered). LSP 3.17 makes `didSave` optional and the server does not advertise `save` under `TextDocumentSyncKind.Full`, so conforming clients never send it; `didChange` already re-indexes on every edit under Full sync. The handler also implemented `IDidChangeTextDocumentHandler`, so registering it would have double-handled `didChange` and re-read stale disk content over fresher parses.
+
 ### Technical Details
 - Build: 0 Warnings, 0 Errors
-- Tests: full suite green (MQL4 regression tests unchanged + new MQL5 tests)
+- Tests: full suite green (714 tests; MQL4 regression tests unchanged + new token-occurrence, workspace-indexing, and MQL5 tests)
 - Parser: Mql4AntlrParser and Mql5AntlrParser share `IMqlParser` via `MqlLanguageService`
+- References: locations are backed by lexer identifier tokens only (comments, strings, and preprocessor lines are structurally excluded)
 - Compatibility: breaking rename documented above; no behavioral regressions for MQL4
 
 ## [1.11.4] - 2026-01-16
