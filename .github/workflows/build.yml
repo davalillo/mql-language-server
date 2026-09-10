@@ -155,7 +155,7 @@ jobs:
       #     retention-days: 1  # Auto-delete after 1 day
 
       - name: Create/Update release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ needs.get-effective-tag.outputs.effective_tag }}
