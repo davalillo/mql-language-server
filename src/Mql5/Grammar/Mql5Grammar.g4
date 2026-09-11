@@ -269,7 +269,7 @@ globalConstructorDeclaration
 
 // Destructor outside of class: Crypter::~Crypter() { }
 globalDestructorDeclaration
-    : modifiers? qualifiedName SCOPE BIT_NOT IDENTIFIER LPAREN RPAREN (block | SEMICOLON)
+    : modifiers? qualifiedName SCOPE BIT_NOT IDENTIFIER LPAREN parameterList? RPAREN (block | SEMICOLON)
     ;
 
 templateDefinition
@@ -325,7 +325,7 @@ constructorDeclaration
     ;
 
 destructorDeclaration
-    : BIT_NOT IDENTIFIER LPAREN RPAREN (block | SEMICOLON)
+    : BIT_NOT IDENTIFIER LPAREN parameterList? RPAREN (block | SEMICOLON)
     ;
 
 initializationList
@@ -386,12 +386,16 @@ doWhileStatement
     ;
 
 forStatement
-    : K_FOR LPAREN forInit expression? SEMICOLON expression? RPAREN statement
+    : K_FOR LPAREN forInit expression? SEMICOLON expressionList? RPAREN statement
     ;
 
 forInit
     : variableDeclaration SEMICOLON
-    | expression? SEMICOLON
+    | expressionList? SEMICOLON
+    ;
+
+expressionList
+    : expression (COMMA expression)*
     ;
 
 switchStatement

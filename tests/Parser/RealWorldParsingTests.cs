@@ -72,6 +72,16 @@ public class RealWorldParsingTests
         var getAncestor = file.Symbols.FirstOrDefault(s => s.Name == "GetAncestor");
         Assert.NotNull(getAncestor);
         _output.WriteLine($"  GetAncestor at line {getAncestor!.Range.Start.Line + 1}");
+
+        // Issue #17 — the destructor at line 104 is declared as `~CAccountProtector(void)`.
+        // This construct is valid MQL4 (MetaEditor accepts it) and must not produce a
+        // syntax error. Other tolerated errors on this fixture come from unmodeled
+        // macros, not from this line. ANTLR reports 1-based lines.
+        var destructorErrors = file.SyntaxErrors
+            .Where(e => e.Line == 104)
+            .ToList();
+        Assert.Empty(destructorErrors);
+        _output.WriteLine($"  ~CAccountProtector(void) at line 104: no syntax errors");
     }
 
     /// <summary>

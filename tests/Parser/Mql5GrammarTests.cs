@@ -121,6 +121,30 @@ public class Mql5GrammarTests
         ParseWithoutErrors("class C { public: void f() {} }; void g() { C* p = new C(); (*p).f(); delete p; }");
     }
 
+    [Fact]
+    public void Parses_DestructorWithVoidParameter()
+    {
+        ParseWithoutErrors("class C { public: ~C(void); }; C::~C(void) {}");
+    }
+
+    [Fact]
+    public void Parses_ForLoopCommaSeparatedInitAndIncrement()
+    {
+        ParseWithoutErrors("void f() { int i, j; for(i = 0, j = 0; j < 10; i++, j += 4) { } }");
+    }
+
+    [Fact]
+    public void Parses_SimpleForLoopRegression()
+    {
+        ParseWithoutErrors("void f() { for(int i = 0; i < 10; i++) { } }");
+    }
+
+    [Fact]
+    public void Parses_DestructorWithoutParametersRegression()
+    {
+        ParseWithoutErrors("class C { public: ~C(); }; C::~C() {}");
+    }
+
     private sealed class FailOnSyntaxErrorListener : IAntlrErrorListener<IToken>
     {
         private readonly List<string> _errors;

@@ -115,6 +115,81 @@ public class SyntaxErrorTests
     }
 
     [Fact]
+    public void Mql4_DestructorWithVoidParameter_NoSyntaxErrors()
+    {
+        var content = @"
+class Crypter
+{
+public:
+    ~Crypter(void);
+};
+
+Crypter::~Crypter(void) {}
+";
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(content, "test.mq4");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
+    }
+
+    [Fact]
+    public void Mql4_ForLoopCommaSeparatedInitAndIncrement_NoSyntaxErrors()
+    {
+        var content = @"
+void f()
+{
+    int i, j;
+    for(i = 0, j = 0; j < 10; i++, j += 4)
+    {
+    }
+}
+";
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(content, "test.mq4");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
+    }
+
+    [Fact]
+    public void Mql4_SimpleForLoopRegression_NoSyntaxErrors()
+    {
+        var content = @"
+void f()
+{
+    for(int i = 0; i < 10; i++)
+    {
+    }
+}
+";
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(content, "test.mq4");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
+    }
+
+    [Fact]
+    public void Mql4_DestructorWithoutParametersRegression_NoSyntaxErrors()
+    {
+        var content = @"
+class Crypter
+{
+public:
+    ~Crypter();
+};
+
+Crypter::~Crypter() {}
+";
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(content, "test.mq4");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
+    }
+
+    [Fact]
     public void InvalidMql4_SyntaxErrorCarriesFileAndGrammar()
     {
         var parser = new Mql4AntlrParser();

@@ -8,8 +8,11 @@ private:
 public:
     Point() : _x(0), _y(0) { }
     Point(int x, int y) : _x(x), _y(y) { }
+    ~Point(void);
     ~Point() { }
 };
+
+Point::~Point(void) { }
 
 void OnTick()
 {
