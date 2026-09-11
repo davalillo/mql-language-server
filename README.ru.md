@@ -2,7 +2,9 @@
 
 [English](README.md) | [Español](README.es.md) | Русский
 
-[![Build Status](https://github.com/davalillo/mql-language-server/actions/workflows/build.yml/badge.svg)](https://github.com/davalillo/mql-language-server/actions)
+[![CI](https://github.com/davalillo/mql-language-server/actions/workflows/ci.yml/badge.svg)](https://github.com/davalillo/mql-language-server/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/davalillo/mql-language-server)](https://github.com/davalillo/mql-language-server/releases/latest)
+[![License](https://img.shields.io/github/license/davalillo/mql-language-server)](LICENSE)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![LSP](https://img.shields.io/badge/LSP-3.17-green.svg)](https://microsoft.github.io/language-server-protocol/)
 
