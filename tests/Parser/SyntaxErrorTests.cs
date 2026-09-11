@@ -114,6 +114,48 @@ public class SyntaxErrorTests
         Assert.Empty(file.SyntaxErrors);
     }
 
+    [Fact]
+    public void InvalidMql4_SyntaxErrorCarriesFileAndGrammar()
+    {
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile("int x\n", "src/common/test.mq4");
+
+        Assert.NotNull(file);
+        Assert.NotEmpty(file.SyntaxErrors);
+
+        var first = file.SyntaxErrors[0];
+        Assert.Equal("MQL4", first.Grammar);
+        Assert.Equal("src/common/test.mq4", first.FilePath);
+    }
+
+    [Fact]
+    public void Mql4_LeadingBom_DoesNotProduceLexerOrSyntaxErrors()
+    {
+        // A leading UTF-8 BOM is stripped before lexing; without the strip it
+        // surfaces as a lexer "token recognition error at: '\uFEFF'" at 1:0.
+        var content = "\uFEFFint OnInit() { return 0; }\n";
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(content, "bom.mq4");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
+    }
+
+    [Fact]
+    public void Mql4_SyntaxErrorsCarryFilePathInAllEntries()
+    {
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile("void f() { int = ; }\n", "broken.mq4");
+
+        Assert.NotNull(file);
+        Assert.All(file.SyntaxErrors, e =>
+        {
+            Assert.Equal("MQL4", e.Grammar);
+            Assert.Equal("broken.mq4", e.FilePath);
+        });
+    }
+
+
     #endregion
 
     #region MQL5 — parser-level syntax error collection
@@ -147,6 +189,31 @@ public class SyntaxErrorTests
         Assert.True(first.Line >= 1);
         Assert.True(first.Column >= 0);
         Assert.False(string.IsNullOrEmpty(first.Message));
+    }
+
+    [Fact]
+    public void InvalidMql5_SyntaxErrorCarriesFileAndGrammar()
+    {
+        var parser = new Mql5AntlrParser();
+        var file = parser.ParseFile("int x\n", "src/common/test.mqh");
+
+        Assert.NotNull(file);
+        Assert.NotEmpty(file.SyntaxErrors);
+
+        var first = file.SyntaxErrors[0];
+        Assert.Equal("MQL5", first.Grammar);
+        Assert.Equal("src/common/test.mqh", first.FilePath);
+    }
+
+    [Fact]
+    public void Mql5_LeadingBom_DoesNotProduceLexerOrSyntaxErrors()
+    {
+        var content = "\uFEFFvoid OnStart() { }\n";
+        var parser = new Mql5AntlrParser();
+        var file = parser.ParseFile(content, "bom.mq5");
+
+        Assert.NotNull(file);
+        Assert.Empty(file.SyntaxErrors);
     }
 
     #endregion

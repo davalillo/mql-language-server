@@ -16,4 +16,10 @@ public class SyntaxError
 
     /// <summary>Text of the offending token, or null if unavailable.</summary>
     public string? OffendingSymbol { get; set; }
+
+    /// <summary>Path of the file being parsed, or "unknown" if unavailable.</summary>
+    public string? FilePath { get; set; }
+
+    /// <summary>Grammar language tag ("MQL4" or "MQL5") that reported the error.</summary>
+    public string Grammar { get; set; } = string.Empty;
 }

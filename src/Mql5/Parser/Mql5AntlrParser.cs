@@ -32,12 +32,23 @@ public class Mql5AntlrParser : IMqlParser
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
         var symbolsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
 
-        var errorListener = new Mql5SyntaxErrorListener();
+        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
 
         try
         {
+            // Strip a leading UTF-8 BOM (\uFEFF); the grammar has no token for it and
+            // it would otherwise surface as a lexer "token recognition error" at 1:0.
+            content = content.TrimStart('\uFEFF');
+
             var inputStream = new AntlrInputStream(content);
             var lexer = new Mql5GrammarLexer(inputStream);
+
+            // Route lexer errors through a listener that reports the file and grammar;
+            // without this, ANTLR's default ConsoleErrorListener prints an anonymous
+            // "token recognition error" with no file context.
+            lexer.RemoveErrorListeners();
+            lexer.AddErrorListener(new LexerErrorListener(filePath, "MQL5"));
+
             var tokenStream = new CommonTokenStream(lexer);
             var parser = new Mql5GrammarParser(tokenStream);
 
@@ -622,10 +633,19 @@ public class Mql5AntlrParser : IMqlParser
 
     private sealed class Mql5SyntaxErrorListener : IAntlrErrorListener<IToken>
     {
+        private readonly string _filePath;
+        private readonly string _grammar;
+
         /// <summary>
         /// Collected syntax errors. Available after parsing completes.
         /// </summary>
         public List<SyntaxError> Errors { get; } = new();
+
+        public Mql5SyntaxErrorListener(string filePath = "unknown", string grammar = "MQL5")
+        {
+            _filePath = filePath;
+            _grammar = grammar;
+        }
 
         public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
         {
@@ -634,9 +654,33 @@ public class Mql5AntlrParser : IMqlParser
                 Line = line,
                 Column = charPositionInLine,
                 Message = msg,
-                OffendingSymbol = offendingSymbol?.Text
+                OffendingSymbol = offendingSymbol?.Text,
+                FilePath = _filePath,
+                Grammar = _grammar
             });
-            Console.Error.WriteLine($"MQL5 syntax error at line {line}:{charPositionInLine} - {msg}");
+            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: syntax error - {msg}");
+        }
+    }
+
+    /// <summary>
+    /// Error listener for the lexer. ANTLR's default ConsoleErrorListener prints
+    /// "token recognition error" without any file or grammar context; this listener
+    /// keeps the unified "[Grammar] file:line:col" prefix used by the parser listener.
+    /// </summary>
+    private sealed class LexerErrorListener : IAntlrErrorListener<int>
+    {
+        private readonly string _filePath;
+        private readonly string _grammar;
+
+        public LexerErrorListener(string filePath, string grammar)
+        {
+            _filePath = filePath;
+            _grammar = grammar;
+        }
+
+        public void SyntaxError(TextWriter output, IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
+        {
+            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: lexer error - {msg}");
         }
     }
 }
