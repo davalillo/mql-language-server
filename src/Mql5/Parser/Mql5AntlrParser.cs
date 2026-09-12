@@ -218,15 +218,18 @@ public class Mql5AntlrParser : IMqlParser
 
         foreach (var include in mainFile.Includes)
         {
-            var includePath = ExtractIncludePath(include);
-            if (!string.IsNullOrEmpty(includePath))
+            // Issue #25a: single include-resolution service. Previously this
+            // chain re-ran the raw-directive regex over already-extracted
+            // stored entries, which never matched, so quoted include merges
+            // silently resolved nothing. TryResolveContained now resolves
+            // quoted entries relative to the includer (with the PathSecurity
+            // containment guard the didOpen path already had) and returns
+            // false for angle-bracket system includes — matching the MQL4
+            // parser's intentional skip.
+            if (IncludePathResolver.TryResolveContained(filePath, include, out var includeFullPath))
             {
-                var includeFullPath = ResolveIncludePath(filePath, includePath);
-                if (File.Exists(includeFullPath))
-                {
-                    var includedFile = ParseFileWithIncludes(includeFullPath, processedFiles);
-                    allSymbols.AddRange(includedFile.Symbols);
-                }
+                var includedFile = ParseFileWithIncludes(includeFullPath, processedFiles);
+                allSymbols.AddRange(includedFile.Symbols);
             }
         }
 
@@ -609,36 +612,6 @@ public class Mql5AntlrParser : IMqlParser
 
             list.Add(symbol);
         }
-    }
-
-    private string ExtractIncludePath(string includeDirective)
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
-        if (match.Success)
-        {
-            return match.Groups[1].Value;
-        }
-
-        match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+\u003c([^\u003e]+)\u003e");
-        if (match.Success)
-        {
-            return $"<{match.Groups[1].Value}>";
-        }
-
-        return string.Empty;
-    }
-
-    private string ResolveIncludePath(string includingFile, string includePath)
-    {
-        if (Path.IsPathRooted(includePath))
-        {
-            return includePath;
-        }
-
-        var includingDir = Path.GetDirectoryName(includingFile);
-        return includingDir != null
-            ? Path.Combine(includingDir, includePath)
-            : includePath;
     }
 
     private List<string> ExtractMacros(CommonTokenStream tokenStream)

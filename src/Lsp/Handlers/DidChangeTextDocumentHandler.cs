@@ -128,19 +128,14 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
 
     private void UpdateIncludes(MqlFile file, string filePath)
     {
-        foreach (var include in file.Includes)
+        // Issue #25a: the previous copy re-ran the raw-directive include regex
+        // over the visitors' already-extracted stored entries, which never
+        // matched. Path resolution and indexing for includes is delegated to
+        // DidOpen / workspace scan, so the loop body stays empty — kept as an
+        // explicit delegation note (see DidOpenTextDocumentHandler).
+        foreach (var _ in file.Includes)
         {
-            var includePath = ExtractIncludePath(include);
-            if (!string.IsNullOrEmpty(includePath))
-            {
-                // Path resolution and indexing delegated to DidOpen / workspace scan.
-            }
+            // Path resolution and indexing delegated to DidOpen / workspace scan.
         }
-    }
-
-    private string ExtractIncludePath(string includeDirective)
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
-        return match.Success ? match.Groups[1].Value : string.Empty;
     }
 }

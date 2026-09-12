@@ -366,35 +366,16 @@ public class WorkspaceIndexer
     /// </summary>
     private static string? ResolveWorkspaceInclude(string includingFile, string includeEntry)
     {
-        if (string.IsNullOrEmpty(includeEntry))
-            return null;
-
-        // The parsers store quoted includes as bare paths and angle-bracket
-        // includes wrapped in <>. Treat any entry still carrying the markers
-        // as a system-library include.
-        var relative = includeEntry.Trim();
-        if (relative.StartsWith("<") || relative.EndsWith(">"))
-            return null;
-
-        string resolved;
-        try
+        // Issue #25a: delegate to the single include-resolution service. The
+        // unified semantics are identical to the behavior this copy already
+        // had (quoted → relative to includer dir + GetFullPath + containment
+        // guard; angle-bracket → system include, not resolved) — this copy is
+        // the one whose entry-shape handling was correct and became canonical.
+        if (!IncludePathResolver.TryResolveContained(includingFile, includeEntry, out var resolved))
         {
-            var includingDir = Path.GetDirectoryName(includingFile);
-            var combined = includingDir != null
-                ? Path.Combine(includingDir, relative)
-                : relative;
-            resolved = Path.GetFullPath(combined);
-        }
-        catch
-        {
-            // Malformed include path: degrade to the sniffing fallback.
             return null;
         }
 
-        // Path traversal guard, same rule as didOpen include resolution.
-        if (!PathSecurity.IsContainedInWorkspace(includingFile, resolved))
-            return null;
-
-        return File.Exists(resolved) ? resolved : null;
+        return resolved;
     }
 }

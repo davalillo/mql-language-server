@@ -6,6 +6,7 @@ using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Mql5Grammar;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Parser;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using LspPosition = OmniSharp.Extensions.LanguageServer.Protocol.Models.Position;
 
@@ -279,19 +280,9 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
 
     private string? ExtractIncludePath(string tokenText)
     {
-        var match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+""([^""]+)""");
-        if (match.Success)
-        {
-            return match.Groups[1].Value;
-        }
-
-        match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+\u003c([^\u003e]+)\u003e");
-        if (match.Success)
-        {
-            return $"<{match.Groups[1].Value}>";
-        }
-
-        return null;
+        // Issue #25a: single include-resolution service (regex extraction of
+        // the quoted/angle-bracket path from the directive token).
+        return IncludePathResolver.ExtractFromDirective(tokenText);
     }
 
     private static LspRange CreateRangeFromToken(IToken token)

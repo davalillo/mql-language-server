@@ -261,22 +261,15 @@ namespace MqlLanguageServer.Parser
                 // is not present in the fixture tree, so they are skipped here;
                 // only local quoted includes can be resolved relative to the
                 // including file's directory.
-                var includePath = include;
-                if (includePath.StartsWith("<"))
+                // Issue #25a: resolution goes through the single
+                // IncludePathResolver service (it returns null for angle-bracket
+                // system includes, preserving the skip behavior).
+                var includeFullPath = IncludePathResolver.Resolve(filePath, include);
+                if (includeFullPath != null && File.Exists(includeFullPath))
                 {
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(includePath))
-                {
-                    // Resolve relative paths
-                    var includeFullPath = ResolveIncludePath(filePath, includePath);
-                    if (File.Exists(includeFullPath))
-                    {
-                        // Parse included file and merge symbols
-                        var includedFile = ParseFileWithIncludes(includeFullPath, processedFiles);
-                        allSymbols.AddRange(includedFile.Symbols);
-                    }
+                    // Parse included file and merge symbols
+                    var includedFile = ParseFileWithIncludes(includeFullPath, processedFiles);
+                    allSymbols.AddRange(includedFile.Symbols);
                 }
             }
 
@@ -287,43 +280,6 @@ namespace MqlLanguageServer.Parser
                 Symbols = allSymbols,
                 Includes = mainFile.Includes
             };
-        }
-
-        /// <summary>
-        /// Extract include path from #include directive
-        /// </summary>
-        /// <param name="includeDirective">Full include directive (e.g., #include "file.mqh")</param>
-        /// <returns>Included file path</returns>
-        private string ExtractIncludePath(string includeDirective)
-        {
-            // Simple parsing: extract content between quotes
-            var match = System.Text.RegularExpressions.Regex.Match(includeDirective, @"#include\s+""([^""]+)""");
-            if (match.Success)
-            {
-                return match.Groups[1].Value;
-            }
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// Resolve include path relative to the including file
-        /// </summary>
-        /// <param name="includingFile">Path to the file that includes</param>
-        /// <param name="includePath">Included file path</param>
-        /// <returns>Full path to included file</returns>
-        private string ResolveIncludePath(string includingFile, string includePath)
-        {
-            // If include path is absolute, use as-is
-            if (Path.IsPathRooted(includePath))
-            {
-                return includePath;
-            }
-
-            // Otherwise, resolve relative to the including file's directory
-            var includingDir = Path.GetDirectoryName(includingFile);
-            return includingDir != null
-                ? Path.Combine(includingDir, includePath)
-                : includePath;
         }
 
         /// <summary>
@@ -1236,24 +1192,13 @@ namespace MqlLanguageServer.Parser
 
         private string? ExtractIncludePath(string tokenText)
         {
-            // Token format: #include "file.mqh" or #include <file.mqh>
-            // or: #include <path/file.mqh>
-
-            // Try to match quoted format: #include "file.mqh"
-            var match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+""([^""]+)""");
-            if (match.Success)
-            {
-                return match.Groups[1].Value;
-            }
-
-            // Try to match angle bracket format: #include <file.mqh>
-            match = System.Text.RegularExpressions.Regex.Match(tokenText, @"#include\s+<([^>]+)>");
-            if (match.Success)
-            {
-                return $"<{match.Groups[1].Value}>";
-            }
-
-            return null;
+            // Issue #25a: single include-resolution service (regex extraction
+            // of the quoted/angle-bracket path). Token format:
+            // #include "file.mqh" or #include <path/file.mqh>.
+            // NOTE: fully qualified because this visitor class sits after the
+            // closing brace of the file's namespace block (pre-existing brace
+            // imbalance), so unqualified lookup would miss it.
+            return MqlLanguageServer.Parser.IncludePathResolver.ExtractFromDirective(tokenText);
         }
 
         private LspRange CreateRangeFromToken(IToken token)
