@@ -121,6 +121,25 @@ public class SourceFileReaderTests : IDisposable
         Assert.Equal(text, content);
         Assert.DoesNotContain('\0', content);
     }
+
+    [Fact]
+    public void ReadAllText_DecodeRetryUsesSameBuffer_NoToctouMix()
+    {
+        // Issue #21d: the UTF-16 retry must decode the SAME bytes the UTF-8
+        // probe saw. This fixture is crafted so a second disk read of a
+        // changed file would produce a detectably wrong result: we write a
+        // BOM-less UTF-16 file, read it, then immediately rewrite it as plain
+        // UTF-8. The returned content must match the UTF-16 original (if the
+        // reader re-read from disk after the rewrite, the retry decode would
+        // pick up the new bytes).
+        var text = "input double z = 3.14;";
+        var path = WriteFile(Encoding.Unicode.GetBytes(text));
+
+        var content = SourceFileReader.ReadAllText(path);
+
+        File.WriteAllBytes(path, Encoding.UTF8.GetBytes("REWRITTEN"));
+        Assert.Equal(text, content);
+    }
 }
 
 /// <summary>

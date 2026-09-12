@@ -148,7 +148,11 @@ public class Mql5AntlrParser : IMqlParser
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing MQL5 file: {ex.Message}");
+            // Log to stderr, never stdout (issue #21a): stdout is the JSON-RPC
+            // transport, so plain text injected here desynchronizes/crashes the
+            // client connection. Keep parsing degraded-but-alive: return the file
+            // with any symbols collected before the exception.
+            Console.Error.WriteLine($"Error parsing MQL5 file: {ex.Message}");
             // Preserve any syntax errors collected before the exception
             parsedFile.SyntaxErrors = errorListener.Errors;
             return parsedFile;

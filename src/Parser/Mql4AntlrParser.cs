@@ -167,8 +167,11 @@ namespace MqlLanguageServer.Parser
             }
             catch (Exception ex)
             {
-                // Log error but continue - return file with any symbols found before error
-                Console.WriteLine($"Error parsing MQL4 file: {ex.Message}");
+                // Log to stderr, never stdout (issue #21a): stdout is the JSON-RPC
+                // transport, so plain text injected here desynchronizes/crashes the
+                // client connection. Keep parsing degraded-but-alive: return the file
+                // with any symbols found before the error.
+                Console.Error.WriteLine($"Error parsing MQL4 file: {ex.Message}");
                 // Preserve any syntax errors collected before the exception
                 parsedFile.SyntaxErrors = errorListener.Errors;
                 return parsedFile;

@@ -104,6 +104,73 @@ public class PathSecurityTests
         Cleanup(workspace);
     }
 
+    [Fact]
+    public void IsContainedInWorkspace_RejectsSymlinkLoop_FailClosed()
+    {
+        // Issue #21b: a symlink loop makes ResolveLinkTarget throw
+        // ("too many levels of symbolic links"). The old implementation fell
+        // back to the unresolved path and ALLOWED the include (fail-open);
+        // the fail-closed guard must reject it instead.
+        var workspace = CreateTempDir();
+        var including = Path.Combine(workspace, "main.mq4");
+        File.WriteAllText(including, "// x");
+
+        var linkPath = Path.Combine(workspace, "loop.mqh");
+        try
+        {
+            File.CreateSymbolicLink(linkPath, linkPath);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            Cleanup(workspace);
+            throw; // rethrow so the test is skipped on platforms without symlinks
+        }
+
+        Assert.False(PathSecurity.IsContainedInWorkspace(including, linkPath));
+
+        Cleanup(workspace);
+    }
+
+    [Fact]
+    public void IsUnderAnyRoot_RejectsSymlinkLoopPath_FailClosed()
+    {
+        // Issue #21b, read-guard side: a symlink loop anywhere in the queried
+        // path makes resolution fail; the path must be rejected rather than
+        // falling back to the unresolved value.
+        var workspace = CreateTempDir();
+        File.WriteAllText(Path.Combine(workspace, "real.mq5"), "int x;");
+
+        var linkPath = Path.Combine(workspace, "loop.mq5");
+        try
+        {
+            File.CreateSymbolicLink(linkPath, linkPath);
+        }
+        catch (PlatformNotSupportedException)
+        {
+            Cleanup(workspace);
+            throw;
+        }
+
+        Assert.False(PathSecurity.IsUnderAnyRoot(linkPath, new[] { workspace }));
+
+        Cleanup(workspace);
+    }
+
+    [Fact]
+    public void IsUnderAnyRoot_NonLinkPaths_StillAllowed()
+    {
+        // Fail-closed must not break the ordinary case: real files under a
+        // declared root are not symlinks, resolution "fails" only in the sense
+        // that no link exists, and containment must keep working.
+        var workspace = CreateTempDir();
+        var file = Path.Combine(workspace, "plain.mq5");
+        File.WriteAllText(file, "int y;");
+
+        Assert.True(PathSecurity.IsUnderAnyRoot(file, new[] { workspace }));
+
+        Cleanup(workspace);
+    }
+
     [Theory]
     [InlineData("", "x")]
     [InlineData("x", "")]

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Serilog;
 
 namespace MqlLanguageServer.Lsp.Server;
 
@@ -38,8 +39,23 @@ internal static class PathSecurity
         }
 
         // Resolve symlinks for both sides so a link escaping the workspace is rejected.
-        var realIncludingDir = ResolveRealPath(includingDir) ?? includingDir;
-        var realResolvedFull = ResolveRealPath(resolvedFull) ?? resolvedFull;
+        // Resolution failure on the QUERIED path (the resolved include — the one an
+        // attacker can influence) is fail-CLOSED (issue #21b): if its real path cannot
+        // be determined, containment cannot be proven, so the include is rejected.
+        // The including file's own directory is best-effort: it is the server-side
+        // reference point, not attacker-controlled, and a hard failure there would
+        // reject every include under exotic filesystems (see TryResolveRealPath).
+        if (!TryResolveRealPath(resolvedFull, out var realResolvedFull))
+        {
+            return false;
+        }
+
+        // If the including directory cannot be resolved (e.g. a case-differing or
+        // vanished path), fall back to the unresolved value: the guard then compares
+        // lexically, preserving the pre-#21b behavior for the trusted side.
+        var realIncludingDir = TryResolveRealPath(includingDir, out var resolvedIncludingDir)
+            ? resolvedIncludingDir
+            : includingDir;
 
         return IsDescendant(realIncludingDir, realResolvedFull);
     }
@@ -69,7 +85,12 @@ internal static class PathSecurity
             return false;
         }
 
-        var realFull = ResolveRealPath(full) ?? full;
+        // The QUERIED path is attacker-influenceable: resolution failure is
+        // fail-CLOSED (issue #21b) — treat the result as unknown and reject.
+        if (!TryResolveRealPath(full, out var realFull))
+        {
+            return false;
+        }
 
         foreach (var root in workspaceRoots)
         {
@@ -88,7 +109,14 @@ internal static class PathSecurity
                 continue;
             }
 
-            var realRoot = ResolveRealPath(normalizedRoot) ?? normalizedRoot;
+            // The declared root is client config, not attacker-controlled, and
+            // may legitimately fail resolution (case-differing paths on Linux,
+            // stale handles): best-effort with lexical fallback preserves the
+            // case-insensitive matching contract from #18.
+            var realRoot = TryResolveRealPath(normalizedRoot, out var resolvedRoot)
+                ? resolvedRoot
+                : normalizedRoot;
+
             if (IsDescendant(realRoot, realFull))
             {
                 return true;
@@ -107,14 +135,34 @@ internal static class PathSecurity
     }
 
     /// <summary>
-    /// Resolves symlinks/reparse points to the real target path. Returns null when the
-    /// target cannot be resolved (e.g. broken link, missing permissions, non-Linux fs).
+    /// Resolves symlinks/reparse points to the real target path (issue #21b:
+    /// fail-closed variant of the old best-effort resolver).
+    ///
+    /// <paramref name="realPath"/> receives the resolved target when the path is a
+    /// link, or the input path unchanged when it is not a link (both
+    /// <c>ResolveLinkTarget</c> overloads return null for non-links). Returns
+    /// <c>false</c> when resolution FAILS (broken chain, symlink loop, permission
+    /// error, missing file): the caller must treat the result as unknown and REJECT
+    /// the path instead of silently falling back to the unresolved value — a failed
+    /// security check must never default to "allow".
+    ///
+    /// Fail-closed applies to the QUERIED path (the resolved include / the file
+    /// being read): it is attacker-influenceable, so an unresolvable real path
+    /// means containment is unprovable. Server-side reference paths (the including
+    /// file's directory, the client-declared workspace root) keep a best-effort
+    /// lexical fallback so ordinary sessions and the #18 case-insensitive root
+    /// matching are unaffected.
+    ///
+    /// <see cref="IsDescendant"/>'s <see cref="StringComparison.OrdinalIgnoreCase"/>
+    /// is deliberate (Windows-correct) and out of scope here.
     /// </summary>
-    private static string? ResolveRealPath(string path)
+    private static bool TryResolveRealPath(string path, out string realPath)
     {
+        realPath = path;
+
         if (string.IsNullOrEmpty(path))
         {
-            return null;
+            return false;
         }
 
         try
@@ -125,13 +173,16 @@ internal static class PathSecurity
             var info = new DirectoryInfo(path);
             if (info.ResolveLinkTarget(true) is { } resolved)
             {
-                return resolved.FullName;
+                realPath = resolved.FullName;
+                return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort: if link resolution fails (broken link, permission, etc.),
-            // fall back to the unresolved path and let the containment check decide.
+            // Resolution failure (broken link, symlink loop, permission, etc.) is
+            // fail-closed: report false and let the caller reject the path.
+            Log.Debug(ex, "PathSecurity: symlink resolution failed for {Path}; rejecting", path);
+            return false;
         }
 
         try
@@ -140,14 +191,18 @@ internal static class PathSecurity
             var fileInfo = new FileInfo(path);
             if (fileInfo.ResolveLinkTarget(true) is { } resolvedFile)
             {
-                return resolvedFile.FullName;
+                realPath = resolvedFile.FullName;
+                return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort fallback.
+            Log.Debug(ex, "PathSecurity: symlink resolution failed for {Path}; rejecting", path);
+            return false;
         }
 
-        return null;
+        // Neither overload resolved a link target and neither threw: the path is not
+        // a symlink (or the platform has no link support), so the input is real.
+        return true;
     }
 }

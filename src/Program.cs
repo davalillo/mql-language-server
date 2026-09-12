@@ -71,12 +71,26 @@ namespace MqlLanguageServer
 
             // Configure Serilog for structured logging
             // IMPORTANT: Write to stderr to avoid polluting JSON-RPC stdout
+            //
+            // Issue #21c: the file sink used to write into the process working
+            // directory (often the workspace root) with unbounded daily-file
+            // retention. Logs now go to the OS-appropriate per-user log
+            // directory, created up front if missing, with capped retention
+            // (7 daily files, 20 MB each) and shared mode so several editor
+            // windows can run against the same directory.
+            LogPaths.EnsureLogDirectoryExists();
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
                 .WriteTo.Console(
                     standardErrorFromLevel: Serilog.Events.LogEventLevel.Verbose,
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
-                .WriteTo.File("mql-lsp-server.log", rollingInterval: RollingInterval.Day)
+                .WriteTo.File(
+                    LogPaths.GetLogFilePath(),
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    fileSizeLimitBytes: 20 * 1024 * 1024,
+                    rollOnFileSizeLimit: true,
+                    shared: true)
                 .CreateLogger();
 
             try

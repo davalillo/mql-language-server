@@ -33,6 +33,11 @@ public static class SourceFileReader
     /// in the opening portion). The retry path never throws: if it fails or
     /// still yields NUL characters, the original content is returned.
     ///
+    /// Issue #21d: the file is read from disk exactly ONCE (single
+    /// <see cref="File.ReadAllBytes"/>); both decodes run over the same byte
+    /// buffer, eliminating the old double-read TOCTOU window where a save
+    /// between the two reads decoded a mix of old and new content.
+    ///
     /// Issue #18: this is the single funnel for all client-driven disk reads,
     /// so workspace containment is enforced HERE (not in ~20 handlers). When
     /// workspace roots are declared, a path outside all of them throws
@@ -86,7 +91,15 @@ public static class SourceFileReader
                 $"Path is outside the declared workspace folders: {filePath}");
         }
 
-        var content = File.ReadAllText(filePath);
+        // Issue #21d: exactly one disk read. Decode UTF-8 first (with BOM
+        // detection via StreamReader, matching File.ReadAllText semantics —
+        // verified byte-identical for invalid UTF-8, UTF-16 BE and UTF-32
+        // BOMs), then retry as UTF-16 LE over the SAME buffer when the first
+        // decode looks like a BOM-less UTF-16 LE misread (NULs in the opening
+        // portion). No second read of a possibly-changing file.
+        var bytes = File.ReadAllBytes(filePath);
+
+        var content = DecodeUtf8(bytes);
 
         if (!ContainsNulInOpeningPortion(content))
             return content;
@@ -96,7 +109,6 @@ public static class SourceFileReader
         // only when it is clean; otherwise fall back to the original decode.
         try
         {
-            var bytes = File.ReadAllBytes(filePath);
             var decoded = Encoding.Unicode.GetString(bytes);
             if (!ContainsNulInOpeningPortion(decoded))
                 return decoded;
@@ -107,6 +119,20 @@ public static class SourceFileReader
         }
 
         return content;
+    }
+
+    /// <summary>
+    /// Decodes a raw byte buffer as UTF-8 with BOM detection, matching
+    /// <see cref="File.ReadAllText(string)"/> semantics (which this method
+    /// replaces as part of the single-read refactor, issue #21d): UTF-8/32
+    /// BOMs are honored and stripped, invalid byte sequences become U+FFFD
+    /// replacement characters instead of throwing.
+    /// </summary>
+    private static string DecodeUtf8(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes);
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        return reader.ReadToEnd();
     }
 
     private static bool ContainsNulInOpeningPortion(string content)
