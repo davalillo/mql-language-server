@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,10 +37,27 @@ namespace MqlLanguageServer
         // completes, so the initialize response is never delayed by the scan.
         private static List<string> workspaceFoldersSnapshot = new();
 
+        /// <summary>
+        /// Reads the build date embedded as assembly metadata ("BuildDate") by the
+        /// 'StampBuildDate' MSBuild target. Falls back to "unknown" when the metadata
+        /// is missing (e.g. assemblies produced before the target existed).
+        /// </summary>
+        private static string GetBuildDate()
+        {
+            var value = Assembly.GetExecutingAssembly()
+                .GetCustomAttributes<AssemblyMetadataAttribute>()
+                .FirstOrDefault(a => a.Key == "BuildDate")
+                ?.Value;
+
+            return string.IsNullOrEmpty(value) ? "unknown" : value;
+        }
+
         static async Task<int> Main(string[] args)
         {
-            // Get build date from BuildConstants (immutable, embedded at compile time)
-            var buildDateStr = BuildConstants.BuildDate;
+            // Build date is embedded as assembly metadata by the 'StampBuildDate'
+            // MSBuild target (src/MqlLanguageServer.Server.csproj). It reflects the
+            // UTC time of the last successful compile of this assembly.
+            var buildDateStr = GetBuildDate();
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "unknown";
 

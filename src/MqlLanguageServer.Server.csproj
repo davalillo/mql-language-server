@@ -32,7 +32,13 @@
     <DebugType>portable</DebugType>
   </PropertyGroup>
 
-  <!-- BuildConstants.cs is now a static file in the project root -->
+  <!-- Embeds the build date (UTC, format yyyyMMdd_HHmmss) as assembly metadata.
+       The SDK emits these attributes when generating AssemblyInfo during compile,
+       so the value reflects the moment the current assembly was last compiled.
+       Incremental builds that skip CoreCompile keep the previous stamp. -->
+  <ItemGroup Condition="'$(DesignTimeBuild)' != 'true'">
+    <AssemblyMetadata Include="BuildDate" Value="$([System.DateTime]::UtcNow.ToString('yyyyMMdd_HHmmss'))" />
+  </ItemGroup>
 
   <!-- Override settings when packing as NuGet Tool -->
   <Target Name="PackTool" AfterTargets="Build">
