@@ -28,12 +28,16 @@ jobs:
     steps:
       - name: Set effective tag
         id: set-tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TAG: ${{ github.event.inputs.tag || 'manual-run' }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ github.event.inputs.tag || 'manual-run' }}"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            TAG="$DISPATCH_TAG"
             IS_TAG_TRIGGER="false"
           else
-            TAG="${{ github.ref_name }}"
+            TAG="$REF_NAME"
             IS_TAG_TRIGGER="true"
           fi
           echo "effective_tag=$TAG" >> $GITHUB_OUTPUT
@@ -48,10 +52,10 @@ jobs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
       - name: Checkout (privado)
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -109,10 +113,12 @@ jobs:
           chmod +x bin/mql-lsp-server-*  
 
       - name: Generate CHECKSUMS.txt
+        env:
+          EFFECTIVE_TAG: ${{ needs.get-effective-tag.outputs.effective_tag }}
         run: |
           cd bin
           # Generate checksums with header
-          echo "# SHA256 checksums for ${{ needs.get-effective-tag.outputs.effective_tag }}" > CHECKSUMS.txt
+          echo "# SHA256 checksums for $EFFECTIVE_TAG" > CHECKSUMS.txt
           echo "# Generated: $(date -u '+%Y-%m-%d')" >> CHECKSUMS.txt
           echo "" >> CHECKSUMS.txt
           find . -type f -name "mql-lsp-server-*" -exec sha256sum {} \; >> CHECKSUMS.txt
@@ -122,7 +128,9 @@ jobs:
         run: dotnet pack src/MqlLanguageServer.Server.csproj -c Release --no-build --output nupkg/
 
       - name: Cleanup old artifacts BEFORE upload
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          EFFECTIVE_TAG: ${{ needs.get-effective-tag.outputs.effective_tag }}
         with:
           script: |
             const artifacts = await github.rest.actions.listArtifactsForRepo({
@@ -131,7 +139,7 @@ jobs:
               per_page: 100
             });
             // Keep only artifacts from current release
-            const keepVersions = ['${{ needs.get-effective-tag.outputs.effective_tag }}'];
+            const keepVersions = [process.env.EFFECTIVE_TAG];
             for (const artifact of artifacts.data.artifacts) {
               const shouldKeep = keepVersions.some(v => artifact.name.includes(v));
               if (!shouldKeep && !artifact.expired) {
@@ -155,7 +163,7 @@ jobs:
       #     retention-days: 1  # Auto-delete after 1 day
 
       - name: Create/Update release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ needs.get-effective-tag.outputs.effective_tag }}
@@ -188,7 +196,9 @@ jobs:
           make_latest: ${{ !contains(needs.get-effective-tag.outputs.effective_tag, '-') }}
 
       - name: Cleanup old artifacts
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          EFFECTIVE_TAG: ${{ needs.get-effective-tag.outputs.effective_tag }}
         with:
           script: |
             // Get the 2 most recent releases
@@ -202,7 +212,7 @@ jobs:
             const keepVersions = releases.data.map(r => r.tag_name);
 
             // Also add current tag if it's a new release (not in releases list yet)
-            const currentTag = '${{ needs.get-effective-tag.outputs.effective_tag }}';
+            const currentTag = process.env.EFFECTIVE_TAG;
             if (!keepVersions.includes(currentTag)) {
               keepVersions.push(currentTag);
             }
