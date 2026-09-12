@@ -1,0 +1,26 @@
+# mql-language-server
+
+> Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5), providing diagnostics, completion, hover, go-to-definition, references, rename, and workspace indexing. Distributed as a NuGet tool package `mql-language-server` (command `mql-lsp-server`), as standalone binaries, and via local install. Licensed under MIT.
+
+## Docs
+
+- [README](https://github.com/davalillo/mql-language-server/blob/main/README.md): Full project overview, features, installation options, and configuration.
+- [README (Español)](https://github.com/davalillo/mql-language-server/blob/main/README.es.md): Spanish version of the overview.
+- [README (Русский)](https://github.com/davalillo/mql-language-server/blob/main/README.ru.md): Russian version of the overview.
+- [Editor Integration](https://github.com/davalillo/mql-language-server/blob/main/docs/guides/EDITOR_INTEGRATION.md): Setup for VS Code, Neovim, Emacs, Vim, Sublime Text, Kate, and other LSP-compatible editors.
+- [Distribution](https://github.com/davalillo/mql-language-server/blob/main/docs/guides/DISTRIBUTION.md): How releases are built and published — standalone binaries, NuGet tool, and tag-triggered pipeline.
+- [Local Installation](https://github.com/davalillo/mql-language-server/blob/main/docs/guides/LOCAL_INSTALLATION.md): Installing a locally built tool package without publishing to nuget.org.
+- [Manual Testing](https://github.com/davalillo/mql-language-server/blob/main/docs/guides/MANUAL_TESTING.md): Step-by-step manual testing of the server against real editors.
+- [FAQ](https://github.com/davalillo/mql-language-server/blob/main/docs/references/FAQ.md): Frequently asked questions about the server and LSP concepts.
+- [Security Analysis](https://github.com/davalillo/mql-language-server/blob/main/docs/references/SECURITY.md): Historical NuGet dependency-audit record; all findings subsequently resolved.
+- [Changelog](https://github.com/davalillo/mql-language-server/blob/main/CHANGELOG.md): Release history with per-version change sections.
+- [Contributing](https://github.com/davalillo/mql-language-server/blob/main/CONTRIBUTING.md): Build prerequisites, ANTLR regeneration, test conventions, commit conventions, and the release process.
+- [Security Policy](https://github.com/davalillo/mql-language-server/blob/main/SECURITY.md): How to report vulnerabilities privately via GitHub Private Vulnerability Reporting.
+- [Third-Party Notices](https://github.com/davalillo/mql-language-server/blob/main/THIRD-PARTY-NOTICES.md): Licenses and attributions for every package in the resolved dependency graph.
+
+## Architecture notes
+
+- Source layout: `src/Lsp/Handlers` (one handler per LSP feature), `src/Lsp/Server` (middleware, path security, symbol index), `src/Parser` (shared parser services incl. `IncludePathResolver`, `ParseInputGuard`, `MacroExtractor`), `src/Mql4/Grammar` and `src/Mql5/Grammar` (ANTLR grammars `Mql4Grammar.g4` / `Mql5Grammar.g4` with generated parsers in `src/Parser/Generated`).
+- Tests mirror source under `tests/` (827 tests, `dotnet test`); `tests/FpMeasurement/` and `tests/Performance/` are category-excluded from normal CI runs.
+- Workspace path containment: all client-supplied `file://` reads are validated against declared workspace folders (`PathSecurity`), and path resolution fails closed on symlink-resolution failure.
+- Parse guards: a linear pre-scan caps bracket nesting depth and input size before ANTLR recursion, so deeply nested input cannot cause a non-catchable `StackOverflowException` in the LSP process.
