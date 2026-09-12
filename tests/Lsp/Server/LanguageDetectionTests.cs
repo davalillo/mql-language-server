@@ -32,11 +32,23 @@ public class LanguageDetectionTests
     }
 
     [Fact]
-    public void Detect_Mqh_With_Mql5Token_Point_Returns_Mql5()
+    public void Detect_MqhWithMql4PredefinedVariables_DefaultsToMql4()
     {
+        // `_Point` (like `_Digits`, `_Symbol`, `_Period`) is a predefined variable valid in
+        // both MQL4 (build 600+) and MQL5, so it must not be treated as an MQL5-only marker.
         var uri = new Uri("file:///x.mqh");
         var result = LanguageDetection.Detect(uri, null, "void OnTick() { double p = _Point; }");
-        Assert.Equal(MqlLanguage.Mql5, result);
+        Assert.Equal(MqlLanguage.Mql4, result);
+    }
+
+    [Fact]
+    public void Detect_Mqh_With_Remaining_Mql5Token_Returns_Mql5()
+    {
+        // Tokens that remain MQL5-exclusive (nullptr, #resource, union, pack(, enum class)
+        // must still route .mqh content to MQL5.
+        var uri = new Uri("file:///x.mqh");
+        Assert.Equal(MqlLanguage.Mql5, LanguageDetection.Detect(uri, null, "void f() { int* p = nullptr; }"));
+        Assert.Equal(MqlLanguage.Mql5, LanguageDetection.Detect(uri, null, "union U { int a; };"));
     }
 
     [Fact]

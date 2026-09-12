@@ -75,7 +75,7 @@ public class DidOpenLanguageRoutingTests
     {
         var uri = DocumentUri.Parse("file:///shared.mqh");
         var handler = CreateHandler();
-        var request = CreateParams(uri, null, "void f() { double p = _Point; }");
+        var request = CreateParams(uri, null, "void f() { int* p = nullptr; }");
 
         await handler.Handle(request, CancellationToken.None);
 

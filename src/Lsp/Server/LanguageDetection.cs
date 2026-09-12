@@ -14,13 +14,16 @@ public static class LanguageDetection
     /// MQL5-exclusive tokens used for content sniffing on .mqh files.
     /// F9: `using` and `final` are intentionally excluded because they are valid in MQL4.
     /// </summary>
+    /// <remarks>
+    /// Tradeoff: a genuinely-MQL5 .mqh that uses none of these tokens falls back to the
+    /// MQL4 default. This is an inherent ambiguity of content sniffing; issue #16 Phase 2
+    /// mitigates it by routing .mqh files by their includer. The predefined variables
+    /// `_Digits`, `_Point`, `_Symbol`, and `_Period` are excluded here on purpose: they are
+    /// valid in both MQL4 (build 600+) and MQL5, so they must not be treated as MQL5 markers.
+    /// </remarks>
     private static readonly string[] Mql5Tokens =
     {
         "nullptr",
-        "_Digits",
-        "_Point",
-        "_Symbol",
-        "_Period",
         "#resource",
         "union",
         "pack(",
