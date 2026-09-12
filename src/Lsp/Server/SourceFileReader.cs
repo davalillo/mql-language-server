@@ -56,6 +56,36 @@ public static class SourceFileReader
                 $"Path is outside the declared workspace folders: {filePath}");
         }
 
+        return ReadAllTextUncontained(filePath);
+    }
+
+    /// <summary>
+    /// Containment-exempt read used exclusively by parser-internal disk reads
+    /// (<c>ParseFileFromPath</c> in Mql4AntlrParser and Mql5AntlrParser).
+    ///
+    /// Issue #18 regression: <c>ParseFileFromPath</c> is NOT client-driven.
+    /// Its callers were traced (see <c>IMqlParser</c>): every LSP handler reads
+    /// the file itself via <see cref="ReadAllText"/> and then parses the
+    /// content with <c>IMqlParser.ParseFile</c>; the only production consumers
+    /// of
+    /// ParseFileFromPath/ParseFileWithIncludes are tests parsing fixture files
+    /// under the repository, which live outside any client-declared workspace
+    /// root. Routing them through the guarded funnel broke them whenever a
+    /// prior test in the same process left workspace roots declared. The LSP
+    /// surface (client-supplied URIs) keeps the guarded funnel — the security
+    /// guarantee is unchanged.
+    /// </summary>
+    public static string ReadAllTextUncontained(string filePath)
+    {
+        if (!WorkspaceRoots.IsReadAllowed(filePath))
+        {
+            Log.Warning(
+                "Blocked read outside declared workspace roots: {FilePath}",
+                filePath);
+            throw new UnauthorizedAccessException(
+                $"Path is outside the declared workspace folders: {filePath}");
+        }
+
         var content = File.ReadAllText(filePath);
 
         if (!ContainsNulInOpeningPortion(content))

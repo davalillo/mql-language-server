@@ -116,7 +116,12 @@ namespace MqlLanguageServer.Parser
                 throw new FileNotFoundException($"MQL4 file not found: {filePath}");
             }
 
-            var content = SourceFileReader.ReadAllText(filePath);
+            // Parser-internal read, NOT client-driven (see IMqlParser): every
+            // LSP handler reads the file itself via SourceFileReader.ReadAllText
+            // (guarded) and parses content. This path is used by tests on repo
+            // fixtures outside any declared workspace root, so it must bypass
+            // the client-URI containment guard.
+            var content = SourceFileReader.ReadAllTextUncontained(filePath);
             return ParseFile(content, filePath);
         }
 
