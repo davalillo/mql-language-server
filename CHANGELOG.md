@@ -1,10 +1,20 @@
-## [Unreleased]
+## [2.1.0] - 2026-09-12
 
 ### Added
 - feat(parser): include file path and grammar in ANTLR error logs
   - Unified error format: `[MQL4/MQL5] file:line:col: syntax error - msg`
   - New `LexerErrorListener` so lexer errors are no longer anonymous
   - Leading UTF-8 BOM stripped before parsing
+- feat(parser): CAppDialog/stdlib event-map macro support (#26)
+  - New `StdlibMacroCallRegistry` holds the stdlib Controls event-map macro family (`EVENT_MAP_BEGIN`/`END`, `ON_EVENT`, `ON_EVENT_PTR`, `ON_NO_ID_EVENT`, `ON_NAMED_EVENT`, `ON_INDEXED_EVENT`, `ON_EXTERNAL_EVENT`); `StdlibMacroInvocationFilter` rewrites each known invocation into a synthetic `;` no-op before parsing, keeping token positions so symbol/occurrence extraction is unaffected
+  - `Account_Protector.mqh` parses with 0 errors (was 139)
+- feat(parser): more valid MQL constructs accepted in both grammars (#26)
+  - `inline` keyword (new `K_INLINE` lexer token)
+  - Pointer member declarators (e.g. `CChartObjectButton *m_button;`)
+  - Functional primitive casts (e.g. `(int)value`)
+- feat(lsp): OS-appropriate log directory with capped retention and multi-window sharing (#21)
+  - New `LogPaths`: `%LOCALAPPDATA%\mql-lsp-server\logs` (Windows), `$XDG_CACHE_HOME`/`~/.cache` (Linux), `~/Library/Logs` (macOS); replaces the old CWD log file with unbounded daily retention
+  - Serilog sink: daily rolling, 7-day retention, 20 MB/day size cap with roll-on-size, `shared: true` so concurrent editor windows share the log
 
 ### Fixed
 - fix(lsp): decode UTF-16 LE files without BOM (#15)
@@ -14,14 +24,51 @@
 - fix(build): update Build Date on every build
   - `BuildConstants.cs` (static, hardcoded) removed; the build date is now embedded as `AssemblyMetadata` at compile time and read from the assembly, with an `unknown` fallback for pre-existing binaries
   - Incremental builds that skip recompilation keep the previous stamp by design
+- fix(parser): StackOverflow on deep nesting eliminated via input guards (#20)
+  - ANTLR's recursive-descent parser consumes a call-stack frame per bracket nesting level; `StackOverflowException` is not catchable in .NET and kills the LSP process
+  - New `ParseInputGuard` pre-scan (shared by handler paths and parser-internal include chains): one linear pass measures bracket/paren depth (skipping strings, chars, and comments) with a depth cap of 200, plus an input size cap and parse cancellation propagation, rejecting pathological input before recursion starts
+- fix(lsp): parse-exception errors routed to stderr instead of stdout (#21)
+  - Both parser wrappers emitted plain text via `Console.WriteLine` into the JSON-RPC stdout channel, desynchronizing the client; both now use `Console.Error` (tested: stdout stays empty)
+- fix(lsp): single-read file decoding removes TOCTOU window (#21)
+  - Handlers read the file once and parse the in-memory content instead of reading once for indexing and again for parsing, so a file changed between the two reads could no longer desynchronize diagnostics from content
+- fix(lsp): graceful flush before stdin-EOF exit (#21)
+  - The server now flushes pending outbound notifications (in-progress diagnostics) before exiting when stdin closes, so final diagnostic batches are not dropped
+- fix(build): server version derived from the assembly (#22)
+  - `--version` and the LSP `initialize` response (new `serverInfo`) report the real version from `<Version>` (e.g. 2.0.1), not the stale hardcoded `1.0.0`; `ServerVersion.Version` is the single derivation point
+- fix(build): `install-local-tool.sh` derives the version from the packed `.nupkg` (#22)
+  - The install script no longer relies on a stale hardcoded version when installing the local build
+- fix(tests): MemoryProfilingTests LOH flake eliminated via aggressive-GC retry (#27)
+  - The Account_Protector LOH budget assertion snapshots the shared xunit test-process heap; tests running before it leave GC/LOH fragmentation that a single forced GC does not recover. The assertion now retries with aggressive GC collection before failing
 
 ### Security
 - ci(security): add CodeQL analysis workflow (`.github/workflows/codeql.yml`)
   - C# analysis with the `security-extended` query suite on every push/PR to `main` plus a weekly scheduled scan; results uploaded to the Security tab
+- fix(security): workspace path containment enforced for all client file reads (#18)
+  - Document/workspace LSP handlers resolved client-supplied `file://` URIs and read files from disk without validating containment against declared workspace folders; a malicious client could make the server read arbitrary files (e.g. `file:///etc/shadow`). All such reads are now validated by `PathSecurity.IsContainedInWorkspace`
+- fix(security): `PathSecurity` fails closed on symlink-resolution failure (#21)
+  - `ResolveRealPath` silently fell back to the unresolved path when `ResolveLinkTarget` threw, so a failed security check defaulted to "allow". The queried path (resolved include / file being read) is now rejected on resolution failure; server-side reference paths keep best-effort lexical fallback
+- ci(security): GitHub Actions pinned to commit SHAs and template-injection surface removed (#19)
+  - All action references pinned to full commit SHAs (with version-tag comments) in `build.yml`, `ci.yml`, and `codeql.yml`, so a re-pointed mutable tag cannot inject code into the release workflow (`contents:write`); the `github-script`/expression interpolation points flagged by the audit no longer embed untrusted input
+- chore(legal): third-party notices shipped in the package and dependency pins (#24)
+  - `THIRD-PARTY-NOTICES.md` credits every package in the resolved dependency graph and is included in the NuGet tool package
+  - `Newtonsoft.Json` and `MediatR` pinned to exact versions to block transitive drift
 
 ### Changed
 - ci(release): name GitHub releases by tag only (`v2.0.1` instead of `MQL Language Server v2.0.1`) so the version is fully visible in the sidebar; existing releases renamed to match
 - docs(contributing): document issue-reference conventions — closing keywords (`Fixes #N`) in commits and PR descriptions for automatic issue closure and Development-sidebar traceability
+- refactor(parser): include-path resolution unified into `IncludePathResolver` (#25)
+  - Four drifted copies of include extraction/resolution (didOpen/didChange handlers, Mql4AntlrParser, Mql5AntlrParser, plus the WorkspaceIndexer scan pass) collapse into one service. The handler and parser copies re-ran the raw-directive regex over stored entries, which never matches — three were inert in production. Quoted-include resolution now actually works in didOpen/didChange indexing and the MQL5 include merge
+- refactor(parser): macro extraction and error listeners extracted from the parser wrapper (#25)
+  - Partial split of the `Mql4AntlrParser` god class (1307 → 1020 lines), mirrored for MQL5: `MacroExtractor` (token-stream macro extraction parameterized by the grammar's `PRE_DEFINE` token type) and shared ANTLR error listeners move to `src/Parser/`
+- refactor(lsp): `GlobalSymbolIndex` direct singleton access replaced by an injectable accessor (#25)
+  - Handlers no longer read the shared symbol index through `GlobalSymbolIndex.Instance`; a `GlobalSymbolIndexAccessor` registered in the composition root flows through `LanguageAwareHandlerBase` / `WorkspaceIndexer` constructors (13 call sites)
+
+### Documentation
+- docs: first-visit pass
+  - Stale versions and test counts fixed across README.md/README.es.md/README.ru.md (91 → 827 tests, with a CHANGELOG pointer instead of a drifting hardcoded claim); example release tag refreshed; standard-library event-map macro support added to the Features bullet
+  - Resolved-security section corrected to remove the contradiction between the historical audit record and the current verified state
+  - Developer docs moved out of the landing surface into `benchmarks/`
+  - `CODEOWNERS` added; `llms.txt` added for AI-agent doc discovery (this release)
 
 ## [2.0.1] - 2026-09-12
 
