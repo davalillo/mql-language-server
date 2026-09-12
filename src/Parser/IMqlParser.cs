@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using MqlLanguageServer.Models;
 
 namespace MqlLanguageServer.Parser;
@@ -13,6 +14,13 @@ public interface IMqlParser
     /// Parse a file from its content.
     /// </summary>
     MqlFile ParseFile(string content, string filePath = "unknown");
+
+    /// <summary>
+    /// Parse a file from its content with cooperative cancellation.
+    /// Oversized or pathologically nested input (issue #20) is rejected
+    /// gracefully via a SyntaxError instead of crashing the server.
+    /// </summary>
+    MqlFile ParseFile(string content, string filePath, CancellationToken cancellationToken);
 
     /// <summary>
     /// Parse a file from a file path.

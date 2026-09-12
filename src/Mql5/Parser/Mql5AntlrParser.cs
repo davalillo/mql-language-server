@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
+using System.Threading;
 using Mql5Grammar;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
@@ -26,20 +27,89 @@ public class Mql5AntlrParser : IMqlParser
     }
 
     /// <summary>
+    /// Parse an MQL5 file from its content with cooperative cancellation.
+    ///
+    /// The guard (size + nesting pre-scan, issue #20) runs before ANTLR
+    /// lexing/parsing so pathological inputs produce a catchable syntax
+    /// error instead of an uncatchable StackOverflowException; a canceled
+    /// token aborts the parse between pre-scan, lexing, and the
+    /// recursive-descent pass. The token cannot abort ANTLR mid-recursion,
+    /// but the pre-scan bounds how deep that recursion can go.
+    /// </summary>
+    public MqlFile ParseFile(string content, string filePath, CancellationToken cancellationToken)
+    {
+        var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
+        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
+
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Pre-parse guard (issue #20): reject oversized inputs and
+            // expression nesting deep enough to blow the call stack.
+            var guardError = ParseInputGuard.Check(content, filePath, "MQL5");
+            if (guardError != null)
+            {
+                parsedFile.SyntaxErrors = new List<SyntaxError> { guardError };
+                return parsedFile;
+            }
+
+            return ParseFile(content, filePath, errorListener, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is cooperative, not an error: return whatever was
+            // collected so far so callers can decide what to publish.
+            parsedFile.SyntaxErrors = errorListener.Errors;
+            return parsedFile;
+        }
+    }
+
+    /// <summary>
     /// Parse an MQL5 file from its content.
     /// </summary>
     public MqlFile ParseFile(string content, string filePath = "unknown")
     {
+        // Non-cancellation entry point: still guarded (issue #20) so
+        // parser-internal paths (include chains, tests) can never recurse
+        // into pathological input either.
+        var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
+        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
+
+        try
+        {
+            var guardError = ParseInputGuard.Check(content, filePath, "MQL5");
+            if (guardError != null)
+            {
+                parsedFile.SyntaxErrors = new List<SyntaxError> { guardError };
+                return parsedFile;
+            }
+
+            return ParseFile(content, filePath, errorListener, CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+            parsedFile.SyntaxErrors = errorListener.Errors;
+            return parsedFile;
+        }
+    }
+
+    /// <summary>
+    /// Core parse pipeline shared by all entry points.
+    /// </summary>
+    private MqlFile ParseFile(
+        string content, string filePath, Mql5SyntaxErrorListener errorListener, CancellationToken cancellationToken)
+    {
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
         var symbolsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
-
-        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
 
         try
         {
             // Strip a leading UTF-8 BOM (\uFEFF); the grammar has no token for it and
             // it would otherwise surface as a lexer "token recognition error" at 1:0.
             content = content.TrimStart('\uFEFF');
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var inputStream = new AntlrInputStream(content);
             var lexer = new Mql5GrammarLexer(inputStream);
@@ -55,6 +125,8 @@ public class Mql5AntlrParser : IMqlParser
 
             parser.RemoveErrorListeners();
             parser.AddErrorListener(errorListener);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var tree = parser.compilationUnit();
             var visitor = new Mql5SymbolVisitor(filePath);

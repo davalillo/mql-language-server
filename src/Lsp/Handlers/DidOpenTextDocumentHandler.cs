@@ -91,7 +91,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 var filePath = documentUri.AbsolutePath ?? "unknown";
                 var parser = ResolveParser(language);
 
-                var mqlFile = parser.ParseFile(content, filePath);
+                var mqlFile = parser.ParseFile(content, filePath, cancellationToken);
                 mqlFile.Language = language;
 
                 _documentStore.AddOrUpdate(documentUri, mqlFile, content, language);
@@ -129,7 +129,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                             // sniffed language is intentionally ignored here.
                             var includeLanguage = language;
 
-                            var includeFile = parser.ParseFile(includeContent, includeFullPath);
+                            var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
                             includeFile.Language = includeLanguage;
                             // OCC-03: occurrence-aware re-index, same rationale as above.
                             GlobalSymbolIndex.Instance.AddFile(

@@ -118,7 +118,12 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
             {
                 var parser = ResolveParser(language);
                 var filePath = request.TextDocument.Uri.GetFileSystemPath() ?? (language == MqlLanguage.Mql5 ? "unknown.mq5" : "unknown.mq4");
-                mqlFile = parser.ParseFile(content, filePath);
+                // Issue #20: thread the (linked) cancellation token into the
+                // parse so the 2s timeout can abort between pre-scan, lexing,
+                // and the recursive-descent pass. Oversized/deeply nested
+                // input is rejected by the parser's pre-parse guard as a
+                // regular SyntaxError, which GenerateDiagnostics publishes.
+                mqlFile = parser.ParseFile(content, filePath, token);
                 _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 

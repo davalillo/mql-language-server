@@ -95,6 +95,25 @@ public static class Constants
         public const long MaxFileSize = 10 * 1024 * 1024; // 10MB
 
         /// <summary>
+        /// Maximum source length accepted by the parser (in characters).
+        /// Inputs above this limit are rejected BEFORE lexing (issue #20):
+        /// ANTLR's CommonTokenStream.Fill() materializes every token, and
+        /// parsing huge inputs cannot be aborted by a CancellationToken once
+        /// the recursive-descent pass starts.
+        /// </summary>
+        public const int MaxParseSourceLength = 10 * 1024 * 1024; // 10M chars
+
+        /// <summary>
+        /// Maximum bracket/parenthesis nesting depth accepted by the parser.
+        /// The MQL grammars use left-recursive expression rules, so ANTLR's
+        /// recursive-descent parser consumes roughly one call-stack frame per
+        /// nesting level; StackOverflowException is not catchable in .NET and
+        /// would kill the LSP process. Real MQL code never exceeds ~30 levels
+        /// (issue #20), so 200 leaves a wide safety margin.
+        /// </summary>
+        public const int MaxParseNestingDepth = 200;
+
+        /// <summary>
         /// Cache expiration time for parsed documents (in minutes)
         /// </summary>
         public const int CacheExpirationMinutes = 60;

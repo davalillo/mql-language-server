@@ -198,7 +198,7 @@ public class WorkspaceIndexer
 
             try
             {
-                IndexMqhFile(mqhPath, includerLanguagesByMqh);
+                IndexMqhFile(mqhPath, includerLanguagesByMqh, token);
                 indexed++;
             }
             catch (Exception ex)
@@ -274,7 +274,8 @@ public class WorkspaceIndexer
         var language = LanguageDetection.Detect(uri, null, content);
         var parser = _languageService.ResolveParser(language);
 
-        var parsedFile = parser.ParseFile(content, path);
+        // Issue #20: thread the scan's cancellation token into the parse.
+        var parsedFile = parser.ParseFile(content, path, token);
         parsedFile.Language = language;
 
         // Record which language includes each resolved .mqh so pass B can
@@ -310,7 +311,8 @@ public class WorkspaceIndexer
     /// sniffing or skipping.
     /// </summary>
     private void IndexMqhFile(string path,
-        IReadOnlyDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh)
+        IReadOnlyDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh,
+        CancellationToken token)
     {
         var content = SourceFileReader.ReadAllText(path);
         var uri = new Uri(path);
@@ -325,7 +327,8 @@ public class WorkspaceIndexer
         var language = ResolveMqhLanguage(path, includerLanguagesByMqh, content);
         var parser = _languageService.ResolveParser(language);
 
-        var parsedFile = parser.ParseFile(content, path);
+        // Issue #20: thread the scan's cancellation token into the parse.
+        var parsedFile = parser.ParseFile(content, path, token);
         parsedFile.Language = language;
 
         GlobalSymbolIndex.Instance.AddFile(

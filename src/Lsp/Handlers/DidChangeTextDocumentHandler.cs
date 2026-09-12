@@ -84,7 +84,10 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
                 var filePath = documentUri.AbsolutePath ?? "unknown";
 
                 var parser = ResolveParser(language);
-                var newMqlFile = parser.ParseFile(newContent, filePath);
+                // Issue #20: propagate the request's CancellationToken into
+                // the parse so pathological input can be aborted between
+                // pre-scan / lexing / recursive-descent phases.
+                var newMqlFile = parser.ParseFile(newContent, filePath, cancellationToken);
 
                 _documentStore.AddOrUpdate(documentUri, newMqlFile, newContent, language);
 
