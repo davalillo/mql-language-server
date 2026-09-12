@@ -19,6 +19,7 @@ Implementación del Language Server Protocol (LSP) para MQL4 y MQL5 (MetaTrader 
 - Autocompletado
 - Hover
 - Diagnósticos
+- Navegación de macros de la biblioteca estándar: las macros de mapa de eventos de la librería Controls de MQL (`ON_EVENT`, `EVENT_MAP_BEGIN`/`EVENT_MAP_END` y las macros `ON_*` relacionadas) se reconocen para que el código de paneles CAppDialog/Controls se analice y navegue correctamente
 
 ## Soporte de MQL5
 
@@ -237,27 +238,9 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 - ✅ NuGet Packaging: pack.ps1 script disponible
 - ✅ Repository: https://github.com/davalillo/mql-language-server
 
-## ⚠️ Vulnerabilidades de paquetes NuGet
+## Seguridad
 
-Advertencias de build: el proyecto muestra 4 advertencias de vulnerabilidades NuGet procedentes de dependencias transitivas:
-
-- `System.Net.Http` 4.3.0 (HIGH)
-- `Microsoft.Build.Utilities.Core` 17.8.3 (HIGH)
-- `System.Private.Uri` 4.3.0 (HIGH/MODERATE)
-
-**Evaluación**: ✅ **Sin impacto en la funcionalidad**
-
-Estas son vulnerabilidades en **dependencias transitivas** (dependencias de dependencias) que:
-- Están profundamente integradas en el ecosistema .NET
-- No son usadas directamente por nuestro código
-- No se pueden actualizar fácilmente sin cambios incompatibles
-- **No afectan a nuestro servidor LSP**, el cual:
-  - Se ejecuta como proceso independiente (no como librería)
-  - No realiza peticiones HTTP
-  - No analiza URIs externos
-  - Solo lee archivos MQL localmente
-
-Consulte [SECURITY_ANALYSIS.md](docs/references/SECURITY.md) para ver el análisis detallado y la justificación.
+Las advertencias de vulnerabilidades NuGet descritas en revisiones anteriores de esta sección fueron **resueltas el 2026-09-10**: las dependencias transitivas vulnerables se eliminaron mediante actualizaciones de dependencias y la auditoría del build está limpia. Consulte [docs/references/SECURITY.md](docs/references/SECURITY.md) para el análisis histórico.
 
 ## Pruebas
 
@@ -266,7 +249,7 @@ Ejecutar las pruebas unitarias:
 dotnet test
 ```
 
-Cobertura de pruebas: 91 pruebas integrales que cubren el parser, los handlers LSP y casos límite.
+Cobertura de pruebas: 827 pruebas (consulte el [CHANGELOG](CHANGELOG.md) para conocer el estado actual de la suite) que cubren el parser, los handlers LSP y casos límite.
 
 ### Cobertura de código con Coverlet
 
@@ -415,9 +398,10 @@ Builds y releases automatizados mediante GitHub Actions:
 ### Desencadenadores del workflow:
 
 **Rama main** (CI rápido):
-- ✅ Builds multiplataforma (Ubuntu, Windows, macOS)
-- ✅ Pruebas automatizadas (pruebas unitarias)
+- ✅ Build + pruebas unitarias en cada push a `main` y en cada PR
+- ✅ Solo Ubuntu (la validación multiplataforma se realiza en el momento del release)
 - ⚡ Sin generación de artefactos (más rápido)
+- ⚡ Pruebas de rendimiento y FpMeasurement excluidas (sensibles al tiempo; se ejecutan localmente)
 
 **Tags v\*** (releases):
 - ✅ Builds multiplataforma
@@ -436,8 +420,8 @@ git push origin main
 # → Build + Tests (~3-5 minutes)
 
 # Release
-git tag v1.2.0
-git push origin v1.2.0
+git tag v2.0.1
+git push origin v2.0.1
 # → Build + Tests + Release + Artifacts (~15-20 minutes)
 # → All artifacts uploaded to GitHub Releases automatically
 ```

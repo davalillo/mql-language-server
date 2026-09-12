@@ -281,5 +281,5 @@ Para cada release (v2.0.0, v2.1.0, etc.):
 
 ---
 
-**Versión**: 2.0.0-rc.1
+**Versión**: v2.0.1
 **Autor**: MQL Language Server Team

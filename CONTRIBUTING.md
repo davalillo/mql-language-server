@@ -37,6 +37,22 @@ Tests live in `tests/` and reference the server project (`src/MqlLanguageServer.
 
 CI runs the suite with the Performance folder excluded (`dotnet test --filter "FullyQualifiedName!~Performance"`); performance tests are timing-sensitive and flaky on hosted runners.
 
+## Code Coverage
+
+The repository ships helper scripts that run the suite under [Coverlet](https://github.com/coverlet-coverage/coverlet) and generate reports in several formats:
+
+```bash
+# Linux/macOS
+./coverage.sh
+
+# Windows PowerShell
+.\coverage.ps1
+```
+
+Reports are written to `coverage/`: `coverage/html/index.html` (interactive HTML report for humans), `coverage/coverage_report.md` (compact Markdown summary), `coverage/coverage_summary.csv` (per-class metrics), `coverage/coverage.json` (full line-by-line data), and `coverage/coverage.xml` (OpenCover XML for CI tooling such as Codecov or SonarQube).
+
+Both scripts auto-install the required tools (`coverlet.console`, `dotnet-reportgenerator-globaltool`) if missing. To exclude ANTLR-generated code from the metrics, see the `--exclude-by-file` parameters inside the scripts.
+
 ### Test Fixtures
 
 The `tests/fixtures/` directory contains sample MQL4/MQL5 files used by the test suite. These fixtures have their own permissive licenses. **Do not add private, proprietary, or copyrighted MQL4/MQL5 code to the fixtures** — only include material you have the right to distribute under a permissive license.

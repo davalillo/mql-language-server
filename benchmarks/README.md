@@ -194,7 +194,7 @@ ls run-benchmark.sh
 
 ### ".NET SDK not found"
 
-Install .NET SDK 8.0 or later:
+Install .NET SDK 10 or later:
 
 ```bash
 # Ubuntu/Debian
@@ -315,9 +315,6 @@ complete -F _benchmark_completion run-benchmark.sh
 ```bash
 # Compare two arbitrary milestones
 diff <(jq . benchmarks/milestone1.json) <(jq . benchmarks/milestone2.json)
-
-# Or use a more detailed comparison script
-./compare-milestones.sh milestone1 milestone2
 ```
 
 ## 📝 Examples from Actual Use

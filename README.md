@@ -19,6 +19,7 @@ Language Server Protocol (LSP) implementation for MQL4 and MQL5 (MetaTrader 4/5)
 - Completion
 - Hover
 - Diagnostics
+- Standard-library macro navigation: event-map macros from the MQL Controls library (`ON_EVENT`, `EVENT_MAP_BEGIN`/`EVENT_MAP_END`, and related `ON_*` macros) are recognized so CAppDialog/Controls panel code parses and navigates cleanly
 
 ## MQL5 Support
 
@@ -237,27 +238,9 @@ No additional steps required. Antlr4BuildTasks handles everything automatically.
 - ✅ NuGet Packaging: pack.ps1 script available
 - ✅ Repository: https://github.com/davalillo/mql-language-server
 
-## ⚠️ NuGet Package Vulnerabilities
+## Security
 
-Build warnings: The project shows 4 NuGet vulnerability warnings from transitive dependencies:
-
-- `System.Net.Http` 4.3.0 (HIGH)
-- `Microsoft.Build.Utilities.Core` 17.8.3 (HIGH)
-- `System.Private.Uri` 4.3.0 (HIGH/MODERATE)
-
-**Assessment**: ✅ **No impact on functionality**
-
-These are vulnerabilities in **transitive dependencies** (dependencies of dependencies) that:
-- Are deep in the .NET ecosystem
-- Are not directly used by our code
-- Cannot be easily updated without breaking changes
-- **Do not affect our LSP server** which:
-  - Runs as standalone process (not library)
-  - Does not make HTTP requests
-  - Does not parse external URIs
-  - Only reads MQL files locally
-
-See [SECURITY_ANALYSIS.md](docs/references/SECURITY.md) for detailed analysis and justification.
+The NuGet vulnerability warnings described in earlier revisions of this section were **resolved on 2026-09-10**: the vulnerable transitive dependencies were eliminated by dependency updates, and the build audit is clean. See [docs/references/SECURITY.md](docs/references/SECURITY.md) for the historical analysis.
 
 ## Testing
 
@@ -266,7 +249,7 @@ Run unit tests:
 dotnet test
 ```
 
-Test coverage: 91 comprehensive tests covering parser, LSP handlers, and edge cases.
+Test coverage: 827 tests (see the [CHANGELOG](CHANGELOG.md) for the current suite status) covering the parser, LSP handlers, and edge cases.
 
 ### Code Coverage with Coverlet
 
@@ -437,8 +420,8 @@ git push origin main
 # → Build + Tests (~3-5 minutes)
 
 # Release
-git tag v1.2.0
-git push origin v1.2.0
+git tag v2.0.1
+git push origin v2.0.1
 # → Build + Tests + Release + Artifacts (~15-20 minutes)
 # → All artifacts uploaded to GitHub Releases automatically
 ```

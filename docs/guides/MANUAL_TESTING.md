@@ -274,7 +274,7 @@ MQL4 and MQL5 parsers are ANTLR-based. If parsing fails:
 
 1. **Check Language ID**: Ensure file has `.mq4`, `.mq5`, or `.mqh` extension
 2. **Restart LSP**: Close and reopen file
-3. **Check Capabilities**: Run with `--verbose` flag
+3. **Check Capabilities**: Run with `--version` flag
 
 ## 📊 Expected Test Results
 

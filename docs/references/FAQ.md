@@ -30,10 +30,10 @@ Currently supported:
 
 The server is actively developed and tested:
 - ✅ Built on proven technologies (ANTLR 4.13.1, .NET 10)
-- ✅ Fully tested (714 tests as of v2.0.0-rc.1)
+- ✅ Fully tested (827 tests; see CHANGELOG for the current suite status)
 - ✅ Cross-platform (Linux, Windows, macOS Intel and Apple Silicon)
 - ✅ Standalone (no .NET runtime required)
-- ℹ️ v2.0.0 is currently a release candidate (`2.0.0-rc.1`); the stable channel points to the previous 1.x release
+- ℹ️ Current stable release: v2.0.1
 
 ## Installation
 
@@ -267,27 +267,19 @@ Binaries will be in `src/bin/Release/net10.0/<rid>/publish/`
 
 ### Can I extend the parser?
 
-Yes! The parser uses ANTLR 4.13.1:
-
-1. **Modify grammar**: Edit `src/Mql4/Grammar/Mql4Grammar.g4`
-2. **Regenerate parser**: Run `dotnet build -c Release` (auto-generates)
-3. **Update visitor**: Modify `src/Parser/Mql4AntlrParser.cs`
-
-Binaries will be in `src/bin/<rid>/` (e.g., `src/bin/linux-x64/mql-lsp-server`)
-
-### Can I extend the parser?
-
 Yes! The parsers use ANTLR 4.13.1:
 
 1. **Modify grammar**: Edit `src/Mql4/Grammar/Mql4Grammar.g4` or `src/Mql5/Grammar/Mql5Grammar.g4`
 2. **Regenerate parser**: Run `dotnet build -c Release` (auto-generates)
 3. **Update visitor**: Modify `src/Parser/Mql4AntlrParser.cs` or `src/Mql5/Parser/Mql5AntlrParser.cs`
 
+Binaries will be in `src/bin/Release/net10.0/<rid>/publish/`
+
 ### What's the roadmap?
 
 See [CHANGELOG.md](../../CHANGELOG.md) for the full version history. Recent highlights:
 
-**v2.0.0-rc.1** (current):
+**v2.0.1** (current stable):
 - MQL5 support (first-class `.mq5`/`.mqh` parsing and LSP features)
 - Token-backed references (false-positive rate 15.52% → 0.00%)
 - Workspace indexing at startup
@@ -355,7 +347,7 @@ Yes! MIT licensed. You can:
 - ✅ Use commercially
 - ✅ Keep private
 
-See [LICENSE](LICENSE) for full license text.
+See [LICENSE](../../LICENSE) for full license text.
 
 ### How do I verify downloads?
 
