@@ -421,8 +421,56 @@ public class MemoryProfilingTests
         // to the symbol count, so a few MB of retained state is acceptable; a
         // leak would show tens of MB. Budget: 64 MB headroom (generous for LOH
         // fragmentation on CI hosts).
-        Assert.True(retainedMb < 64.0,
-            $"Retained managed memory {retainedMb:F2} MB exceeds 64 MB budget — possible leak");
+        const double retainedBudgetMb = 64.0;
+
+        if (retainedMb >= retainedBudgetMb)
+        {
+            // Noise-vs-leak retry (issue #27). This assertion snapshots the
+            // SHARED xunit test-process heap: tests running before this one can
+            // leave GC/LOH fragmentation that a single forced GC does not always
+            // fully release, so the first measurement occasionally overshoots the
+            // budget even though the parse itself is clean (verified ~1/6 full-
+            // suite runs, while isolated runs retain ~26 MB — half the budget).
+            // A real leak stays pinned after ANY amount of collection; noise
+            // returns below budget once the LOH is compacted and finalizers are
+            // drained. So on the first overshoot we run one deeper recovery
+            // cycle — repeated blocking collects with Aggressive mode (compacts
+            // the LOH) and a finalizer wait between passes — and re-measure
+            // BEFORE failing. Only a second overshoot fails the test, and that
+            // pattern (memory unchanged after deep collection) is a strong leak
+            // signal, so the final message says so. Do NOT "simplify" this away
+            // or raise the budget: the retry preserves the leak sensitivity of
+            // the 64 MB assertion while absorbing heap-measurement noise.
+            _output?.WriteLine(
+                $"  Retained memory {retainedMb:F2} MB >= {retainedBudgetMb:F2} MB budget on first " +
+                "measurement — retrying after deeper GC/LOH recovery (issue #27, measurement-noise guard)");
+
+            for (var pass = 0; pass < 3; pass++)
+            {
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+                GC.WaitForPendingFinalizers();
+            }
+
+            // Final blocking collect so Aggressive-mode work (including LOH
+            // compaction and finalizer-side objects) is reflected in the re-read.
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+
+            var managedAfterRetry = GC.GetTotalMemory(forceFullCollection: false);
+            var retainedBytesRetry = managedAfterRetry - managedBefore;
+            var retainedMbRetry = retainedBytesRetry / 1024.0 / 1024.0;
+
+            _output?.WriteLine(
+                $"  Retained managed memory after deeper GC recovery: {retainedMbRetry:F2} MB ({retainedBytesRetry} bytes)");
+
+            Assert.True(retainedMbRetry < retainedBudgetMb,
+                $"Retained managed memory {retainedMbRetry:F2} MB (first measurement: {retainedMb:F2} MB) still " +
+                $"exceeds {retainedBudgetMb:F2} MB budget even after a deep GC/LOH recovery pass — strong leak " +
+                "signal: the memory did not return below budget after full collection (issue #27).");
+            return;
+        }
+
+        Assert.True(retainedMb < retainedBudgetMb,
+            $"Retained managed memory {retainedMb:F2} MB exceeds {retainedBudgetMb:F2} MB budget — possible leak");
     }
 
     private string GetLargeFixturePath(string fileName)
