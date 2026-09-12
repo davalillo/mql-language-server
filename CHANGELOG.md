@@ -1,3 +1,44 @@
+## [Unreleased]
+
+### Added
+- feat(parser): include file path and grammar in ANTLR error logs
+  - Unified error format: `[MQL4/MQL5] file:line:col: syntax error - msg`
+  - New `LexerErrorListener` so lexer errors are no longer anonymous
+  - Leading UTF-8 BOM stripped before parsing
+
+### Fixed
+- fix(lsp): decode UTF-16 LE files without BOM (#15)
+  - New shared `SourceFileReader.ReadAllText` helper: when the initial decode contains NUL characters in the opening portion (signature of BOM-less UTF-16 LE misread as UTF-8), re-decodes the raw bytes as UTF-16 LE and keeps the result only if it is clean; the retry never throws
+  - All ~24 `File.ReadAllText` call sites across handlers, `WorkspaceIndexer`, and both ANTLR parsers now route through the helper
+  - Fixes corrupted symbols, navigation, and diagnostics for MetaEditor-era files touched by external tools
+- fix(build): update Build Date on every build
+  - `BuildConstants.cs` (static, hardcoded) removed; the build date is now embedded as `AssemblyMetadata` at compile time and read from the assembly, with an `unknown` fallback for pre-existing binaries
+  - Incremental builds that skip recompilation keep the previous stamp by design
+
+### Security
+- ci(security): add CodeQL analysis workflow (`.github/workflows/codeql.yml`)
+  - C# analysis with the `security-extended` query suite on every push/PR to `main` plus a weekly scheduled scan; results uploaded to the Security tab
+
+### Changed
+- ci(release): name GitHub releases by tag only (`v2.0.1` instead of `MQL Language Server v2.0.1`) so the version is fully visible in the sidebar; existing releases renamed to match
+- docs(contributing): document issue-reference conventions — closing keywords (`Fixes #N`) in commits and PR descriptions for automatic issue closure and Development-sidebar traceability
+
+## [2.0.1] - 2026-09-12
+
+### Fixed
+- fix(lsp): route `.mqh` headers by includer language, not content (#16)
+  - A header's language is decided by who includes it, not by its content
+  - `WorkspaceIndexer` scans in two passes: unambiguous `.mq4`/`.mq5` sources first (recording resolved includes), then each `.mqh` under its includers' language when they agree; conflicting includers, system headers, and unresolved includes fall back to content sniffing
+  - New `MqhLanguageResolver` consults the index at open time via `GlobalSymbolIndex.GetIndexedLanguage`/`GetIncluderLanguages`, making open order irrelevant
+- fix(lsp): stop treating MQL4-shared predefined variables as MQL5 markers (phase 1 of #16)
+  - `_Digits`, `_Point`, `_Symbol`, `_Period` removed from `Mql5Tokens` in `LanguageDetection`; they exist in both MQL4 (build 600+) and MQL5
+- fix(parser): accept `(void)` destructors and comma-separated for-loop clauses (#17)
+  - `~C(void)` and `C::~C(void) {}` now parse in both grammars
+  - `for(i = 0, j = 0; ...; i++, j += 4)` parses via an expression list in the init/increment slots (comma operator stays out of `expression` to avoid associativity issues)
+
+### Changed
+- build(deps): bump GitHub Actions (checkout 4→7, setup-dotnet 4→6, github-script 7→9, softprops/action-gh-release 2→3) and NSubstitute 5.3.0→6.2.0
+
 ## [2.0.0-rc.1] - 2026-09-10
 
 Release candidate: prerelease for validating the release pipeline (tag/csproj verification, asset publishing) and the token-backed references implementation before sealing the stable 2.0.0. Not marked as `latest`; the stable channel continues pointing at the previous release until 2.0.0 is sealed.
@@ -45,9 +86,6 @@ Release candidate: prerelease for validating the release pipeline (tag/csproj ve
 - docs: remove pinned install version from READMEs/guides; correct .NET 8 reference in `install-local-tool.sh` prerequisite message
 - chore: remove orphan `test_parser` fixtures from repo root
 - ARCHITECTURE.md: handler count updated to 26; dead `DidSaveTextDocumentHandler` node and edges removed
-
-### Removed
-- refactor: removed dead `DidSaveTextDocumentHandler` (never registered). LSP 3.17 makes `didSave` optional and the server does not advertise `save` under `TextDocumentSyncKind.Full`, so conforming clients never send it; `didChange` already re-indexes on every edit under Full sync. The handler also implemented `IDidChangeTextDocumentHandler`, so registering it would have double-handled `didChange` and re-read stale disk content over fresher parses.
 
 ### Technical Details
 - Build: 0 Warnings, 0 Errors
