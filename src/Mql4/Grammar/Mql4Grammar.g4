@@ -73,6 +73,9 @@ K_SINPUT    : 'sinput';
 K_CONST     : 'const';
 K_VIRTUAL   : 'virtual';
 K_OVERRIDE  : 'override';
+// Issue #26: `inline` storage-class keyword on out-of-class member definitions
+// (e.g. `inline bool CClass::Method(...)`). Valid MQL4/MQL5.
+K_INLINE    : 'inline';
 
 K_CLASS     : 'class';
 K_STRUCT    : 'struct';
@@ -195,8 +198,10 @@ directive
 
 // --- Types ---
 // Supports "int", "const int", "int&", "List<T>"
+// Issue #26: also supports object-pointer declarators "CArrayLong *p" via MUL
+// (MQL, like C++, allows pointers to class objects in member declarations).
 type
-    : modifiers? baseType (LT type (COMMA type)* GT)? (BIT_AND)?
+    : modifiers? baseType (LT type (COMMA type)* GT)? (MUL | BIT_AND)?
     ;
 
 baseType
@@ -207,7 +212,7 @@ baseType
     ;
 
 modifiers
-    : (K_CONST | K_STATIC | K_INPUT | K_SINPUT | K_EXTERN | K_VIRTUAL)+
+    : (K_CONST | K_STATIC | K_INPUT | K_SINPUT | K_EXTERN | K_VIRTUAL | K_INLINE)+
     ;
 
 qualifiedName
@@ -386,11 +391,14 @@ flowControlStatement
     ;
 
 // --- Expressions ---
+// Issue #26: functional primitive-type cast "double((datetime)x)" — the cast
+// keyword used as a call-like prefix in argument position (valid MQL).
 expression
     : primaryExpression                                     # atomExpr
     | expression (DOT | ARROW) IDENTIFIER                   # memberAccessExpr
     | expression LBRACKET expression RBRACKET               # arrayIndexExpr
     | expression LPAREN argumentList? RPAREN                # functionCallExpr
+    | primitiveCast LPAREN expression RPAREN                # functionalCastExpr
     | expression (INC | DEC)                                # postfixExpr
     | (INC | DEC) expression                                # prefixExpr
     | (ADD | SUB | BIT_NOT | LOG_NOT) expression            # unaryExpr
@@ -410,6 +418,14 @@ expression
     | expression LOG_OR expression                          # logOrExpr
     | <assoc=right> expression QUESTION expression COLON expression # ternaryExpr
     | <assoc=right> expression assignmentOp expression      # assignmentExpr
+    ;
+
+// Numeric primitive type names usable as functional cast prefixes
+// (e.g. `double((datetime)x)`, `int(y)`).
+primitiveCast
+    : K_INT | K_DOUBLE | K_BOOL
+    | K_DATETIME | K_COLOR
+    | K_CHAR | K_UCHAR | K_SHORT | K_USHORT | K_UINT | K_LONG | K_ULONG | K_FLOAT
     ;
 
 primaryExpression

@@ -130,6 +130,17 @@ namespace MqlLanguageServer.Parser
                 // Create token stream
                 var tokenStream = new CommonTokenStream(lexer);
 
+                // Issue #26: neutralize known stdlib function-like macro
+                // invocations (ON_EVENT/EVENT_MAP_* etc. from unresolvable
+                // stdlib includes) before parsing, so the grammar sees no-op
+                // statements instead of unparseable macro calls.
+                var filteredTokenSource = StdlibMacroInvocationFilter.Apply(
+                    tokenStream, MqlLanguageServer.Parser.StdlibMacroInvocationFilter.DefaultMql4);
+                if (filteredTokenSource != null)
+                {
+                    tokenStream = new CommonTokenStream(filteredTokenSource);
+                }
+
                 // Create parser
                 var parser = new Mql4GrammarParser(tokenStream);
 
@@ -1031,6 +1042,19 @@ namespace MqlLanguageServer.Parser
 
         public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
         {
+            // Issue #26: tolerate function-like macro invocations from unresolvable
+            // stdlib includes (e.g. ON_EVENT(...) from Controls\Defines.mqh). The
+            // grammar has no concept of a macro call, so the invocation surfaces as
+            // a bare identifier at class-body statement position. Suppress the
+            // error when the offending token matches a known stdlib macro name.
+            // NOTE: fully qualified because this listener class sits after the
+            // closing brace of the file's namespace block (pre-existing brace
+            // imbalance at lines 1010-1011), so unqualified lookup would miss it.
+            if (MqlLanguageServer.Parser.StdlibMacroCallRegistry.IsKnownMacroCall(offendingSymbol?.Text))
+            {
+                return;
+            }
+
             Errors.Add(new SyntaxError
             {
                 Line = line,

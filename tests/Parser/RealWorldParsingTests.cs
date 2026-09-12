@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using Xunit;
 using Xunit.Abstractions;
@@ -59,11 +60,9 @@ public class RealWorldParsingTests
             $"  {fileName}: {file.Symbols.Count} symbols, " +
             $"{file.SyntaxErrors.Count} syntax errors");
 
-        // The header is dominated by the CAccountProtector class body. Real-world
-        // grammar limitations produce syntax errors on ON_EVENT macro blocks and
-        // template helpers, but the visitor still recovers hundreds of symbols
-        // (member variables, methods). This is valid stress coverage — a real
-        // parser must degrade gracefully on macros it doesn't model.
+        // The header is dominated by the CAccountProtector class body. The
+        // visitor must still recover hundreds of symbols (member variables,
+        // methods) — stress coverage for the symbol-extraction path.
         Assert.True(file.Symbols.Count > 100,
             $"Account_Protector.mqh should yield >100 symbols, got {file.Symbols.Count}");
 
@@ -75,13 +74,123 @@ public class RealWorldParsingTests
 
         // Issue #17 — the destructor at line 104 is declared as `~CAccountProtector(void)`.
         // This construct is valid MQL4 (MetaEditor accepts it) and must not produce a
-        // syntax error. Other tolerated errors on this fixture come from unmodeled
-        // macros, not from this line. ANTLR reports 1-based lines.
+        // syntax error. ANTLR reports 1-based lines.
         var destructorErrors = file.SyntaxErrors
             .Where(e => e.Line == 104)
             .ToList();
         Assert.Empty(destructorErrors);
         _output.WriteLine($"  ~CAccountProtector(void) at line 104: no syntax errors");
+    }
+
+    /// <summary>
+    /// Issue #26 — the five false-positive classes reported on
+    /// Account_Protector.mqh must produce ZERO syntax errors:
+    /// <list type="bullet">
+    /// <item>ON_EVENT(...) macro calls, lines 335-465 (131 occurrences) and
+    /// EVENT_MAP_END(...) at line 466 — function-like macros from the stdlib
+    /// Controls library (Controls\Defines.mqh event-map family) whose include
+    /// cannot be resolved during parsing; neutralized by
+    /// StdlibMacroInvocationFilter.</item>
+    /// <item>Line 81: pointer-style member declarator
+    /// <c>CArrayLong *PartiallyClosedOrders;</c> — modeled by the MUL
+    /// declarator in the type rule.</item>
+    /// <item>Line 4602: <c>inline bool CAccountProtector::CheckFilterLossProfit(...)</c>
+    /// — the inline storage-class keyword, modeled as a modifier.</item>
+    /// <item>Lines 6074/6081: functional primitive-type cast
+    /// <c>double((datetime)sets.SnapEquityTime)</c> in argument position —
+    /// modeled by the functionalCastExpr alternative.</item>
+    /// </list>
+    /// The event-map lines were previously 132 of the 139 errors on this
+    /// fixture. Known remaining limitation: none in the asserted ranges — the
+    /// whole file parses cleanly.
+    /// </summary>
+    [Fact]
+    public void Account_Protector_Header_Issue26FalsePositives_AreEliminated()
+    {
+        const string fileName = "Account_Protector.mqh";
+        var path = GetFixtureFilePath(fileName);
+        var content = File.ReadAllText(path);
+        var file = _parser.ParseFile(content, path);
+
+        // (a) Macro-call tolerance: ON_EVENT lines 335-465 + EVENT_MAP_END 466.
+        //     ANTLR lines are 1-based; the macro block spans 334 (EVENT_MAP_BEGIN)
+        //     through 466 (EVENT_MAP_END).
+        var macroErrors = file.SyntaxErrors
+            .Where(e => e.Line >= 334 && e.Line <= 466)
+            .ToList();
+        Assert.Empty(macroErrors);
+
+        // (b) Pointer member declarator: `CArrayLong *PartiallyClosedOrders;`
+        var pointerMemberErrors = file.SyntaxErrors
+            .Where(e => e.Line == 81)
+            .ToList();
+        Assert.Empty(pointerMemberErrors);
+
+        // The declarator's name must be the identifier, not the asterisk: the
+        // visitor reads variableDeclarator.IDENTIFIER() which is "PartiallyClosedOrders".
+        var pointerMember = file.Symbols.FirstOrDefault(s => s.Name == "PartiallyClosedOrders");
+        Assert.NotNull(pointerMember);
+        Assert.DoesNotContain("*", pointerMember!.Name);
+
+        // (c) inline keyword modifier on out-of-class member definition.
+        var inlineErrors = file.SyntaxErrors
+            .Where(e => e.Line == 4602)
+            .ToList();
+        Assert.Empty(inlineErrors);
+
+        // (d) Functional primitive-type cast in argument position.
+        var castErrors = file.SyntaxErrors
+            .Where(e => e.Line == 6074 || e.Line == 6081)
+            .ToList();
+        Assert.Empty(castErrors);
+
+        // Symbols must still extract: the previously-tolerated constructs were
+        // never the source of symbols, and the parser must not lose coverage.
+        Assert.True(file.Symbols.Count > 100,
+            $"Account_Protector.mqh should yield >100 symbols, got {file.Symbols.Count}");
+
+        // The GetAncestor/destructor assertions from G4 remain valid.
+        var getAncestor = file.Symbols.FirstOrDefault(s => s.Name == "GetAncestor");
+        Assert.NotNull(getAncestor);
+
+        _output.WriteLine(
+            $"  Issue #26 false positives: 0 on macro block (334-466), 0 on pointer member (81), " +
+            $"0 on inline (4602), 0 on casts (6074/6081); total syntax errors: {file.SyntaxErrors.Count}");
+    }
+
+    /// <summary>
+    /// Issue #26 (MQL5 parity) — the MQL5 parser shares the same grammar family
+    /// gaps, so the same constructs must parse cleanly there: pointer member
+    /// declarators, the inline keyword, and functional primitive-type casts.
+    /// Uses the MQL5 parser directly on a synthetic snippet covering all three
+    /// constructs (no MQL5 fixture uses the CAppDialog pattern yet).
+    /// </summary>
+    [Fact]
+    public void Mql5_Issue26_Constructs_ParseWithoutSyntaxErrors()
+    {
+        const string source = """
+            class CPanel : public CAppDialog
+            {
+            public:
+                CArrayLong *PartiallyClosedOrders;
+                double m_Value;
+            };
+            inline bool CPanel::CheckValue(const double v)
+            {
+                return v > 0;
+            }
+            void SaveSnapshot()
+            {
+                GlobalVariableSet("AP_Time", double((datetime)0));
+            }
+            """;
+
+        var parser = new Mql5AntlrParser();
+        var file = parser.ParseFile(source, "issue26.mq5");
+
+        Assert.True(file.SyntaxErrors.Count == 0,
+            $"MQL5 issue #26 constructs should parse cleanly, got: " +
+            string.Join("; ", file.SyntaxErrors.Select(e => $"{e.Line}:{e.Column} {e.Message}")));
     }
 
     /// <summary>

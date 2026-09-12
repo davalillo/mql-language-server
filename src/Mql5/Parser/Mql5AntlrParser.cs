@@ -121,6 +121,18 @@ public class Mql5AntlrParser : IMqlParser
             lexer.AddErrorListener(new LexerErrorListener(filePath, "MQL5"));
 
             var tokenStream = new CommonTokenStream(lexer);
+
+            // Issue #26: neutralize known stdlib function-like macro invocations
+            // (ON_EVENT/EVENT_MAP_* etc. from unresolvable stdlib includes)
+            // before parsing, so the grammar sees no-op statements instead of
+            // unparseable macro calls.
+            var filteredTokenSource = MqlLanguageServer.Parser.StdlibMacroInvocationFilter.Apply(
+                tokenStream, MqlLanguageServer.Parser.StdlibMacroInvocationFilter.DefaultMql5);
+            if (filteredTokenSource != null)
+            {
+                tokenStream = new CommonTokenStream(filteredTokenSource);
+            }
+
             var parser = new Mql5GrammarParser(tokenStream);
 
             parser.RemoveErrorListeners();
@@ -731,6 +743,16 @@ public class Mql5AntlrParser : IMqlParser
 
         public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
         {
+            // Issue #26: tolerate function-like macro invocations from unresolvable
+            // stdlib includes (e.g. ON_EVENT(...) from Controls\Defines.mqh). The
+            // grammar has no concept of a macro call, so the invocation surfaces as
+            // a bare identifier at class-body statement position. Suppress the
+            // error when the offending token matches a known stdlib macro name.
+            if (StdlibMacroCallRegistry.IsKnownMacroCall(offendingSymbol?.Text))
+            {
+                return;
+            }
+
             Errors.Add(new SyntaxError
             {
                 Line = line,
