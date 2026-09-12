@@ -13,6 +13,7 @@ namespace MqlLanguageServer.Tests.Lsp.Server;
 /// opening portion and otherwise keeps the original decode. Fixtures are
 /// generated at runtime in temp files to avoid committing binary fixtures.
 /// </summary>
+[Collection("source-file-reader")]
 public class SourceFileReaderTests : IDisposable
 {
     private readonly string _tempDirectory;
@@ -20,6 +21,9 @@ public class SourceFileReaderTests : IDisposable
 
     public SourceFileReaderTests()
     {
+        // Issue #18: these fixtures live outside any declared workspace root,
+        // so the guard must be in fail-open mode for these tests to read them.
+        WorkspaceRoots.Clear();
         _tempDirectory = Path.Combine(Path.GetTempPath(), "source-file-reader-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDirectory);
         _tempFile = Path.Combine(_tempDirectory, "fixture.mq5");
@@ -116,5 +120,152 @@ public class SourceFileReaderTests : IDisposable
 
         Assert.Equal(text, content);
         Assert.DoesNotContain('\0', content);
+    }
+}
+
+/// <summary>
+/// Issue #18: the central workspace-containment guard in
+/// SourceFileReader.ReadAllText. WorkspaceRoots is process-wide static state,
+/// so the tests restore the previous root set on dispose and share
+/// [Collection("source-file-reader")] with SourceFileReaderTests: both mutate
+/// the global guard state, and xunit serializes tests within a collection
+/// while collections run in parallel.
+/// </summary>
+[Collection("source-file-reader")]
+public class SourceFileReaderWorkspaceGuardTests : IDisposable
+{
+    private readonly string _workspace;
+    private readonly string _inside;
+    private readonly string _outside;
+    private readonly string _previousRoots;
+
+    public SourceFileReaderWorkspaceGuardTests()
+    {
+        _previousRoots = string.Join("|", WorkspaceRoots.Current);
+        _workspace = Path.Combine(Path.GetTempPath(), "mql-lsp-guard-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_workspace);
+
+        _inside = Write(_workspace, "inside.mq5", "int insideVar;");
+        var outsideDir = Path.Combine(Path.GetTempPath(), "mql-lsp-guard-outside", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(outsideDir);
+        _outside = Write(outsideDir, "outside.mq5", "int outsideVar;");
+    }
+
+    public void Dispose()
+    {
+        WorkspaceRoots.Clear();
+        if (_previousRoots.Length > 0)
+        {
+            WorkspaceRoots.Set(_previousRoots.Split('|'));
+        }
+
+        try
+        {
+            Directory.Delete(_workspace, recursive: true);
+            Directory.Delete(Path.GetDirectoryName(_outside)!, recursive: true);
+        }
+        catch
+        {
+            // best effort cleanup
+        }
+    }
+
+    private static string Write(string dir, string name, string content)
+    {
+        var path = Path.Combine(dir, name);
+        File.WriteAllText(path, content);
+        return path;
+    }
+
+    [Fact]
+    public void ReadAllText_NoRootsDeclared_FailOpen_ReadsAnyPath()
+    {
+        WorkspaceRoots.Clear();
+
+        Assert.Equal("int outsideVar;", SourceFileReader.ReadAllText(_outside));
+    }
+
+    [Fact]
+    public void ReadAllText_InsideDeclaredRoot_IsAllowed()
+    {
+        WorkspaceRoots.Set(new[] { _workspace });
+
+        Assert.Equal("int insideVar;", SourceFileReader.ReadAllText(_inside));
+    }
+
+    [Fact]
+    public void ReadAllText_OutsideDeclaredRoot_ThrowsUnauthorizedAccess()
+    {
+        WorkspaceRoots.Set(new[] { _workspace });
+
+        Assert.Throws<UnauthorizedAccessException>(
+            () => SourceFileReader.ReadAllText(_outside));
+    }
+
+    [Fact]
+    public void ReadAllText_NonFileSchemeStyleRelativePath_IsRejected()
+    {
+        // Simulates the "filesystem path" a non-file:// scheme produces
+        // (GetFileSystemPath returns the literal, e.g. "Untitled-1"): it is
+        // relative and must be rejected once roots are declared.
+        WorkspaceRoots.Set(new[] { _workspace });
+
+        Assert.Throws<UnauthorizedAccessException>(
+            () => SourceFileReader.ReadAllText("Untitled-1"));
+    }
+
+    [Fact]
+    public void ReadAllText_PercentEncodedRoot_MatchesDecodedSibling()
+    {
+        // A workspace dir whose name contains a space: the client declares the
+        // folder percent-encoded while handler paths arrive decoded
+        // (GetFileSystemPath). Containment must hold for the decoded path.
+        var spacedDir = Path.Combine(
+            Path.GetTempPath(), "mql-lsp-guard-tests", "my proj " + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(spacedDir);
+        var file = Write(spacedDir, "spaced.mq5", "int spacedVar;");
+
+        WorkspaceRoots.Set(new[] { spacedDir });
+
+        Assert.Equal("int spacedVar;", SourceFileReader.ReadAllText(file));
+
+        Directory.Delete(spacedDir, recursive: true);
+    }
+
+    [Fact]
+    public void ReadAllText_CaseDifferingRootPath_IsAllowed()
+    {
+        // Containment is case-insensitive (consistent with the include guard),
+        // so a case-differing but real path under the root is allowed.
+        WorkspaceRoots.Set(new[] { _workspace.ToUpperInvariant() });
+
+        Assert.Equal("int insideVar;", SourceFileReader.ReadAllText(_inside));
+    }
+
+    [Fact]
+    public void ReadAllText_TraversalEscapingRoot_IsRejected()
+    {
+        // A sibling path crafted with .. segments that resolves outside the
+        // declared root must be rejected even though it lexically starts with
+        // the root's directory.
+        var sibling = Path.Combine(
+            Path.GetDirectoryName(_workspace)!, "escape-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(sibling);
+        var file = Write(sibling, "escape.mq5", "int escapeVar;");
+
+        WorkspaceRoots.Set(new[] { _workspace });
+
+        Assert.Throws<UnauthorizedAccessException>(
+            () => SourceFileReader.ReadAllText(file + "/../" + Path.GetFileName(file)));
+
+        Directory.Delete(sibling, recursive: true);
+    }
+
+    [Fact]
+    public void ReadAllText_EmptyRootSetViaSetNull_FailOpen()
+    {
+        WorkspaceRoots.Set(null);
+
+        Assert.Equal("int outsideVar;", SourceFileReader.ReadAllText(_outside));
     }
 }

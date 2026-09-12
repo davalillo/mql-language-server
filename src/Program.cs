@@ -163,6 +163,12 @@ namespace MqlLanguageServer
                                 }
                             }
 
+                            // Issue #18: register the declared roots for the central
+                            // read guard in SourceFileReader. From this point on,
+                            // every client-driven disk read must be inside one of
+                            // them (fail-open only while the set is empty).
+                            WorkspaceRoots.Set(workspaceFoldersSnapshot);
+
                             return Task.FromResult(new InitializeResult
                             {
                                 Capabilities = new ServerCapabilities

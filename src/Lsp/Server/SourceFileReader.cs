@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Serilog;
 
 namespace MqlLanguageServer.Lsp.Server;
 
@@ -31,9 +32,30 @@ public static class SourceFileReader
     /// the initial decode looks like a BOM-less UTF-16 LE file (NUL characters
     /// in the opening portion). The retry path never throws: if it fails or
     /// still yields NUL characters, the original content is returned.
+    ///
+    /// Issue #18: this is the single funnel for all client-driven disk reads,
+    /// so workspace containment is enforced HERE (not in ~20 handlers). When
+    /// workspace roots are declared, a path outside all of them throws
+    /// <see cref="UnauthorizedAccessException"/> — callers' existing try/catch
+    /// frames degrade gracefully to null/empty results. With no roots declared
+    /// the guard is fail-open (see <see cref="WorkspaceRoots"/>). Non-file://
+    /// schemes never reach this method with a real path: their "filesystem
+    /// path" (e.g. "Untitled-1" for untitled:) is relative and rejected.
     /// </summary>
+    /// <exception cref="UnauthorizedAccessException">
+    /// The path is outside every declared workspace root.
+    /// </exception>
     public static string ReadAllText(string filePath)
     {
+        if (!WorkspaceRoots.IsReadAllowed(filePath))
+        {
+            Log.Warning(
+                "Blocked read outside declared workspace roots: {FilePath}",
+                filePath);
+            throw new UnauthorizedAccessException(
+                $"Path is outside the declared workspace folders: {filePath}");
+        }
+
         var content = File.ReadAllText(filePath);
 
         if (!ContainsNulInOpeningPortion(content))

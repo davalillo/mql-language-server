@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace MqlLanguageServer.Lsp.Server;
 
 /// <summary>
-/// Path-traversal security helpers for #include resolution.
+/// Path-traversal security helpers for #include resolution and workspace
+/// containment (issue #18).
 /// </summary>
 internal static class PathSecurity
 {
@@ -40,6 +42,60 @@ internal static class PathSecurity
         var realResolvedFull = ResolveRealPath(resolvedFull) ?? resolvedFull;
 
         return IsDescendant(realIncludingDir, realResolvedFull);
+    }
+
+    /// <summary>
+    /// Issue #18: checks whether <paramref name="fullPath"/> sits inside any of
+    /// <paramref name="workspaceRoots"/>. Reuses the same containment and
+    /// symlink-resolution logic as <see cref="IsContainedInWorkspace"/> but
+    /// against the declared workspace roots instead of an including file.
+    /// Case-insensitive on all platforms (consistent with the include guard).
+    /// </summary>
+    public static bool IsUnderAnyRoot(string fullPath, IEnumerable<string> workspaceRoots)
+    {
+        if (string.IsNullOrEmpty(fullPath) || workspaceRoots == null)
+        {
+            return false;
+        }
+
+        string full;
+        try
+        {
+            full = Path.GetFullPath(fullPath);
+        }
+        catch
+        {
+            // Malformed path (invalid chars, wildcards, etc.): reject.
+            return false;
+        }
+
+        var realFull = ResolveRealPath(full) ?? full;
+
+        foreach (var root in workspaceRoots)
+        {
+            if (string.IsNullOrEmpty(root))
+            {
+                continue;
+            }
+
+            string normalizedRoot;
+            try
+            {
+                normalizedRoot = Path.GetFullPath(root);
+            }
+            catch
+            {
+                continue;
+            }
+
+            var realRoot = ResolveRealPath(normalizedRoot) ?? normalizedRoot;
+            if (IsDescendant(realRoot, realFull))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsDescendant(string baseDir, string fullPath)
