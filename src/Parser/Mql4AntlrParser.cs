@@ -163,8 +163,9 @@ namespace MqlLanguageServer.Parser
                 parsedFile.FilePath = filePath;
 
                 // NEW: Extract macros using token scanning (Channel 1 - PREPROCESSOR)
-                // This is needed because #define, #ifdef, etc. are hidden from the parser
-                parsedFile.Macros = ExtractMacros(tokenStream);
+                // This is needed because #define, #ifdef, etc. are hidden from the parser.
+                // Issue #25b: extracted to the shared MacroExtractor collaborator.
+                parsedFile.Macros = MacroExtractor.Extract(tokenStream, Mql4GrammarLexer.PRE_DEFINE);
 
                 // OCC-01: capture default-channel IDENTIFIER tokens as occurrences.
                 parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
@@ -568,173 +569,6 @@ namespace MqlLanguageServer.Parser
             return true;
         }
 
-        /// <summary>
-        /// Extract macros from token stream using optimized token scanning
-        /// #define, #ifdef, #ifndef, etc. are hidden in Channel 1 (PREPROCESSOR)
-        /// so they don't appear in the AST but are accessible via token stream
-        /// OPTIMIZED: Only processes tokens in channel 1, uses efficient macro name extraction
-        /// </summary>
-        /// <param name="tokenStream">Token stream with all tokens (including hidden channels)</param>
-        /// <returns>List of macro definitions</returns>
-        private List<string> ExtractMacros(CommonTokenStream tokenStream)
-        {
-            var macros = new List<string>(16); // Pre-allocate capacity for common cases
-
-            // Fill buffer with all tokens (including those in hidden channels)
-            tokenStream.Fill();
-            var tokens = tokenStream.GetTokens();
-
-            // OPTIMIZATION 1: Pre-check if there are any preprocessor tokens at all
-            // by examining the token stream size and early exit if empty
-            if (tokens.Count == 0)
-            {
-                return macros;
-            }
-
-            // OPTIMIZATION 2: Direct iteration with channel/type checks
-            // Only process tokens in PREPROCESSOR channel (channel 1)
-            for (int i = 0; i < tokens.Count; i++)
-            {
-                var token = tokens[i];
-
-                // Channel 1 = PREPROCESSOR (hidden from parser)
-                if (token.Channel == 1 && token.Type == Mql4GrammarLexer.PRE_DEFINE)
-                {
-                    // Extract macro name using optimized parsing
-                    var macroName = ParseMacroNameOptimized(token.Text);
-                    if (!string.IsNullOrEmpty(macroName))
-                    {
-                        macros.Add(macroName);
-                    }
-                }
-            }
-
-            return macros;
-        }
-
-        /// <summary>
-        /// Parse macro name from define directive text (optimized version)
-        /// Example: "#define MY_MACRO 10" -> "MY_MACRO"
-        /// Uses efficient span-based parsing instead of string.Replace/Split
-        /// </summary>
-        /// <param name="defineText">Full text of the #define directive</param>
-        /// <returns>Macro name or empty string if parsing fails</returns>
-        private string ParseMacroNameOptimized(string defineText)
-        {
-            if (string.IsNullOrEmpty(defineText))
-            {
-                return string.Empty;
-            }
-
-            // OPTIMIZATION: Use ReadOnlySpan<char> for zero-allocation parsing
-            // Find "#define" (case-insensitive for robustness)
-            ReadOnlySpan<char> text = defineText.AsSpan().TrimStart();
-
-            // Check for #define prefix
-            if (text.Length < 8 || text[0] != '#') // "#define" is 7 chars + space = 8
-            {
-                return string.Empty;
-            }
-
-            // Check if starts with "#define" (case-sensitive for speed, MQL4 is case-insensitive anyway)
-            if (!text.StartsWith("#define", StringComparison.Ordinal))
-            {
-                return string.Empty;
-            }
-
-            // Move past "#define" and whitespace
-            int pos = 7; // length of "#define"
-            while (pos < text.Length && char.IsWhiteSpace(text[pos]))
-            {
-                pos++;
-            }
-
-            if (pos >= text.Length)
-            {
-                return string.Empty;
-            }
-
-            // Extract identifier (letter, digit, underscore)
-            int start = pos;
-            while (pos < text.Length && (char.IsLetterOrDigit(text[pos]) || text[pos] == '_'))
-            {
-                pos++;
-            }
-
-            if (pos <= start)
-            {
-                return string.Empty;
-            }
-
-            return text.Slice(start, pos - start).ToString();
-        }
-
-        /// <summary>
-        /// Parse macro name from define directive text (robust version with validation)
-        /// Example: "#define MY_MACRO 10" -> "MY_MACRO"
-        /// Handles edge cases like comments, line continuations, etc.
-        /// </summary>
-        /// <param name="defineText">Full text of the #define directive</param>
-        /// <returns>Macro name or empty string if parsing fails</returns>
-        private string ParseMacroName(string defineText)
-        {
-            if (string.IsNullOrWhiteSpace(defineText))
-            {
-                return string.Empty;
-            }
-
-            // OPTIMIZATION: Use the optimized version first
-            var result = ParseMacroNameOptimized(defineText);
-
-            // VALIDATION: Ensure result is a valid MQL4 identifier
-            // MQL4 identifiers: start with letter/underscore, contain letters/digits/underscores
-            if (!string.IsNullOrEmpty(result) && IsValidMql4Identifier(result))
-            {
-                return result;
-            }
-
-            // Fallback to original parsing for compatibility
-            // Simple parsing: remove "#define", trim, and take first word
-            var parts = defineText.Replace("#define", "", StringComparison.Ordinal).Trim()
-                .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length > 0 && IsValidMql4Identifier(parts[0]))
-            {
-                return parts[0];
-            }
-
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// Validate if a string is a valid MQL4 identifier
-        /// </summary>
-        /// <param name="identifier">Identifier to validate</param>
-        /// <returns>True if valid identifier</returns>
-        private bool IsValidMql4Identifier(string identifier)
-        {
-            if (string.IsNullOrEmpty(identifier))
-            {
-                return false;
-            }
-
-            // First character must be letter or underscore
-            if (!char.IsLetter(identifier[0]) && identifier[0] != '_')
-            {
-                return false;
-            }
-
-            // Rest must be letter, digit, or underscore
-            for (int i = 1; i < identifier.Length; i++)
-            {
-                if (!char.IsLetterOrDigit(identifier[i]) && identifier[i] != '_')
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// Create and build symbol index for fast lookups (optimized version with out parameter)
@@ -978,76 +812,10 @@ namespace MqlLanguageServer.Parser
     }
 
     /// <summary>
-    /// ANTLR Error Listener for syntax error reporting
-    /// </summary>
-    public class SyntaxErrorListener : IAntlrErrorListener<IToken>
-    {
-        private readonly string _filePath;
-        private readonly string _grammar;
-
-        /// <summary>
-        /// Collected syntax errors. Available after parsing completes.
-        /// </summary>
-        public List<SyntaxError> Errors { get; } = new();
-
-        public SyntaxErrorListener(string filePath = "unknown", string grammar = "MQL4")
-        {
-            _filePath = filePath;
-            _grammar = grammar;
-        }
-
-        public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
-        {
-            // Issue #26: tolerate function-like macro invocations from unresolvable
-            // stdlib includes (e.g. ON_EVENT(...) from Controls\Defines.mqh). The
-            // grammar has no concept of a macro call, so the invocation surfaces as
-            // a bare identifier at class-body statement position. Suppress the
-            // error when the offending token matches a known stdlib macro name.
-            // NOTE: fully qualified because this listener class sits after the
-            // closing brace of the file's namespace block (pre-existing brace
-            // imbalance at lines 1010-1011), so unqualified lookup would miss it.
-            if (MqlLanguageServer.Parser.StdlibMacroCallRegistry.IsKnownMacroCall(offendingSymbol?.Text))
-            {
-                return;
-            }
-
-            Errors.Add(new SyntaxError
-            {
-                Line = line,
-                Column = charPositionInLine,
-                Message = msg,
-                OffendingSymbol = offendingSymbol?.Text,
-                FilePath = _filePath,
-                Grammar = _grammar
-            });
-            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: syntax error - {msg}");
-        }
-    }
-
-    /// <summary>
-    /// Error listener for the lexer. ANTLR's default ConsoleErrorListener prints
-    /// "token recognition error" without any file or grammar context; this listener
-    /// keeps the unified "[Grammar] file:line:col" prefix used by the parser listener.
-    /// </summary>
-    public class LexerErrorListener : IAntlrErrorListener<int>
-    {
-        private readonly string _filePath;
-        private readonly string _grammar;
-
-        public LexerErrorListener(string filePath, string grammar)
-        {
-            _filePath = filePath;
-            _grammar = grammar;
-        }
-
-        public void SyntaxError(TextWriter output, IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
-        {
-            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: lexer error - {msg}");
-        }
-    }
-
-    /// <summary>
-    /// MQL4 Symbol Visitor - Extracts symbols from ANTLR parse tree
+    /// MQL4 Symbol Visitor - Extracts symbols from ANTLR parse tree.
+    /// (The SyntaxErrorListener / LexerErrorListener classes that used to live
+    /// after this file's namespace block now live in AntlrErrorListeners.cs —
+    /// issue #25b.)
     /// </summary>
     public class Mql4SymbolVisitor : Mql4GrammarBaseVisitor<Mql4Symbol?>
     {

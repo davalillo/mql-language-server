@@ -39,7 +39,7 @@ public class Mql5AntlrParser : IMqlParser
     public MqlFile ParseFile(string content, string filePath, CancellationToken cancellationToken)
     {
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
-        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
+        var errorListener = new SyntaxErrorListener(filePath, "MQL5");
 
         try
         {
@@ -74,7 +74,7 @@ public class Mql5AntlrParser : IMqlParser
         // parser-internal paths (include chains, tests) can never recurse
         // into pathological input either.
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
-        var errorListener = new Mql5SyntaxErrorListener(filePath, "MQL5");
+        var errorListener = new SyntaxErrorListener(filePath, "MQL5");
 
         try
         {
@@ -98,7 +98,7 @@ public class Mql5AntlrParser : IMqlParser
     /// Core parse pipeline shared by all entry points.
     /// </summary>
     private MqlFile ParseFile(
-        string content, string filePath, Mql5SyntaxErrorListener errorListener, CancellationToken cancellationToken)
+        string content, string filePath, SyntaxErrorListener errorListener, CancellationToken cancellationToken)
     {
         var parsedFile = new MqlFile { Language = MqlLanguage.Mql5 };
         var symbolsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
@@ -147,7 +147,8 @@ public class Mql5AntlrParser : IMqlParser
             parsedFile.Symbols = visitor.Symbols;
             parsedFile.Includes = visitor.Includes;
             parsedFile.FilePath = filePath;
-            parsedFile.Macros = ExtractMacros(tokenStream);
+            // Issue #25b: extracted to the shared MacroExtractor collaborator.
+            parsedFile.Macros = MacroExtractor.Extract(tokenStream, Mql5GrammarLexer.PRE_DEFINE);
 
             // OCC-01: capture default-channel IDENTIFIER tokens as occurrences.
             parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
@@ -614,75 +615,6 @@ public class Mql5AntlrParser : IMqlParser
         }
     }
 
-    private List<string> ExtractMacros(CommonTokenStream tokenStream)
-    {
-        var macros = new List<string>(16);
-        tokenStream.Fill();
-        var tokens = tokenStream.GetTokens();
-
-        if (tokens.Count == 0)
-        {
-            return macros;
-        }
-
-        for (int i = 0; i < tokens.Count; i++)
-        {
-            var token = tokens[i];
-            if (token.Channel == 1 && token.Type == Mql5GrammarLexer.PRE_DEFINE)
-            {
-                var macroName = ParseMacroName(token.Text);
-                if (!string.IsNullOrEmpty(macroName))
-                {
-                    macros.Add(macroName);
-                }
-            }
-        }
-
-        return macros;
-    }
-
-    private string ParseMacroName(string defineText)
-    {
-        if (string.IsNullOrEmpty(defineText))
-        {
-            return string.Empty;
-        }
-
-        ReadOnlySpan<char> text = defineText.AsSpan().TrimStart();
-        if (text.Length < 8 || text[0] != '#')
-        {
-            return string.Empty;
-        }
-
-        if (!text.StartsWith("#define", StringComparison.Ordinal))
-        {
-            return string.Empty;
-        }
-
-        int pos = 7;
-        while (pos < text.Length && char.IsWhiteSpace(text[pos]))
-        {
-            pos++;
-        }
-
-        if (pos >= text.Length)
-        {
-            return string.Empty;
-        }
-
-        int start = pos;
-        while (pos < text.Length && (char.IsLetterOrDigit(text[pos]) || text[pos] == '_'))
-        {
-            pos++;
-        }
-
-        if (pos <= start)
-        {
-            return string.Empty;
-        }
-
-        return text.Slice(start, pos - start).ToString();
-    }
 
     private bool IsPositionInRange(int line, int column, LspRange range)
     {
@@ -696,68 +628,5 @@ public class Mql5AntlrParser : IMqlParser
             return false;
 
         return true;
-    }
-
-    private sealed class Mql5SyntaxErrorListener : IAntlrErrorListener<IToken>
-    {
-        private readonly string _filePath;
-        private readonly string _grammar;
-
-        /// <summary>
-        /// Collected syntax errors. Available after parsing completes.
-        /// </summary>
-        public List<SyntaxError> Errors { get; } = new();
-
-        public Mql5SyntaxErrorListener(string filePath = "unknown", string grammar = "MQL5")
-        {
-            _filePath = filePath;
-            _grammar = grammar;
-        }
-
-        public void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
-        {
-            // Issue #26: tolerate function-like macro invocations from unresolvable
-            // stdlib includes (e.g. ON_EVENT(...) from Controls\Defines.mqh). The
-            // grammar has no concept of a macro call, so the invocation surfaces as
-            // a bare identifier at class-body statement position. Suppress the
-            // error when the offending token matches a known stdlib macro name.
-            if (StdlibMacroCallRegistry.IsKnownMacroCall(offendingSymbol?.Text))
-            {
-                return;
-            }
-
-            Errors.Add(new SyntaxError
-            {
-                Line = line,
-                Column = charPositionInLine,
-                Message = msg,
-                OffendingSymbol = offendingSymbol?.Text,
-                FilePath = _filePath,
-                Grammar = _grammar
-            });
-            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: syntax error - {msg}");
-        }
-    }
-
-    /// <summary>
-    /// Error listener for the lexer. ANTLR's default ConsoleErrorListener prints
-    /// "token recognition error" without any file or grammar context; this listener
-    /// keeps the unified "[Grammar] file:line:col" prefix used by the parser listener.
-    /// </summary>
-    private sealed class LexerErrorListener : IAntlrErrorListener<int>
-    {
-        private readonly string _filePath;
-        private readonly string _grammar;
-
-        public LexerErrorListener(string filePath, string grammar)
-        {
-            _filePath = filePath;
-            _grammar = grammar;
-        }
-
-        public void SyntaxError(TextWriter output, IRecognizer recognizer, int offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
-        {
-            Console.Error.WriteLine($"[{_grammar}] {_filePath}:{line}:{charPositionInLine}: lexer error - {msg}");
-        }
     }
 }
