@@ -524,4 +524,4 @@ mql-lsp-server --stdio
 
 ## Лицензия
 
-MIT
+MIT — сторонние компоненты и их лицензии перечислены в [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

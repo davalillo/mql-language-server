@@ -58,6 +58,21 @@
     <PackageReference Include="OmniSharp.Extensions.JsonRpc" Version="0.19.9" />
     <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
     <PackageReference Include="OmniSharp.Extensions.LanguageServer.Shared" Version="0.19.9" />
+    <!-- Newtonsoft.Json arrives transitively via OmniSharp.Extensions 0.19.9 (resolved 13.0.3).
+         Pinning it explicitly guards against a future OmniSharp downgrade silently restoring
+         a version below 13.0.1, which is affected by CVE-2024-21907 / GHSA-5crp-9r3c-p9vr
+         (DoS via deep JSON nesting). The exact resolved version (13.0.3) is pinned rather
+         than a floor (>= 13.0.1) so restore stays deterministic; bump it deliberately. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <!-- MediatR arrives transitively via OmniSharp.Extensions 0.19.9. It is pinned to the
+         [8.1.0, 9.0.0) range (NuGet interval notation: floor 8.1.0 inclusive, ceiling
+         9.0.0 exclusive) for two reasons: (1) it keeps the 8.x API surface OmniSharp 0.19.9
+         was tested against, and (2) it acts as a license guard — MediatR versions up to
+         12.x are Apache-2.0, but the 13.0.0+ line (July 2025) is distributed under a
+         commercial / RPL-1.5 dual license by Lucky Penny Software, so the range blocks
+         the commercial line and any API change past the ceiling makes the upgrade an
+         explicit, reviewed change rather than a silent transitive resolution. -->
+    <PackageReference Include="MediatR" Version="[8.1.0, 9.0.0)" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
@@ -70,6 +85,9 @@
     <None Update="README.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Ship third-party license notices inside the NuGet tool package
+         (BSD-3-Clause notice preservation for the ANTLR runtime). -->
+    <None Include="..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <!-- ANTLR Grammar Generation -->

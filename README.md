@@ -541,4 +541,4 @@ More guides and references live in the [`docs/`](docs/README.md) directory:
 
 ## License
 
-MIT
+MIT — third-party components and their licenses are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

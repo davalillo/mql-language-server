@@ -524,4 +524,4 @@ Añadir a settings.json:
 
 ## Licencia
 
-MIT
+MIT — los componentes de terceros y sus licencias se enumeran en [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
