@@ -102,8 +102,8 @@ namespace MqlLanguageServer
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
                 Log.Information("=================================================");
 
-                // CAMBIO 1: Usamos 'From' en lugar de 'Create'. Es asíncrono.
-                // Esto garantiza que el servidor se inicialice correctamente.
+                // Use 'From' instead of 'Create': it is asynchronous and
+                // guarantees the server initializes correctly.
                 var server = await LanguageServer.From(options =>
                 {
                     _ = options
@@ -113,7 +113,7 @@ namespace MqlLanguageServer
                         .WithLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()))
                         .WithServices(services =>
                         {
-                            // MANTÉN SOLO TUS SERVICIOS PROPIOS
+                            // Keep only our own services here.
                             services.AddTransient<Mql4AntlrParser>();
                             services.AddTransient<Mql5AntlrParser>();
                             services.AddSingleton<OpenDocumentStore>();
@@ -131,11 +131,13 @@ namespace MqlLanguageServer
                             services.AddSingleton<IMqlBuiltins, Mql4BuiltinsAdapter>();
                             services.AddSingleton<IMqlBuiltins, Mql5Builtins>();
 
-                            // CAMBIO 2: ¡ELIMINA TODOS LOS AddSingleton DE HANDLERS AQUÍ!
-                            // .WithHandler<T>() se encarga de registrarlos en la DI automáticamente.
+                            // Do NOT register handler singletons here:
+                            // .WithHandler<T>() registers them in the DI
+                            // container automatically.
                         })
-                        // CAMBIO 3: Registra los Handlers. La librería detectará sus interfaces
-                        // y llenará las Capabilities (hoverProvider: true, etc.) por ti.
+                        // Register the handlers. The library detects their
+                        // interfaces and fills in the Capabilities
+                        // (hoverProvider: true, etc.) for you.
                         .WithHandler<DocumentSymbolHandler>()
                         .WithHandler<DefinitionHandler>()
                         .WithHandler<ReferencesHandler>()
@@ -156,7 +158,7 @@ namespace MqlLanguageServer
                         .WithHandler<WorkspaceSymbolHandler>()
                         .WithHandler<DiagnosticHandler>()
 
-                        // Handlers de sincronización de texto
+                        // Text-document sync handlers
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>()
@@ -205,7 +207,7 @@ namespace MqlLanguageServer
                             return Task.CompletedTask;
                         })
 
-                        // Esto está bien para forzar la configuración de sync
+                        // This is fine for forcing the sync configuration
                         .OnTextDocumentSync(
                             TextDocumentSyncKind.Full,
                             uri => new TextDocumentAttributes(uri, LanguageDetection.GetLanguageIdFromUri(uri.ToUri())),
@@ -233,7 +235,7 @@ namespace MqlLanguageServer
                     Log.Warning(ex, "Failed to start workspace scan; server continues without it.");
                 }
 
-                // CAMBIO 4: Esperar a que termine
+                // Wait for the server to exit.
                 await server.WaitForExit;
 
                 // Cancel the workspace scan on shutdown (D6).

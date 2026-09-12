@@ -63,5 +63,10 @@ build_registry.sh
 okf/
 openspec/
 
+# Benchmark measurement artifacts (results/backups churn on every run;
+# the JSON output format is documented in BENCHMARK_TOOL.md)
+benchmarks/
+!benchmarks/README.md
+
 # Test transient output
 tests/TestResults/

@@ -76,7 +76,7 @@ public class OpenDocumentStore
     }
 
     /// <summary>
-    /// Overload para compatibilidad (si solo necesitas el modelo)
+    /// Compatibility overload (when only the file model is needed).
     /// </summary>
     public bool TryGetValue(Uri uri, out MqlFile? file)
     {
