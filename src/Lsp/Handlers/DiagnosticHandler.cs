@@ -103,7 +103,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                 {
                     try
                     {
-                        content = System.IO.File.ReadAllText(fsPath);
+                        content = SourceFileReader.ReadAllText(fsPath);
                     }
                     catch (System.IO.IOException) { }
                 }

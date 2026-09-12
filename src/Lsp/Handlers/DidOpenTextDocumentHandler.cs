@@ -123,7 +123,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                         var includeFullPath = ResolveIncludePath(filePath, includePath);
                         if (File.Exists(includeFullPath) && IsContainedInWorkspace(filePath, includeFullPath))
                         {
-                            var includeContent = File.ReadAllText(includeFullPath);
+                            var includeContent = SourceFileReader.ReadAllText(includeFullPath);
                             // Force the includer's language for shared headers so symbols are
                             // indexed under one key (D2 dual-key coexistence). The include's own
                             // sniffed language is intentionally ignored here.

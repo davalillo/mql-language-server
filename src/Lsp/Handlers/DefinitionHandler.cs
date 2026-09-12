@@ -73,7 +73,7 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
             }
 
             var parser = ResolveParser(language);
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
             MqlFile? mqlFile = null;
@@ -108,7 +108,7 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
 
                 try
                 {
-                    var defContent = File.ReadAllText(defLocation.FilePath);
+                    var defContent = SourceFileReader.ReadAllText(defLocation.FilePath);
                     var lines = defContent.Split('\n');
                     var defLine = defLocation.Symbol.Range.Start.Line;
                     var defChar = defLocation.Symbol.Range.Start.Character;

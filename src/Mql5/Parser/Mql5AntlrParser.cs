@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Mql5Grammar;
+using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Parser;
@@ -92,7 +93,7 @@ public class Mql5AntlrParser : IMqlParser
             throw new FileNotFoundException($"MQL5 file not found: {filePath}");
         }
 
-        var content = File.ReadAllText(filePath);
+        var content = SourceFileReader.ReadAllText(filePath);
         return ParseFile(content, filePath);
     }
 

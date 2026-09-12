@@ -69,7 +69,7 @@ public class FoldingRangeHandler : LanguageAwareHandlerBase<FoldingRangeRequestP
             }
 
             var parser = ResolveParser(language);
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var lines = content.Split('\n');
             var uri = documentUri.ToUri();
 

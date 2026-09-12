@@ -84,7 +84,7 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
             }
 
             var parser = ResolveParser(language);
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
             MqlFile? mqlFile = null;

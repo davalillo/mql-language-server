@@ -82,7 +82,7 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 }
 
                 var parseStopwatch = Stopwatch.StartNew();
-                var content = File.ReadAllText(filePath);
+                var content = SourceFileReader.ReadAllText(filePath);
                 mqlFile = parser.ParseFile(content, filePath);
                 parseStopwatch.Stop();
 
@@ -104,7 +104,7 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 return new CompletionList(Array.Empty<CompletionItem>(), false);
             }
 
-            var fileContent = File.ReadAllText(filePathForContext);
+            var fileContent = SourceFileReader.ReadAllText(filePathForContext);
             var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
 
             var completions = new List<CompletionItem>();

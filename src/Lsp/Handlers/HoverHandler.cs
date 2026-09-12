@@ -78,7 +78,7 @@ public class HoverHandler : LanguageAwareHandlerBase<HoverParams, Hover?>, IHove
             string content;
             try
             {
-                content = File.ReadAllText(filePath);
+                content = SourceFileReader.ReadAllText(filePath);
             }
             catch (Exception ex)
             {

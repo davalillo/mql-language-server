@@ -69,7 +69,7 @@ public class DocumentSymbolHandler : LanguageAwareHandlerBase<DocumentSymbolPara
             }
 
             var parser = ResolveParser(language);
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
             if (!_documentStore.TryGetValue(uri, out var mqlFile) || mqlFile == null)

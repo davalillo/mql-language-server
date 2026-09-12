@@ -49,7 +49,7 @@ public class SemanticTokensHandler
                 return Task.FromResult<SemanticTokens?>(null);
             }
 
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
             Mql4File? mql4File = null;

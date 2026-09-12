@@ -261,7 +261,7 @@ public class WorkspaceIndexer
     private void IndexFile(string path, CancellationToken token,
         IDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh)
     {
-        var content = File.ReadAllText(path);
+        var content = SourceFileReader.ReadAllText(path);
         var uri = new Uri(path);
 
         // OpenDocumentStore is authoritative for open buffers; never overwrite.
@@ -312,7 +312,7 @@ public class WorkspaceIndexer
     private void IndexMqhFile(string path,
         IReadOnlyDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh)
     {
-        var content = File.ReadAllText(path);
+        var content = SourceFileReader.ReadAllText(path);
         var uri = new Uri(path);
 
         // OpenDocumentStore is authoritative for open buffers; never overwrite.

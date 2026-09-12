@@ -7,6 +7,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Mql4Grammar;
+using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Mql4.Builtins;
 using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
@@ -115,7 +116,7 @@ namespace MqlLanguageServer.Parser
                 throw new FileNotFoundException($"MQL4 file not found: {filePath}");
             }
 
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             return ParseFile(content, filePath);
         }
 

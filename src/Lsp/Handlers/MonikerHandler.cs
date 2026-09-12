@@ -46,7 +46,7 @@ public class MonikerHandler
                 return Task.FromResult<Container<Moniker>?>(null);
             }
 
-            var content = File.ReadAllText(filePath);
+            var content = SourceFileReader.ReadAllText(filePath);
             var uri = request.TextDocument.Uri.ToUri();
 
             Mql4File? mql4File = null;

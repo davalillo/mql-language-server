@@ -77,7 +77,7 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
         {
             try
             {
-                var content = File.ReadAllText(uri.AbsolutePath);
+                var content = SourceFileReader.ReadAllText(uri.AbsolutePath);
                 return LanguageDetection.Detect(uri, null, content);
             }
             catch
