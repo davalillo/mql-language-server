@@ -22,14 +22,33 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
     protected readonly OpenDocumentStore _documentStore;
     private readonly IMqlBuiltins[] _builtins;
 
+    /// <summary>
+    /// Issue #25c: injected access to the shared symbol index. Defaults to
+    /// the <see cref="GlobalSymbolIndexAccessor"/> parameterless overload
+    /// (which falls back to <see cref="GlobalSymbolIndex.Instance"/>) so
+    /// existing base-constructor call sites keep compiling; the production
+    /// composition root injects the DI-registered singleton.
+    /// </summary>
+    protected GlobalSymbolIndexAccessor SymbolIndex { get; }
+
     protected LanguageAwareHandlerBase(
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
         IMqlBuiltins[] builtins)
+        : this(languageService, documentStore, builtins, new GlobalSymbolIndexAccessor())
+    {
+    }
+
+    protected LanguageAwareHandlerBase(
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor symbolIndex)
     {
         _languageService = languageService ?? throw new ArgumentNullException(nameof(languageService));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
         _builtins = builtins ?? throw new ArgumentNullException(nameof(builtins));
+        SymbolIndex = symbolIndex ?? throw new ArgumentNullException(nameof(symbolIndex));
     }
 
     /// <summary>
@@ -68,7 +87,7 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
             return language;
 
         // Issue #16 Phase 2: indexed .mqh headers route by includer.
-        if (MqhLanguageResolver.TryResolve(uri, GlobalSymbolIndex.Instance, out var indexedLanguage))
+        if (MqhLanguageResolver.TryResolve(uri, SymbolIndex.Index, out var indexedLanguage))
             return indexedLanguage;
 
         // For files not yet opened via didOpen, read content from disk for

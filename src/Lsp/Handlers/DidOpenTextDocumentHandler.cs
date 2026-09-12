@@ -32,8 +32,9 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
         ILogger<DidOpenTextDocumentHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore openFiles,
-        IMqlBuiltins[] builtins)
-        : base(languageService, openFiles, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, openFiles, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("DidOpenTextDocumentHandler initialized");
@@ -48,7 +49,8 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
         : this(logger,
                new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
                openFiles,
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
@@ -70,7 +72,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
         // by content. Content sniffing (REQ-LD-02, D2) only applies when the
         // header is not indexed or the index evidence is ambiguous — this
         // makes open-order irrelevant.
-        var language = MqhLanguageResolver.TryResolve(documentUri, GlobalSymbolIndex.Instance, out var indexedLanguage)
+        var language = MqhLanguageResolver.TryResolve(documentUri, SymbolIndex.Index, out var indexedLanguage)
             ? indexedLanguage
             : LanguageDetection.Detect(documentUri, languageId, content);
 
@@ -100,7 +102,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 // the wholesale per-file occurrence replacement swaps old for
                 // new instead of purging scan-indexed entries with an empty
                 // list (CRITICAL-2 fix; identical mapping to the workspace scan).
-                GlobalSymbolIndex.Instance.AddFile(
+                SymbolIndex.Index.AddFile(
                     filePath, language, mqlFile.Symbols,
                     SymbolOccurrenceMapper.Map(mqlFile, filePath, language));
 
@@ -136,10 +138,10 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                         var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
                         includeFile.Language = includeLanguage;
                         // OCC-03: occurrence-aware re-index, same rationale as above.
-                        GlobalSymbolIndex.Instance.AddFile(
+                        SymbolIndex.Index.AddFile(
                             includeFullPath, includeLanguage, includeFile.Symbols,
                             SymbolOccurrenceMapper.Map(includeFile, includeFullPath, includeLanguage));
-                        GlobalSymbolIndex.Instance.AddDependency(filePath, includeFullPath);
+                        SymbolIndex.Index.AddDependency(filePath, includeFullPath);
                     }
                 }
 

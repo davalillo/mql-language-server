@@ -29,8 +29,9 @@ public class WorkspaceSymbolHandler : LanguageAwareHandlerBase<WorkspaceSymbolPa
         ILogger<WorkspaceSymbolHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
-        : base(languageService, documentStore, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, documentStore, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("WorkspaceSymbolHandler initialized");
@@ -43,7 +44,8 @@ public class WorkspaceSymbolHandler : LanguageAwareHandlerBase<WorkspaceSymbolPa
         : this(logger,
                new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser()),
                new OpenDocumentStore(),
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
@@ -71,7 +73,7 @@ public class WorkspaceSymbolHandler : LanguageAwareHandlerBase<WorkspaceSymbolPa
         try
         {
             // F3 fix: language-agnostic iteration returns matches from BOTH MQL4 and MQL5.
-            foreach (var (uri, _, fileSymbols) in GlobalSymbolIndex.Instance.GetAllSymbols())
+            foreach (var (uri, _, fileSymbols) in SymbolIndex.Index.GetAllSymbols())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 

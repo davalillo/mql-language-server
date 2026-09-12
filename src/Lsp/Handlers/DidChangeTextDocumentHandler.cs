@@ -32,8 +32,9 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
         ILogger<DidChangeTextDocumentHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore openFiles,
-        IMqlBuiltins[] builtins)
-        : base(languageService, openFiles, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, openFiles, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("DidChangeTextDocumentHandler initialized");
@@ -48,7 +49,8 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
         : this(logger,
                new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
                openFiles,
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
@@ -95,7 +97,7 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
                 // the wholesale per-file occurrence replacement swaps old for
                 // new instead of purging scan-indexed entries with an empty
                 // list (CRITICAL-2 fix; identical mapping to the workspace scan).
-                GlobalSymbolIndex.Instance.AddFile(
+                SymbolIndex.Index.AddFile(
                     filePath, language, newMqlFile.Symbols,
                     SymbolOccurrenceMapper.Map(newMqlFile, filePath, language));
 

@@ -30,8 +30,9 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
         ILogger<RenameHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
-        : base(languageService, documentStore, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, documentStore, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("RenameHandler initialized");
@@ -46,16 +47,19 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
         : this(logger,
                new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
                documentStore,
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
     // Backward-compatible constructor used by EditingHandlersTests.
+    // Issue #25c: routes through the accessor instead of the raw singleton
+    // so the handler body has no direct GlobalSymbolIndex.Instance reads.
     public RenameHandler(
         ILogger<RenameHandler> logger,
         Mql4AntlrParser parser,
         OpenDocumentStore documentStore)
-        : this(logger, parser, documentStore, GlobalSymbolIndex.Instance)
+        : this(logger, parser, documentStore, new GlobalSymbolIndexAccessor().Index)
     {
     }
 

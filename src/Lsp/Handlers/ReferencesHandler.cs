@@ -33,8 +33,9 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
         ILogger<ReferencesHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
-        : base(languageService, documentStore, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, documentStore, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("ReferencesHandler initialized");
@@ -49,7 +50,8 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
         : this(logger,
                new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
                documentStore,
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
@@ -103,7 +105,7 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
             // heuristically filtered — only comment/string/preprocessor noise
             // is removed by construction, because occurrences are captured
             // from default-channel IDENTIFIER tokens only.
-            var occurrences = GlobalSymbolIndex.Instance.FindOccurrences(symbol.Name);
+            var occurrences = SymbolIndex.Index.FindOccurrences(symbol.Name);
 
             // D7 (corrected): on OmniSharp 0.19.9 IncludeDeclaration lives on
             // ReferenceContext, not as a top-level ReferenceParams property.

@@ -51,16 +51,27 @@ public class WorkspaceIndexer
     private readonly ILogger<WorkspaceIndexer> _logger;
     private readonly MqlLanguageService _languageService;
     private readonly OpenDocumentStore _documentStore;
+    private readonly GlobalSymbolIndexAccessor _symbolIndex;
     private CancellationTokenSource? _cts;
 
     public WorkspaceIndexer(
         ILogger<WorkspaceIndexer> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore)
+        : this(logger, languageService, documentStore, new GlobalSymbolIndexAccessor())
+    {
+    }
+
+    public WorkspaceIndexer(
+        ILogger<WorkspaceIndexer> logger,
+        MqlLanguageService languageService,
+        OpenDocumentStore documentStore,
+        GlobalSymbolIndexAccessor symbolIndex)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _languageService = languageService ?? throw new ArgumentNullException(nameof(languageService));
         _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+        _symbolIndex = symbolIndex ?? throw new ArgumentNullException(nameof(symbolIndex));
     }
 
     /// <summary>
@@ -298,7 +309,7 @@ public class WorkspaceIndexer
 
         // Index-only write: no OpenDocumentStore pollution (D6). Occurrences
         // are mapped by the shared helper (also used by didOpen/didChange).
-        GlobalSymbolIndex.Instance.AddFile(
+        _symbolIndex.Index.AddFile(
             path, language, parsedFile.Symbols,
             SymbolOccurrenceMapper.Map(parsedFile, path, language));
     }
@@ -331,7 +342,7 @@ public class WorkspaceIndexer
         var parsedFile = parser.ParseFile(content, path, token);
         parsedFile.Language = language;
 
-        GlobalSymbolIndex.Instance.AddFile(
+        _symbolIndex.Index.AddFile(
             path, language, parsedFile.Symbols,
             SymbolOccurrenceMapper.Map(parsedFile, path, language));
     }

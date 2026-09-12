@@ -31,8 +31,9 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
         ILogger<DefinitionHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
-        : base(languageService, documentStore, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, documentStore, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("DefinitionHandler initialized");
@@ -47,7 +48,8 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
         : this(logger,
                new MqlLanguageService(parser ?? throw new ArgumentNullException(nameof(parser)), new Mql5AntlrParser()),
                documentStore,
-               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })
+               new IMqlBuiltins[] { new Mql4BuiltinsAdapter() },
+               new GlobalSymbolIndexAccessor(globalSymbolIndex))
     {
     }
 
@@ -95,7 +97,7 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
                 return null;
             }
 
-            var allDefinitions = GlobalSymbolIndex.Instance.FindSymbol(symbol.Name);
+            var allDefinitions = SymbolIndex.Index.FindSymbol(symbol.Name);
 
             Location? definitionLocation = null;
 

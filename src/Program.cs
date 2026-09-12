@@ -118,6 +118,10 @@ namespace MqlLanguageServer
                             services.AddTransient<Mql5AntlrParser>();
                             services.AddSingleton<OpenDocumentStore>();
                             services.AddSingleton<GlobalSymbolIndex>();
+                            // Issue #25c: handlers receive the shared index
+                            // through this accessor instead of touching the
+                            // static GlobalSymbolIndex.Instance singleton.
+                            services.AddSingleton<GlobalSymbolIndexAccessor>();
                             services.AddSingleton<MetricsCollector>();
                             services.AddSingleton<MqlLspServer>();
                             services.AddSingleton<MqlLanguageService>();
