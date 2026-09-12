@@ -82,10 +82,28 @@ fi
 print_success "NuGet package created: $NUPKG_FILE"
 echo ""
 
+# Derive the package version from the .nupkg filename (mql-language-server.<version>.nupkg)
+# instead of hardcoding it — the version lives in the csproj <Version> and changes
+# with every release (issue #22). ${pkg##*/} strips the directory; ${p##*.} is wrong
+# here, so split on the first dot after the package id with ${p#mql-language-server.}
+# and then cut the ".nupkg" suffix with ${v%.nupkg}.
+PKG_BASENAME=$(basename "$NUPKG_FILE")
+PKG_VERSION=${PKG_BASENAME#mql-language-server.}
+PKG_VERSION=${PKG_VERSION%.nupkg}
+PKG_VERSION=${PKG_VERSION%%+*} # strip any SemVer suffix (e.g. -symbols is not present, +build metadata could be)
+
+if [ -z "$PKG_VERSION" ]; then
+    print_error "Failed to derive version from package name: $PKG_BASENAME"
+    exit 1
+fi
+
+print_success "Installing version: $PKG_VERSION"
+echo ""
+
 # Step 3: Install as global tool from local source
 print_step "Installing MQL Language Server as global tool..."
 dotnet tool install --global mql-language-server \
-    --version 1.0.0 \
+    --version "$PKG_VERSION" \
     --add-source "$PACKAGE_DIR"
 
 print_success "Tool installed successfully"

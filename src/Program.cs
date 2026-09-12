@@ -58,10 +58,10 @@ namespace MqlLanguageServer
             // MSBuild target (src/MqlLanguageServer.Server.csproj). It reflects the
             // UTC time of the last successful compile of this assembly.
             var buildDateStr = GetBuildDate();
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var versionStr = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "unknown";
 
-            // Check for --version flag first
+            // Check for --version flag first.
+            // Version comes from the assembly (issue #22), same value shipped in the package.
+            var versionStr = ServerVersion.Version;
             if (args.Length > 0 && (args[0] == "--version" || args[0] == "-v"))
             {
                 Console.WriteLine($"MQL Language Server {versionStr}");
@@ -156,6 +156,15 @@ namespace MqlLanguageServer
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>()
+                        // Report the real version in the LSP initialize response
+                        // (ServerInfo). The value is derived from the assembly, which
+                        // the MSBuild SDK stamps from <Version> in the csproj — the
+                        // same value the CI tag↔csproj gate enforces (issue #22).
+                        .WithServerInfo(new ServerInfo
+                        {
+                            Name = Constants.Server.Name,
+                            Version = ServerVersion.Version
+                        })
                         .OnInitialize((server, request, token) =>
                         {
                             Log.Information("MQL Language Server initialized for client: {ClientName}", request.ClientInfo?.Name ?? "unknown");
@@ -183,16 +192,13 @@ namespace MqlLanguageServer
                             // them (fail-open only while the set is empty).
                             WorkspaceRoots.Set(workspaceFoldersSnapshot);
 
-                            return Task.FromResult(new InitializeResult
-                            {
-                                Capabilities = new ServerCapabilities
-                                {
-                                    // Forzamos que aparezca True (o el objeto de opciones)
-                                    WorkspaceSymbolProvider = true,
-
-
-                                }
-                            });
+                            // The InitializeResult for this handler's return type is
+                            // built by the library from options.ServerInfo (set below
+                            // via WithServerInfo, issue #22); this delegate's return
+                            // value is ignored by OmniSharp 0.19.9 (Task-returning
+                            // delegate), so capabilities are derived from the
+                            // registered handlers.
+                            return Task.CompletedTask;
                         })
 
                         // Esto está bien para forzar la configuración de sync

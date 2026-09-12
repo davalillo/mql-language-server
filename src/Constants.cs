@@ -48,7 +48,6 @@ public static class Constants
     public static class Server
     {
         public const string Name = "MQL Language Server";
-        public const string Version = "1.0.0";
         public const string DisplayName = "MQL LSP";
         /// <summary>
         /// Base name of the log file. The full path lives in <see cref="LogPaths"/>
