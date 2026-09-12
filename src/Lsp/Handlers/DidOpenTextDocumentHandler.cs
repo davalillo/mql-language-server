@@ -66,8 +66,13 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
         var content = request.TextDocument.Text;
         var languageId = request.TextDocument.LanguageId;
 
-        // D2: .mqh files without languageId are sniffed per REQ-LD-02.
-        var language = LanguageDetection.Detect(documentUri, languageId, content);
+        // Issue #16 Phase 2: an indexed .mqh is routed by its includers, not
+        // by content. Content sniffing (REQ-LD-02, D2) only applies when the
+        // header is not indexed or the index evidence is ambiguous — this
+        // makes open-order irrelevant.
+        var language = MqhLanguageResolver.TryResolve(documentUri, GlobalSymbolIndex.Instance, out var indexedLanguage)
+            ? indexedLanguage
+            : LanguageDetection.Detect(documentUri, languageId, content);
 
         return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
     }

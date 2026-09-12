@@ -438,6 +438,57 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
+    /// Issue #16 Phase 2: get the language a file was indexed under, when it
+    /// is indexed under exactly one language. Returns null when the file is
+    /// not indexed, or when it is indexed under both languages (conflicting
+    /// keys must not pick an arbitrary winner).
+    /// </summary>
+    public MqlLanguage? GetIndexedLanguage(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+            return null;
+
+        MqlLanguage? found = null;
+        foreach (var key in _symbolsByFile.Keys)
+        {
+            if (!string.Equals(key.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (found.HasValue && found.Value != key.Language)
+                return null; // conflicting keys: no unambiguous answer
+
+            found = key.Language;
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Issue #16 Phase 2: get the languages of all indexed files that include
+    /// the given file, based on the dependency edges added via AddDependency.
+    /// Used to route an unindexed .mqh by its includers at open time. Returns
+    /// an empty list when nothing includes it (or the index has no edges).
+    /// </summary>
+    public List<MqlLanguage> GetIncluderLanguages(string filePath)
+    {
+        var result = new List<MqlLanguage>();
+        if (string.IsNullOrEmpty(filePath))
+            return result;
+
+        foreach (var kvp in _fileDependencies)
+        {
+            if (!kvp.Value.Contains(filePath, StringComparer.OrdinalIgnoreCase))
+                continue;
+
+            var language = GetIndexedLanguage(kvp.Key);
+            if (language.HasValue && !result.Contains(language.Value))
+                result.Add(language.Value);
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Add dependency relationship (file A includes file B)
     /// </summary>
     public void AddDependency(string includingFile, string includedFile)

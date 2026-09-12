@@ -147,27 +147,66 @@ public class WorkspaceIndexer
 
         _logger.LogInformation("Workspace scan started: {Folder} ({FileCount} candidate files)", folder, files.Count);
 
+        // Issue #16 Phase 2: a .mqh file's language is decided by who includes
+        // it, not by its content. Pass A indexes only the unambiguous
+        // .mq4/.mq5 sources and records their resolved includes; pass B routes
+        // each .mqh by its includers' languages, falling back to content
+        // sniffing only when includers disagree or none resolve.
+        var includerLanguagesByMqh = new Dictionary<string, HashSet<MqlLanguage>>(StringComparer.OrdinalIgnoreCase);
+        var mqhPaths = new List<string>();
+
         var indexed = 0;
         foreach (var path in files)
         {
             if (token.IsCancellationRequested)
                 break;
 
-            // WI-05: a single file failure never aborts the scan.
+            var extension = Path.GetExtension(path);
+
+            // Pass A: unambiguous-by-extension sources only.
+            if (!extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
+            {
+                // WI-05: a single file failure never aborts the scan.
+                try
+                {
+                    IndexFile(path, token, includerLanguagesByMqh);
+                    indexed++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", path);
+                }
+
+                // Test seam (WI-02): per-file hook invoked on the scan thread
+                // after each IndexFile attempt. Null in production; no locks,
+                // D5 untouched.
+                onFileIndexed?.Invoke(path);
+            }
+            else
+            {
+                // Pass B candidates are deferred until all sources are indexed.
+                mqhPaths.Add(path);
+            }
+        }
+
+        // Pass B: route each .mqh by its includers when the evidence is
+        // unambiguous; otherwise fall back to content sniffing.
+        foreach (var mqhPath in mqhPaths)
+        {
+            if (token.IsCancellationRequested)
+                break;
+
             try
             {
-                IndexFile(path, token);
+                IndexMqhFile(mqhPath, includerLanguagesByMqh);
                 indexed++;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", path);
+                _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", mqhPath);
             }
 
-            // Test seam (WI-02): per-file hook invoked on the scan thread
-            // after each IndexFile attempt. Null in production; no locks,
-            // D5 untouched.
-            onFileIndexed?.Invoke(path);
+            onFileIndexed?.Invoke(mqhPath);
         }
 
         _logger.LogInformation("Workspace scan finished: {Folder} ({IndexedCount}/{FileCount} files indexed)", folder, indexed, files.Count);
@@ -212,12 +251,15 @@ public class WorkspaceIndexer
     }
 
     /// <summary>
-    /// Parse and index one file: language resolution (including .mqh content
-    /// sniffing), ParseFile, and an index-only AddFile upsert. Open documents
-    /// are skipped — the client buffer (didOpen/didChange) is authoritative
-    /// and the store upsert is idempotent anyway (D6).
+    /// Parse and index one .mq4/.mq5 source file (pass A). Language comes from
+    /// the extension via LanguageDetection; resolved .mqh includes are recorded
+    /// into <paramref name="includerLanguagesByMqh"/> so pass B can route each
+    /// header by its includers (issue #16 Phase 2). Open documents are
+    /// skipped — the client buffer (didOpen/didChange) is authoritative and
+    /// the store upsert is idempotent anyway (D6).
     /// </summary>
-    private void IndexFile(string path, CancellationToken token)
+    private void IndexFile(string path, CancellationToken token,
+        IDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh)
     {
         var content = File.ReadAllText(path);
         var uri = new Uri(path);
@@ -235,10 +277,121 @@ public class WorkspaceIndexer
         var parsedFile = parser.ParseFile(content, path);
         parsedFile.Language = language;
 
+        // Record which language includes each resolved .mqh so pass B can
+        // route headers without content sniffing. Resolution is bounded by
+        // PathSecurity so a traversal include never expands the map.
+        foreach (var include in parsedFile.Includes)
+        {
+            var resolved = ResolveWorkspaceInclude(path, include);
+            if (resolved == null)
+                continue;
+
+            if (!includerLanguagesByMqh.TryGetValue(resolved, out var languages))
+            {
+                languages = new HashSet<MqlLanguage>();
+                includerLanguagesByMqh[resolved] = languages;
+            }
+
+            languages.Add(language);
+        }
+
         // Index-only write: no OpenDocumentStore pollution (D6). Occurrences
         // are mapped by the shared helper (also used by didOpen/didChange).
         GlobalSymbolIndex.Instance.AddFile(
             path, language, parsedFile.Symbols,
             SymbolOccurrenceMapper.Map(parsedFile, path, language));
+    }
+
+    /// <summary>
+    /// Parse and index one .mqh include file (pass B). The language is the
+    /// includer-voted language when every includer agrees (issue #16 Phase 2);
+    /// conflicting or missing includers fall back to LanguageDetection content
+    /// sniffing (Phase 1 rules). Never throws: every failure degrades to
+    /// sniffing or skipping.
+    /// </summary>
+    private void IndexMqhFile(string path,
+        IReadOnlyDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh)
+    {
+        var content = File.ReadAllText(path);
+        var uri = new Uri(path);
+
+        // OpenDocumentStore is authoritative for open buffers; never overwrite.
+        if (_documentStore.TryGetValue(uri, out _))
+        {
+            _logger.LogDebug("Skipping open document during scan: {FilePath}", path);
+            return;
+        }
+
+        var language = ResolveMqhLanguage(path, includerLanguagesByMqh, content);
+        var parser = _languageService.ResolveParser(language);
+
+        var parsedFile = parser.ParseFile(content, path);
+        parsedFile.Language = language;
+
+        GlobalSymbolIndex.Instance.AddFile(
+            path, language, parsedFile.Symbols,
+            SymbolOccurrenceMapper.Map(parsedFile, path, language));
+    }
+
+    /// <summary>
+    /// Issue #16 Phase 2: choose a .mqh's language from its includers. When
+    /// all includers agree, that language wins. When includers conflict (both
+    /// MQL4 and MQL5 include it) or none resolve (system headers included
+    /// with angle brackets, include resolution failure, includer outside the
+    /// workspace), fall back to LanguageDetection content sniffing (Phase 1).
+    /// </summary>
+    private static MqlLanguage ResolveMqhLanguage(string path,
+        IReadOnlyDictionary<string, HashSet<MqlLanguage>> includerLanguagesByMqh,
+        string content)
+    {
+        if (includerLanguagesByMqh.TryGetValue(path, out var languages) && languages.Count == 1)
+        {
+            return languages.First();
+        }
+
+        return LanguageDetection.Detect(new Uri(path), null, content);
+    }
+
+    /// <summary>
+    /// Resolve one #include entry recorded by the parsers to an absolute file
+    /// path inside the workspace. Entries are stored as the extracted path:
+    /// bare (<c>lib\nested.mqh</c>) for quoted includes, or wrapped in angle
+    /// brackets (<c>&lt;Controls\Dialog.mqh&gt;</c>) for system-library includes,
+    /// which are intentionally not resolved because they live in the
+    /// terminal's standard library outside the workspace. Returns null for
+    /// angle-bracket includes, path-security rejections, and missing targets.
+    /// </summary>
+    private static string? ResolveWorkspaceInclude(string includingFile, string includeEntry)
+    {
+        if (string.IsNullOrEmpty(includeEntry))
+            return null;
+
+        // The parsers store quoted includes as bare paths and angle-bracket
+        // includes wrapped in <>. Treat any entry still carrying the markers
+        // as a system-library include.
+        var relative = includeEntry.Trim();
+        if (relative.StartsWith("<") || relative.EndsWith(">"))
+            return null;
+
+        string resolved;
+        try
+        {
+            var includingDir = Path.GetDirectoryName(includingFile);
+            var combined = includingDir != null
+                ? Path.Combine(includingDir, relative)
+                : relative;
+            resolved = Path.GetFullPath(combined);
+        }
+        catch
+        {
+            // Malformed include path: degrade to the sniffing fallback.
+            return null;
+        }
+
+        // Path traversal guard, same rule as didOpen include resolution.
+        if (!PathSecurity.IsContainedInWorkspace(includingFile, resolved))
+            return null;
+
+        return File.Exists(resolved) ? resolved : null;
     }
 }

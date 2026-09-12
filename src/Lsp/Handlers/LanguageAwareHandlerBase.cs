@@ -56,15 +56,23 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
 
     /// <summary>
     /// Resolve the language for a document URI, defaulting to MQL4.
-    /// For files not yet opened via didOpen, reads the file from disk (when it exists)
-    /// so that content sniffing on .mqh headers routes to the correct parser.
+    /// For .mqh headers, an indexed file is routed by its includers first
+    /// (issue #16 Phase 2); content sniffing from disk applies only when the
+    /// header is not indexed or the index evidence is ambiguous. For files
+    /// not yet opened via didOpen, reads the file from disk (when it exists)
+    /// so that fallback sniffing still routes to the correct parser.
     /// </summary>
     protected MqlLanguage ResolveLanguage(Uri uri)
     {
         if (_documentStore.TryGetLanguage(uri, out var language))
             return language;
 
-        // For files not yet opened via didOpen, read content from disk for accurate sniffing.
+        // Issue #16 Phase 2: indexed .mqh headers route by includer.
+        if (MqhLanguageResolver.TryResolve(uri, GlobalSymbolIndex.Instance, out var indexedLanguage))
+            return indexedLanguage;
+
+        // For files not yet opened via didOpen, read content from disk for
+        // accurate sniffing.
         if (uri.IsFile && File.Exists(uri.AbsolutePath))
         {
             try
