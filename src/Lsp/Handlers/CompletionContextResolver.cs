@@ -74,7 +74,7 @@ public sealed class CompletionContextResolver
             // document's language (CCR-04) and capped per the workspace-symbol
             // precedent, mirroring the member path.
             var scopeSymbols = CollectScopeSymbols(file, line0, character0);
-            scopeSymbols = MergeIndexSymbols(file, language, scopeSymbols);
+            scopeSymbols = MergeIndexSymbols(file, language, line0, character0, scopeSymbols);
             return new CompletionResolution(true, null, scopeSymbols);
         }
         catch (Exception)
@@ -549,12 +549,15 @@ public sealed class CompletionContextResolver
     /// CCR-03/CCR-04 (scope path): merge symbols from the GlobalSymbolIndex
     /// into the scope candidate list. Only symbols whose language matches
     /// the requesting document are admitted, per-file scanning is capped,
-    /// and file-level symbols declared after the cursor inside the enclosing
-    /// function of the requesting file are never re-admitted from the index
-    /// (index entries come from other files, so the locals pass already owns
-    /// them in the requesting file's model).
+    /// and symbols of the requesting file's own entry must never override
+    /// the self-file pass: didOpen/didChange re-index the requesting file
+    /// (JD-2, JD-5), so the merge sees the self file's entry and would
+    /// otherwise re-admit class members (JD-2) and locals declared after
+    /// the cursor (JD-5) that the tiers correctly excluded.
     /// </summary>
-    private IReadOnlyList<MqlSymbol> MergeIndexSymbols(MqlFile file, MqlLanguage language, IReadOnlyList<MqlSymbol> scopeSymbols)
+    private IReadOnlyList<MqlSymbol> MergeIndexSymbols(
+        MqlFile file, MqlLanguage language, int line0, int character0,
+        IReadOnlyList<MqlSymbol> scopeSymbols)
     {
         var result = new List<MqlSymbol>(scopeSymbols);
         var seen = new HashSet<string>(scopeSymbols.Select(s => s.Name), StringComparer.OrdinalIgnoreCase);
@@ -568,6 +571,13 @@ public sealed class CompletionContextResolver
             file.Symbols.Where(s => s.Range.Start != null &&
                 IsInsideAnyTypeBody(file, s.Range.Start.Line, s.Range.Start.Character)));
 
+        // JD-5: locals of the requesting file's enclosing function that the
+        // tiers excluded (declared after the cursor) must not come back from
+        // the self file's own index entry. Before-cursor locals are already
+        // claimed by `seen` (tier 1 owns them); the enclosing function owns
+        // every symbol declared inside its body range.
+        var enclosingFunction = FindEnclosingFunction(file, line0, character0);
+
         var scannedFiles = 0;
         foreach (var (indexedFilePath, fileLanguage, symbols) in _symbolIndex.Index.GetAllSymbols())
         {
@@ -579,6 +589,14 @@ public sealed class CompletionContextResolver
             if (fileLanguage != language)
                 continue;
 
+            // JD-5: the requesting file's own entry is special — the
+            // self-file pass already decided what its symbols may contribute.
+            // Exclude any indexed symbol whose declaration starts inside the
+            // enclosing function's body (tier 1 territory), regardless of
+            // hash-set identity.
+            var isSelfFile = enclosingFunction != null &&
+                string.Equals(indexedFilePath.AbsolutePath, file.FilePath, StringComparison.Ordinal);
+
             foreach (var symbol in symbols.Take(MaxSymbolsPerIndexedFile))
             {
                 if (string.IsNullOrEmpty(symbol.Name))
@@ -586,6 +604,14 @@ public sealed class CompletionContextResolver
 
                 if (selfFileSymbols.Contains(symbol))
                     continue;
+
+                if (isSelfFile && enclosingFunction != null &&
+                    symbol.Range.Start != null &&
+                    ContainsPosition(enclosingFunction.Range,
+                        symbol.Range.Start.Line, symbol.Range.Start.Character))
+                {
+                    continue;
+                }
 
                 if (seen.Add(symbol.Name))
                 {

@@ -456,6 +456,41 @@ int OnInit()
     }
 
     /// <summary>
+    /// CCR-01 consistency (JD-5): didOpen/didChange re-index the requesting
+    /// file itself, so the index merge sees the self file's entry too. A
+    /// local declared AFTER the cursor inside a top-level function —
+    /// correctly excluded by the locals pass — must not be re-admitted from
+    /// the self file's own index entry, while a before-cursor local still is.
+    /// Runs in the cross-file collection (it mutates the shared index
+    /// singleton).
+    /// </summary>
+    [Fact]
+    public void Resolve_IndexMerge_DoesNotReAdmitAfterCursorLocals()
+    {
+        var content = @"int OnInit()
+{
+    int total;
+    rate
+    int later;
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/jd5_merge.mq5");
+        GlobalSymbolIndex.Instance.AddFile("/test/jd5_merge.mq5", MqlLanguage.Mql5, file.Symbols);
+        var resolver = CreateResolver();
+
+        // Cursor after "rate" on line 3 (0-based), before "int later;".
+        var result = resolver.Resolve(file, content, 3, 8, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // Before-cursor local still suggested (tier 1).
+        Assert.Contains(result.ScopeSymbols, s => s.Name == "total");
+        // The after-cursor local is excluded by the self-file pass; the
+        // index merge must not re-admit it from the requesting file's own
+        // index entry.
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "later");
+    }
+
+    /// <summary>
     /// CCR-03: a receiver type defined in another (quoted-include) file is
     /// resolved through the GlobalSymbolIndex and its members merged.
     /// </summary>
