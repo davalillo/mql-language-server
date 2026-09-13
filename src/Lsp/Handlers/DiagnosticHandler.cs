@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Models;
+using MqlLanguageServer.Analysis;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Mql4.Builtins;
 using MqlLanguageServer.Mql5.Builtins;
@@ -25,6 +26,13 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
     private readonly ILogger<DiagnosticHandler> _logger;
     private readonly IServiceProvider? _serviceProvider;
 
+    /// <summary>
+    /// Optional semantic analyzer (issue #28). Defaults to null and is created
+    /// internally on first use, following the optional-dependency style of the
+    /// backward-compatible test constructors.
+    /// </summary>
+    private readonly SemanticAnalyzer? _semanticAnalyzer;
+
     // A-007: LSP 3.17 diagnostic codes are string|number. We emit numeric codes in
     // dedicated ranges so clients can route/interpret them without parsing prefixes.
     //   MQL4 diagnostics: 1000-1999
@@ -37,10 +45,12 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         ILogger<DiagnosticHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
+        IMqlBuiltins[] builtins,
+        SemanticAnalyzer? semanticAnalyzer = null)
         : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _semanticAnalyzer = semanticAnalyzer;
     }
 
     // Backward-compatible constructor for existing MQL4 tests.
@@ -189,6 +199,13 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                 });
             }
         }
+
+        // Issue #28: MQL-native semantic rules run after syntax errors and
+        // before the line-scan heuristics. Failures inside the analyzer are
+        // swallowed per-rule (best-effort) and must not disturb the existing
+        // syntax/typo/underscore diagnostics.
+        var semanticAnalyzer = _semanticAnalyzer ?? new SemanticAnalyzer();
+        diagnostics.AddRange(semanticAnalyzer.Analyze(mqlFile, content, language, token));
 
         for (int i = 0; i < lines.Length; i++)
         {
