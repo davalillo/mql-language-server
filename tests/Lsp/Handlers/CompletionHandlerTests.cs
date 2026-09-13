@@ -6,6 +6,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
@@ -387,4 +390,133 @@ public class CompletionHandlerTests
     }
 
     #endregion
+}
+
+/// <summary>
+/// Slice 3 handler-integration tests (SDD change issue-29-ast-completion,
+/// REQ-HD-04): member-access completion delegates to the
+/// <see cref="CompletionContextResolver"/>, and plain contexts keep the
+/// keyword/snippet/builtin providers alongside the scope-aware symbol list.
+/// These tests run in the "Mql5 Handler Tests" collection (REQ-HD-05) so the
+/// shared <see cref="GlobalSymbolIndex"/> singleton is reset per test.
+/// </summary>
+[Collection("Mql5 Handler Tests")]
+public class CompletionHandlerIntegrationTests
+{
+    private readonly Mql5TestCollectionFixture _fixture;
+
+    public CompletionHandlerIntegrationTests(Mql5TestCollectionFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    private static CompletionHandler CreateHandler(OpenDocumentStore store)
+    {
+        return new CompletionHandler(
+            Substitute.For<ILogger<CompletionHandler>>(),
+            new MqlLanguageService(new Mql4AntlrParser(), new Mql5AntlrParser()),
+            store,
+            new IMqlBuiltins[] { new Mql4BuiltinsAdapter(), new Mql5Builtins() });
+    }
+
+    /// <summary>
+    /// REQ-HD-04 / CCR-02: typing "trade." yields CTrade's members with
+    /// method/field kinds, and unrelated top-level symbols are not mixed in.
+    /// </summary>
+    [Fact]
+    public async Task Handle_MemberAccessOnLocal_ReturnsClassMembers_ExcludesUnrelatedSymbolsAsync()
+    {
+        // Arrange
+        var content = @"class CTrade
+{
+    int ticket;
+    int Buy()
+    {
+        return 0;
+    }
+};
+int UnrelatedTopLevel()
+{
+    return 0;
+}
+int OnInit()
+{
+    CTrade trade;
+    trade.
+    return 0;
+}";
+        var path = _fixture.CreateTempFile("member_local.mq5", content);
+
+        var store = new OpenDocumentStore();
+        var handler = CreateHandler(store);
+
+        var request = new CompletionParams
+        {
+            TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+            // Cursor immediately after "trade." (line 15, 0-based).
+            Position = new Position(15, 10)
+        };
+
+        // Act
+        var result = await handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Items);
+
+        var labels = result.Items.Select(i => i.Label).ToList();
+        Assert.Contains("ticket", labels);
+        Assert.Contains("Buy", labels);
+        Assert.DoesNotContain("UnrelatedTopLevel", labels);
+
+        Assert.Contains(result.Items, i => i.Label == "Buy" && i.Kind == CompletionItemKind.Method);
+        Assert.Contains(result.Items, i => i.Label == "ticket" && i.Kind == CompletionItemKind.Variable);
+    }
+
+    /// <summary>
+    /// REQ-HD-04: in a plain (non member-access) context the response keeps
+    /// keywords, snippets, and builtins alongside the scope-aware symbol list
+    /// (locals before the cursor are suggested).
+    /// </summary>
+    [Fact]
+    public async Task Handle_PlainContext_KeepsKeywordsSnippetsBuiltinsAndScopeListAsync()
+    {
+        // Arrange
+        var content = @"int OnInit()
+{
+    int count;
+    count
+    return 0;
+}";
+        var path = _fixture.CreateTempFile("plain_context.mq5", content);
+
+        var store = new OpenDocumentStore();
+        var handler = CreateHandler(store);
+
+        var request = new CompletionParams
+        {
+            TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+            // Cursor after "count" (line 3, 0-based) — plain context.
+            Position = new Position(3, 9)
+        };
+
+        // Act
+        var result = await handler.Handle(request, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        var labels = result.Items.Select(i => i.Label).ToList();
+
+        // Keywords remain.
+        Assert.Contains(result.Items, i => i.Kind == CompletionItemKind.Keyword && i.Label == "int");
+
+        // Snippets remain (general context → OnInit/OnTick snippets for MQL5).
+        Assert.Contains(result.Items, i => i.Kind == CompletionItemKind.Snippet);
+
+        // Builtins remain.
+        Assert.Contains(labels, l => l == "PositionGetTicket");
+
+        // Scope-aware symbol list: local declared before the cursor.
+        Assert.Contains(result.Items, i => i.Label == "count" && i.Kind == CompletionItemKind.Variable);
+    }
 }
