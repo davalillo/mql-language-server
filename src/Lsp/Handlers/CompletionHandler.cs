@@ -100,13 +100,30 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 }
             }
 
-            var filePathForContext = documentUri.GetFileSystemPath();
-            if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
+            // JD-1: the completion context must be computed against the same
+            // content the symbol model was parsed from. When the document is
+            // open (didOpen/didChange), that is the store's buffered content —
+            // the on-disk file lags behind unsaved edits, so a freshly typed
+            // "receiver." would never reach the member-access resolver if the
+            // context were taken from disk. When the document is not in the
+            // store, the content parsed above (from disk) is reused.
+            string fileContent;
+            if (_documentStore.TryGetValue(uri, out _, out var bufferedContent, out _) &&
+                bufferedContent != null)
             {
-                return new CompletionList(Array.Empty<CompletionItem>(), false);
+                fileContent = bufferedContent;
+            }
+            else
+            {
+                var filePathForContext = documentUri.GetFileSystemPath();
+                if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
+                {
+                    return new CompletionList(Array.Empty<CompletionItem>(), false);
+                }
+
+                fileContent = SourceFileReader.ReadAllText(filePathForContext);
             }
 
-            var fileContent = SourceFileReader.ReadAllText(filePathForContext);
             var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
 
             // Issue #29: delegate context analysis to the AST/scope resolver

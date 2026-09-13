@@ -519,4 +519,80 @@ int OnInit()
         // Scope-aware symbol list: local declared before the cursor.
         Assert.Contains(result.Items, i => i.Label == "count" && i.Kind == CompletionItemKind.Variable);
     }
+
+    /// <summary>
+    /// JD-1: after a didChange with UNSAVED buffer content, the completion
+    /// context must be computed against the store's cached content (the open
+    /// buffer), not the on-disk text — a freshly typed "trade." is not on
+    /// disk yet, so member completion must still resolve CTrade's members.
+    /// </summary>
+    [Fact]
+    public async Task Handle_UnsavedBuffer_MemberCompletionUsesBufferedContentAsync()
+    {
+        // Arrange: what is currently on disk (no member-access line yet).
+        var diskContent = @"class CTrade
+{
+    int ticket;
+    int Buy()
+    {
+        return 0;
+    }
+};
+int OnInit()
+{
+    CTrade trade;
+    return 0;
+}";
+        var path = _fixture.CreateTempFile("unsaved_buffer.mq5", diskContent);
+
+        // The open buffer: the user typed "trade." but has not saved —
+        // the store (didChange) holds this content, disk holds diskContent.
+        var bufferContent = @"class CTrade
+{
+    int ticket;
+    int Buy()
+    {
+        return 0;
+    }
+};
+int OnInit()
+{
+    CTrade trade;
+    trade.
+    return 0;
+}";
+
+        var store = new OpenDocumentStore();
+        var bufferedModel = new Mql5AntlrParser().ParseFile(bufferContent, path);
+        store.AddOrUpdate(
+            DocumentUri.FromFileSystemPath(path).ToUri(),
+            bufferedModel,
+            bufferContent,
+            MqlLanguage.Mql5);
+
+        var handler = CreateHandler(store);
+
+        var request = new CompletionParams
+        {
+            TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+            // Cursor immediately after "trade." (line 11, 0-based) — only
+            // present in the buffer, not on disk.
+            Position = new Position(11, 10)
+        };
+
+        // Act
+        var result = await handler.Handle(request, CancellationToken.None);
+
+        // Assert: member completion resolved from the buffered content —
+        // the member list is the receiver type's members only (CCR-02
+        // contract), so the receiver class itself (a top-level symbol the
+        // scope path would suggest) must be absent: its presence proves the
+        // member-access context never engaged on the unsaved buffer.
+        Assert.NotNull(result);
+        var labels = result.Items.Select(i => i.Label).ToList();
+        Assert.Contains("Buy", labels);
+        Assert.Contains("ticket", labels);
+        Assert.DoesNotContain("CTrade", labels);
+        Assert.Contains(result.Items, i => i.Label == "Buy" && i.Kind == CompletionItemKind.Method);
+    }
 }
