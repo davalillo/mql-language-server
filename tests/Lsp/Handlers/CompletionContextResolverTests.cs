@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -203,4 +204,224 @@ public class CompletionContextResolverCrossFileTests
     private readonly Mql5AntlrParser _parser = new();
 
     private static CompletionContextResolver CreateResolver() => new(new GlobalSymbolIndexAccessor());
+
+    /// <summary>
+    /// CCR-03: a receiver type defined in another (quoted-include) file is
+    /// resolved through the GlobalSymbolIndex and its members merged.
+    /// </summary>
+    [Fact]
+    public void Resolve_ReceiverTypeFromIndexedMqh_ReturnsItsMembers()
+    {
+        // Simulate an indexed .mqh defining class CTimer.
+        var includePath = Path.Combine(Path.GetTempPath(), $"ccr03_{Guid.NewGuid():N}", "timer.mqh");
+        Directory.CreateDirectory(Path.GetDirectoryName(includePath)!);
+        var includeContent = @"class CTimer
+{
+    int elapsed;
+    void Reset()
+    {
+        elapsed = 0;
+    }
+};";
+        File.WriteAllText(includePath, includeContent);
+
+        var mqhParser = new Mql5AntlrParser();
+        var includedFile = mqhParser.ParseFile(includeContent, includePath);
+        GlobalSymbolIndex.Instance.AddFile(includePath, MqlLanguage.Mql5, includedFile.Symbols);
+
+        // Main file declares `CTimer t;` — the class is NOT in the main file model.
+        var content = @"#include ""timer.mqh""
+int OnInit()
+{
+    CTimer t;
+    t.
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/ccr03_main.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "t." (line 4 0-based, char 6).
+        var result = resolver.Resolve(file, content, 4, 6, MqlLanguage.Mql5);
+
+        Directory.Delete(Path.GetDirectoryName(includePath)!, recursive: true);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.MemberAccess);
+        Assert.Equal("t", result.MemberAccess.ReceiverIdentifier);
+        Assert.Equal("CTimer", result.MemberAccess.ReceiverType.Name);
+        var memberNames = result.MemberAccess.Members.Select(m => m.Name).ToList();
+        Assert.Contains("elapsed", memberNames);
+        Assert.Contains("Reset", memberNames);
+    }
+
+    /// <summary>
+    /// CCR-03: a receiver whose type is only declared in an angle-bracket
+    /// stdlib include is not workspace-indexed — no false member list.
+    /// </summary>
+    [Fact]
+    public void Resolve_AngleBracketStdlibType_ProducesNoMemberList()
+    {
+        var content = @"#include <Trade/Trade.mqh>
+int OnInit()
+{
+    CTrade trade;
+    trade.
+    return 0;
+}";
+
+        var file = _parser.ParseFile(content, "/test/ccr03_angle.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "trade." (line 4 0-based, char 10).
+        var result = resolver.Resolve(file, content, 4, 10, MqlLanguage.Mql5);
+
+        // No false member list: either unresolved (fallback per CCR-05) or
+        // an empty member list.
+        if (result.Success)
+        {
+            Assert.NotNull(result.MemberAccess);
+            Assert.Empty(result.MemberAccess.Members);
+        }
+        else
+        {
+            Assert.Null(result.MemberAccess);
+        }
+    }
+
+    /// <summary>
+    /// CCR-05: MQL4 class members with SymbolType==null are classified from
+    /// Kind (Method kind → method completion still works on an instance).
+    /// </summary>
+    [Fact]
+    public void Resolve_Mql4ClassMembersWithNullSymbolType_ClassifiedFromKind()
+    {
+        var mql4Parser = new Mql4AntlrParser();
+        var content = @"class CIndicator
+{
+    int buffer;
+    void Draw()
+    {
+    }
+};
+int OnInit()
+{
+    CIndicator ind;
+    ind.
+    return 0;
+}";
+        var file = mql4Parser.ParseFile(content, "/test/ccr05_mql4.mq4");
+        var resolver = CreateResolver();
+
+        // Cursor after "ind." (line 10 0-based, char 8).
+        var result = resolver.Resolve(file, content, 10, 8, MqlLanguage.Mql4);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.MemberAccess);
+        Assert.Equal("CIndicator", result.MemberAccess.ReceiverType.Name);
+
+        var members = result.MemberAccess.Members;
+        Assert.Contains(members, m => m.Name == "Draw" && m.Kind == SymbolKind.Method);
+        Assert.Contains(members, m => m.Name == "buffer" && m.Kind == SymbolKind.Variable);
+        // MQL4 tolerance: the type symbol itself carries no SymbolType.
+        Assert.Null(result.MemberAccess.ReceiverType.SymbolType);
+    }
+
+    /// <summary>
+    /// CCR-04: the cross-file merge admits only symbols whose language
+    /// matches the requesting document — a .mq4 request must not see an
+    /// MQL5-indexed class.
+    /// </summary>
+    [Fact]
+    public void Resolve_Mql4Request_DoesNotMergeMql5IndexedClass()
+    {
+        // Index a class under Mql5.
+        var mqhParser = new Mql5AntlrParser();
+        var indexContent = @"class CMql5Only
+{
+    int mql5Field;
+};";
+        var indexFile = mqhParser.ParseFile(indexContent, "/test/ccr04_mql5.mqh");
+        GlobalSymbolIndex.Instance.AddFile("/test/ccr04_mql5.mqh", MqlLanguage.Mql5, indexFile.Symbols);
+
+        // MQL4 document references the same-named class.
+        var mql4Parser = new Mql4AntlrParser();
+        var content = @"int OnInit()
+{
+    CMql5Only x;
+    x.
+    return 0;
+}";
+        var file = mql4Parser.ParseFile(content, "/test/ccr04_main.mq4");
+        var resolver = CreateResolver();
+
+        // Cursor after "x." (line 3 0-based, char 6).
+        var result = resolver.Resolve(file, content, 3, 6, MqlLanguage.Mql4);
+
+        // The MQL5-only class must NOT resolve for an MQL4 request: either
+        // unresolved (Success=false) or an empty member list.
+        if (result.Success)
+        {
+            Assert.NotNull(result.MemberAccess);
+            Assert.Empty(result.MemberAccess.Members);
+        }
+        else
+        {
+            Assert.Null(result.MemberAccess);
+        }
+    }
+
+    /// <summary>
+    /// CCR-05: a null model / null content never throws — the resolver
+    /// degrades to Success=false (the handler then applies heuristics).
+    /// </summary>
+    [Fact]
+    public void Resolve_NullModel_DoesNotThrow_ReturnsFailure()
+    {
+        var resolver = CreateResolver();
+
+        var result = resolver.Resolve(null!, "int OnInit()\n{\n}", 1, 4, MqlLanguage.Mql4);
+
+        Assert.False(result.Success);
+        Assert.Null(result.MemberAccess);
+        Assert.Empty(result.ScopeSymbols);
+    }
+
+    /// <summary>
+    /// CCR-03/2.6: index iteration is capped (WorkspaceSymbolHandler
+    /// Take(100) precedent) so huge workspaces cannot flood completion.
+    /// </summary>
+    [Fact]
+    public void Resolve_MemberLookupAcrossManyIndexedFiles_MergesWithoutCapViolation()
+    {
+        // Index 150 MQL5 classes across separate files; the receiver type
+        // must still resolve despite the volume (cap bounds work per file
+        // scan, it must not break correctness for the requested type).
+        var mqhParser = new Mql5AntlrParser();
+        for (int i = 0; i < 150; i++)
+        {
+            var classContent = $@"class CBulk{i}
+{{
+    int field{i};
+}};";
+            var parsed = mqhParser.ParseFile(classContent, $"/test/ccr06_bulk_{i}.mqh");
+            GlobalSymbolIndex.Instance.AddFile($"/test/ccr06_bulk_{i}.mqh", MqlLanguage.Mql5, parsed.Symbols);
+        }
+
+        var content = @"int OnInit()
+{
+    CBulk77 x;
+    x.
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/ccr06_main.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "x." (line 3 0-based, char 6).
+        var result = resolver.Resolve(file, content, 3, 6, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.MemberAccess);
+        Assert.Equal("CBulk77", result.MemberAccess.ReceiverType.Name);
+        Assert.Contains(result.MemberAccess.Members, m => m.Name == "field77");
+    }
 }

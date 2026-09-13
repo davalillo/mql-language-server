@@ -262,9 +262,7 @@ public sealed class CompletionContextResolver
         if (string.IsNullOrEmpty(declaredType))
             return null;
 
-        // 2. Find the class/struct symbol for the declared type name in the
-        //    current file model. (Cross-file GlobalSymbolIndex resolution
-        //    arrives with commit 3.)
+        // 2. Find the class/struct symbol for the declared type name.
         return FindTypeSymbol(file, declaredType, language);
     }
 
@@ -297,8 +295,31 @@ public sealed class CompletionContextResolver
         if (inFile != null)
             return inFile;
 
+        return FindTypeInIndex(typeName, language);
+    }
+
+    private MqlSymbol? FindTypeInIndex(string typeName, MqlLanguage language)
+    {
+        foreach (var (_, fileLanguage, symbols) in _symbolIndex.Index.GetAllSymbols())
+        {
+            if (fileLanguage != language)
+                continue;
+
+            var match = symbols.Take(MaxSymbolsPerIndexedFile).FirstOrDefault(s =>
+                string.Equals(s.Name, typeName, StringComparison.Ordinal) &&
+                IsTypeSymbol(s));
+            if (match != null)
+                return match;
+        }
+
         return null;
     }
+
+    /// <summary>
+    /// Maximum number of symbols scanned per indexed file during a member
+    /// lookup (WorkspaceSymbolHandler Take(100) precedent).
+    /// </summary>
+    private const int MaxSymbolsPerIndexedFile = 100;
 
     private static bool IsTypeSymbol(MqlSymbol symbol)
     {
