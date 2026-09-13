@@ -219,6 +219,50 @@ int OnInit()
     }
 
     /// <summary>
+    /// JD-6: the derived class name must not leak into the member-access
+    /// item list. ResolveHierarchy wires derived type symbols into the
+    /// base's Children; CollectMembers must skip them (the ParentSymbol
+    /// walk still yields the base's own members, so inherited members are
+    /// not lost) — inserting the class name after the dot is a compile
+    /// error.
+    /// </summary>
+    [Fact]
+    public void Resolve_MemberAccessOnBaseInstance_DoesNotSuggestDerivedClassName()
+    {
+        var content = @"class CBase
+{
+    void Setup()
+    {
+    }
+};
+class CDerived : public CBase
+{
+    int extra;
+};
+int OnInit()
+{
+    CBase b;
+    b.
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/jd6_member.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "b." (line 13 0-based, char 6).
+        var result = resolver.Resolve(file, content, 13, 6, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        Assert.NotNull(result.MemberAccess);
+        Assert.Equal("CBase", result.MemberAccess.ReceiverType.Name);
+
+        var memberNames = result.MemberAccess.Members.Select(m => m.Name).ToList();
+        // The base's own member is still suggested.
+        Assert.Contains("Setup", memberNames);
+        // The hierarchy-wired derived class name is NOT a member item.
+        Assert.DoesNotContain("CDerived", memberNames);
+    }
+
+    /// <summary>
     /// CCR-02: member completion on a local with a declared class type — only
     /// the receiver class's methods/fields, correct kinds, no unrelated
     /// top-level symbols mixed in.

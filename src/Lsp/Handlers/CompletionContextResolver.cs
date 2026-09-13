@@ -637,6 +637,11 @@ public sealed class CompletionContextResolver
     /// <summary>
     /// Collect the receiver type's members: its Children union the children of
     /// every ancestor reached via the ParentSymbol chain (inherited members).
+    /// JD-6: hierarchy-wired type symbols (ResolveHierarchy attaches derived
+    /// class/struct/interface symbols to the base's Children) are skipped —
+    /// the derived class name is not a member item (inserting it after the
+    /// dot is a compile error). Inherited members are not lost: the
+    /// ParentSymbol walk yields the base's own members.
     /// </summary>
     private static IReadOnlyList<MqlSymbol> CollectMembers(MqlSymbol typeSymbol, MqlLanguage language)
     {
@@ -648,6 +653,9 @@ public sealed class CompletionContextResolver
         {
             foreach (var child in current.Children)
             {
+                if (IsTypeSymbol(child))
+                    continue;
+
                 if (seen.Add(child))
                 {
                     members.Add(child);
