@@ -77,6 +77,120 @@ double rate;";
     }
 
     /// <summary>
+    /// CCR-01 tier 2 (JD-2): members of the ENCLOSING class are suggested in
+    /// a plain (non member-access) context, between locals and top-level
+    /// symbols. The cursor sits inside a method of the class; method-locals
+    /// and parameters are visitor over-attachments in Children and must not
+    /// leak into tier 2.
+    /// </summary>
+    [Fact]
+    public void Resolve_EnclosingClassMembers_AreSuggestedInPlainScope()
+    {
+        var content = @"class CExpert
+{
+    int magic;
+    int GetMagic()
+    {
+        int inner;
+        return magic;
+    }
+    void SetMagic(int value)
+    {
+        int helper;
+        helper = 0;
+    }
+};
+int UnrelatedFn()
+{
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/ccr01_class.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "magic" on line 6 (0-based), inside GetMagic — a plain
+        // (non member-access) context within the enclosing class CExpert.
+        var result = resolver.Resolve(file, content, 6, 20, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // Tier 2: the enclosing class's field and methods are suggested.
+        Assert.Contains(result.ScopeSymbols, s =>
+            s.Name == "magic" && s.Kind == SymbolKind.Variable);
+        Assert.Contains(result.ScopeSymbols, s =>
+            s.Name == "GetMagic" && s.Kind == SymbolKind.Method);
+        // Top-level tier preserved.
+        Assert.Contains(result.ScopeSymbols, s => s.Name == "UnrelatedFn");
+        // Visitor over-attachments (a sibling method's parameter and local)
+        // must not appear: they are not true class members.
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "value");
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "helper");
+    }
+
+    /// <summary>
+    /// CCR-01 tier 2 (JD-2): members of a NON-enclosing class are NOT
+    /// suggested in a plain context — the class itself is (top-level tier),
+    /// but its members stay out.
+    /// </summary>
+    [Fact]
+    public void Resolve_NonEnclosingClassMembers_AreNotSuggested()
+    {
+        var content = @"class COther
+{
+    int otherField;
+};
+int OnInit()
+{
+    int count;
+    count
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/ccr01_other.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "count" on line 7 (0-based), plain context inside
+        // OnInit — no enclosing class.
+        var result = resolver.Resolve(file, content, 7, 9, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // The class symbol itself remains a valid top-level suggestion.
+        Assert.Contains(result.ScopeSymbols, s => s.Name == "COther");
+        // Its member must not leak into the scope list.
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "otherField");
+    }
+
+    /// <summary>
+    /// CCR-01 tier 2 (JD-2): a local declaration shadowing a same-named
+    /// ENCLOSED-CLASS member keeps innermost-wins — exactly one entry,
+    /// attributed to the local; the class member (tier 2) must not be
+    /// re-admitted after the local claimed the name.
+    /// </summary>
+    [Fact]
+    public void Resolve_LocalShadowingClassMember_RemainsInnermostWins()
+    {
+        var content = @"class CExpert
+{
+    int magic;
+    int GetMagic()
+    {
+        int magic;
+        magic
+        return 0;
+    }
+};";
+        var file = _parser.ParseFile(content, "/test/ccr01_shadow_member.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "magic" on line 6 (0-based), after the local
+        // declaration on line 5.
+        var result = resolver.Resolve(file, content, 6, 13, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        var magicEntries = result.ScopeSymbols.Where(s => s.Name == "magic").ToList();
+        Assert.Single(magicEntries);
+        // Attributed to the local declaration (line 5, 0-based).
+        Assert.Equal(5, magicEntries[0].Range.Start.Line);
+    }
+
+    /// <summary>
     /// CCR-01: a local declaration shadows a same-named global — exactly one
     /// entry, attributed to the local declaration.
     /// </summary>
@@ -204,6 +318,42 @@ public class CompletionContextResolverCrossFileTests
     private readonly Mql5AntlrParser _parser = new();
 
     private static CompletionContextResolver CreateResolver() => new(new GlobalSymbolIndexAccessor());
+
+    /// <summary>
+    /// CCR-01 tier-2 consistency (JD-2): the handler flow re-indexes the
+    /// requesting document itself on every didOpen/didChange, so the
+    /// GlobalSymbolIndex merge must not re-admit class members the
+    /// self-file pass excluded — otherwise the non-enclosing-class
+    /// exclusion would silently regress in the production flow. Runs in the
+    /// cross-file collection (it mutates the shared index singleton).
+    /// </summary>
+    [Fact]
+    public void Resolve_IndexMerge_DoesNotReAdmitExcludedSelfFileMembers()
+    {
+        // The requesting file defines a class; the cursor sits inside OnInit
+        // (no enclosing class), so "otherField" must be excluded from the
+        // self-file pass.
+        var content = @"class COther
+{
+    int otherField;
+};
+int OnInit()
+{
+    count
+    return 0;
+}";
+        var file = _parser.ParseFile(content, "/test/ccr01_merge.mq5");
+        GlobalSymbolIndex.Instance.AddFile("/test/ccr01_merge.mq5", MqlLanguage.Mql5, file.Symbols);
+        var resolver = CreateResolver();
+
+        // Cursor after "count" on line 6 (0-based), plain context.
+        var result = resolver.Resolve(file, content, 6, 9, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // The self-file pass excluded it; the index merge must not
+        // re-admit it.
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "otherField");
+    }
 
     /// <summary>
     /// CCR-03: a receiver type defined in another (quoted-include) file is

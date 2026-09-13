@@ -414,11 +414,12 @@ int OnInit()
         // Act
         var result = await handler.Handle(request, CancellationToken.None);
 
-        // Assert: MQL5 pipeline ran — the header's own class member is in the
-        // scope-aware list (the file model already carries the member; the
-        // request language came from the store's includer-decided Mql5).
+        // Assert: MQL5 pipeline ran — the header's own class is in the
+        // scope-aware top-level list. (Its member is NOT suggested outside
+        // the enclosing class per CCR-01/JD-2: class members belong to the
+        // enclosing-class tier, and the cursor here is outside the class.)
         Assert.NotNull(result);
-        Assert.Contains(result.Items, i => i.Label == "member");
+        Assert.Contains(result.Items, i => i.Label == "CRouted");
     }
 
     /// <summary>

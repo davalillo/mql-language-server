@@ -107,19 +107,48 @@ public sealed class CompletionContextResolver
             }
         }
 
-        // 2. Top-level file symbols (shadowed names already claimed by locals
-        //    are skipped: innermost declaration wins). Symbols declared inside
-        //    the enclosing function belong to the locals pass above, which
-        //    already filtered them by cursor position — never re-admit them
-        //    here, or declarations after the cursor would leak back in.
+        // 2. Enclosing class members (CCR-01 tier 2, JD-2): members of the
+        //    innermost class/struct/interface containing the cursor (or that
+        //    owns the enclosing function via its Children, since visitors
+        //    give type symbols name-token-only ranges). Visitors attach
+        //    method-locals/parameters as Children over-attachments, so those
+        //    are filtered out of tier 2.
+        var enclosingClass = FindEnclosingClass(file, enclosingFunction, line0, character0);
+        if (enclosingClass != null)
+        {
+            foreach (var member in CollectEnclosingClassMembers(file, enclosingClass))
+            {
+                if (seen.Add(member.Name))
+                {
+                    result.Add(member);
+                }
+            }
+        }
+
+        // 3. Top-level file symbols (shadowed names already claimed by locals
+        //    or class members are skipped: innermost declaration wins). Symbols
+        //    declared inside the enclosing function belong to the locals pass
+        //    above, which already filtered them by cursor position — never
+        //    re-admit them here, or declarations after the cursor would leak
+        //    back in. Class members are equally excluded (JD-2): the top-level
+        //    tier is for true file-level symbols only, not for members of any
+        //    class (only the enclosing class's members belong in tier 2).
         foreach (var symbol in file.Symbols)
         {
             if (string.IsNullOrEmpty(symbol.Name))
                 continue;
 
             var start = symbol.Range.Start;
-            if (enclosingFunction != null && start != null &&
+            if (start == null)
+                continue;
+
+            if (enclosingFunction != null &&
                 ContainsPosition(enclosingFunction.Range, start.Line, start.Character))
+            {
+                continue;
+            }
+
+            if (IsInsideAnyTypeBody(file, start.Line, start.Character))
             {
                 continue;
             }
@@ -131,6 +160,156 @@ public sealed class CompletionContextResolver
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Find the innermost class/struct/interface containing the cursor
+    /// position (0-based), or — when the cursor sits inside a method body
+    /// whose class was not itself range-contained (the visitors give type
+    /// symbols name-token-only ranges) — the class that owns the enclosing
+    /// function via its Children.
+    /// </summary>
+    private static MqlSymbol? FindEnclosingClass(
+        MqlFile file, MqlSymbol? enclosingFunction, int line0, int character0)
+    {
+        MqlSymbol? best = null;
+
+        foreach (var symbol in file.Symbols)
+        {
+            if (!IsTypeSymbol(symbol))
+                continue;
+
+            if (ContainsPosition(symbol.Range, line0, character0))
+            {
+                // Innermost: prefer the narrowest containing range.
+                if (best == null || SpanSize(symbol.Range) < SpanSize(best.Range))
+                {
+                    best = symbol;
+                }
+            }
+        }
+
+        if (best != null || enclosingFunction == null)
+            return best;
+
+        // Fallback: the class owning the enclosing function through Children
+        // (type symbols carry name-token-only ranges, so cursor containment
+        // cannot see inside the class body).
+        foreach (var symbol in file.Symbols)
+        {
+            if (!IsTypeSymbol(symbol))
+                continue;
+
+            if (symbol.Children.Contains(enclosingFunction))
+            {
+                return symbol;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Collect the enclosing class's true members: Children minus function
+    /// locals/parameters (visitor over-attachments — the type stack persists
+    /// inside method bodies, so declarations belonging to ANY function body
+    /// are wrongly attached as class Children). A variable child is a true
+    /// class field only when its declaration does not sit inside any
+    /// function/method body range of the file.
+    /// </summary>
+    private static IEnumerable<MqlSymbol> CollectEnclosingClassMembers(
+        MqlFile file, MqlSymbol enclosingClass)
+    {
+        foreach (var child in enclosingClass.Children)
+        {
+            if (string.IsNullOrEmpty(child.Name))
+                continue;
+
+            // Skip over-attached function-locals/parameters: a variable whose
+            // declaration starts inside any function/method body belongs to
+            // tier 1 of that function (or is out of scope), never to tier 2.
+            if (child.Kind == SymbolKind.Variable &&
+                child.Range.Start != null &&
+                IsInsideAnyFunctionBody(file, child.Range.Start.Line, child.Range.Start.Character))
+            {
+                continue;
+            }
+
+            yield return child;
+        }
+    }
+
+    /// <summary>
+    /// True when the declaration position starts inside any function/method
+    /// body range of the file (full body ranges per the visitors).
+    /// </summary>
+    private static bool IsInsideAnyFunctionBody(MqlFile file, int line, int character)
+    {
+        foreach (var symbol in file.Symbols)
+        {
+            if (symbol.Kind != SymbolKind.Function && symbol.Kind != SymbolKind.Method)
+                continue;
+
+            if (ContainsPosition(symbol.Range, line, character))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True when the position falls inside the body of any type symbol in the
+    /// file (JD-2): the top-level admission must not re-admit members of ANY
+    /// class, only true top-level symbols are admitted. Type symbol ranges
+    /// are name-token-only in both visitors, so each type's body span is
+    /// derived conservatively: from the type's name start to the end of its
+    /// widest member span, extended to the file end when trailing members
+    /// exist beyond the widest span (a lower bound is acceptable here — the
+    /// merge pass and tier-2 logic own member suggestions).
+    /// </summary>
+    private static bool IsInsideAnyTypeBody(MqlFile file, int line, int character)
+    {
+        foreach (var symbol in file.Symbols)
+        {
+            if (!IsTypeSymbol(symbol))
+                continue;
+
+            var start = symbol.Range.Start;
+            if (start == null)
+                continue;
+
+            var endLine = symbol.Range.End?.Line ?? start.Line;
+            var endChar = symbol.Range.End?.Character ?? start.Character;
+            var widestLine = start.Line;
+            var widestChar = start.Character;
+            foreach (var child in symbol.Children)
+            {
+                if (child.Range.End == null)
+                    continue;
+                if (child.Range.End.Line > widestLine ||
+                    (child.Range.End.Line == widestLine && child.Range.End.Character > widestChar))
+                {
+                    widestLine = child.Range.End.Line;
+                    widestChar = child.Range.End.Character;
+                }
+            }
+
+            var bodyEndLine = Math.Max(endLine, widestLine);
+            var bodyEndChar = bodyEndLine == widestLine ? Math.Max(endChar, widestChar) : endChar;
+
+            // Strict start comparison: the type symbol's own declaration
+            // (start == the type's name position) is a top-level symbol and
+            // must not exclude itself; only nested declarations are "inside".
+            if (ComparePositions(start.Line, start.Character, line, character) < 0 &&
+                ComparePositions(line, character, bodyEndLine, bodyEndChar) <= 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -364,8 +543,17 @@ public sealed class CompletionContextResolver
         var result = new List<MqlSymbol>(scopeSymbols);
         var seen = new HashSet<string>(scopeSymbols.Select(s => s.Name), StringComparer.OrdinalIgnoreCase);
 
+        // JD-2: symbols the self-file pass excluded (class members, locals)
+        // must not be re-admitted from the index when the requesting file
+        // itself is indexed (didOpen/didChange re-index it). Class members
+        // are not top-level candidates: only the enclosing class's members
+        // belong in tier 2.
+        var selfFileSymbols = new HashSet<MqlSymbol>(
+            file.Symbols.Where(s => s.Range.Start != null &&
+                IsInsideAnyTypeBody(file, s.Range.Start.Line, s.Range.Start.Character)));
+
         var scannedFiles = 0;
-        foreach (var (_, fileLanguage, symbols) in _symbolIndex.Index.GetAllSymbols())
+        foreach (var (indexedFilePath, fileLanguage, symbols) in _symbolIndex.Index.GetAllSymbols())
         {
             if (scannedFiles >= MaxIndexedFilesMerged)
                 break;
@@ -378,6 +566,9 @@ public sealed class CompletionContextResolver
             foreach (var symbol in symbols.Take(MaxSymbolsPerIndexedFile))
             {
                 if (string.IsNullOrEmpty(symbol.Name))
+                    continue;
+
+                if (selfFileSymbols.Contains(symbol))
                     continue;
 
                 if (seen.Add(symbol.Name))
