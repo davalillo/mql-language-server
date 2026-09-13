@@ -24,6 +24,11 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
     private readonly string _filePath;
     private readonly Dictionary<string, MqlSymbol> _symbolsByName = new(StringComparer.OrdinalIgnoreCase);
 
+    // REQ-SM-02: stack of enclosing class/struct/interface symbols while visiting their bodies.
+    // Members discovered inside are attached as Children of the innermost enclosing type at
+    // extraction time — never via Range containment (class Range spans only the name token).
+    private readonly Stack<MqlSymbol> _currentTypeStack = new();
+
     public Mql5SymbolVisitor(string filePath)
     {
         _filePath = filePath ?? string.Empty;
@@ -47,9 +52,17 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         Symbols.Add(symbol);
         _symbolsByName[name] = symbol;
 
-        var result = base.VisitClassDeclaration(context);
-        ResolveHierarchy();
-        return result;
+        _currentTypeStack.Push(symbol);
+        try
+        {
+            var result = base.VisitClassDeclaration(context);
+            ResolveHierarchy();
+            return result;
+        }
+        finally
+        {
+            _currentTypeStack.Pop();
+        }
     }
 
     public override MqlSymbol? VisitStructDeclaration([NotNull] Mql5GrammarParser.StructDeclarationContext context)
@@ -70,9 +83,17 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         Symbols.Add(symbol);
         _symbolsByName[name] = symbol;
 
-        var result = base.VisitStructDeclaration(context);
-        ResolveHierarchy();
-        return result;
+        _currentTypeStack.Push(symbol);
+        try
+        {
+            var result = base.VisitStructDeclaration(context);
+            ResolveHierarchy();
+            return result;
+        }
+        finally
+        {
+            _currentTypeStack.Pop();
+        }
     }
 
     public override MqlSymbol? VisitInterfaceDeclaration([NotNull] Mql5GrammarParser.InterfaceDeclarationContext context)
@@ -93,9 +114,17 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         Symbols.Add(symbol);
         _symbolsByName[name] = symbol;
 
-        var result = base.VisitInterfaceDeclaration(context);
-        ResolveHierarchy();
-        return result;
+        _currentTypeStack.Push(symbol);
+        try
+        {
+            var result = base.VisitInterfaceDeclaration(context);
+            ResolveHierarchy();
+            return result;
+        }
+        finally
+        {
+            _currentTypeStack.Pop();
+        }
     }
 
     public override MqlSymbol? VisitUnionDeclaration([NotNull] Mql5GrammarParser.UnionDeclarationContext context)
@@ -111,7 +140,15 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         Symbols.Add(symbol);
         _symbolsByName[name] = symbol;
 
-        return base.VisitUnionDeclaration(context);
+        _currentTypeStack.Push(symbol);
+        try
+        {
+            return base.VisitUnionDeclaration(context);
+        }
+        finally
+        {
+            _currentTypeStack.Pop();
+        }
     }
 
     public override MqlSymbol? VisitEnumDeclaration([NotNull] Mql5GrammarParser.EnumDeclarationContext context)
@@ -148,11 +185,15 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
             var selectionRange = CreateRangeFromToken(lastToken.Symbol);
             var fullRange = CreateFullFunctionRange(context, lastToken.Symbol);
 
+            // A function declared inside a class/struct/interface body is a method.
+            var enclosingType = _currentTypeStack.Count > 0 ? _currentTypeStack.Peek() : null;
+            var symbolType = enclosingType != null ? SymbolType.Method : SymbolType.Function;
+
             var symbol = new MqlSymbol
             {
                 Name = name,
-                Kind = SymbolType.Function.ToLspSymbolKind(),
-                SymbolType = SymbolType.Function,
+                Kind = symbolType.ToLspSymbolKind(),
+                SymbolType = symbolType,
                 Range = fullRange,
                 Detail = $"function {context.type().GetText()} {name}",
                 SelectionRange = selectionRange,
@@ -160,6 +201,7 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
             };
 
             Symbols.Add(symbol);
+            AttachMember(symbol);
         }
 
         return base.VisitFunctionDeclaration(context);
@@ -204,14 +246,43 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
                     Range = range,
                     SelectionRange = range,
                     Detail = detail,
+                    DeclaredType = typeText,
                     FilePath = _filePath
                 };
 
                 Symbols.Add(symbol);
+                AttachMember(symbol);
             }
         }
 
         return base.VisitVariableDeclaration(context);
+    }
+
+    public override MqlSymbol? VisitParameter([NotNull] Mql5GrammarParser.ParameterContext context)
+    {
+        // Parameters are anonymous in some positions ("void f(int)") — only capture named ones.
+        var nameToken = context.IDENTIFIER();
+        if (nameToken != null)
+        {
+            var name = nameToken.GetText();
+            var range = CreateRangeFromToken(nameToken.Symbol);
+
+            var symbol = new MqlSymbol
+            {
+                Name = name,
+                Kind = SymbolType.Variable.ToLspSymbolKind(),
+                SymbolType = SymbolType.Variable,
+                Range = range,
+                SelectionRange = range,
+                Detail = $"{context.type().GetText()} {name}",
+                DeclaredType = context.type().GetText(),
+                FilePath = _filePath
+            };
+
+            Symbols.Add(symbol);
+        }
+
+        return base.VisitParameter(context);
     }
 
     public override MqlSymbol? VisitDirective([NotNull] Mql5GrammarParser.DirectiveContext context)
@@ -227,6 +298,19 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         }
 
         return base.VisitDirective(context);
+    }
+
+    private void AttachMember(MqlSymbol member)
+    {
+        // REQ-SM-02: attach class members as Children of the innermost enclosing type symbol.
+        if (_currentTypeStack.Count == 0)
+            return;
+
+        var enclosingType = _currentTypeStack.Peek();
+        if (!enclosingType.Children.Contains(member))
+        {
+            enclosingType.Children.Add(member);
+        }
     }
 
     private void ResolveHierarchy()
