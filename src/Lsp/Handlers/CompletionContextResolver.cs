@@ -225,6 +225,14 @@ public sealed class CompletionContextResolver
             if (string.IsNullOrEmpty(child.Name))
                 continue;
 
+            // JD-4: ResolveHierarchy wires derived class/struct/interface
+            // symbols into the base's Children; they are inheritance wiring,
+            // not lexical members. CollectMembers walks ParentSymbol for
+            // inherited members at member-access time, so excluding type
+            // symbols here loses nothing.
+            if (IsTypeSymbol(child))
+                continue;
+
             // Skip over-attached function-locals/parameters: a variable whose
             // declaration starts inside any function/method body belongs to
             // tier 1 of that function (or is out of scope), never to tier 2.
@@ -286,6 +294,14 @@ public sealed class CompletionContextResolver
             var widestChar = start.Character;
             foreach (var child in symbol.Children)
             {
+                // JD-3: ResolveHierarchy wires derived class/struct/interface
+                // symbols into the base's Children; their name-token Range.End
+                // must not extend the base's body span, or every top-level
+                // symbol declared between the two declarations is
+                // misclassified as a class member and dropped from the tiers.
+                if (IsTypeSymbol(child))
+                    continue;
+
                 if (child.Range.End == null)
                     continue;
                 if (child.Range.End.Line > widestLine ||

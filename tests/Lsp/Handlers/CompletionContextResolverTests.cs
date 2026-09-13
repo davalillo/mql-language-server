@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Xunit;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
 using MqlLanguageServer.Mql5.Parser;
@@ -304,6 +305,105 @@ int Check(COrderInfo order)
         Assert.Equal("order", orderResult.MemberAccess.ReceiverIdentifier);
         Assert.Equal("COrderInfo", orderResult.MemberAccess.ReceiverType.Name);
         Assert.Contains(orderResult.MemberAccess.Members, m => m.Name == "symbol");
+    }
+
+    [Fact]
+    public void Resolve_TopLevelSymbolBetweenInheritedClassWiring_IsSuggestedInPlainScope()
+    {
+        // JD-3: ResolveHierarchy wires CDerived into CBase.Children, so the
+        // widest-child span computation extended CBase's body span to
+        // CDerived's name token. Every top-level symbol declared between the
+        // two classes (g_config) was then misclassified as a class member and
+        // silently dropped from the scope tiers.
+        var content = @"class CBase { void Setup() {} };
+int g_config;
+class CDerived : public CBase { int extra; };
+int OnInit() { g_config
+    return 0; }";
+        var file = _parser.ParseFile(content, "/test/jd3_inheritance.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor after "g_config" (line 3 0-based, char 23) — plain (non
+        // member-access) context inside OnInit.
+        var result = resolver.Resolve(file, content, 3, 23, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // The global declared between the two classes must be suggested.
+        Assert.Contains(result.ScopeSymbols, s =>
+            s.Name == "g_config" && s.Kind == SymbolKind.Variable);
+    }
+
+    [Fact]
+    public void Resolve_CursorInsideBaseClassMethod_KeepsTopLevelSymbolsVisible()
+    {
+        // JD-3, same mechanism observed from inside the base class: with the
+        // cursor inside CBase.Setup, the hierarchy-extended body span
+        // swallowed g_config (and CDerived's own tier-3 admission); only the
+        // wired derived type leaked through as a bogus "enclosing class
+        // member" (JD-4).
+        var content = @"class CBase { void Setup() {} };
+int g_config;
+class CDerived : public CBase { int extra; };
+int OnInit() { g_config
+    return 0; }";
+        var file = _parser.ParseFile(content, "/test/jd3_base_method.mq5");
+        var resolver = CreateResolver();
+
+        // Cursor inside CBase.Setup's body (line 0 0-based, char 22).
+        var result = resolver.Resolve(file, content, 0, 22, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        Assert.Contains(result.ScopeSymbols, s =>
+            s.Name == "g_config" && s.Kind == SymbolKind.Variable);
+        Assert.Contains(result.ScopeSymbols, s => s.Name == "OnInit");
+    }
+
+    [Fact]
+    public void Resolve_HierarchyWiredDerivedType_IsNotYieldedAsEnclosingClassMember()
+    {
+        // JD-4: ResolveHierarchy attaches derived class/struct/interface
+        // symbols to the base's Children; the tier-2 filter must not yield
+        // them as enclosing-class members (CollectMembers already walks
+        // ParentSymbol for inherited members at member-access time, so
+        // excluding them here loses nothing). CDerived's range sits inside
+        // CBase's body span so its admission cannot be dominated by the
+        // top-level tier — this isolates the tier-2 classification; the
+        // realistic parser-level chain is covered by the JD-3 fixtures.
+        var content = @"class CBase
+{
+    void Setup()
+    {
+    }
+};
+int g_config;";
+        var file = _parser.ParseFile(content, "/test/jd4_wired_child.mq5");
+
+        // Simulate the ResolveHierarchy wiring the MQL5 visitor performs:
+        // the derived type is attached to the base's Children with a
+        // name-token-only range inside the base's body span.
+        var cDerived = new MqlSymbol
+        {
+            Name = "CDerived",
+            Kind = SymbolKind.Class,
+            SymbolType = SymbolType.Class,
+            Range = new LspRange(new Position(3, 4), new Position(3, 12)),
+            FilePath = file.FilePath
+        };
+        var cBase = file.Symbols.First(s => s.Name == "CBase");
+        cBase.Children.Add(cDerived);
+
+        var resolver = CreateResolver();
+
+        // Cursor inside Setup's body (line 3 0-based, char 6) — the
+        // enclosing class is CBase through the Children fallback.
+        var result = resolver.Resolve(file, content, 3, 6, MqlLanguage.Mql5);
+
+        Assert.True(result.Success);
+        // The true member is still suggested.
+        Assert.Contains(result.ScopeSymbols, s =>
+            s.Name == "Setup" && s.Kind == SymbolKind.Method);
+        // The hierarchy-wired derived type is not a class member.
+        Assert.DoesNotContain(result.ScopeSymbols, s => s.Name == "CDerived");
     }
 }
 
