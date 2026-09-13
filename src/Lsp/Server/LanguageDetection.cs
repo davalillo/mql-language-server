@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MqlLanguageServer.Models;
@@ -29,6 +30,14 @@ public static class LanguageDetection
         "pack(",
         "enum class"
     };
+
+    /// <summary>
+    /// Read-only exposure of <see cref="Mql5Tokens"/> for consumers that need
+    /// the MQL5-exclusive marker list without duplicating it (issue #28:
+    /// LanguageMisuseRule flags these tokens in MQL4 documents). Single
+    /// source of truth for both content sniffing and semantic diagnostics.
+    /// </summary>
+    public static IReadOnlyList<string> Mql5Markers => Mql5Tokens;
 
     /// <summary>
     /// Detect the language of a document from client languageId, URI, and content.
