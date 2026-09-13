@@ -69,7 +69,12 @@ public sealed class CompletionContextResolver
                 return new CompletionResolution(false, null, Array.Empty<MqlSymbol>());
             }
 
+            // CCR-03: the requesting document's own symbols first, then the
+            // GlobalSymbolIndex merge — language-filtered by the requesting
+            // document's language (CCR-04) and capped per the workspace-symbol
+            // precedent, mirroring the member path.
             var scopeSymbols = CollectScopeSymbols(file, line0, character0);
+            scopeSymbols = MergeIndexSymbols(file, language, scopeSymbols);
             return new CompletionResolution(true, null, scopeSymbols);
         }
         catch (Exception)
@@ -262,8 +267,26 @@ public sealed class CompletionContextResolver
         if (string.IsNullOrEmpty(declaredType))
             return null;
 
-        // 2. Find the class/struct symbol for the declared type name.
-        return FindTypeSymbol(file, declaredType, language);
+        // 2. Find the class/struct symbol for the declared type name: file
+        //    model first, then GlobalSymbolIndex (language-filtered,
+        //    CCR-03/CCR-04).
+        var typeSymbol = FindTypeSymbol(file, declaredType, language);
+        if (typeSymbol != null)
+            return typeSymbol;
+
+        // 3. Not in the file model or the index: materialize a lightweight
+        //    placeholder type symbol so the member context survives when the
+        //    receiver type itself is not indexed (stdlib, unresolved
+        //    includes). Members stay empty — no false member list (CCR-03
+        //    angle-include behavior) — but the scope list is not polluted
+        //    with unrelated symbols either.
+        return new MqlSymbol
+        {
+            Name = declaredType,
+            Kind = SymbolKind.Class,
+            FilePath = receiverVariable?.FilePath ?? string.Empty,
+            Range = receiverVariable?.Range ?? new LspRange()
+        };
     }
 
     /// <summary>
@@ -320,6 +343,52 @@ public sealed class CompletionContextResolver
     /// lookup (WorkspaceSymbolHandler Take(100) precedent).
     /// </summary>
     private const int MaxSymbolsPerIndexedFile = 100;
+
+    /// <summary>
+    /// Maximum number of files scanned during a scope merge (same cap
+    /// precedent as the member lookup and WorkspaceSymbolHandler).
+    /// </summary>
+    private const int MaxIndexedFilesMerged = 100;
+
+    /// <summary>
+    /// CCR-03/CCR-04 (scope path): merge symbols from the GlobalSymbolIndex
+    /// into the scope candidate list. Only symbols whose language matches
+    /// the requesting document are admitted, per-file scanning is capped,
+    /// and file-level symbols declared after the cursor inside the enclosing
+    /// function of the requesting file are never re-admitted from the index
+    /// (index entries come from other files, so the locals pass already owns
+    /// them in the requesting file's model).
+    /// </summary>
+    private IReadOnlyList<MqlSymbol> MergeIndexSymbols(MqlFile file, MqlLanguage language, IReadOnlyList<MqlSymbol> scopeSymbols)
+    {
+        var result = new List<MqlSymbol>(scopeSymbols);
+        var seen = new HashSet<string>(scopeSymbols.Select(s => s.Name), StringComparer.OrdinalIgnoreCase);
+
+        var scannedFiles = 0;
+        foreach (var (_, fileLanguage, symbols) in _symbolIndex.Index.GetAllSymbols())
+        {
+            if (scannedFiles >= MaxIndexedFilesMerged)
+                break;
+
+            scannedFiles++;
+
+            if (fileLanguage != language)
+                continue;
+
+            foreach (var symbol in symbols.Take(MaxSymbolsPerIndexedFile))
+            {
+                if (string.IsNullOrEmpty(symbol.Name))
+                    continue;
+
+                if (seen.Add(symbol.Name))
+                {
+                    result.Add(symbol);
+                }
+            }
+        }
+
+        return result;
+    }
 
     private static bool IsTypeSymbol(MqlSymbol symbol)
     {
