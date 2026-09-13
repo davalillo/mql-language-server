@@ -1,3 +1,23 @@
+## [Unreleased]
+
+### Added
+- feat(completion): AST/scope-based completion context resolution (#29)
+  - New `CompletionContextResolver` replaces the text-heuristic context analysis in `CompletionHandler`: completion context is now resolved from the parsed symbol model instead of string-matching line content
+  - Scope-aware symbol collection with proper precedence (CCR-01): locals declared before the cursor → members of the enclosing class → top-level symbols → `GlobalSymbolIndex` merge; innermost declarations shadow outer ones, and declarations after the cursor are never suggested
+  - Member-access completion on `.` and `->` (CCR-02/03): the receiver expression's declared type (locals, fields, parameters) is resolved against class symbols — including classes from quoted `#include`d `.mqh` files via `GlobalSymbolIndex` — and only that class's methods/fields are suggested with correct `CompletionItemKind`; unrelated top-level symbols no longer mix in
+  - Cross-file and language routing (CCR-03/04): workspace-indexed symbols merge into completion lists filtered by the requesting document's language, with per-file/per-scan caps (`Take(100)` precedent); `.mqh` completion follows the includer's language
+  - MQL4 tolerance (CCR-05): completion works without `SymbolType` classification (LSP `Kind` fallback); resolver failures degrade to the previous text heuristics and the empty-`CompletionList` error contract is preserved
+  - Keyword/snippet/builtin providers untouched; no per-keystroke re-parsing (resolver consumes the cached `MqlFile` from `OpenDocumentStore`)
+- feat(parser): declared-type capture and class-member model for both grammars (REQ-SM-02/06)
+  - `MqlSymbol.DeclaredType` captured for variables, fields, and parameters by the MQL4 and MQL5 ANTLR visitors
+  - Class/struct/interface members attached as `Children` via a visitor type-stack (class `Range` spans only the name token, so containment comes from the parse tree)
+  - MQL4 visitor now emits class/struct symbols and captures function parameters (previously missing entirely)
+- fix(lsp): completion context uses the editor buffer, not on-disk content (JD-1)
+  - Member completion after `didChange` on an unsaved buffer previously scanned stale disk text, so freshly typed `obj.` produced no member list until save
+- fix(completion): enclosing-class members tier and type-body scoping in scope resolution (JD-2/JD-3/JD-4)
+  - CCR-01's enclosing-class-member tier implemented; class body spans exclude hierarchy-wired derived types so same-file inheritance no longer hides top-level symbols
+- fix(completion): index merge excludes self-file after-cursor locals; member collection skips wired type symbols (JD-5/JD-6)
+
 ## [2.1.0] - 2026-09-12
 
 ### Added

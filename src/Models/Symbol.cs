@@ -24,6 +24,12 @@ public class MqlSymbol
     public SymbolType? SymbolType { get; set; }
 
     /// <summary>
+    /// Declared type of variables, fields, and parameters (e.g. "CTrade" for "CTrade trade;"),
+    /// as written in the source. Null for non-variable symbols.
+    /// </summary>
+    public string? DeclaredType { get; set; }
+
+    /// <summary>
     /// Range within the document (full symbol including body for functions)
     /// </summary>
     public Range Range { get; set; } = new();

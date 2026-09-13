@@ -421,6 +421,92 @@ public class Mql5AntlrParserTests
         Assert.Empty(file.Macros);
     }
 
+    // --- DeclaredType capture (REQ-SM-02) ---
+
+    [Fact]
+    public void ParseFile_GlobalVariableWithClassType_CapturesDeclaredType()
+    {
+        var file = _parser.ParseFile("CTrade trade;\n", "t.mq5");
+
+        var symbol = Assert.Single(file.Symbols, s => s.Name == "trade");
+        Assert.Equal("CTrade", symbol.DeclaredType);
+    }
+
+    [Fact]
+    public void ParseFile_ClassFieldWithClassType_CapturesDeclaredType()
+    {
+        var code =
+            "class CExpertUser {\n" +
+            "private:\n" +
+            "    CExpert m_expert;\n" +
+            "};\n";
+        var file = _parser.ParseFile(code, "t.mq5");
+
+        var classSymbol = file.Symbols.FirstOrDefault(s => s.Name == "CExpertUser");
+        Assert.NotNull(classSymbol);
+        var field = classSymbol!.Children.Single(s => s.Name == "m_expert");
+        Assert.Equal("CExpert", field.DeclaredType);
+    }
+
+    [Fact]
+    public void ParseFile_ParameterWithClassType_CapturesDeclaredType()
+    {
+        var code =
+            "void OpenOrder(COrderInfo order) {\n" +
+            "    order.Print();\n" +
+            "}\n";
+        var file = _parser.ParseFile(code, "t.mq5");
+
+        var param = file.Symbols.FirstOrDefault(s => s.Name == "order");
+        Assert.NotNull(param);
+        Assert.Equal("COrderInfo", param!.DeclaredType);
+    }
+
+    // --- Class member containment (REQ-SM-02) ---
+
+    [Fact]
+    public void ParseFile_ClassMembers_AttachedAsChildren_WithMethodClassification()
+    {
+        var code =
+            "class CWidget {\n" +
+            "private:\n" +
+            "    int m_count;\n" +
+            "public:\n" +
+            "    void Reset() { m_count = 0; }\n" +
+            "};\n";
+        var file = _parser.ParseFile(code, "t.mq5");
+
+        var classSymbol = file.Symbols.FirstOrDefault(s => s.Name == "CWidget");
+        Assert.NotNull(classSymbol);
+
+        var field = classSymbol!.Children.SingleOrDefault(s => s.Name == "m_count");
+        Assert.NotNull(field);
+        Assert.Equal(SymbolType.Variable, field!.SymbolType);
+
+        var method = classSymbol.Children.SingleOrDefault(s => s.Name == "Reset");
+        Assert.NotNull(method);
+        Assert.Equal(SymbolType.Method, method!.SymbolType);
+    }
+
+    [Fact]
+    public void ParseFile_ClassMembers_AlsoPresentInFlatList_InheritanceWiringPreserved()
+    {
+        var code =
+            "class Base {}; class Derived : public Base {};\n" +
+            "class CWidget { int m_count; void Reset() {} };\n";
+        var file = _parser.ParseFile(code, "t.mq5");
+
+        // Flat list still holds every symbol (additive model contract)
+        Assert.Contains(file.Symbols, s => s.Name == "CWidget");
+        Assert.Contains(file.Symbols, s => s.Name == "m_count");
+        Assert.Contains(file.Symbols, s => s.Name == "Reset");
+
+        var baseSymbol = file.Symbols.First(s => s.Name == "Base");
+        var derivedSymbol = file.Symbols.First(s => s.Name == "Derived");
+        Assert.Equal(baseSymbol, derivedSymbol.ParentSymbol);
+        Assert.Contains(derivedSymbol, baseSymbol.Children);
+    }
+
     // --- ParseFile error path ---
 
     [Fact]

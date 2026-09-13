@@ -27,6 +27,7 @@ namespace MqlLanguageServer.Lsp.Handlers;
 public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, CompletionList>, ICompletionHandler
 {
     private readonly ILogger<CompletionHandler> _logger;
+    private readonly CompletionContextResolver _contextResolver;
 
     public CompletionHandler(
         ILogger<CompletionHandler> logger,
@@ -36,6 +37,7 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
         : base(languageService, documentStore, builtins)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _contextResolver = new CompletionContextResolver(SymbolIndex);
         _logger.LogInformation("CompletionHandler initialized");
     }
 
@@ -98,30 +100,71 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 }
             }
 
-            var filePathForContext = documentUri.GetFileSystemPath();
-            if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
+            // JD-1: the completion context must be computed against the same
+            // content the symbol model was parsed from. When the document is
+            // open (didOpen/didChange), that is the store's buffered content —
+            // the on-disk file lags behind unsaved edits, so a freshly typed
+            // "receiver." would never reach the member-access resolver if the
+            // context were taken from disk. When the document is not in the
+            // store, the content parsed above (from disk) is reused.
+            string fileContent;
+            if (_documentStore.TryGetValue(uri, out _, out var bufferedContent, out _) &&
+                bufferedContent != null)
             {
-                return new CompletionList(Array.Empty<CompletionItem>(), false);
-            }
-
-            var fileContent = SourceFileReader.ReadAllText(filePathForContext);
-            var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
-
-            var completions = new List<CompletionItem>();
-
-            if (context.IsInsideFunction)
-            {
-                completions.AddRange(GetContextualCompletions(context));
+                fileContent = bufferedContent;
             }
             else
             {
-                completions.AddRange(GetGlobalScopeCompletions(mqlFile, builtins));
+                var filePathForContext = documentUri.GetFileSystemPath();
+                if (string.IsNullOrEmpty(filePathForContext) || !File.Exists(filePathForContext))
+                {
+                    return new CompletionList(Array.Empty<CompletionItem>(), false);
+                }
+
+                fileContent = SourceFileReader.ReadAllText(filePathForContext);
+            }
+
+            var context = AnalyzeCompletionContext(fileContent, request.Position.Line + 1, request.Position.Character + 1);
+
+            // Issue #29: delegate context analysis to the AST/scope resolver
+            // over the cached MqlFile (REQ-SM-06: no re-parse per keystroke).
+            var resolution = _contextResolver.Resolve(
+                mqlFile, fileContent,
+                request.Position.Line, request.Position.Character, language);
+
+            var completions = new List<CompletionItem>();
+
+            if (resolution.Success && resolution.MemberAccess != null)
+            {
+                // Member-access context (CCR-02/03): the receiver type's
+                // members only — unrelated top-level symbols are not mixed in.
+                completions.AddRange(GetMemberCompletions(resolution.MemberAccess));
+            }
+            else if (resolution.Success)
+            {
+                // Plain context (CCR-01): scope-aware symbol list from the
+                // resolver (locals before cursor, innermost shadowing).
+                completions.AddRange(GetScopeCompletions(resolution.ScopeSymbols));
+            }
+            else
+            {
+                // Resolver failure (CCR-05): degrade to the existing text
+                // heuristics, unchanged.
+                if (context.IsInsideFunction)
+                {
+                    completions.AddRange(GetContextualCompletions(context));
+                }
+                else
+                {
+                    completions.AddRange(GetGlobalScopeCompletions(mqlFile, builtins));
+                }
+
+                completions.AddRange(GetSymbolCompletions(mqlFile, builtins));
             }
 
             completions.AddRange(GetKeywordCompletions(language));
             completions.AddRange(GetSnippetCompletions(context, language));
             completions.AddRange(GetFilteredBuiltinCompletions(context, builtins));
-            completions.AddRange(GetSymbolCompletions(mqlFile, builtins));
 
             var groupedCompletions = GroupCompletionsByType(completions).ToList();
             var sortedCompletions = SortCompletionsByRelevance(groupedCompletions, context);
@@ -216,6 +259,87 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 InsertText = s.Name,
                 Detail = s.Detail
             });
+    }
+
+    /// <summary>
+    /// Issue #29 (CCR-02/03): completion items for the receiver type's members.
+    /// Kinds are mapped from SymbolType (falling back to Kind when absent,
+    /// per CCR-05 MQL4 tolerance).
+    /// </summary>
+    private IEnumerable<CompletionItem> GetMemberCompletions(MemberAccessInfo memberAccess)
+    {
+        return memberAccess.Members
+            .Where(m => !string.IsNullOrEmpty(m.Name))
+            .Select(m => new CompletionItem
+            {
+                Label = m.Name,
+                Kind = MapItemKind(m),
+                InsertText = m.Name,
+                Detail = m.Detail
+            });
+    }
+
+    /// <summary>
+    /// Issue #29 (CCR-01): completion items for the resolver's scope symbol
+    /// list (locals before cursor, enclosing-class members, top-level symbols,
+    /// deduplicated innermost-first).
+    /// </summary>
+    private IEnumerable<CompletionItem> GetScopeCompletions(IReadOnlyList<MqlSymbol> scopeSymbols)
+    {
+        return scopeSymbols
+            .Where(s => !string.IsNullOrEmpty(s.Name))
+            .Select(s => new CompletionItem
+            {
+                Label = s.Name,
+                Kind = MapItemKind(s),
+                InsertText = s.Name,
+                Detail = s.Detail
+            });
+    }
+
+    /// <summary>
+    /// Issue #29 (task 2.8 deferred here): map a symbol to its LSP
+    /// CompletionItemKind from SymbolType, branching on Kind when SymbolType
+    /// is absent (MQL4 tolerance, CCR-05).
+    /// </summary>
+    private static CompletionItemKind MapItemKind(MqlSymbol symbol)
+    {
+        if (symbol.SymbolType.HasValue)
+        {
+            return symbol.SymbolType.Value switch
+            {
+                SymbolType.Class => CompletionItemKind.Class,
+                SymbolType.Struct => CompletionItemKind.Struct,
+                SymbolType.Interface => CompletionItemKind.Interface,
+                SymbolType.Enum => CompletionItemKind.Enum,
+                SymbolType.Function => CompletionItemKind.Function,
+                SymbolType.Method => CompletionItemKind.Method,
+                SymbolType.Property => CompletionItemKind.Property,
+                SymbolType.Constructor => CompletionItemKind.Constructor,
+                SymbolType.Destructor => CompletionItemKind.Function,
+                SymbolType.Variable => CompletionItemKind.Variable,
+                SymbolType.Template => CompletionItemKind.Class,
+                _ => GetKindFromSymbolKind(symbol.Kind)
+            };
+        }
+
+        return GetKindFromSymbolKind(symbol.Kind);
+    }
+
+    private static CompletionItemKind GetKindFromSymbolKind(SymbolKind symbolKind)
+    {
+        return symbolKind switch
+        {
+            SymbolKind.Function => CompletionItemKind.Function,
+            SymbolKind.Method => CompletionItemKind.Method,
+            SymbolKind.Variable => CompletionItemKind.Variable,
+            SymbolKind.Class => CompletionItemKind.Class,
+            SymbolKind.Struct => CompletionItemKind.Struct,
+            SymbolKind.Interface => CompletionItemKind.Interface,
+            SymbolKind.Enum => CompletionItemKind.Enum,
+            SymbolKind.Constant => CompletionItemKind.Value,
+            _ => CompletionItemKind.Text
+        };
     }
 
     private IEnumerable<CompletionItem> GetSnippetCompletions(CompletionContext context, MqlLanguage language)
@@ -344,14 +468,26 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
     {
         var keywordCompletions = completions.Where(c => c.Kind == CompletionItemKind.Keyword).OrderBy(c => c.Label);
         var snippetCompletions = completions.Where(c => c.Kind == CompletionItemKind.Snippet).OrderBy(c => c.Label);
+        var classCompletions = completions.Where(c =>
+            c.Kind == CompletionItemKind.Class ||
+            c.Kind == CompletionItemKind.Struct ||
+            c.Kind == CompletionItemKind.Interface ||
+            c.Kind == CompletionItemKind.Enum).OrderBy(c => c.Label);
         var functionCompletions = completions.Where(c => c.Kind == CompletionItemKind.Function).OrderBy(c => c.Label);
+        var methodCompletions = completions.Where(c =>
+            c.Kind == CompletionItemKind.Method ||
+            c.Kind == CompletionItemKind.Constructor).OrderBy(c => c.Label);
         var variableCompletions = completions.Where(c => c.Kind == CompletionItemKind.Variable).OrderBy(c => c.Label);
+        var propertyCompletions = completions.Where(c => c.Kind == CompletionItemKind.Property).OrderBy(c => c.Label);
         var valueCompletions = completions.Where(c => c.Kind == CompletionItemKind.Value || c.Kind == CompletionItemKind.Constant).OrderBy(c => c.Label);
 
         return keywordCompletions
             .Concat(snippetCompletions)
+            .Concat(classCompletions)
             .Concat(functionCompletions)
+            .Concat(methodCompletions)
             .Concat(variableCompletions)
+            .Concat(propertyCompletions)
             .Concat(valueCompletions)
             .ToList();
     }

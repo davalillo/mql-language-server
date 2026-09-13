@@ -824,9 +824,74 @@ namespace MqlLanguageServer.Parser
 
         private readonly string _filePath;
 
+        // REQ-SM-02: stack of enclosing class/struct symbols while visiting their bodies.
+        // Members discovered inside are attached as Children of the innermost enclosing type
+        // at extraction time — never via Range containment (class Range spans the name token).
+        private readonly Stack<Mql4Symbol> _currentTypeStack = new Stack<Mql4Symbol>();
+
         public Mql4SymbolVisitor(string filePath)
         {
             _filePath = filePath ?? string.Empty;
+        }
+
+        public override Mql4Symbol? VisitClassDeclaration([NotNull] Mql4GrammarParser.ClassDeclarationContext context)
+        {
+            // REQ-SM-02: the MQL4 visitor now emits class symbols (previously none).
+            // Tolerance per CCR-05: Kind is set, SymbolType stays null.
+            var nameToken = context.IDENTIFIER();
+            if (nameToken == null)
+                return base.VisitClassDeclaration(context);
+
+            var symbol = new Mql4Symbol
+            {
+                Name = nameToken.GetText(),
+                Kind = LspSymbolKind.Class,
+                Range = CreateRangeFromToken(nameToken.Symbol),
+                SelectionRange = CreateRangeFromToken(nameToken.Symbol),
+                Detail = $"class {nameToken.GetText()}",
+                FilePath = _filePath
+            };
+
+            Symbols.Add(symbol);
+
+            _currentTypeStack.Push(symbol);
+            try
+            {
+                return base.VisitClassDeclaration(context);
+            }
+            finally
+            {
+                _currentTypeStack.Pop();
+            }
+        }
+
+        public override Mql4Symbol? VisitStructDeclaration([NotNull] Mql4GrammarParser.StructDeclarationContext context)
+        {
+            var nameToken = context.IDENTIFIER();
+            if (nameToken == null)
+                return base.VisitStructDeclaration(context);
+
+            var symbol = new Mql4Symbol
+            {
+                Name = nameToken.GetText(),
+                Kind = LspSymbolKind.Struct,
+                Range = CreateRangeFromToken(nameToken.Symbol),
+                SelectionRange = CreateRangeFromToken(nameToken.Symbol),
+                Detail = $"struct {nameToken.GetText()}",
+                FilePath = _filePath
+            };
+
+            Symbols.Add(symbol);
+
+            _currentTypeStack.Push(symbol);
+            try
+            {
+                return base.VisitStructDeclaration(context);
+            }
+            finally
+            {
+                _currentTypeStack.Pop();
+            }
         }
 
         public override Mql4Symbol? VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context)
@@ -840,10 +905,15 @@ namespace MqlLanguageServer.Parser
                 var selectionRange = CreateRangeFromToken(lastToken.Symbol);
                 var fullRange = CreateFullFunctionRange(context, lastToken.Symbol);
 
+                // A function declared inside a class/struct body is a method (Kind only —
+                // MQL4 tolerance keeps SymbolType null, CCR-05).
+                var enclosingType = _currentTypeStack.Count > 0 ? _currentTypeStack.Peek() : null;
+                var kind = enclosingType != null ? LspSymbolKind.Method : LspSymbolKind.Function;
+
                 var symbol = new Mql4Symbol
                 {
                     Name = name,
-                    Kind = LspSymbolKind.Function,
+                    Kind = kind,
                     Range = fullRange,  // Range = full range (declaration + body) per LSP spec
                     Detail = $"Function returning {context.type().GetText()}",
                     SelectionRange = selectionRange,  // SelectionRange = only the declaration name
@@ -851,6 +921,7 @@ namespace MqlLanguageServer.Parser
                 };
 
                 Symbols.Add(symbol);
+                AttachMember(symbol);
             }
 
             return base.VisitFunctionDeclaration(context);
@@ -917,14 +988,59 @@ namespace MqlLanguageServer.Parser
                         Range = range,
                         SelectionRange = range,
                         Detail = detail,
+                        DeclaredType = typeText,
                         FilePath = _filePath
                     };
 
                     Symbols.Add(symbol);
+                    AttachMember(symbol);
                 }
             }
 
             return base.VisitVariableDeclaration(context);
+        }
+
+        public override Mql4Symbol? VisitParameter([NotNull] Mql4GrammarParser.ParameterContext context)
+        {
+            // Parameters are anonymous in some positions ("void f(int)") — only capture named ones.
+            var nameToken = context.IDENTIFIER();
+            if (nameToken != null)
+            {
+                var name = nameToken.GetText();
+                var range = CreateRangeFromToken(nameToken.Symbol);
+
+                var symbol = new Mql4Symbol
+                {
+                    Name = name,
+                    Kind = LspSymbolKind.Variable,
+                    Range = range,
+                    SelectionRange = range,
+                    Detail = $"{context.type().GetText()} {name}",
+                    DeclaredType = context.type().GetText(),
+                    FilePath = _filePath
+                };
+
+                Symbols.Add(symbol);
+                AttachMember(symbol);
+            }
+
+            return base.VisitParameter(context);
+        }
+
+        /// <summary>
+        /// REQ-SM-02: attach class members as Children of the innermost enclosing type symbol.
+        /// No-op for top-level declarations.
+        /// </summary>
+        private void AttachMember(Mql4Symbol member)
+        {
+            if (_currentTypeStack.Count == 0)
+                return;
+
+            var enclosingType = _currentTypeStack.Peek();
+            if (!enclosingType.Children.Contains(member))
+            {
+                enclosingType.Children.Add(member);
+            }
         }
 
         public override Mql4Symbol? VisitDirective([NotNull] Mql4GrammarParser.DirectiveContext context)
