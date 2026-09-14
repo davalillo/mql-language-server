@@ -28,9 +28,16 @@ public interface ISemanticRule
 /// <param name="Language">Target language variant.</param>
 /// <param name="BaseCode">Numeric diagnostic code base (1000 for MQL4, 5000 for MQL5).</param>
 /// <param name="Token">Cancellation token linked to the diagnostic request timeout.</param>
+/// <param name="Builtins">
+/// Optional per-language builtin registries (issue #32, D2). Rules that need a
+/// builtin filter select the registry matching <see cref="Language"/>; null
+/// keeps the context usable from contexts that have no DI (additive,
+/// non-breaking default).
+/// </param>
 public record SemanticRuleContext(
     MqlFile? File,
     string Content,
     MqlLanguage Language,
     int BaseCode,
-    CancellationToken Token);
+    CancellationToken Token,
+    Mql4.Builtins.IMqlBuiltins[]? Builtins = null);
