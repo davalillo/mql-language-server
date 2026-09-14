@@ -23,11 +23,18 @@ public enum Mql4OnlyApiKind
 /// <param name="Kind">Function or predefined variable.</param>
 /// <param name="Reason">Why the name is MQL4-only (REQ-MA-02 admission).</param>
 /// <param name="Replacement">Concrete MQL5 suggestion.</param>
+/// <param name="SemanticsChanged">
+/// True when the name still exists in MQL5 with changed semantics (option C
+/// of the Judgment-Day ledger JD-1): the rule then only flags MQL4-style
+/// bare variable reads, skipping valid MQL5 call forms `Name(...)` — the
+/// next non-whitespace character after the identifier is `(`.
+/// </param>
 public readonly record struct Mql4OnlyApiEntry(
     string Name,
     Mql4OnlyApiKind Kind,
     string Reason,
-    string Replacement);
+    string Replacement,
+    bool SemanticsChanged = false);
 
 /// <summary>
 /// Curated registry of MQL4-only standard-library API names (issue #34).
@@ -35,12 +42,15 @@ public readonly record struct Mql4OnlyApiEntry(
 /// Admission per REQ-MA-02: an entry is admissible only if the name is
 /// demonstrably rejected by the MQL5 compiler, or present in MQL5 with
 /// changed semantics such that unchanged MQL4 usage is a defect. Names
-/// shared by both languages (OrderSend, OrderSelect, OrderClose,
-/// ArrayResize, Print, CopyBuffer, FileOpen, OrdersTotal, HistoryTotal,
-/// the i* series, IsStopped, …) are deliberately excluded: call-site
-/// signature discrimination is out of scope and flagging them would be a
-/// false positive. This table is explicitly NOT a diff of Mql4Builtins /
-/// Mql5Builtins (asymmetric, shared names).
+/// shared by both languages with UNCHANGED semantics (OrderSend,
+/// OrderSelect, OrderClose, ArrayResize, Print, CopyBuffer, FileOpen,
+/// OrdersTotal, HistoryTotal, the i* series, IsStopped, …) are deliberately
+/// excluded: call-site signature discrimination is out of scope and flagging
+/// them would be a false positive. Semantics-changed names (Bars, Digits,
+/// Point) are admitted with <c>SemanticsChanged = true</c>: the rule skips
+/// their valid MQL5 call forms and flags only MQL4-style bare reads, so no
+/// valid MQL5 usage is flagged. This table is explicitly NOT a diff of
+/// Mql4Builtins / Mql5Builtins (asymmetric, shared names).
 ///
 /// Keyed Ordinal (case-sensitive): MQL identifiers are case-sensitive
 /// like C++, so `TimeHour` and `timehour` are distinct identifiers.
@@ -50,8 +60,10 @@ internal static class Mql4OnlyApiRegistry
     private static readonly FrozenDictionary<string, Mql4OnlyApiEntry> _entries = new Dictionary<string, Mql4OnlyApiEntry>
     {
         // --- Predefined variables (5) -----------------------------------
-        // MQL5 has _Ask/_Bid/_Digits/_Point/iBars(); bare forms are rejected
-        // or have changed semantics.
+        // Ask/Bid: bare forms rejected by the MQL5 compiler (always flagged).
+        // Bars/Digits/Point: still exist in MQL5 with changed semantics —
+        // SemanticsChanged=true, so only bare variable reads are flagged;
+        // valid MQL5 call forms (Bars(...), Digits(), Point()) are skipped.
         { "Ask", new("Ask", Mql4OnlyApiKind.Variable,
             "MQL4 predefined variable; MQL5 compiler rejects bare Ask",
             "SymbolInfoDouble(_Symbol, SYMBOL_ASK)") },
@@ -60,13 +72,16 @@ internal static class Mql4OnlyApiRegistry
             "SymbolInfoDouble(_Symbol, SYMBOL_BID)") },
         { "Bars", new("Bars", Mql4OnlyApiKind.Variable,
             "Semantics changed: MQL4 predefined var; MQL5 Bars is a function Bars(symbol, timeframe)",
-            "iBars(_Symbol, _Period)") },
+            "iBars(_Symbol, _Period)",
+            SemanticsChanged: true) },
         { "Digits", new("Digits", Mql4OnlyApiKind.Variable,
             "Semantics changed: MQL4 predefined var; MQL5 Digits is a function call",
-            "_Digits") },
+            "_Digits",
+            SemanticsChanged: true) },
         { "Point", new("Point", Mql4OnlyApiKind.Variable,
             "Semantics changed: MQL4 predefined var; MQL5 Point is a function call",
-            "_Point") },
+            "_Point",
+            SemanticsChanged: true) },
 
         // --- Predefined series arrays (6) --------------------------------
         // MQL4-only; MQL5 requires explicit Copy*/i* calls.

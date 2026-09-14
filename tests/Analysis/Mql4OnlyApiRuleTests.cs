@@ -282,6 +282,84 @@ public class Mql4OnlyApiRuleTests
     }
 
     // ------------------------------------------------------------------
+    // Call-form discrimination for semantics-changed names (REQ-MA-02/05,
+    // option C): Bars/Digits/Point exist in MQL5 as functions with changed
+    // semantics. A call form `Bars(...)` is valid MQL5 and must NOT warn; a
+    // bare MQL4-style variable read `Bars` IS the migration defect and must
+    // warn with the honest semantics-changed message.
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void SemanticsChangedFunctionCallForm_NotFlagged()
+    {
+        // Valid MQL5 function calls must not produce diagnostics — this
+        // pins the false-positive channel found in Judgment Day (repo
+        // fixtures contain 8 such Bars() call sites).
+        const string content =
+            "int total = Bars(_Symbol, timeframe);\n" +
+            "int bars2 = Bars(Symbol(), Period());\n" +
+            "int digits = Digits();\n" +
+            "double point = Point();\n";
+
+        var diagnostics = _rule.Check(Context(null, content)).ToList();
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void SemanticsChangedVariableRead_StillFlaggedWithHonestMessage()
+    {
+        // A bare MQL4-style read of Bars/Digits/Point in an MQL5 document is
+        // the actual migration defect; the message must NOT claim the name
+        // is unavailable in MQL5 (it is, with changed semantics).
+        const string content =
+            "int total = Bars;\n" +
+            "int digits = Digits;\n";
+
+        var diagnostics = _rule.Check(Context(null, content)).ToList();
+
+        Assert.Equal(2, diagnostics.Count);
+
+        var bars = diagnostics.Single(d => d.Message.Contains("'Bars'"));
+        Assert.Equal("5060", bars.Code);
+        Assert.DoesNotContain("not available in MQL5", bars.Message);
+        Assert.Contains("changed semantics", bars.Message);
+        Assert.Contains("iBars", bars.Message);
+
+        var digits = diagnostics.Single(d => d.Message.Contains("'Digits'"));
+        Assert.DoesNotContain("not available in MQL5", digits.Message);
+        Assert.Contains("_Digits", digits.Message);
+    }
+
+    [Fact]
+    public void RejectedByCompilerNames_CallFormStillFlagged()
+    {
+        // The call-form skip applies ONLY to semantics-changed entries.
+        // MQL5-compiler-rejected names keep flagging even in call position
+        // (TimeHour() does not exist in MQL5 at all).
+        const string content = "int h = TimeHour(t);\n";
+
+        var diagnostics = _rule.Check(Context(null, content)).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Contains("not available in MQL5", diagnostic.Message);
+    }
+
+    [Fact]
+    public void MixedCallAndVariableRead_Bars()
+    {
+        // Same line, both forms: only the bare variable read warns.
+        const string content = "int delta = Bars - Bars(_Symbol, _Period);\n";
+
+        var diagnostics = _rule.Check(Context(null, content)).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Contains("'Bars'", diagnostic.Message);
+        // Range covers the bare occurrence (index 12..16), not the call.
+        Assert.Equal(new Range(0, 12, 0, 16), diagnostic.Range);
+    }
+
+    // ------------------------------------------------------------------
     // Analyzer integration (REQ-MA-06) — tests 14, 15, 16.
     // These exercise SemanticAnalyzer.Analyze directly.
     // ------------------------------------------------------------------

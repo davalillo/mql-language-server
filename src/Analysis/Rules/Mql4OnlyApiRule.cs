@@ -17,8 +17,12 @@ namespace MqlLanguageServer.Analysis.Rules;
 /// Detection is a case-sensitive identifier-boundary scan per line; no type
 /// inference, no regex. Occurrences inside whole-line comments are skipped,
 /// string literals and trailing comments are not (phase-1 limitation
-/// inherited from #28 by design). The rule emits nothing for MQL4 documents:
-/// the MQL5-exclusive direction stays owned by <see cref="LanguageMisuseRule"/>.
+/// inherited from #28 by design). Semantics-changed entries (Bars, Digits,
+/// Point — still valid MQL5 names) skip valid MQL5 call forms `Name(...)`
+/// and flag only MQL4-style bare reads, with an honest "changed semantics"
+/// message instead of "not available". The rule emits nothing for MQL4
+/// documents: the MQL5-exclusive direction stays owned by
+/// <see cref="LanguageMisuseRule"/>.
 /// </summary>
 public sealed class Mql4OnlyApiRule : ISemanticRule
 {
@@ -90,11 +94,26 @@ public sealed class Mql4OnlyApiRule : ISemanticRule
                         continue;
                     }
 
+                    // Option C (Judgment-Day ledger JD-1): semantics-changed
+                    // names (Bars/Digits/Point) still exist in MQL5 as
+                    // functions. A call form `Name(...)` is valid MQL5 and
+                    // must not warn; only MQL4-style bare reads are defects.
+                    // The next non-whitespace character after the identifier
+                    // disambiguates without type info.
+                    if (entry.SemanticsChanged && NextNonSpaceCharIsOpenParen(line, searchStart))
+                    {
+                        continue;
+                    }
+
+                    var message = entry.SemanticsChanged
+                        ? $"MQL5 {entry.Kind.ToString().ToLowerInvariant()} '{name}' has changed semantics: {entry.Reason}. Use {entry.Replacement} instead."
+                        : $"MQL4-only {entry.Kind.ToString().ToLowerInvariant()} '{name}' is not available in MQL5; {entry.Reason}. Use {entry.Replacement} instead.";
+
                     yield return new Diagnostic
                     {
                         Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, index, i, index + name.Length),
                         Severity = DiagnosticSeverity.Warning,
-                        Message = $"MQL4-only {entry.Kind.ToString().ToLowerInvariant()} '{name}' is not available in MQL5; {entry.Reason}. Use {entry.Replacement} instead.",
+                        Message = message,
                         Code = (context.BaseCode + Mql4OnlyApiInMql5Offset).ToString(),
                         Source = "mql-lsp"
                     };
@@ -104,4 +123,24 @@ public sealed class Mql4OnlyApiRule : ISemanticRule
     }
 
     private static bool IsIdentChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+    /// <summary>
+    /// True when the next non-whitespace character after <paramref name="start"/>
+    /// is `(` — i.e. the identifier is in call position. Used only for
+    /// semantics-changed entries, where the MQL5 call form is valid.
+    /// </summary>
+    private static bool NextNonSpaceCharIsOpenParen(string line, int start)
+    {
+        for (var j = start; j < line.Length; j++)
+        {
+            if (char.IsWhiteSpace(line[j]))
+            {
+                continue;
+            }
+
+            return line[j] == '(';
+        }
+
+        return false;
+    }
 }
