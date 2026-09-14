@@ -154,6 +154,13 @@ public class Mql5AntlrParser : IMqlParser
             parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
                 tokenStream, Mql5GrammarLexer.IDENTIFIER);
 
+            // Issue #30: capture color literals (C'r,g,b', hex, clr* names)
+            // from the same token stream (REQ-CP-01..04, REQ-CP-08).
+            parsedFile.ColorOccurrences = ColorOccurrenceCapture.Collect(
+                tokenStream,
+                new ColorTokenTypes(Mql5GrammarLexer.LITERAL_COLOR, Mql5GrammarLexer.HEX, Mql5GrammarLexer.IDENTIFIER),
+                MqlLanguageServer.Color.MqlColorRegistry.Instance);
+
             BuildSymbolIndex(parsedFile, symbolsByName);
 
             parsedFile.SyntaxErrors = errorListener.Errors;

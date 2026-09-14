@@ -225,6 +225,50 @@ public class Mql4AdvancedFixtureTests
         AssertHasSymbol(file, "OnTick", SymbolKind.Function);
     }
 
+    // REQ-CP-01: C-literals captured at their exact ranges by the full parser
+    // pipeline (ColorOccurrenceCapture wired into Mql4AntlrParser).
+
+    [Fact]
+    public void SpecialLiterals_Captures_Three_CLiterals_At_Exact_Ranges()
+    {
+        var file = ParseFixture("advanced_special_literals.mq4");
+
+        var cLiterals = file.ColorOccurrences.Where(o => o.Kind == ColorKind.CLiteral).ToList();
+        Assert.Equal(3, cLiterals.Count);
+
+        // Fixture: `color red = C'255,0,0';` — 1-based line 5, 0-based col 12.
+        var red = cLiterals.Single(o => o.R == 255);
+        Assert.Equal(4, red.Line);
+        Assert.Equal(12, red.Column);
+        Assert.Equal(10, red.Length); // C'255,0,0' is 10 chars (green/blue are 9)
+        Assert.Equal((byte)0xFF, red.Alpha);
+
+        // `color green = C'0,255,0';` — 1-based line 6, 0-based col 14.
+        var green = cLiterals.Single(o => o.G == 255 && o.R == 0 && o.B == 0);
+        Assert.Equal(5, green.Line);
+        Assert.Equal(14, green.Column);
+
+        // `color blue = C'0,0,255';` — 1-based line 14 (inside OnTick).
+        var blue = cLiterals.Single(o => o.B == 255 && o.R == 0 && o.G == 0);
+        Assert.Equal(13, blue.Line);
+        Assert.Equal(17, blue.Column);
+    }
+
+    // D5 / REQ-CP-08: the grammar also lexes bitmasks (0xFF, 0xABCD, 0xFFFF,
+    // all present in this fixture) — they must NOT be reported as colors.
+
+    [Fact]
+    public void SpecialLiterals_Bitmasks_Produce_No_Colors()
+    {
+        var file = ParseFixture("advanced_special_literals.mq4");
+
+        Assert.DoesNotContain(file.ColorOccurrences, o => o.Length == 4 && o.Kind == ColorKind.Hex); // 0xFF / 0xFFFF
+        Assert.DoesNotContain(file.ColorOccurrences, o => o.Length == 6 && o.Kind == ColorKind.Hex); // 0xABCD
+        // The only hex color in the fixture would be none — all hex tokens are
+        // masks. Nothing hex at all:
+        Assert.DoesNotContain(file.ColorOccurrences, o => o.Kind == ColorKind.Hex);
+    }
+
     [Fact]
     public void Modifiers_Extracts_InputAndStaticVariables()
     {

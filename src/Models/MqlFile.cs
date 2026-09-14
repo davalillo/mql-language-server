@@ -49,6 +49,13 @@ public class MqlFile
     public IReadOnlyList<TokenOccurrence> Occurrences { get; set; } = new List<TokenOccurrence>();
 
     /// <summary>
+    /// Color literal occurrences (C'r,g,b', hex, clr* names) captured during
+    /// the last parse (REQ-CP-01..03). Additive, replaced wholesale per parse
+    /// (Occurrences pattern), refreshed by didChange re-parsing (REQ-CP-10).
+    /// </summary>
+    public IReadOnlyList<ColorOccurrence> ColorOccurrences { get; set; } = new List<ColorOccurrence>();
+
+    /// <summary>
     /// OPTIMIZATION: Cached symbol index for fast lookups by name
     /// Built lazily on first access and reused for subsequent lookups
     /// </summary>
