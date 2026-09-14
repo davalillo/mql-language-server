@@ -40,7 +40,10 @@ public sealed class SemanticAnalyzer
         new PropertyDirectiveRule(),
         new LanguageMisuseRule(),
         new Mql4OnlyApiRule(),
-        new ConversionRule()
+        new ConversionRule(),
+        // Issue #32: unresolved-symbol detection appends last so emitted
+        // diagnostic ordering stays stable between runs.
+        new UnresolvedSymbolRule()
     };
 
     /// <summary>
@@ -57,7 +60,9 @@ public sealed class SemanticAnalyzer
         }
 
         var baseCode = language == MqlLanguage.Mql5 ? DiagnosticCodes.Mql5Base : DiagnosticCodes.Mql4Base;
-        var context = new SemanticRuleContext(file, content, language, baseCode, token);
+        // Issue #32 (D2/D3): pass the builtin registries so builtin-filtering
+        // rules can select the registry matching the language.
+        var context = new SemanticRuleContext(file, content, language, baseCode, token, _builtins);
 
         foreach (var rule in CreateDefaultRules())
         {

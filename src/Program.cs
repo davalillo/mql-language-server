@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Analysis;
 using MqlLanguageServer.Mql4.Builtins;
 using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Mql5.Parser;
@@ -126,6 +127,12 @@ namespace MqlLanguageServer
                             services.AddSingleton<MqlLspServer>();
                             services.AddSingleton<MqlLanguageService>();
                             services.AddSingleton<WorkspaceIndexer>();
+
+                            // Issue #32 (D3): DI-constructed so the builtin
+                            // registries reach SemanticAnalyzer rules (the
+                            // lazy `new SemanticAnalyzer()` fallback in
+                            // DiagnosticHandler has null builtins).
+                            services.AddSingleton<SemanticAnalyzer>();
 
                             // Per-language built-in registries (IMqlBuiltins[]) are injected into handlers.
                             services.AddSingleton<IMqlBuiltins, Mql4BuiltinsAdapter>();
