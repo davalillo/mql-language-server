@@ -171,6 +171,13 @@ namespace MqlLanguageServer.Parser
                 parsedFile.Occurrences = TokenOccurrenceCapture.Collect(
                     tokenStream, Mql4GrammarLexer.IDENTIFIER);
 
+                // Issue #30: capture color literals (C'r,g,b', hex, clr* names)
+                // from the same token stream (REQ-CP-01..04, REQ-CP-08).
+                parsedFile.ColorOccurrences = ColorOccurrenceCapture.Collect(
+                    tokenStream,
+                    new ColorTokenTypes(Mql4GrammarLexer.LITERAL_COLOR, Mql4GrammarLexer.HEX, Mql4GrammarLexer.IDENTIFIER),
+                    MqlLanguageServer.Color.MqlColorRegistry.Instance);
+
                 // Build index of symbols by name
                 BuildSymbolIndex(parsedFile, symbolsByName);
 
