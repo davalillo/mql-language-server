@@ -164,6 +164,11 @@ namespace MqlLanguageServer
                         .WithHandler<ImplementationHandler>()
                         .WithHandler<WorkspaceSymbolHandler>()
                         .WithHandler<DiagnosticHandler>()
+                        // Issue #30: color swatches. colorProvider capability
+                        // derives automatically from DocumentColorHandler's
+                        // registration (D4) — no manual capability edits.
+                        .WithHandler<DocumentColorHandler>()
+                        .WithHandler<ColorPresentationHandler>()
 
                         // Text-document sync handlers
                         .WithHandler<DidOpenTextDocumentHandler>()
