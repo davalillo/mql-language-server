@@ -39,6 +39,7 @@ public sealed class SemanticAnalyzer
         new InputModifierRule(),
         new PropertyDirectiveRule(),
         new LanguageMisuseRule(),
+        new Mql4OnlyApiRule(),
         new ConversionRule()
     };
 
