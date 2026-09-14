@@ -62,6 +62,21 @@ public static class IncludePathResolver
         new(@"#include\s+<([^>]+)>", RegexOptions.Compiled);
 
     /// <summary>
+    /// Issue #32 (REQ-IA-03): internal read-only accessor for content scans of
+    /// existing quoted <c>#include "..."</c> entries. Resolve semantics are
+    /// untouched — this only exposes the already-compiled pattern so the
+    /// directive service reuses one canonical regex definition.
+    /// </summary>
+    internal static Regex QuotedIncludeRegexAccessor => QuotedIncludeRegex;
+
+    /// <summary>
+    /// Issue #32: internal read-only accessor for the angle-bracket
+    /// <c>#include &lt;...&gt;</c> pattern (used by the include-assist insert
+    /// position scan and angle-form already-included comparison).
+    /// </summary>
+    internal static Regex AngleBracketIncludeRegexAccessor => AngleBracketIncludeRegex;
+
+    /// <summary>
     /// Extract the include entry from a raw <c>#include</c> directive token.
     /// This is the grammar-visitor entry point: token text is the full
     /// directive (e.g. <c>#include "file.mqh"</c> or
