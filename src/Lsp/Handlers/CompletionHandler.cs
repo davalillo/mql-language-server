@@ -19,6 +19,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 
+// System.Range would be ambiguous with the LSP Range in TextEdit shapes.
+using LspRange = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
+
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
@@ -145,6 +148,15 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 // Plain context (CCR-01): scope-aware symbol list from the
                 // resolver (locals before cursor, innermost shadowing).
                 completions.AddRange(GetScopeCompletions(resolution.ScopeSymbols));
+
+                // Issue #33 Phase 2 (REQ-IA-08..12): auto-import attach pass.
+                // At this point `completions` holds scope items exactly, so a
+                // Label match against ScopeSymbols is unambiguous (T1). Runs
+                // before keywords/builtins are appended and before grouping;
+                // replaces eligible items (OmniSharp init-only shape).
+                var withAutoImports = ApplyAutoImports(
+                    completions, resolution.ScopeSymbols, mqlFile.FilePath, fileContent, language);
+                completions = new List<CompletionItem>(withAutoImports);
             }
             else
             {
@@ -296,6 +308,163 @@ public class CompletionHandler : LanguageAwareHandlerBase<CompletionParams, Comp
                 Detail = s.Detail
             });
     }
+
+    /// <summary>
+    /// Issue #33 Phase 2 (REQ-IA-08..12): completion-time auto-import attach
+    /// pass. For each completion item backed by a resolver scope symbol whose
+    /// defining file differs from the current document, re-derive the defining
+    /// candidate through the Phase-1 CodeActionHandler chain (T2):
+    /// FindSymbol(name, language) → GetIndexedLanguage != null (IA-06) →
+    /// exclude the current file → IsAlreadyIncluded (path-aware, memoized) →
+    /// ComputeQuotedDirective (memoized, D1 quoted-only) → shortest relative
+    /// path, take 1 (D2). The winning item is rebuilt carrying
+    /// AdditionalTextEdits with a single TextEdit at the FindInsertPosition
+    /// line (REQ-IA-04 shape, mirrors CodeActionResolveHandler.cs:161-166)
+    /// plus an "(auto-import)" detail suffix (REQ-IA-09).
+    ///
+    /// <para>OmniSharp 0.19.9 declares CompletionItem.AdditionalTextEdits and
+    /// Detail as init-only, so eligible items are replaced (rebuilt) rather
+    /// than mutated in place; the observable contract (design T1: attached
+    /// edits + suffix on the scope item) is preserved.</para>
+    ///
+    /// <para>T5 containment: any failure logs at debug and leaves the items
+    /// unmodified — the outer catch blanks the whole completion list, so an
+    /// attach-pass error must never escape. Member-access and fallback-path
+    /// items never reach this method (T3), so D3 holds by construction.</para>
+    /// </summary>
+    private List<CompletionItem> ApplyAutoImports(
+        List<CompletionItem> completions,
+        IReadOnlyList<MqlSymbol> scopeSymbols,
+        string includerFilePath,
+        string fileContent,
+        MqlLanguage language)
+    {
+        try
+        {
+            if (completions.Count == 0 || string.IsNullOrEmpty(includerFilePath))
+            {
+                return completions;
+            }
+
+            // T4: one content scan for the insert position per request.
+            var insertLine = IncludeDirectiveService.FindInsertPosition(fileContent);
+
+            // T4: memoize per distinct target path (one content scan each).
+            var alreadyIncludedCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            var directiveCache = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+            var winners = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var scopeSymbol in scopeSymbols)
+            {
+                if (string.IsNullOrEmpty(scopeSymbol.Name) || winners.ContainsKey(scopeSymbol.Name))
+                {
+                    continue;
+                }
+
+                // T1: the resolver's symbol only feeds the same-document
+                // discriminator (dedup-guaranteed). The directive itself is
+                // re-derived from the Phase-1 chain below (T2/D2).
+                if (string.Equals(scopeSymbol.FilePath, includerFilePath, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // IA-06: language-filtered lookup; a dual-key target
+                // (GetIndexedLanguage null) never matches FindSymbol's
+                // single-language buckets, so ambiguity is never guessed.
+                var candidates = SymbolIndex.Index.FindSymbol(scopeSymbol.Name, language)
+                    .Where(l => l.Symbol?.Name != null)
+                    .Select(l => l.FilePath)
+                    .Where(p => !string.IsNullOrEmpty(p) &&
+                                !string.Equals(p, includerFilePath, StringComparison.Ordinal) &&
+                                GlobalSymbolIndexHasSingleLanguage(p))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                // D5/REQ-IA-05: path-aware already-included filter (memoized).
+                candidates = candidates
+                    .Where(target =>
+                    {
+                        if (!alreadyIncludedCache.TryGetValue(target, out var included))
+                        {
+                            included = IncludeDirectiveService.IsAlreadyIncluded(includerFilePath, fileContent, target);
+                            alreadyIncludedCache[target] = included;
+                        }
+
+                        return !included;
+                    })
+                    .ToList();
+
+                // D8/D1: only targets expressible as a quoted directive.
+                var directives = new List<(string Target, string Directive)>();
+                foreach (var target in candidates)
+                {
+                    if (!directiveCache.TryGetValue(target, out var directive))
+                    {
+                        directive = IncludeDirectiveService.ComputeQuotedDirective(includerFilePath, target);
+                        directiveCache[target] = directive;
+                    }
+
+                    if (directive != null)
+                    {
+                        directives.Add((target, directive));
+                    }
+                }
+
+                // D2/REQ-IA-12: shortest path wins, exactly one directive (take 1).
+                var winnerDirective = directives
+                    .DistinctBy(d => d.Target, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(d => d.Target.Length)
+                    .Select(d => d.Directive)
+                    .FirstOrDefault();
+
+                if (winnerDirective != null)
+                {
+                    winners[scopeSymbol.Name] = winnerDirective;
+                }
+            }
+
+            if (winners.Count == 0)
+            {
+                return completions;
+            }
+
+            return completions
+                .Select(item => winners.TryGetValue(item.Label, out var directive)
+                    ? new CompletionItem
+                    {
+                        Label = item.Label,
+                        Kind = item.Kind,
+                        InsertText = item.InsertText,
+                        Detail = (item.Detail ?? string.Empty) + " (auto-import)",
+                        AdditionalTextEdits = new TextEdit[]
+                        {
+                            new()
+                            {
+                                Range = new LspRange(insertLine, 0, insertLine, 0),
+                                NewText = directive + "\n"
+                            }
+                        }
+                    }
+                    : item)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            // T5: never let the attach pass blank completions — the outer
+            // catch returns an empty CompletionList.
+            _logger.LogDebug(ex, "Auto-import attach pass failed; completions returned unmodified.");
+            return completions;
+        }
+    }
+
+    /// <summary>
+    /// True when the file is indexed under exactly one language (IA-06:
+    /// dual-key ambiguity yields no answer and is skipped).
+    /// </summary>
+    private bool GlobalSymbolIndexHasSingleLanguage(string filePath) =>
+        SymbolIndex.Index.GetIndexedLanguage(filePath) != null;
 
     /// <summary>
     /// Issue #29 (task 2.8 deferred here): map a symbol to its LSP
