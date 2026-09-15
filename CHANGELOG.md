@@ -1,4 +1,6 @@
-## [Unreleased]
+## [2.2.0-rc.2] - 2026-09-15
+
+Release candidate 2 for the 2.2.0 line: adds the parse-reuse LRU cache (issue #36) validated with the Serena MCP workflow. Not marked as `latest`; the stable channel continues pointing at 2.1.0 until 2.2.0 is sealed.
 
 ### Added
 - feat(lsp): reuse cached parse across didOpen/didClose cycles (#36)
