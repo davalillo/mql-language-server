@@ -90,6 +90,20 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
 
             if (content != null)
             {
+                // Issue #36: a didOpen that follows a didClose on unchanged
+                // content reuses the parse retained by the store's LRU cache.
+                // Content is byte-identical, so the GlobalSymbolIndex already
+                // holds exactly what the original AddFile produced — do NOT
+                // re-index: GlobalSymbolIndex.AddFile would clear-then-AddRange
+                // the cached model's own symbol list into itself, wiping the
+                // file's symbols from the index.
+                if (_documentStore.TryGetReusableParse(documentUri, content, language, out var cachedFile))
+                {
+                    _logger.LogDebug("Reusing cached parse for {DocumentUri} ({Language})", documentUri, language);
+                    _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", cachedFile!.Symbols.Count);
+                    return Unit.Value;
+                }
+
                 var filePath = documentUri.AbsolutePath ?? "unknown";
                 var parser = ResolveParser(language);
 

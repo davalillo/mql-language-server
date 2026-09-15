@@ -19,6 +19,9 @@ public class MetricsCollector
     private long _cacheHits;
     private long _cacheMisses;
 
+    // Parse-reuse metrics (issue #36): LRU cache hits across didClose cycles
+    private long _parseReuses;
+
     // Parsing metrics
     private readonly ConcurrentDictionary<string, ParsingMetric> _parsingMetrics = new();
     
@@ -44,6 +47,15 @@ public class MetricsCollector
     public void RecordCacheMiss()
     {
         Interlocked.Increment(ref _cacheMisses);
+    }
+
+    /// <summary>
+    /// Record a parse reuse: a didOpen served from the closed-document LRU
+    /// cache instead of a fresh parse (issue #36).
+    /// </summary>
+    public void RecordParseReuse()
+    {
+        Interlocked.Increment(ref _parseReuses);
     }
 
     /// <summary>
@@ -108,8 +120,9 @@ public class MetricsCollector
     {
         return new MetricsSnapshot
         {
-            CacheHits = _cacheHits,
-            CacheMisses = _cacheMisses,
+            CacheHits = Interlocked.Read(ref _cacheHits),
+            CacheMisses = Interlocked.Read(ref _cacheMisses),
+            ParseReuses = Interlocked.Read(ref _parseReuses),
             CacheHitRate = GetCacheHitRate(),
             ParsingMetrics = _parsingMetrics.Values.ToList(),
             OperationMetrics = _operationMetrics.Values.ToList(),
@@ -124,6 +137,7 @@ public class MetricsCollector
     {
         _cacheHits = 0;
         _cacheMisses = 0;
+        _parseReuses = 0;
         _parsingMetrics.Clear();
         _operationMetrics.Clear();
     }
@@ -145,6 +159,7 @@ public class MetricsCollector
         sb.AppendLine($"  Cache Hits: {snapshot.CacheHits}");
         sb.AppendLine($"  Cache Misses: {snapshot.CacheMisses}");
         sb.AppendLine($"  Hit Rate: {snapshot.CacheHitRate:F2}%");
+        sb.AppendLine($"  Parse Reuses: {snapshot.ParseReuses}");
         sb.AppendLine();
 
         // Parsing metrics
@@ -224,6 +239,7 @@ public class MetricsSnapshot
 {
     public long CacheHits { get; set; }
     public long CacheMisses { get; set; }
+    public long ParseReuses { get; set; }
     public double CacheHitRate { get; set; }
     public IReadOnlyList<ParsingMetric> ParsingMetrics { get; set; } = new List<ParsingMetric>();
     public IReadOnlyList<LspOperationMetric> OperationMetrics { get; set; } = new List<LspOperationMetric>();
