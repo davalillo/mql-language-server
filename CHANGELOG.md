@@ -1,6 +1,33 @@
-## [Unreleased]
+## [2.2.0-rc.1] - 2026-09-15
+
+Release candidate: prerelease for validating the release pipeline and the semantic diagnostics, MQL4-only API detection, include-assist, color swatches, and auto-import completion features before sealing stable 2.2.0. Not marked as `latest`; the stable channel continues pointing at 2.1.0 until 2.2.0 is sealed.
 
 ### Added
+- feat(analysis): MQL-native semantic diagnostics (#28)
+  - New `SemanticAnalyzer` in `src/Analysis` composing independently testable `ISemanticRule` implementations, wired into the `DiagnosticHandler` pipeline after syntax errors and before line-scan heuristics
+  - `InputModifierRule`: `input` string arrays and `input` declared inside function scope flagged (codes 1021/1022 MQL4, 5021/5022 MQL5)
+  - `PropertyDirectiveRule`: unknown or wrong-language `#property` identifiers with capped numbered families (codes 1030/1031, 5030/5031)
+  - `LanguageMisuseRule`: MQL5-exclusive tokens used in MQL4 documents (code 1040); uses `LanguageDetection.Mql5Markers` as single source of truth
+  - `ConversionRule`: conservative string-literal-to-numeric `input` check (code 1050/5050)
+  - Per-rule cancellation preserves the handler's 2s timeout; analyzer instantiation is per-request since rules are stateless
+  - Diagnostic codes stay inside the reserved MQL4 1000/MQL5 5000 windows; existing codes unchanged
+- feat(analysis): MQL4-only API migration radar in MQL5 documents (#34)
+  - Curated registry of 47 MQL4-only API names across five families (predefined variables, series arrays, `Time*` helpers, environment/state helpers, order-property getters), each with inline admission evidence and an MQL5 replacement; `StringComparer.Ordinal` keying since MQL identifiers are case-sensitive
+  - `Mql4OnlyApiRule` (code 5060): word-boundary scan with identifier-boundary predicate — names embedded in longer identifiers never match; language gate yields nothing for MQL4 (code 1060 reserved but never emitted); per-100-line batch cancellation
+  - Semantics-changed names (`Bars`, `Digits`, `Point`) skip valid MQL5 call forms (next char is `(`) and emit an honest "changed semantics" message for bare MQL4-style reads, which remain flagged as the real migration defect
+  - Shared MQL4/MQL5 names (`OrderSend`, `OrderSelect`, `ArrayResize`, `Print`, `CopyBuffer`, `i*` series, `OrdersTotal`, ...) deliberately excluded: signature discrimination out of scope
+- feat(lsp): include-assist Phase 1 QuickFix (#32)
+  - New `IncludeDirectiveService` computes the quoted `#include` directive for a missing symbol's defining file
+  - `CodeActionHandler` offers a QuickFix sourced from the workspace symbol index, resolving into a `TextEdit` that inserts the directive at the `FindInsertPosition` line
+  - `UnresolvedSymbolRule` flags undeclared identifiers that the include-assist QuickFix can resolve
+- feat(lsp): color swatches — `textDocument/documentColor` and `textDocument/colorPresentation` (#30)
+  - Parser captures color occurrences from `C'...'` literals, hex literals, and `clr*` names (REQ-CP-01..04)
+  - `MqlColorRegistry` maps color literals to `ColorInformation` with LSP float conversion (0..1 range)
+  - `DocumentColorHandler` returns color ranges; `ColorPresentationHandler` returns label and text edits; `colorProvider` capability auto-registered
+  - `didChange` refreshes reported colors: removing a literal retires its color, adding one surfaces it with the correct range (REQ-CP-10)
+- feat(lsp): auto-import include on completion via `AdditionalTextEdits` (#33)
+  - Plain-context completion items backed by out-of-file indexed symbols now carry `AdditionalTextEdits` inserting the Phase-1 quoted `#include` directive at the `FindInsertPosition` line, plus an "(auto-import)" detail suffix
+  - The pass re-derives the defining candidate through the `CodeActionHandler` chain (language filter, path-aware already-included check, quoted-directive-only) with per-request memoization and shortest-path take-1 determinism; failures degrade silently
 - feat(completion): AST/scope-based completion context resolution (#29)
   - New `CompletionContextResolver` replaces the text-heuristic context analysis in `CompletionHandler`: completion context is now resolved from the parsed symbol model instead of string-matching line content
   - Scope-aware symbol collection with proper precedence (CCR-01): locals declared before the cursor → members of the enclosing class → top-level symbols → `GlobalSymbolIndex` merge; innermost declarations shadow outer ones, and declarations after the cursor are never suggested
