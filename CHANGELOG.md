@@ -1,3 +1,13 @@
+## [Unreleased]
+
+### Added
+- feat(lsp): reuse cached parse across didOpen/didClose cycles (#36)
+  - New closed-document LRU cache in `OpenDocumentStore` (10 entries, 60s TTL, lazy eviction under the existing store lock): `Remove` retains the parsed `MqlFile` instead of discarding it, so a re-open with byte-identical content can reuse the parse
+  - New `TryGetReusableParse(uri, content, language, out file)`: checked BEFORE parsing in `DidOpenTextDocumentHandler`; validates byte-exact content equality (`StringComparison.Ordinal`, no hashing) and language identity (guards the D2 dual-key `.mqh` routing model); on hit the entry is promoted back into the open set
+  - Cache hits skip both the ANTLR parse and the `GlobalSymbolIndex.AddFile` re-index: the index survives didClose untouched, and re-adding the cached model's own `Symbols` list would clear-then-AddRange it into itself, wiping the file's symbols from the index
+  - `DidChangeTextDocumentHandler` fast path: identical content on the live entry skips the redundant full parse
+  - New `ParseReuses` metric (`MetricsCollector`) reported in the metrics summary
+
 ## [2.2.0-rc.1] - 2026-09-15
 
 Release candidate: prerelease for validating the release pipeline and the semantic diagnostics, MQL4-only API detection, include-assist, color swatches, and auto-import completion features before sealing stable 2.2.0. Not marked as `latest`; the stable channel continues pointing at 2.1.0 until 2.2.0 is sealed.
