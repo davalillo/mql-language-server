@@ -83,6 +83,18 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
 
             if (!string.IsNullOrEmpty(newContent))
             {
+                // Issue #36: the document is still open here, so check the
+                // live entry only (no LRU involvement on didChange). When the
+                // content is unchanged since the last parse, the live model is
+                // already indexed and current: skip the redundant full parse.
+                if (_documentStore.TryGetValue(documentUri, out var existingFile, out var existingContent, out var existingLanguage) &&
+                    existingLanguage == language &&
+                    string.Equals(existingContent, newContent, StringComparison.Ordinal))
+                {
+                    _logger.LogDebug("Skipping didChange re-parse for {DocumentUri}: content unchanged", documentUri);
+                    return Unit.Value;
+                }
+
                 var filePath = documentUri.AbsolutePath ?? "unknown";
 
                 var parser = ResolveParser(language);
