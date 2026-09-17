@@ -22,6 +22,10 @@ public class MetricsCollector
     // Parse-reuse metrics (issue #36): LRU cache hits across didClose cycles
     private long _parseReuses;
 
+    // Macro expansion metrics (issue #37)
+    private long _macroExpansions;
+    private readonly ConcurrentDictionary<string, long> _macroSkips = new();
+
     // Parsing metrics
     private readonly ConcurrentDictionary<string, ParsingMetric> _parsingMetrics = new();
     
@@ -56,6 +60,25 @@ public class MetricsCollector
     public void RecordParseReuse()
     {
         Interlocked.Increment(ref _parseReuses);
+    }
+
+    /// <summary>
+    /// Record one user-macro invocation expanded before parse (issue #37).
+    /// </summary>
+    public void RecordMacroExpansion()
+    {
+        Interlocked.Increment(ref _macroExpansions);
+    }
+
+    /// <summary>
+    /// Record one user-macro invocation skipped by the expansion pass
+    /// (issue #37): unknown arg shape, multi-line invocation, recursion
+    /// cap, or body-not-lexable.
+    /// </summary>
+    /// <param name="reason">Machine-readable skip reason (metric label).</param>
+    public void RecordMacroSkip(string reason)
+    {
+        _macroSkips.AddOrUpdate(reason, 1, (_, count) => count + 1);
     }
 
     /// <summary>
@@ -123,6 +146,8 @@ public class MetricsCollector
             CacheHits = Interlocked.Read(ref _cacheHits),
             CacheMisses = Interlocked.Read(ref _cacheMisses),
             ParseReuses = Interlocked.Read(ref _parseReuses),
+            MacroExpansions = Interlocked.Read(ref _macroExpansions),
+            MacroSkips = _macroSkips.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             CacheHitRate = GetCacheHitRate(),
             ParsingMetrics = _parsingMetrics.Values.ToList(),
             OperationMetrics = _operationMetrics.Values.ToList(),
@@ -240,6 +265,9 @@ public class MetricsSnapshot
     public long CacheHits { get; set; }
     public long CacheMisses { get; set; }
     public long ParseReuses { get; set; }
+    public long MacroExpansions { get; set; }
+    public IReadOnlyDictionary<string, long> MacroSkips { get; set; } =
+        new Dictionary<string, long>();
     public double CacheHitRate { get; set; }
     public IReadOnlyList<ParsingMetric> ParsingMetrics { get; set; } = new List<ParsingMetric>();
     public IReadOnlyList<LspOperationMetric> OperationMetrics { get; set; } = new List<LspOperationMetric>();
