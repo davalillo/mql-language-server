@@ -1,3 +1,15 @@
+## [2.2.0] - 2026-09-17
+
+Stable 2.2.0: promotes the content validated by release candidates 1 and 2 to the stable channel. See `[2.2.0-rc.1]` and `[2.2.0-rc.2]` below for the full per-feature technical detail.
+
+### Added
+- feat(analysis): MQL-native semantic diagnostics (#28) — `SemanticAnalyzer` composable rules pipeline with MQL4 1000 / MQL5 5000 code windows
+- feat(analysis): MQL4-only API migration radar in MQL5 documents (#34) — curated registry of 47 MQL4-only API names with MQL5 replacements (code 5060)
+- feat(lsp): include-assist Phase 1 QuickFix (#32) — `#include` directive code action for unresolved symbols
+- feat(lsp): color swatches — `documentColor` / `colorPresentation` with auto-registered `colorProvider` capability (#30)
+- feat(lsp): auto-import include on completion via `AdditionalTextEdits` (#33)
+- feat(lsp): reuse cached parse across didOpen/didClose cycles (#36) — closed-document LRU cache (10 entries, 60s TTL) with byte-exact content validation and `ParseReuses` metric
+
 ## [2.2.0-rc.2] - 2026-09-15
 
 Release candidate 2 for the 2.2.0 line: adds the parse-reuse LRU cache (issue #36) validated with the Serena MCP workflow. Not marked as `latest`; the stable channel continues pointing at 2.1.0 until 2.2.0 is sealed.
