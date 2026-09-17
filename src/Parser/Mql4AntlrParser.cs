@@ -130,6 +130,27 @@ namespace MqlLanguageServer.Parser
                 // Create token stream
                 var tokenStream = new CommonTokenStream(lexer);
 
+                // Issue #37: expand user-defined function-like macros (from
+                // this file AND its quoted includes) before parsing. The
+                // stdlib no-op filter (below) then runs on the expanded
+                // stream — the two passes compose: expansion first, stdlib
+                // neutralization second (its registry is untouched and
+                // Account_Protector.mqh keeps parsing with 0 errors).
+                var macroTable = MacroTableBuilder.Build(
+                    tokenStream, new MacroTableBuilder.PreTokenTypes(
+                        Mql4GrammarLexer.PRE_DEFINE, Mql4GrammarLexer.PRE_IFDEF, Mql4GrammarLexer.PRE_IFNDEF,
+                        Mql4GrammarLexer.PRE_ELSE, Mql4GrammarLexer.PRE_ENDIF, Mql4GrammarLexer.PRE_INCLUDE),
+                    filePath, MqlLanguage.Mql4);
+                var expandedTokenSource = MacroExpansionFilter.Apply(
+                    tokenStream, macroTable, MqlLanguage.Mql4,
+                    new ExpansionTokenTypes(
+                        Mql4GrammarLexer.IDENTIFIER, Mql4GrammarLexer.LPAREN, Mql4GrammarLexer.RPAREN,
+                        Mql4GrammarLexer.COMMA, Mql4GrammarLexer.SEMICOLON));
+                if (expandedTokenSource != null)
+                {
+                    tokenStream = new CommonTokenStream(expandedTokenSource);
+                }
+
                 // Issue #26: neutralize known stdlib function-like macro
                 // invocations (ON_EVENT/EVENT_MAP_* etc. from unresolvable
                 // stdlib includes) before parsing, so the grammar sees no-op

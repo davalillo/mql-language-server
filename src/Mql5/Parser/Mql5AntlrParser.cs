@@ -122,6 +122,27 @@ public class Mql5AntlrParser : IMqlParser
 
             var tokenStream = new CommonTokenStream(lexer);
 
+            // Issue #37: expand user-defined function-like macros (from this
+            // file AND its quoted includes) before parsing. The stdlib
+            // no-op filter (below) then runs on the expanded stream — the
+            // two passes compose: expansion first, stdlib neutralization
+            // second (its registry is untouched and Account_Protector.mqh
+            // keeps parsing with 0 errors).
+            var macroTable = MqlLanguageServer.Parser.MacroTableBuilder.Build(
+                tokenStream, new MqlLanguageServer.Parser.MacroTableBuilder.PreTokenTypes(
+                    Mql5GrammarLexer.PRE_DEFINE, Mql5GrammarLexer.PRE_IFDEF, Mql5GrammarLexer.PRE_IFNDEF,
+                    Mql5GrammarLexer.PRE_ELSE, Mql5GrammarLexer.PRE_ENDIF, Mql5GrammarLexer.PRE_INCLUDE),
+                filePath, MqlLanguage.Mql5);
+            var expandedTokenSource = MqlLanguageServer.Parser.MacroExpansionFilter.Apply(
+                tokenStream, macroTable, MqlLanguage.Mql5,
+                new MqlLanguageServer.Parser.ExpansionTokenTypes(
+                    Mql5GrammarLexer.IDENTIFIER, Mql5GrammarLexer.LPAREN, Mql5GrammarLexer.RPAREN,
+                    Mql5GrammarLexer.COMMA, Mql5GrammarLexer.SEMICOLON));
+            if (expandedTokenSource != null)
+            {
+                tokenStream = new CommonTokenStream(expandedTokenSource);
+            }
+
             // Issue #26: neutralize known stdlib function-like macro invocations
             // (ON_EVENT/EVENT_MAP_* etc. from unresolvable stdlib includes)
             // before parsing, so the grammar sees no-op statements instead of
