@@ -3,6 +3,8 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using MqlLanguageServer.Lsp.Handlers;
 using MqlLanguageServer.Lsp.Server;
+using MqlLanguageServer.Models;
+using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -12,7 +14,10 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
     /// <summary>
     /// Tests for editing handlers (Rename, DocumentFormatting, RangeFormatting, OnTypeFormatting).
     /// S-003: added behavior tests (file-not-found + happy path) for RenameHandler (17.5%).
+    /// Rename queries the GlobalSymbolIndex occurrence index, so the class joins
+    /// the serialized "GlobalSymbolIndex Tests" collection.
     /// </summary>
+    [Collection("GlobalSymbolIndex Tests")]
     public class EditingHandlersTests
     {
         private static string WriteTempFile(string fileName, string content)
@@ -92,6 +97,145 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
             finally
             {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task RenameHandler_RenamesUsageReferences_InSameFileAsync()
+        {
+            // Regression: rename must edit usage occurrences of the symbol,
+            // not only its declaration. Occurrences come from the
+            // GlobalSymbolIndex token index (OCC-03), filtered to the
+            // requested document so same-name symbols in other files are
+            // never touched (the index is name-keyed by design, OCC-05).
+            var content = "input int m=365;\nint numDatosRegresiones=m;\n";
+            var path = WriteTempFile("TestRenameUsage.mq4", content);
+
+            try
+            {
+                // Parse + index the file exactly as didOpen does (symbols +
+                // token occurrences), mirroring the references test setup.
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(content, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql4,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, content, MqlLanguage.Mql4);
+
+                var handler = new RenameHandler(
+                    Substitute.For<ILogger<RenameHandler>>(),
+                    parser,
+                    documentStore);
+
+                // Position on "m" in the declaration (0-based line 0, col 10).
+                var request = new RenameParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(0, 10),
+                    NewName = "days"
+                };
+
+                // Act
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Assert - exactly two edits in the requested document:
+                // the declaration name token (line 0) and the usage token
+                // (line 1, after "numDatosRegresiones=").
+                Assert.NotNull(result);
+                Assert.NotNull(result!.Changes);
+                Assert.True(result.Changes.TryGetValue(uri, out var edits),
+                    "WorkspaceEdit should contain edits for the requested document");
+                var editList = edits!.ToList();
+                Assert.Equal(2, editList.Count);
+                Assert.All(editList, e => Assert.Equal("days", e.NewText));
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 0 && e.Range.Start.Character == 10 &&
+                    e.Range.End.Line == 0 && e.Range.End.Character == 11);
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 1 && e.Range.Start.Character == 24 &&
+                    e.Range.End.Line == 1 && e.Range.End.Character == 25);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task RenameHandler_RenamesUsageReferences_InSameFileMql5Async()
+        {
+            // Triangulation: same regression contract on the MQL5 dialect
+            // (shared handler; extension-based language routing).
+            var content = "input int m=365;\nint numDatosRegresiones=m;\n";
+            var path = WriteTempFile("TestRenameUsage.mq5", content);
+
+            try
+            {
+                var parser = new Mql5AntlrParser();
+                var mqlFile = parser.ParseFile(content, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql5, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql5,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, content, MqlLanguage.Mql5);
+
+                var handler = new RenameHandler(
+                    Substitute.For<ILogger<RenameHandler>>(),
+                    // Constructor parameter is typed to Mql4AntlrParser; the handler resolves the
+                    // dialect parser itself via ResolveParser(language) from the document URI,
+                    // so this MQL5 test still exercises the MQL5 pipeline.
+                    new Mql4AntlrParser(),
+                    documentStore);
+
+                var request = new RenameParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(0, 10),
+                    NewName = "days"
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                Assert.NotNull(result!.Changes);
+                Assert.True(result.Changes.TryGetValue(uri, out var edits),
+                    "WorkspaceEdit should contain edits for the requested document");
+                var editList = edits!.ToList();
+                Assert.Equal(2, editList.Count);
+                Assert.All(editList, e => Assert.Equal("days", e.NewText));
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 0 && e.Range.Start.Character == 10 &&
+                    e.Range.End.Line == 0 && e.Range.End.Character == 11);
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 1 && e.Range.Start.Character == 24 &&
+                    e.Range.End.Line == 1 && e.Range.End.Character == 25);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
                 if (File.Exists(path)) File.Delete(path);
             }
         }

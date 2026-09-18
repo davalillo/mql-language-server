@@ -92,10 +92,15 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
             var uri = documentUri.ToUri();
 
             MqlFile? mqlFile = null;
+            var fromDocumentStore = false;
             if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
             {
                 mqlFile = parser.ParseFile(content, filePath);
                 _documentStore.AddOrUpdate(uri, mqlFile, content, language);
+            }
+            else
+            {
+                fromDocumentStore = true;
             }
 
             var line = request.Position.Line + 1;
@@ -110,16 +115,35 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
 
             var textEdits = new List<TextEdit>();
 
-            foreach (var s in mqlFile.Symbols)
+            if (!fromDocumentStore)
             {
-                if (s.Name == symbol.Name)
+                // A closed or never-opened file is parsed here without passing
+                // through didOpen/didChange; index it exactly as they would
+                // (identical SymbolOccurrenceMapper mapping) so the occurrence
+                // query below sees this file's identifier tokens.
+                SymbolIndex.Index.AddFile(
+                    filePath, language, mqlFile.Symbols,
+                    SymbolOccurrenceMapper.Map(mqlFile, filePath, language));
+            }
+
+            // Token-backed rename edits (OCC-03): occurrences are name-keyed
+            // identifier tokens with 0-based line/column, so they map directly
+            // onto LSP positions (same conversion as ReferencesHandler).
+            // Filter to the requested document: the index is name-keyed by
+            // design (OCC-05), so unfiltered workspace-wide edits would
+            // wrongly rename same-name symbols in other files.
+            var occurrences = SymbolIndex.Index.FindOccurrences(symbol.Name)
+                .Where(o => o.FilePath == filePath);
+
+            foreach (var occurrence in occurrences)
+            {
+                textEdits.Add(new TextEdit
                 {
-                    textEdits.Add(new TextEdit
-                    {
-                        NewText = newName,
-                        Range = s.Range
-                    });
-                }
+                    NewText = newName,
+                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                        new Position(occurrence.Line, occurrence.Column),
+                        new Position(occurrence.Line, occurrence.Column + occurrence.Length))
+                });
             }
 
             if (textEdits.Count == 0)

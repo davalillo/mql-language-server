@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Fixed
+- fix(lsp): `textDocument/rename` now builds its edits from the token-occurrence index (same source as `textDocument/references`), filtered to the requested document — renaming a symbol now also updates same-file usage references (e.g. a global initializer reading an `input` variable), not just the declaration. Previously the edit set was built from declaration symbols only, so usages were silently left behind, leaving uncompilable code. Cross-file occurrences are deliberately excluded: the index is name-keyed by design (see OCC-05), and name-based cross-file edits would corrupt same-named symbols in unrelated files. A document absent from the open-document store is indexed on demand (didOpen-equivalent), preserving behavior for closed files.
+
 ## [2.3.0-rc.1] - 2026-09-18
 
 Release candidate 1 for the 2.3.0 line: adds the user-defined macro expansion pass (issue #37) validated with the Ducibus Pro corpus (the rc.2 bar). Not marked as `latest`; the stable channel continues pointing at 2.2.0 until 2.3.0 is sealed.
