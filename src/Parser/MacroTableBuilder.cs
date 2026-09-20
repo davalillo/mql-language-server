@@ -21,8 +21,12 @@ namespace MqlLanguageServer.Parser;
 /// token stream in directive order, resolving quoted
 /// <c>#include "..."</c> entries through the single
 /// <see cref="IncludePathResolver.Resolve"/> service and scanning those files
-/// line-wise with the same conditional logic. Direct quoted includes only in
-/// tier 1 — nested include chains are a documented follow-up.
+/// line-wise with the same conditional logic. Nested include chains are
+/// walked transitively (issue #39): a header's own quoted includes resolve
+/// relative to that header's directory, guarded by a visited set of resolved
+/// paths (include cycles terminate; each unique path is scanned at most
+/// once) and a depth cap of 8 include levels (deeper headers degrade
+/// conservatively — their macros are absent from the table, never a crash).
 /// </para>
 ///
 /// <para>
@@ -54,10 +58,10 @@ public static class MacroTableBuilder
 
     /// <summary>
     /// Build the macro table for a document: the file's own defines first,
-    /// then its direct quoted includes in include order. Include files are
-    /// read with the parser-internal read (same trust level as
-    /// <c>ParseFileFromPath</c>); unresolved or unreadable includes are
-    /// skipped with a warning and never throw.
+    /// then its quoted includes in include order, transitively (issue #39).
+    /// Include files are read with the parser-internal read (same trust
+    /// level as <c>ParseFileFromPath</c>); unresolved or unreadable includes
+    /// are skipped with a warning and never throw.
     /// </summary>
     /// <param name="tokenStream">Token stream of the file being parsed (will
     /// be filled if empty). Must be the ORIGINAL stream — the table walk
@@ -132,7 +136,10 @@ public static class MacroTableBuilder
         var table = new MacroTable();
         var conditional = new ConditionalState(documentLanguage);
         var scannedIncludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var pendingIncludes = new List<(PreDirective Directive, string ResolvedPath)>();
+        // Pending include scan queue: (resolved absolute path, include depth).
+        // Depth 1 = direct quoted includes of the parsed file; a header's own
+        // nested includes queue at depth + 1 (issue #39 transitive walk).
+        var pendingIncludes = new List<(string ResolvedPath, int Depth)>();
         // Deferred defines: (directive, sourceFile, conditional-frame snapshot).
         // Dialect evaluation happens AFTER the walk so unbalanced conditionals
         // (degraded at walk end) retroactively yield Both — evaluating eagerly
@@ -163,7 +170,7 @@ public static class MacroTableBuilder
                     break;
 
                 case PreDirectiveKind.Include:
-                    QueueInclude(filePath, directive.Text, scannedIncludes, pendingIncludes);
+                    QueueInclude(filePath, directive.Text, table, depth: 1, scannedIncludes, pendingIncludes);
                     break;
             }
         }
@@ -180,14 +187,19 @@ public static class MacroTableBuilder
 
         // Quoted includes are scanned after the main file so a local override
         // (last-definition-wins) matches textual include order where the
-        // includer's own defines come first. Each include is scanned with a
-        // FRESH conditional state: the header's conditionals are
-        // self-contained (tier-1 assumption) and cross-file state would leak
-        // an unbalanced frame from the includer into the header.
-        foreach (var (_, resolvedPath) in pendingIncludes)
+        // includer's own defines come first. Direct includes scan in include
+        // order; a scanned header's own nested includes append to the same
+        // queue (issue #39 transitive walk), so index-based iteration is
+        // required (the list grows while it is walked). Each include is
+        // scanned with a FRESH conditional state: the header's conditionals
+        // are self-contained and cross-file state would leak an unbalanced
+        // frame from the includer into the header (cross-file conditional
+        // merge remains issue #40, out of scope here).
+        for (var i = 0; i < pendingIncludes.Count; i++)
         {
+            var (resolvedPath, depth) = pendingIncludes[i];
             var includeConditional = new ConditionalState(documentLanguage);
-            ScanIncludeFile(table, resolvedPath, includeConditional);
+            ScanIncludeFile(table, resolvedPath, includeConditional, depth, scannedIncludes, pendingIncludes);
         }
 
         return table;
@@ -557,14 +569,29 @@ public static class MacroTableBuilder
     }
 
     /// <summary>
+    /// Maximum include-chain depth walked for macro collection (issue #39):
+    /// depth 1 = the parsed file's direct quoted includes. Includes found in
+    /// a depth-<see cref="MaxIncludeDepth"/> header would be depth 9 —
+    /// beyond the cap — and are skipped with a
+    /// <see cref="MacroTable.DepthCapHits"/> count (conservative degrade:
+    /// deeper macros are absent, never a crash).
+    /// </summary>
+    private const int MaxIncludeDepth = 8;
+
+    /// <summary>
     /// Queue a quoted include for scanning. Only quoted entries
     /// (<c>#include "..."</c>) resolve; angle-bracket entries are system
     /// includes and are skipped (same rule as ParseFileWithIncludes).
+    /// Nested entries pass the INCLUDING HEADER's path as
+    /// <paramref name="includingFile"/> so they resolve relative to that
+    /// header's directory (issue #39). The shared
+    /// <paramref name="scannedIncludes"/> visited set guarantees each unique
+    /// resolved path is queued at most once, so include cycles terminate.
     /// </summary>
     private static void QueueInclude(
-        string includingFile, string directiveText,
+        string includingFile, string directiveText, MacroTable table, int depth,
         HashSet<string> scannedIncludes,
-        List<(PreDirective, string)> pendingIncludes)
+        List<(string ResolvedPath, int Depth)> pendingIncludes)
     {
         var entry = IncludePathResolver.ExtractFromDirective(directiveText);
         if (entry == null || entry.StartsWith("<", StringComparison.Ordinal))
@@ -578,7 +605,13 @@ public static class MacroTableBuilder
             return;
         }
 
-        pendingIncludes.Add((new PreDirective(PreDirectiveKind.Include, directiveText, includingFile), resolved));
+        if (depth > MaxIncludeDepth)
+        {
+            table.RecordDepthCapHit(resolved);
+            return;
+        }
+
+        pendingIncludes.Add((resolved, depth));
     }
 
     /// <summary>
@@ -591,7 +624,9 @@ public static class MacroTableBuilder
     /// </summary>
     private static void ScanIncludeFile(
         MacroTable table, string includePath,
-        ConditionalState conditional)
+        ConditionalState conditional, int depth,
+        HashSet<string> scannedIncludes,
+        List<(string ResolvedPath, int Depth)> pendingIncludes)
     {
         string content;
         try
@@ -626,8 +661,11 @@ public static class MacroTableBuilder
                     conditional.Pop();
                     break;
                 case PreDirectiveKind.Include:
-                    // Tier 1: direct includes only. Nested include chains are
-                    // a documented follow-up (issue #37); intentionally not walked.
+                    // Transitive walk (issue #39): this header's own quoted
+                    // includes resolve relative to ITS directory and queue at
+                    // depth + 1. The shared visited set makes cycles (a
+                    // header reached again through a nested chain) a no-op.
+                    QueueInclude(includePath, directive.Text, table, depth + 1, scannedIncludes, pendingIncludes);
                     break;
             }
         }
@@ -719,6 +757,11 @@ public static class MacroTableBuilder
                 return (PreDirectiveKind.Endif, trimmed);
             }
 
+            if (trimmed.StartsWith("#include", StringComparison.Ordinal))
+            {
+                return (PreDirectiveKind.Include, trimmed);
+            }
+
             if (trimmed.StartsWith("#define", StringComparison.Ordinal))
             {
                 return (PreDirectiveKind.Define, trimmed);
@@ -798,6 +841,21 @@ public sealed class MacroTable
     /// <summary>Duplicate #define observations (same name redefined), logged
     /// and counted for metrics (last-definition-wins per dialect).</summary>
     public int DuplicateCount { get; private set; }
+
+    /// <summary>Include chains truncated at the depth cap (issue #39): each
+    /// header skipped because it sits deeper than the cap counts once.
+    /// Capped levels degrade conservatively — the deeper macros are simply
+    /// absent from the table, never a crash.</summary>
+    public int DepthCapHits { get; private set; }
+
+    /// <summary>Record one include skipped at the depth cap (issue #39).</summary>
+    public void RecordDepthCapHit(string includePath)
+    {
+        DepthCapHits++;
+        Serilog.Log.Debug(
+            "MacroTableBuilder: include {IncludePath} is deeper than the include-chain depth cap; its #defines are not collected",
+            includePath);
+    }
 
     /// <summary>
     /// Add a definition. Last-definition-wins per dialect: a later definition

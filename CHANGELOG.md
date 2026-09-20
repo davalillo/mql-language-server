@@ -2,6 +2,7 @@
 
 ### Added
 - feat(parser): object-like (parameterless) macro expansion (#38) — `#define` constants (`#define MAX_LOTS 0.5`, `#define True true`) now expand at the invocation identifier in the tier-1 token-stream splice pass, so user constants resolve in the parse tree instead of triggering unresolved-symbol semantic diagnostics. Object-like definitions are stored in the macro table (last-definition-wins per dialect, `ObjectLikeCount`); expansion reuses the function-like position policy (line-accurate, first token anchored at the invocation column) and the single-pass depth cap 1 (bodies are never re-scanned). Exactly one identifier token is replaced; an empty body (`#define GUARD`) splices to zero tokens, counted as a skip with reason `object-like-empty-body`. Directive name positions (`#define`/`#undef`) are structurally safe — whole directives are hidden-channel tokens and only default-channel identifiers expand.
+- feat(parser): the macro table now walks nested include chains transitively (#39) — a quoted include's own quoted includes resolve relative to that header's directory, guarded by a visited set of resolved paths (include cycles terminate; each unique header is scanned at most once) and a depth cap of 8 include levels with a recorded hit count (deeper macros degrade conservatively — absent from the table, never a crash). Fixes macros defined in second-level headers being invisible at call sites; validated against the existing macro fixtures and the Ducibus Pro corpus
 
 ## [2.3.0] - 2026-09-19
 
