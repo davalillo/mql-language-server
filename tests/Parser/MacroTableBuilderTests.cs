@@ -529,6 +529,62 @@ public class MacroTableBuilderTests
     }
 
     // ------------------------------------------------------------------
+    // Include-order conditional merge (issue #40)
+    // ------------------------------------------------------------------
+
+    private static string FixturesDir =>
+        Path.Combine(Path.GetDirectoryName(typeof(MacroTableBuilderTests).Assembly.Location)!,
+            "fixtures", "macros");
+
+    [Fact]
+    public void MergedWalk_HeaderOpensConditional_IncluderDefinesAndCloses_DialectGated()
+    {
+        // Issue #40: the header opens #ifndef __MQL5__; the includer defines
+        // under that frame and closes it. The merged include-order walk must
+        // govern the includer's define with the header's frame (MQL4-gated),
+        // not leak it as Both — otherwise an MQL5 document expands the MT4
+        // body.
+        var fixturePath = Path.Combine(FixturesDir, "split_cond_consumer.mq4");
+        var content = File.ReadAllText(fixturePath);
+
+        var table4 = BuildMql4(content, fixturePath);
+        var def4 = table4.Resolve("SPLIT_INPUT", MqlLanguage.Mql4);
+        Assert.NotNull(def4);
+        Assert.Equal("extern type name", def4!.Body);
+        Assert.Equal(MqlDialect.Mql4, def4.Dialects);
+
+        // The header's own define under the same cross-boundary frame.
+        var headerDef = table4.Resolve("SPLIT_HEADER_INPUT", MqlLanguage.Mql4);
+        Assert.NotNull(headerDef);
+        Assert.Equal(MqlDialect.Mql4, headerDef!.Dialects);
+
+        // MQL5 document: the frame is dead — nothing resolves (no MT4 leak).
+        var table5 = BuildMql5(content, fixturePath);
+        Assert.Null(table5.Resolve("SPLIT_INPUT", MqlLanguage.Mql5));
+        Assert.Null(table5.Resolve("SPLIT_HEADER_INPUT", MqlLanguage.Mql5));
+    }
+
+    [Fact]
+    public void MergedWalk_UnbalancedCrossBoundaryFrame_DegradesToBoth_AndCounts()
+    {
+        // Issue #40: an #ifndef whose #endif never arrives degrades its
+        // definitions conservatively to Both and is counted once per
+        // unbalanced known-marker frame (DepthCapHits precedent).
+        var fixturePath = Path.Combine(FixturesDir, "unbalanced_conditional.mq4");
+        var content = File.ReadAllText(fixturePath);
+
+        var table4 = BuildMql4(content, fixturePath);
+        var def4 = table4.Resolve("ORPHAN_INPUT", MqlLanguage.Mql4);
+        Assert.NotNull(def4);
+        Assert.Equal(MqlDialect.Both, def4!.Dialects);
+        Assert.Equal(1, table4.UnbalancedFrameCount);
+
+        var table5 = BuildMql5(content, fixturePath);
+        Assert.NotNull(table5.Resolve("ORPHAN_INPUT", MqlLanguage.Mql5));
+        Assert.Equal(1, table5.UnbalancedFrameCount);
+    }
+
+    // ------------------------------------------------------------------
     // Fast path / empty table
     // ------------------------------------------------------------------
 

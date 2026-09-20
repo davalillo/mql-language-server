@@ -30,6 +30,16 @@ namespace MqlLanguageServer.Parser;
 /// </para>
 ///
 /// <para>
+/// Include-order conditional merge (issue #40): the walk evaluates ONE
+/// continuous directive stream in real include order, like a preprocessor
+/// call stack — a mid-stream <c>#include</c> splices that file's directives
+/// at the include point, then resumes the includer. A header may therefore
+/// OPEN a dialect conditional that the includer CLOSES (and vice versa);
+/// definitions governed by such a cross-boundary frame resolve to the
+/// dialect-correct body instead of conservative "Both".
+/// </para>
+///
+/// <para>
 /// Dialect tagging (issue #37 scope): the conditional walk understands
 /// <c>#ifdef X</c> / <c>#ifndef X</c> / <c>#else</c> / <c>#endif</c> for the
 /// known markers <c>__MQL4__</c> and <c>__MQL5__</c> only. Conditionals on
@@ -37,7 +47,9 @@ namespace MqlLanguageServer.Parser;
 /// the enclosed definitions as <see cref="MqlDialect.Both"/> — the
 /// conservative choice, because such flags cannot be evaluated without
 /// pre-parse state. Unbalanced directives degrade the same way: from the
-/// first unbalanced boundary onward, remaining definitions are tagged Both.
+/// first unbalanced boundary onward, remaining definitions are tagged Both
+/// (each unbalanced known-marker frame is counted in
+/// <see cref="MacroTable.UnbalancedFrameCount"/>).
 /// </para>
 ///
 /// <para>
@@ -129,17 +141,17 @@ public static class MacroTableBuilder
             return MacroTable.Empty;
         }
 
-        // Include order: the file's own defines are evaluated in stream order;
-        // a #include encountered mid-stream switches the scan to that file's
-        // directives (a full include-order textual merge is a tier-2 follow-up;
-        // for the real corpus each header's conditionals are self-contained).
+        // Issue #40: include-order textual merge. A mid-stream #include
+        // splices that file's directives at the include point (recursively,
+        // still guarded by the visited set + depth cap), so conditionals
+        // evaluate in ONE continuous stream following the real include
+        // order — a header may open a dialect conditional that the includer
+        // closes, like a preprocessor call stack.
         var table = new MacroTable();
-        var conditional = new ConditionalState(documentLanguage);
         var scannedIncludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        // Pending include scan queue: (resolved absolute path, include depth).
-        // Depth 1 = direct quoted includes of the parsed file; a header's own
-        // nested includes queue at depth + 1 (issue #39 transitive walk).
-        var pendingIncludes = new List<(string ResolvedPath, int Depth)>();
+        var merged = MergeIncludes(directives, filePath, depth: 0, scannedIncludes, table);
+
+        var conditional = new ConditionalState(documentLanguage);
         // Deferred defines: (directive, sourceFile, conditional-frame snapshot).
         // Dialect evaluation happens AFTER the walk so unbalanced conditionals
         // (degraded at walk end) retroactively yield Both — evaluating eagerly
@@ -148,7 +160,7 @@ public static class MacroTableBuilder
         var deferredDefines = new List<(
             string Text, string SourceFile, IReadOnlyList<(int Index, int Key)> Frames)>();
 
-        foreach (var directive in directives)
+        foreach (var directive in merged)
         {
             switch (directive.Kind)
             {
@@ -170,36 +182,24 @@ public static class MacroTableBuilder
                     break;
 
                 case PreDirectiveKind.Include:
-                    QueueInclude(filePath, directive.Text, table, depth: 1, scannedIncludes, pendingIncludes);
+                    // Already spliced into the merged stream by MergeIncludes.
                     break;
             }
         }
 
         // Unbalanced conditionals (missing #endif): degrade the leftover
         // frames so their definitions fall back to Both (conservative) rather
-        // than staying dialect-gated or dead by a formatting accident.
-        conditional.DegradeUnbalanced();
+        // than staying dialect-gated or dead by a formatting accident. Each
+        // unbalanced known-marker frame is counted (issue #40).
+        var unbalancedFrames = conditional.DegradeUnbalanced();
+        if (unbalancedFrames > 0)
+        {
+            table.RecordUnbalancedFrames(unbalancedFrames);
+        }
 
         foreach (var (text, sourceFile, frames) in deferredDefines)
         {
             ApplyDefine(table, text, conditional.DialectAt(frames), sourceFile);
-        }
-
-        // Quoted includes are scanned after the main file so a local override
-        // (last-definition-wins) matches textual include order where the
-        // includer's own defines come first. Direct includes scan in include
-        // order; a scanned header's own nested includes append to the same
-        // queue (issue #39 transitive walk), so index-based iteration is
-        // required (the list grows while it is walked). Each include is
-        // scanned with a FRESH conditional state: the header's conditionals
-        // are self-contained and cross-file state would leak an unbalanced
-        // frame from the includer into the header (cross-file conditional
-        // merge remains issue #40, out of scope here).
-        for (var i = 0; i < pendingIncludes.Count; i++)
-        {
-            var (resolvedPath, depth) = pendingIncludes[i];
-            var includeConditional = new ConditionalState(documentLanguage);
-            ScanIncludeFile(table, resolvedPath, includeConditional, depth, scannedIncludes, pendingIncludes);
         }
 
         return table;
@@ -389,20 +389,27 @@ public static class MacroTableBuilder
     /// <c>#endif</c> never arrives leaves a frame forever on the stack.
     /// Degrade conservatively: unwind all known-marker frames so the
     /// enclosing definitions fall back to Both instead of staying
-    /// dialect-gated or dead. Called when the directive walk ends.
+    /// dialect-gated or dead. Called when the merged directive walk ends
+    /// (issue #40: one walk over the include-order merge). Returns the
+    /// number of frames degraded, for the
+    /// <see cref="MacroTable.UnbalancedFrameCount"/> counter.
     /// </summary>
-    public void DegradeUnbalanced()
+    public int DegradeUnbalanced()
     {
         // Any open known-marker frame at walk end has no matching #endif:
         // degrade it so its definitions fall back to Both instead of staying
         // dialect-gated or dead by a formatting accident.
+        var degradedCount = 0;
         for (var i = 0; i < _frames.Count; i++)
         {
-            if (_frames[i].IsKnownMarker && !_frames[i].Closed)
+            if (_frames[i].IsKnownMarker && !_frames[i].Closed && !_degraded.Contains(i))
             {
                 _degraded.Add(i);
+                degradedCount++;
             }
         }
+
+        return degradedCount;
     }
 
     public void Invert()
@@ -579,96 +586,77 @@ public static class MacroTableBuilder
     private const int MaxIncludeDepth = 8;
 
     /// <summary>
-    /// Queue a quoted include for scanning. Only quoted entries
-    /// (<c>#include "..."</c>) resolve; angle-bracket entries are system
-    /// includes and are skipped (same rule as ParseFileWithIncludes).
-    /// Nested entries pass the INCLUDING HEADER's path as
-    /// <paramref name="includingFile"/> so they resolve relative to that
-    /// header's directory (issue #39). The shared
+    /// Merge a directive stream with its quoted includes, in include order
+    /// (issue #40): a quoted <c>#include</c> entry splices the included
+    /// file's own directives AT THE INCLUDE POINT, recursively, so the walk
+    /// sees one continuous stream exactly as a preprocessor would. Only
+    /// quoted entries (<c>#include "..."</c>) resolve; angle-bracket
+    /// entries are system includes and are skipped (same rule as
+    /// ParseFileWithIncludes). Nested entries pass the INCLUDING file's path
+    /// as <paramref name="includingFile"/> so they resolve relative to that
+    /// file's directory (issue #39). The shared
     /// <paramref name="scannedIncludes"/> visited set guarantees each unique
-    /// resolved path is queued at most once, so include cycles terminate.
+    /// resolved path is spliced at most once, so include cycles terminate.
+    /// Headers deeper than <see cref="MaxIncludeDepth"/> (the parsed file
+    /// itself is depth 0; its direct includes are depth 1) are skipped with
+    /// a <see cref="MacroTable.DepthCapHits"/> count. Unresolved or
+    /// unreadable includes are skipped with a warning and never throw.
     /// </summary>
-    private static void QueueInclude(
-        string includingFile, string directiveText, MacroTable table, int depth,
-        HashSet<string> scannedIncludes,
-        List<(string ResolvedPath, int Depth)> pendingIncludes)
+    private static List<PreDirective> MergeIncludes(
+        List<PreDirective> directives, string includingFile, int depth,
+        HashSet<string> scannedIncludes, MacroTable table)
     {
-        var entry = IncludePathResolver.ExtractFromDirective(directiveText);
-        if (entry == null || entry.StartsWith("<", StringComparison.Ordinal))
+        var merged = new List<PreDirective>(directives.Count);
+        foreach (var directive in directives)
         {
-            return;
-        }
-
-        var resolved = IncludePathResolver.Resolve(includingFile, entry);
-        if (resolved == null || !File.Exists(resolved) || !scannedIncludes.Add(resolved))
-        {
-            return;
-        }
-
-        if (depth > MaxIncludeDepth)
-        {
-            table.RecordDepthCapHit(resolved);
-            return;
-        }
-
-        pendingIncludes.Add((resolved, depth));
-    }
-
-    /// <summary>
-    /// Scan one include file's text for #define/conditional directives using
-    /// the same line-based walk (a comment/string-aware line scanner: lines
-    /// whose first non-whitespace is <c>//</c> or a commented-out directive
-    /// are ignored, so <c>//#ifndef</c> never affects evaluation; defines
-    /// inside <c>/* ... */</c> block comments are skipped by tracking
-    /// comment open/close spans across lines).
-    /// </summary>
-    private static void ScanIncludeFile(
-        MacroTable table, string includePath,
-        ConditionalState conditional, int depth,
-        HashSet<string> scannedIncludes,
-        List<(string ResolvedPath, int Depth)> pendingIncludes)
-    {
-        string content;
-        try
-        {
-            // Parser-internal read (same trust level as ParseFileFromPath):
-            // the resolved path already passed IncludePathResolver + File.Exists.
-            content = SourceFileReader.ReadAllTextUncontained(includePath);
-        }
-        catch (Exception ex)
-        {
-            Serilog.Log.Warning(ex, "MacroTableBuilder: cannot read include {IncludePath}; its #defines are invisible", includePath);
-            return;
-        }
-
-        foreach (var directive in LineScanner.Scan(content))
-        {
-            switch (directive.Kind)
+            if (directive.Kind != PreDirectiveKind.Include)
             {
-                case PreDirectiveKind.Define:
-                    ApplyDefine(table, directive.Text, conditional.CurrentDialect, includePath);
-                    break;
-                case PreDirectiveKind.Ifdef:
-                case PreDirectiveKind.Ifndef:
-                    conditional.Push(
-                        ParseConditionalMarker(directive.Text),
-                        directive.Kind == PreDirectiveKind.Ifdef);
-                    break;
-                case PreDirectiveKind.Else:
-                    conditional.Invert();
-                    break;
-                case PreDirectiveKind.Endif:
-                    conditional.Pop();
-                    break;
-                case PreDirectiveKind.Include:
-                    // Transitive walk (issue #39): this header's own quoted
-                    // includes resolve relative to ITS directory and queue at
-                    // depth + 1. The shared visited set makes cycles (a
-                    // header reached again through a nested chain) a no-op.
-                    QueueInclude(includePath, directive.Text, table, depth + 1, scannedIncludes, pendingIncludes);
-                    break;
+                merged.Add(directive);
+                continue;
             }
+
+            var entry = IncludePathResolver.ExtractFromDirective(directive.Text);
+            if (entry == null || entry.StartsWith("<", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var resolved = IncludePathResolver.Resolve(includingFile, entry);
+            if (resolved == null || !File.Exists(resolved) || !scannedIncludes.Add(resolved))
+            {
+                continue;
+            }
+
+            if (depth + 1 > MaxIncludeDepth)
+            {
+                table.RecordDepthCapHit(resolved);
+                continue;
+            }
+
+            string content;
+            try
+            {
+                // Parser-internal read (same trust level as
+                // ParseFileFromPath): the resolved path already passed
+                // IncludePathResolver + File.Exists.
+                content = SourceFileReader.ReadAllTextUncontained(resolved);
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "MacroTableBuilder: cannot read include {IncludePath}; its #defines are invisible", resolved);
+                continue;
+            }
+
+            // The included file's directives carry ITS path as SourceFile
+            // and are merged recursively: its own #include entries splice
+            // at their points, before the includer's remaining directives.
+            var includeDirectives = LineScanner.Scan(content)
+                .Select(d => new PreDirective(d.Kind, d.Text, resolved))
+                .ToList();
+            merged.AddRange(MergeIncludes(includeDirectives, resolved, depth + 1, scannedIncludes, table));
         }
+
+        return merged;
     }
 
     /// <summary>
@@ -843,6 +831,29 @@ public sealed class MacroTable
     /// Capped levels degrade conservatively — the deeper macros are simply
     /// absent from the table, never a crash.</summary>
     public int DepthCapHits { get; private set; }
+
+    /// <summary>Conditional frames left open at the end of the merged
+    /// include-order walk (issue #40): an <c>#ifdef/#ifndef</c> whose
+    /// <c>#endif</c> never arrives (in its own file or across the include
+    /// boundary) counts once per unbalanced known-marker frame. Unbalanced
+    /// frames degrade conservatively — their definitions tag Both, never a
+    /// crash, and no synthetic <c>#endif</c> is invented.</summary>
+    public int UnbalancedFrameCount { get; private set; }
+
+    /// <summary>Record unbalanced conditional frames degraded at walk end
+    /// (issue #40, following the DepthCapHits precedent).</summary>
+    public void RecordUnbalancedFrames(int count)
+    {
+        if (count <= 0)
+        {
+            return;
+        }
+
+        UnbalancedFrameCount += count;
+        Serilog.Log.Debug(
+            "MacroTableBuilder: {Count} unbalanced conditional frame(s) degraded to Both (missing #endif)",
+            count);
+    }
 
     /// <summary>Record one include skipped at the depth cap (issue #39).</summary>
     public void RecordDepthCapHit(string includePath)
