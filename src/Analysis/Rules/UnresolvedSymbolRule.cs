@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MqlLanguageServer.Mql4.Builtins;
+using MqlLanguageServer.Mql5.Builtins;
 using MqlLanguageServer.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
@@ -22,10 +23,16 @@ namespace MqlLanguageServer.Analysis.Rules;
 ///
 /// Member-access receivers (<c>obj.Method</c>) are not flagged: an occurrence
 /// immediately followed by <c>.</c> is a property/method reference, not a free
-/// identifier. Registry coverage is partial (Mql5Builtins has ~100 names, no
-/// enum constants like <c>PERIOD_H1</c>), so builtin false positives are
-/// acceptable and degrade silently (index miss → no action). Enriching the
-/// tables is Phase 2.
+/// identifier. Builtin filtering is dialect-tagged (issue #46): the rule
+/// consults the standard-library registry matching <see cref="MqlLanguage"/>
+/// (MQL5 → <see cref="Mql5.Builtins.Mql5Builtins"/>, MQL4 →
+/// <see cref="Mql4.Builtins.Mql4BuiltinsAdapter"/>) instead of the union of all
+/// provided registries, so MQL4-only names stay resolvable in MQL4 documents
+/// without silencing MQL5 diagnostics. When the caller supplies custom
+/// registries without a dialect-tagged one, the legacy union behavior is kept.
+/// Names curated in <see cref="Mql4OnlyApiRegistry"/> (issue #34) are never
+/// duplicated here: <see cref="Mql4OnlyApiRule"/> (code 5060) owns them in
+/// MQL5 documents, and they are valid API in MQL4 documents.
 /// </summary>
 public sealed class UnresolvedSymbolRule : ISemanticRule
 {
@@ -43,6 +50,7 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
 
         var declared = CollectDeclaredNames(context.File?.Symbols, context.File?.Macros);
         var builtins = context.Builtins ?? Array.Empty<IMqlBuiltins>();
+        var dialectRegistry = SelectDialectRegistry(context.Language, builtins);
 
         foreach (var occurrence in occurrences)
         {
@@ -58,7 +66,25 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
                 continue;
             }
 
-            if (builtins.Any(b => b.IsBuiltin(occurrence.Text)))
+            if (dialectRegistry != null)
+            {
+                if (dialectRegistry.IsBuiltin(occurrence.Text))
+                {
+                    continue;
+                }
+            }
+            else if (builtins.Any(b => b.IsBuiltin(occurrence.Text)))
+            {
+                // Caller supplied custom registries without a dialect-tagged
+                // one: keep the legacy union behavior over that set.
+                continue;
+            }
+
+            // Issue #46 (decision 3): MQL4-only API names (issue #34) are owned
+            // by Mql4OnlyApiRule (code 5060) in MQL5 documents; they are valid
+            // API in MQL4 documents. Either way they must never also surface as
+            // unresolved-symbol diagnostics. Read-only registry consult.
+            if (Mql4OnlyApiRegistry.TryGetEntry(occurrence.Text, out _))
             {
                 continue;
             }
@@ -93,6 +119,51 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
                     }))
             };
         }
+    }
+
+    /// <summary>
+    /// Selects the builtin registry matching the document dialect (issue #46).
+    /// MQL5 documents consult the <see cref="Mql5Builtins"/> instance from the
+    /// provided set, MQL4 documents the <see cref="Mql4BuiltinsAdapter"/>. When
+    /// no registries are provided at all — or the provided set carries
+    /// dialect-tagged registries but not the matching one — the matching
+    /// default dialect registry is used so standard-library names still
+    /// resolve and cross-dialect names stay dishonest-free. When the caller
+    /// supplies only custom registries (no dialect-tagged one, e.g. unit-test
+    /// fakes), null is returned and the legacy union behavior applies.
+    /// </summary>
+    private static readonly IMqlBuiltins DefaultMql5Registry = new Mql5Builtins();
+    private static readonly IMqlBuiltins DefaultMql4Registry = new Mql4BuiltinsAdapter();
+
+    private static IMqlBuiltins? SelectDialectRegistry(MqlLanguage language, IMqlBuiltins[] builtins)
+    {
+        var sawDialectTagged = false;
+        IMqlBuiltins? matching = null;
+        foreach (var candidate in builtins)
+        {
+            if (language == MqlLanguage.Mql5 && candidate is Mql5Builtins)
+            {
+                return candidate;
+            }
+
+            if (language == MqlLanguage.Mql4 && candidate is Mql4BuiltinsAdapter)
+            {
+                return candidate;
+            }
+
+            sawDialectTagged |= candidate is Mql5Builtins or Mql4BuiltinsAdapter;
+        }
+
+        if (builtins.Length == 0 || sawDialectTagged)
+        {
+            // Cached singletons: the Lazy tables inside each registry must be
+            // built once per process, not once per analysis pass.
+            matching = language == MqlLanguage.Mql5
+                ? DefaultMql5Registry
+                : DefaultMql4Registry;
+        }
+
+        return matching;
     }
 
     /// <summary>

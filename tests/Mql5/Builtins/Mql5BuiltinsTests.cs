@@ -47,4 +47,57 @@ public class Mql5BuiltinsTests
             Assert.Equal(expectedDetail, builtins.GetBuiltinVariableDescription(name));
         }
     }
+
+    [Theory]
+    [InlineData("PERIOD_M1")]
+    [InlineData("PERIOD_H1")]
+    [InlineData("PERIOD_H12")]
+    [InlineData("PERIOD_D1")]
+    [InlineData("PERIOD_W1")]
+    [InlineData("PERIOD_MN1")]
+    [InlineData("PRICE_CLOSE")]
+    [InlineData("PRICE_WEIGHTED")]
+    [InlineData("MODE_SMA")]
+    [InlineData("MODE_LWMA")]
+    [InlineData("STYLE_SOLID")]
+    [InlineData("STYLE_DASHDOTDOT")]
+    [InlineData("OBJ_VLINE")]
+    [InlineData("OBJ_FIBO")]
+    [InlineData("OBJPROP_COLOR")]
+    [InlineData("OBJPROP_TIME")]
+    [InlineData("CHART_SCALE")]
+    [InlineData("CHART_WINDOWS_TOTAL")]
+    [InlineData("INDICATOR_SHORTNAME")]
+    [InlineData("INDICATOR_DATA")]
+    [InlineData("DRAW_LINE")]
+    [InlineData("DRAW_COLOR_CANDLES")]
+    [InlineData("MODE_MAIN")]
+    [InlineData("MODE_PLUSDI")]
+    [InlineData("ORDER_TYPE_BUY_STOP_LIMIT")]
+    [InlineData("ORDER_TYPE_SELL_STOP_LIMIT")]
+    [InlineData("DEAL_ENTRY_IN")]
+    [InlineData("DEAL_REASON_SL")]
+    [InlineData("ENUM_TIMEFRAMES")]
+    [InlineData("ENUM_ORDER_TYPE")]
+    [InlineData("ENUM_TRADE_REQUEST_ACTIONS")]
+    [InlineData("ENUM_OBJECT")]
+    public void Mql5Builtins_Resolves_StdlibEnumConstants(string constant)
+    {
+        var builtins = new Mql5Builtins();
+
+        Assert.True(builtins.IsBuiltinVariable(constant),
+            $"{constant} should be registered as an MQL5 stdlib enum constant (issue #46)");
+        Assert.False(string.IsNullOrWhiteSpace(builtins.GetBuiltinVariableDescription(constant)));
+    }
+
+    [Fact]
+    public void Mql5Builtins_BuiltinVariables_WithStdlibEnumConstants_ShouldExceedThreshold()
+    {
+        // Issue #46 added ~285 enum constants to the MQL5 table; a threshold
+        // (never an exact pin) guards against accidental table truncation.
+        var builtins = new Mql5Builtins();
+
+        Assert.True(builtins.BuiltInVariables.Count > 250,
+            $"Expected > 250 built-in variables after issue #46 enrichment, found {builtins.BuiltInVariables.Count}");
+    }
 }

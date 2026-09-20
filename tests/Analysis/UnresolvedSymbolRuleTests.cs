@@ -227,6 +227,144 @@ public class UnresolvedSymbolRuleTests
         Assert.Contains(diagnostics, d => d.Code == "1070");
     }
 
+    // --- Issue #46: dialect-tagged builtin registries + Mql4OnlyApiRegistry guard ---
+
+    [Fact]
+    public void Mql5Document_WithStdlibEnumConstants_DoesNotFlagThem()
+    {
+        // Issue #46 acceptance (a): MQL5 stdlib enum constants resolve against
+        // the dialect registry, so no unresolved-symbol diagnostics fire.
+        const string content = "int t = PERIOD_H1;\ndouble p = PRICE_CLOSE;\nint m = MODE_SMA;\nObjectSetInteger(0, \"o\", OBJPROP_TIME, 0);\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence>
+            {
+                new("PERIOD_H1", 0, 8, 10),
+                new("PRICE_CLOSE", 1, 12, 11),
+                new("MODE_SMA", 2, 9, 8),
+                new("OBJPROP_TIME", 3, 25, 11)
+            }
+        };
+
+        var diagnostics = _rule.Check(Context(
+            file,
+            content,
+            MqlLanguage.Mql5,
+            new IMqlBuiltins[] { new Mql5Builtins(), new Mql4BuiltinsAdapter() })).ToList();
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void Mql4OnlyConstant_InMql5Document_StillFlagged_ByDialectFilter()
+    {
+        // Issue #46 acceptance (b): OP_BUY is MQL4-only and NOT present in
+        // Mql4OnlyApiRegistry, so the dialect filter must keep flagging it in
+        // an MQL5 document even when the MQL4 registry is also provided.
+        const string content = "int cmd = OP_BUY;\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence> { new("OP_BUY", 0, 10, 6) }
+        };
+        var builtins = new IMqlBuiltins[] { new Mql5Builtins(), new Mql4BuiltinsAdapter() };
+
+        var diagnostics = _rule.Check(Context(file, content, MqlLanguage.Mql5, builtins)).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("5070", diagnostic.Code);
+        Assert.Equal("OP_BUY", ReadSymbol(diagnostic.Data));
+    }
+
+    [Fact]
+    public void Mql4OnlyConstant_InMql5Document_WithMql4RegistryOnly_StillFlagged()
+    {
+        // Dialect honesty: providing only the MQL4 registry must not silence
+        // MQL4-only names in an MQL5 document (the pre-#46 union behavior did).
+        const string content = "int cmd = OP_BUY;\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence> { new("OP_BUY", 0, 10, 6) }
+        };
+
+        var diagnostics = _rule.Check(Context(
+            file,
+            content,
+            MqlLanguage.Mql5,
+            new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("OP_BUY", ReadSymbol(diagnostic.Data));
+    }
+
+    [Fact]
+    public void Mql4Document_WithMql4OnlyConstant_DoesNotFlagIt()
+    {
+        // Issue #46 acceptance (c): OP_BUY resolves in an MQL4 document.
+        const string content = "int cmd = OP_BUY;\nint main = MODE_MAIN;\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence>
+            {
+                new("OP_BUY", 0, 10, 6),
+                new("MODE_MAIN", 1, 11, 9)
+            }
+        };
+
+        var diagnostics = _rule.Check(Context(
+            file,
+            content,
+            MqlLanguage.Mql4,
+            new IMqlBuiltins[] { new Mql4BuiltinsAdapter() })).ToList();
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void Mql4OnlyApiRegistryNames_AreNeverDuplicatedAsUnresolved()
+    {
+        // Issue #46 decision 3: names curated in Mql4OnlyApiRegistry (Ask,
+        // TimeHour) are owned by Mql4OnlyApiRule (code 5060) in MQL5
+        // documents; the unresolved-symbol rule must stay silent on them.
+        const string content = "double price = Ask;\nint hour = TimeHour(TimeCurrent());\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence>
+            {
+                new("Ask", 0, 14, 3),
+                new("TimeHour", 1, 10, 8)
+            }
+        };
+
+        var diagnostics = _rule.Check(Context(
+            file,
+            content,
+            MqlLanguage.Mql5,
+            new IMqlBuiltins[] { new Mql5Builtins() })).ToList();
+
+        Assert.Empty(diagnostics);
+    }
+
+    [Fact]
+    public void Mql5Document_WithNullBuiltins_UsesDefaultMql5Registry()
+    {
+        // Issue #46: with no registries provided, the default dialect registry
+        // still resolves stdlib constants while undeclared names stay flagged.
+        const string content = "int t = PERIOD_H1;\nMyHelper();\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence>
+            {
+                new("PERIOD_H1", 0, 8, 10),
+                new("MyHelper", 1, 0, 8)
+            }
+        };
+
+        var diagnostics = _rule.Check(Context(file, content, MqlLanguage.Mql5, null)).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("MyHelper", ReadSymbol(diagnostic.Data));
+    }
+
     private static string? ReadSymbol(object? data)
     {
         if (data is Newtonsoft.Json.Linq.JToken token)
