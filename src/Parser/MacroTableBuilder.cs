@@ -819,10 +819,10 @@ public static class MacroTableBuilder
 }
 
 /// <summary>
-/// The built macro table (issue #37): function-like macro definitions by
-/// case-insensitive name, in first-seen order. Object-like definitions are
-/// recorded for diagnostics/metrics but the tier-1 expansion pass never
-/// expands them.
+/// The built macro table (issue #37): macro definitions by case-insensitive
+/// name, in first-seen order. Function-like definitions expand at their
+/// invocation span (issue #37); object-like (parameterless) definitions
+/// expand at the invocation identifier itself (issue #38).
 /// </summary>
 public sealed class MacroTable
 {
@@ -833,6 +833,10 @@ public sealed class MacroTable
 
     /// <summary>Number of function-like definitions in the table.</summary>
     public int FunctionLikeCount { get; private set; }
+
+    /// <summary>Number of object-like (parameterless) definitions in the
+    /// table (issue #38): they expand at the invocation identifier.</summary>
+    public int ObjectLikeCount { get; private set; }
 
     /// <summary>Duplicate #define observations (same name redefined), logged
     /// and counted for metrics (last-definition-wins per dialect).</summary>
@@ -863,6 +867,10 @@ public sealed class MacroTable
         if (definition.IsFunctionLike)
         {
             FunctionLikeCount++;
+        }
+        else
+        {
+            ObjectLikeCount++;
         }
 
         if (!_byName.TryGetValue(definition.Name, out var list))
