@@ -169,6 +169,44 @@ public class MacroExpansionFixtureTests
     }
 
     // ------------------------------------------------------------------
+    // Issue #40: conditionals spanning the include boundary
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void SplitConditional_Mql4_ZeroSyntaxErrors_WithSymbol()
+    {
+        // The header opens #ifndef __MQL5__; the consumer defines under that
+        // frame and closes it. One continuous conditional across the include
+        // boundary must parse clean and expand dialect-correct.
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(
+            FixtureContent("split_cond_consumer.mq4"), FixturePath("split_cond_consumer.mq4"));
+
+        Assert.True(file.SyntaxErrors.Count == 0,
+            "split_cond_consumer.mq4 must parse with 0 syntax errors, got: "
+            + string.Join("; ", file.SyntaxErrors.Select(e => $"{e.Line}:{e.Column} {e.Message}")));
+
+        Assert.Contains(file.Symbols, s => s.Name == "split_lot");
+        Assert.Contains(file.Symbols, s => s.Name == "split_header_lot");
+    }
+
+    [Fact]
+    public void UnbalancedConditional_Mql4_ZeroSyntaxErrors_WithSymbol()
+    {
+        // An #ifndef whose #endif never arrives must still parse clean (the
+        // frame degrades to Both) and expand its call sites.
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(
+            FixtureContent("unbalanced_conditional.mq4"), FixturePath("unbalanced_conditional.mq4"));
+
+        Assert.True(file.SyntaxErrors.Count == 0,
+            "unbalanced_conditional.mq4 must parse with 0 syntax errors, got: "
+            + string.Join("; ", file.SyntaxErrors.Select(e => $"{e.Line}:{e.Column} {e.Message}")));
+
+        Assert.Contains(file.Symbols, s => s.Name == "orphan_lot");
+    }
+
+    // ------------------------------------------------------------------
     // Wrapper dialect routing: LanguageDetection must not misroute .mq5
     // ------------------------------------------------------------------
 
