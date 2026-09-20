@@ -43,6 +43,42 @@ jobs:
           echo "effective_tag=$TAG" >> $GITHUB_OUTPUT
           echo "is_tag_trigger=$IS_TAG_TRIGGER" >> $GITHUB_OUTPUT
 
+  smoke-test-linux-arm64:
+    name: Smoke test linux-arm64 (native runner)
+    needs: get-effective-tag
+    runs-on: ubuntu-24.04-arm
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    steps:
+      - name: Checkout (privado)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Cross-published IL is architecture-independent, but this job proves
+      # the arm64 artifact actually RUNS on arm64 hardware (issue #47):
+      # publish on the native runner and complete an LSP initialize handshake.
+      - name: Publish linux-arm64 (native)
+        run: |
+          dotnet publish src/MqlLanguageServer.Server.csproj \
+            -c Release -r linux-arm64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None -p:DebugSymbols=false \
+            --output bin_temp/arm64
+
+      - name: LSP initialize handshake
+        run: |
+          REQ='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":null,"capabilities":{}}}'
+          set +e
+          printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ" \
+            | timeout 15 bin_temp/arm64/mql-lsp-server > handshake.out
+          set -e
+          grep -q '"capabilities"' handshake.out
+          echo "LSP initialize handshake OK (linux-arm64 native)"
+
   publish-binaries:
     name: Publish all platforms
     needs: get-effective-tag
@@ -84,9 +120,9 @@ jobs:
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries
         run: |
-          platforms=("linux-x64" "osx-x64" "osx-arm64" "win-x64")
-          outputs=("linux" "osx-x64" "osx-arm64" "win")
-          names=("mql-lsp-server-linux-x64" "mql-lsp-server-osx-x64" "mql-lsp-server-osx-arm64" "mql-lsp-server-win-x64.exe")
+          platforms=("linux-x64" "linux-arm64" "osx-x64" "osx-arm64" "win-x64")
+          outputs=("linux" "linux-arm64" "osx-x64" "osx-arm64" "win")
+          names=("mql-lsp-server-linux-x64" "mql-lsp-server-linux-arm64" "mql-lsp-server-osx-x64" "mql-lsp-server-osx-arm64" "mql-lsp-server-win-x64.exe")
           
           for i in "${!platforms[@]}"; do
             rid="${platforms[$i]}"
@@ -173,7 +209,8 @@ jobs:
 
             ### Archivos disponibles:
             - **Windows:** `mql-lsp-server-win-x64.exe`
-            - **Linux:** `mql-lsp-server-linux-x64`
+            - **Linux (x64):** `mql-lsp-server-linux-x64`
+            - **Linux (ARM64):** `mql-lsp-server-linux-arm64`
             - **macOS (Intel):** `mql-lsp-server-osx-x64`
             - **macOS (M1/M2/M3):** `mql-lsp-server-osx-arm64`
             - **Checksums:** `CHECKSUMS.txt` (verifica integridad de archivos)
@@ -186,6 +223,7 @@ jobs:
             ```
           files: |
             bin/mql-lsp-server-linux-x64
+            bin/mql-lsp-server-linux-arm64
             bin/mql-lsp-server-osx-x64
             bin/mql-lsp-server-osx-arm64
             bin/mql-lsp-server-win-x64.exe
