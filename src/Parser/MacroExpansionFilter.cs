@@ -54,7 +54,7 @@ public sealed record ExpansionTokenTypes(int Identifier, int Lparen, int Rparen,
 /// </para>
 ///
 /// <para>
-/// Tier-1 scope (issue #37): function-like macros only, identifier/typeref
+/// Tier-1 scope (issue #37): function-like macros, identifier/typeref
 /// arguments, single-line invocations, single pass with NO recursive
 /// expansion (the expansion result is never re-scanned — depth cap 1, skip
 /// logged + metric). Multi-line invocations, unknown arg shapes, and
@@ -62,9 +62,24 @@ public sealed record ExpansionTokenTypes(int Identifier, int Lparen, int Rparen,
 /// metric. Comments on the invocation line are separate hidden-channel
 /// tokens AFTER the splice point and survive by construction.
 /// </para>
+///
+/// <para>
+/// Object-like (parameterless) macros (issue #38): a default-channel
+/// identifier resolving to an object-like definition is replaced by the
+/// tokens of its body — exactly ONE token is swapped, no argument scan.
+/// An empty body (<c>#define GUARD</c>) splices to zero tokens: the
+/// invocation disappears. Directive name positions are structurally safe:
+/// whole <c>#define</c>/<c>#undef</c> directives are single channel-1
+/// tokens in both grammars, and only default-channel identifiers expand.
+/// </para>
 /// </summary>
 public static class MacroExpansionFilter
 {
+    /// <summary>Shared empty binding set for object-like expansion: no
+    /// parameters exist, but ## paste seams in the body still apply.</summary>
+    private static readonly IReadOnlyDictionary<string, string> EmptyBindings =
+        new Dictionary<string, string>();
+
     /// <summary>
     /// Build a filtered token source with user-macro invocations expanded.
     /// Returns null when the table is empty or no table name appears in the
@@ -83,7 +98,7 @@ public static class MacroExpansionFilter
         MqlLanguage documentLanguage,
         ExpansionTokenTypes tokenTypes)
     {
-        if (table.IsEmpty || table.FunctionLikeCount == 0)
+        if (table.IsEmpty)
         {
             return null;
         }
@@ -125,36 +140,79 @@ public static class MacroExpansionFilter
                 && token.Type != Lexer.Eof)
             {
                 var definition = table.Resolve(token.Text ?? string.Empty, documentLanguage);
-                string? skipReason = null;
-                if (definition != null
-                    && TryScanInvocation(tokens, i, tokenTypes, out var afterArgs, out var argTokens)
-                    && definition.IsFunctionLike
-                    && TryMatchParameters(definition, argTokens, out var bindings, out skipReason))
+                if (definition != null)
                 {
-                    var expanded = ExpandBody(definition, bindings, tokenTypes, documentLanguage);
-                    if (expanded != null)
+                    if (!definition.IsFunctionLike)
                     {
-                        // Splice: synthesized tokens replace [i, afterArgs).
-                        // Hidden-channel tokens BETWEEN args are dropped
-                        // (whitespace inside the argument list); a comment
-                        // AFTER the invocation is a separate token later in
-                        // the stream and passes through untouched.
-                        // Position policy (issue #37): line-accurate — every
-                        // synthesized token carries the invocation's line;
-                        // the first token anchors at the identifier's column.
-                        StampPositions(expanded, token, token.Line);
-                        output.AddRange(expanded);
-                        i = afterArgs;
-                        expansionCount++;
-                        MetricsCollector.Instance.RecordMacroExpansion();
-                        continue;
-                    }
+                        // Issue #38: object-like (parameterless) macro —
+                        // replace exactly the invocation identifier with the
+                        // body tokens. The #define/#undef name positions
+                        // cannot reach this branch: whole directives are
+                        // single channel-1 tokens and only default-channel
+                        // identifiers expand here.
+                        if (definition.HasBody)
+                        {
+                            var objectExpanded = ExpandBody(
+                                definition, EmptyBindings, tokenTypes, documentLanguage);
+                            if (objectExpanded != null)
+                            {
+                                // Same position policy as function-like
+                                // (issue #37): line-accurate, first token
+                                // anchored at the invocation's column.
+                                StampPositions(objectExpanded, token, token.Line);
+                                output.AddRange(objectExpanded);
+                                i++;
+                                expansionCount++;
+                                MetricsCollector.Instance.RecordMacroExpansion();
+                                continue;
+                            }
 
-                    MetricsCollector.Instance.RecordMacroSkip(skipReason ?? "body-not-lexable");
-                }
-                else if (definition != null && skipReason != null)
-                {
-                    MetricsCollector.Instance.RecordMacroSkip(skipReason);
+                            MetricsCollector.Instance.RecordMacroSkip("body-not-lexable");
+                        }
+                        else
+                        {
+                            // Empty body (#define GUARD): the invocation
+                            // disappears — splice to zero tokens. Counted as
+                            // an expansion with its own skip reason: nothing
+                            // was produced, so nothing downstream can fail.
+                            i++;
+                            expansionCount++;
+                            MetricsCollector.Instance.RecordMacroSkip("object-like-empty-body");
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        string? skipReason = null;
+                        if (TryScanInvocation(tokens, i, tokenTypes, out var afterArgs, out var argTokens)
+                            && TryMatchParameters(definition, argTokens, out var bindings, out skipReason))
+                        {
+                            var expanded = ExpandBody(definition, bindings, tokenTypes, documentLanguage);
+                            if (expanded != null)
+                            {
+                                // Splice: synthesized tokens replace [i, afterArgs).
+                                // Hidden-channel tokens BETWEEN args are dropped
+                                // (whitespace inside the argument list); a comment
+                                // AFTER the invocation is a separate token later in
+                                // the stream and passes through untouched.
+                                // Position policy (issue #37): line-accurate — every
+                                // synthesized token carries the invocation's line;
+                                // the first token anchors at the identifier's column.
+                                StampPositions(expanded, token, token.Line);
+                                output.AddRange(expanded);
+                                i = afterArgs;
+                                expansionCount++;
+                                MetricsCollector.Instance.RecordMacroExpansion();
+                                continue;
+                            }
+
+                            MetricsCollector.Instance.RecordMacroSkip(skipReason ?? "body-not-lexable");
+                        }
+                        else if (skipReason != null)
+                        {
+                            MetricsCollector.Instance.RecordMacroSkip(skipReason);
+                        }
+                    }
                 }
             }
 
@@ -296,7 +354,9 @@ public static class MacroExpansionFilter
 
         if (!definition.IsFunctionLike)
         {
-            skipReason = "object-like"; // recorded, never expanded (tier 1)
+            // Defensive: the main loop routes object-like definitions to the
+            // dedicated issue #38 branch before this method is reached.
+            skipReason = "object-like";
             return false;
         }
 

@@ -220,15 +220,120 @@ public class MacroExpansionFilterTests
     }
 
     [Fact]
-    public void ObjectLikeMacro_IsNeverExpanded()
+    public void ObjectLikeMacro_True_ExpandsToKeywordAtInvocation()
     {
+        // Issue #38: object-like macros expand at the invocation identifier.
         var content = "#define True true\n" +
                       "bool x = True;\n";
 
         var (table, source, final) = ExpandMql4(content);
         Assert.True(table.IsEmpty || table.FunctionLikeCount == 0);
-        Assert.Null(source); // object-like defines are recorded but never expanded
-        Assert.Contains("True", DefaultChannelText(final), StringComparison.Ordinal);
+        Assert.NotNull(source);
+
+        var text = DefaultChannelText(final);
+        Assert.DoesNotContain("True", text, StringComparison.Ordinal);
+        Assert.Contains("true", text, StringComparison.Ordinal);
+
+        // The body token lands at the invocation position: line 2, the
+        // identifier's column ("bool x = " → 0-based col 9).
+        var body = final.Single(t =>
+            t.Channel == TokenConstants.DefaultChannel && t.Text == "true");
+        Assert.Equal(2, body.Line);
+        Assert.Equal(9, body.Column);
+    }
+
+    [Fact]
+    public void ObjectLikeMacro_ExpandsNumericConstantInExpression()
+    {
+        var content = "#define MAX_LOTS 0.5\n" +
+                      "double lots = MAX_LOTS;\n";
+
+        var (_, source, final) = ExpandMql4(content);
+        Assert.NotNull(source);
+
+        var text = DefaultChannelText(final);
+        Assert.Contains("0.5", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("MAX_LOTS", text, StringComparison.Ordinal);
+
+        // Body token at the invocation position: line 2, "double lots = "
+        // → 0-based col 14.
+        var body = final.Single(t =>
+            t.Channel == TokenConstants.DefaultChannel && t.Text == "0.5");
+        Assert.Equal(2, body.Line);
+        Assert.Equal(14, body.Column);
+    }
+
+    [Fact]
+    public void ObjectLikeMacro_EmptyBody_SplicesToZeroTokens()
+    {
+        var content = "#define GUARD\n" +
+                      "GUARD int x = 1;\n";
+
+        var (_, source, final) = ExpandMql4(content);
+        // The splice happened even though the invocation vanished: a rebuilt
+        // stream must be returned (the identifier was removed).
+        Assert.NotNull(source);
+
+        var text = DefaultChannelText(final);
+        Assert.DoesNotContain("GUARD", text, StringComparison.Ordinal);
+        Assert.Matches("int x = 1 ;", text);
+    }
+
+    [Fact]
+    public void ObjectLikeMacro_DepthCapOne_BodyNotReExpanded()
+    {
+        var content = "#define A B\n" +
+                      "#define B 2\n" +
+                      "int x = A;\n";
+
+        var (_, source, final) = ExpandMql4(content);
+        Assert.NotNull(source);
+
+        // Single pass: A expanded to B, but the synthesized B is never
+        // re-scanned (depth cap 1), so B stays an identifier.
+        var text = DefaultChannelText(final);
+        Assert.Contains("B", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("2", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ObjectLikeMacro_DirectiveNamePositions_NotExpanded()
+    {
+        var content = "#define MAX_LOTS 0.5\n" +
+                      "#define LIMIT MAX_LOTS\n" +
+                      "#undef MAX_LOTS\n" +
+                      "double x = MAX_LOTS;\n";
+
+        var (_, source, final) = ExpandMql4(content);
+        Assert.NotNull(source);
+
+        // Only the default-channel invocation expands. Whole directives are
+        // channel-1 tokens, so the #define name/body positions and the
+        // #undef name position survive verbatim.
+        var limitDefine = final.Single(t =>
+            t.Type == Mql4GrammarLexer.PRE_DEFINE && t.Text != null && t.Text.Contains("LIMIT"));
+        Assert.Contains("MAX_LOTS", limitDefine.Text, StringComparison.Ordinal);
+
+        var undef = final.Single(t => t.Type == Mql4GrammarLexer.PRE_UNDEF);
+        Assert.Contains("MAX_LOTS", undef.Text, StringComparison.Ordinal);
+
+        var text = DefaultChannelText(final);
+        Assert.Contains("0.5", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ObjectLikeMacro_WithParensInBody_ExpandsSingleIdentifier()
+    {
+        var content = "#define Bid SymbolInfoDouble(_Symbol, SYMBOL_BID)\n" +
+                      "double b = Bid;\n";
+
+        var (_, source, final) = ExpandMql4(content);
+        Assert.NotNull(source);
+
+        // Exactly ONE identifier token is replaced; the body (which contains
+        // parentheses) is spliced in, trailing call-site text stays after.
+        var text = DefaultChannelText(final);
+        Assert.Matches("double b = SymbolInfoDouble \\( _Symbol , SYMBOL_BID \\) ;", text);
     }
 
     [Fact]

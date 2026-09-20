@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using MqlLanguageServer.Models;
 using MqlLanguageServer.Mql5.Parser;
 using MqlLanguageServer.Parser;
@@ -109,6 +110,46 @@ public class MacroExpansionFixtureTests
         // Symbols from the INCLUDED monolith (dialect-correct names).
         Assert.Contains(file.Symbols, s => s.Name == "HolguraAdjH");
         Assert.Contains(file.Symbols, s => s.Name == "HolguraAdjH_in");
+    }
+
+    // ------------------------------------------------------------------
+    // Object-like (parameterless) macros (issue #38)
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void ObjectLikeConsumer_Mql4_ZeroSyntaxErrors_ConstantExpands()
+    {
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(
+            FixtureContent("object_like_consumer.mq4"), FixturePath("object_like_consumer.mq4"));
+
+        Assert.True(file.SyntaxErrors.Count == 0,
+            "object_like_consumer.mq4 should parse with 0 syntax errors after object-like expansion, got: "
+            + string.Join("; ", file.SyntaxErrors.Select(e => $"{e.Line}:{e.Column} {e.Message}")));
+
+        // The declared variable resolves.
+        Assert.Contains(file.Symbols, s => s.Name == "MaxLots");
+
+        // The invocation was replaced by the body tokens: MAX_LOTS no longer
+        // occurs as an identifier (0.5 is a DOUBLE token, not an occurrence).
+        Assert.DoesNotContain(file.Occurrences, o => o.Text == "MAX_LOTS");
+        Assert.DoesNotContain(file.Occurrences, o => o.Text == "True");
+    }
+
+    [Fact]
+    public void ObjectLikeConsumer_Mql4_NoUnresolvedConstantDiagnostic()
+    {
+        var parser = new Mql4AntlrParser();
+        var content = FixtureContent("object_like_consumer.mq4");
+        var file = parser.ParseFile(content, FixturePath("object_like_consumer.mq4"));
+
+        var analyzer = new MqlLanguageServer.Analysis.SemanticAnalyzer();
+        var diagnostics = analyzer.Analyze(file, content, MqlLanguage.Mql4, CancellationToken.None);
+
+        Assert.DoesNotContain(diagnostics,
+            d => d.Message != null && d.Message.Contains("MAX_LOTS", StringComparison.Ordinal));
+        Assert.DoesNotContain(diagnostics,
+            d => d.Message != null && d.Message.Contains("True", StringComparison.Ordinal));
     }
 
     // ------------------------------------------------------------------
