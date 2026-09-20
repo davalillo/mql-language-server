@@ -79,6 +79,50 @@ jobs:
           grep -q '"capabilities"' handshake.out
           echo "LSP initialize handshake OK (linux-arm64 native)"
 
+  smoke-test-win-arm64:
+    name: Smoke test win-arm64 (native runner)
+    needs: get-effective-tag
+    runs-on: windows-11-arm
+    if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    steps:
+      - name: Checkout (privado)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Same rationale as the linux-arm64 job (issue #47, extended by issue #49):
+      # prove the arm64 artifact actually RUNS on arm64 Windows hardware by
+      # publishing on the native runner and completing an LSP initialize handshake.
+      - name: Publish win-arm64 (native)
+        shell: bash
+        run: |
+          dotnet publish src/MqlLanguageServer.Server.csproj \
+            -c Release -r win-arm64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=None -p:DebugSymbols=false \
+            --output bin_temp/arm64
+
+      - name: LSP initialize handshake
+        shell: bash
+        run: |
+          REQ='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":null,"capabilities":{}}}'
+          set +e
+          printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ" \
+            | ./bin_temp/arm64/mql-lsp-server.exe > handshake.out &
+          SERVER_PID=$!
+          set -e
+          for _ in $(seq 1 15); do
+            if grep -q '"capabilities"' handshake.out; then break; fi
+            sleep 1
+          done
+          kill "$SERVER_PID" 2>/dev/null || true
+          grep -q '"capabilities"' handshake.out
+          echo "LSP initialize handshake OK (win-arm64 native)"
+
   publish-binaries:
     name: Publish all platforms
     needs: get-effective-tag
@@ -120,9 +164,9 @@ jobs:
       # CAMBIO IMPORTANTE: Renombramos los archivos al publicarlos para que no se llamen igual
       - name: Publish & Rename Binaries
         run: |
-          platforms=("linux-x64" "linux-arm64" "osx-x64" "osx-arm64" "win-x64")
-          outputs=("linux" "linux-arm64" "osx-x64" "osx-arm64" "win")
-          names=("mql-lsp-server-linux-x64" "mql-lsp-server-linux-arm64" "mql-lsp-server-osx-x64" "mql-lsp-server-osx-arm64" "mql-lsp-server-win-x64.exe")
+          platforms=("linux-x64" "linux-arm64" "osx-x64" "osx-arm64" "win-x64" "win-arm64")
+          outputs=("linux" "linux-arm64" "osx-x64" "osx-arm64" "win" "win-arm64")
+          names=("mql-lsp-server-linux-x64" "mql-lsp-server-linux-arm64" "mql-lsp-server-osx-x64" "mql-lsp-server-osx-arm64" "mql-lsp-server-win-x64.exe" "mql-lsp-server-win-arm64.exe")
           
           for i in "${!platforms[@]}"; do
             rid="${platforms[$i]}"
@@ -139,7 +183,7 @@ jobs:
               --output "bin_temp/$out_dir"
             
             mkdir -p bin
-            if [[ "$rid" == win-x64 ]]; then
+            if [[ "$rid" == win-* ]]; then
               mv "bin_temp/$out_dir/mql-lsp-server.exe" "bin/$final_name"
             else
               mv "bin_temp/$out_dir/mql-lsp-server" "bin/$final_name"
@@ -209,6 +253,7 @@ jobs:
 
             ### Archivos disponibles:
             - **Windows:** `mql-lsp-server-win-x64.exe`
+            - **Windows (ARM64):** `mql-lsp-server-win-arm64.exe`
             - **Linux (x64):** `mql-lsp-server-linux-x64`
             - **Linux (ARM64):** `mql-lsp-server-linux-arm64`
             - **macOS (Intel):** `mql-lsp-server-osx-x64`
@@ -227,6 +272,7 @@ jobs:
             bin/mql-lsp-server-osx-x64
             bin/mql-lsp-server-osx-arm64
             bin/mql-lsp-server-win-x64.exe
+            bin/mql-lsp-server-win-arm64.exe
             bin/CHECKSUMS.txt
             nupkg/*.nupkg
           draft: false
