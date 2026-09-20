@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Added
+- feat(parser): object-like (parameterless) macro expansion (#38) — `#define` constants (`#define MAX_LOTS 0.5`, `#define True true`) now expand at the invocation identifier in the tier-1 token-stream splice pass, so user constants resolve in the parse tree instead of triggering unresolved-symbol semantic diagnostics. Object-like definitions are stored in the macro table (last-definition-wins per dialect, `ObjectLikeCount`); expansion reuses the function-like position policy (line-accurate, first token anchored at the invocation column) and the single-pass depth cap 1 (bodies are never re-scanned). Exactly one identifier token is replaced; an empty body (`#define GUARD`) splices to zero tokens, counted as a skip with reason `object-like-empty-body`. Directive name positions (`#define`/`#undef`) are structurally safe — whole directives are hidden-channel tokens and only default-channel identifiers expand.
+
 ## [2.3.0] - 2026-09-19
 
 Stable 2.3.0: promotes the content validated by release candidates 1 and 2 to the stable channel. See `[2.3.0-rc.1]` and `[2.3.0-rc.2]` below for the full per-feature technical detail.

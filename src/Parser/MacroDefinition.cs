@@ -32,9 +32,9 @@ public enum MqlDialect
 ///
 /// Function-like macros (<c>#define EA_INPUT(type, name) extern type name</c>)
 /// carry a parameter list; object-like macros (<c>#define True true</c>) have
-/// an empty <see cref="Parameters"/> list and are recorded but never expanded
-/// by the tier-1 expansion pass (issue #37 non-goal: shape-neutral identifier
-/// rewrites only affect semantic resolution, not parsing).
+/// an empty <see cref="Parameters"/> list and expand at the invocation
+/// identifier itself (issue #38; issue #37 originally recorded them without
+/// expanding).
 /// </summary>
 public sealed record MacroDefinition
 {
