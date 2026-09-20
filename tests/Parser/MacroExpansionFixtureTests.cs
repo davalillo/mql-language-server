@@ -71,6 +71,22 @@ public class MacroExpansionFixtureTests
         Assert.DoesNotContain(file.Occurrences, o => o.Text.Contains("//."));
     }
 
+    [Fact]
+    public void Consumer_Mql4_NestedChainMacro_Expands()
+    {
+        // Issue #39: NESTED_INPUT lives in nested_defs.mqh, included by
+        // compat_header.mqh — a second-level include chain. The call site in
+        // consumer.mq4 must expand with 0 syntax errors and yield the symbol.
+        var parser = new Mql4AntlrParser();
+        var file = parser.ParseFile(FixtureContent("consumer.mq4"), FixturePath("consumer.mq4"));
+
+        Assert.True(file.SyntaxErrors.Count == 0,
+            "consumer.mq4 must parse with 0 syntax errors with the nested chain walked, got: "
+            + string.Join("; ", file.SyntaxErrors.Select(e => $"{e.Line}:{e.Column} {e.Message}")));
+
+        Assert.Contains(file.Symbols, s => s.Name == "nested_lot");
+    }
+
     // ------------------------------------------------------------------
     // MQL5 dialect (the .mq4 content parsed with the MQL5 parser, as the
     // wrapper include does)

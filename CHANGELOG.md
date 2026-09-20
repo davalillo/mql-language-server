@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Added
+- feat(parser): the macro table now walks nested include chains transitively (#39) — a quoted include's own quoted includes resolve relative to that header's directory, guarded by a visited set of resolved paths (include cycles terminate; each unique header is scanned at most once) and a depth cap of 8 include levels with a recorded hit count (deeper macros degrade conservatively — absent from the table, never a crash). Fixes macros defined in second-level headers being invisible at call sites; validated against the existing macro fixtures and the Ducibus Pro corpus
+
 ## [2.3.0] - 2026-09-19
 
 Stable 2.3.0: promotes the content validated by release candidates 1 and 2 to the stable channel. See `[2.3.0-rc.1]` and `[2.3.0-rc.2]` below for the full per-feature technical detail.

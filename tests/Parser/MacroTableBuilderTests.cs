@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -349,6 +350,124 @@ public class MacroTableBuilderTests
         var content = "#include \"does_not_exist_37.mqh\"\n#define LOCAL(x) int x\n";
         var table = BuildMql4(content);
         Assert.NotNull(table.Resolve("LOCAL", MqlLanguage.Mql4));
+    }
+
+    [Fact]
+    public void CrossFile_NestedIncludeChain_SecondLevelDefinesAreVisible()
+    {
+        // Issue #39: leaf_defs.mqh is included by mid_header.mqh, which is
+        // included by the consumer. Nested quoted includes must resolve
+        // relative to the INCLUDING HEADER's directory and be walked
+        // transitively; before this, second-level defines were invisible.
+        var dir = Path.Combine(Path.GetTempPath(), "mtb-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "leaf_defs.mqh"),
+                "#define LEAF_MACRO(x) int x\n");
+
+            File.WriteAllText(Path.Combine(dir, "mid_header.mqh"),
+                "#include \"leaf_defs.mqh\"\n" +
+                "#define MID_MACRO(x) double x\n");
+
+            var consumer = Path.Combine(dir, "consumer.mq4");
+            File.WriteAllText(consumer,
+                "#include \"mid_header.mqh\"\n" +
+                "#define LOCAL(x) int x\n");
+
+            var lexer = new Mql4GrammarLexer(new AntlrInputStream(File.ReadAllText(consumer)));
+            var stream = new CommonTokenStream(lexer);
+            var table = MacroTableBuilder.Build(stream, Mql4PreTokens, consumer, MqlLanguage.Mql4);
+
+            Assert.NotNull(table.Resolve("LOCAL", MqlLanguage.Mql4));
+            Assert.NotNull(table.Resolve("MID_MACRO", MqlLanguage.Mql4));
+            Assert.NotNull(table.Resolve("LEAF_MACRO", MqlLanguage.Mql4));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CrossFile_IncludeChainBeyondDepthCap_DegradesConservatively()
+    {
+        // Issue #39 triangulation: a chain deeper than the 8-level cap must
+        // terminate, record depth-cap hits, and degrade conservatively —
+        // macros from capped-away levels are absent, capped-in levels stay.
+        var dir = Path.Combine(Path.GetTempPath(), "mtb-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            const int chainLength = 12;
+            for (var level = chainLength; level >= 1; level--)
+            {
+                var lines = new List<string>();
+                if (level < chainLength)
+                {
+                    lines.Add($"#include \"chain_{level + 1}.mqh\"");
+                }
+
+                lines.Add($"#define CHAIN_{level}(x) int x");
+                File.WriteAllText(Path.Combine(dir, $"chain_{level}.mqh"), string.Join("\n", lines) + "\n");
+            }
+
+            var consumer = Path.Combine(dir, "consumer.mq4");
+            File.WriteAllText(consumer, "#include \"chain_1.mqh\"\n");
+
+            var lexer = new Mql4GrammarLexer(new AntlrInputStream(File.ReadAllText(consumer)));
+            var stream = new CommonTokenStream(lexer);
+            // Termination is proven by this call returning at all.
+            var table = MacroTableBuilder.Build(stream, Mql4PreTokens, consumer, MqlLanguage.Mql4);
+
+            // Levels 1-8 are walked; level 9+ degrade away.
+            Assert.NotNull(table.Resolve("CHAIN_1", MqlLanguage.Mql4));
+            Assert.NotNull(table.Resolve("CHAIN_8", MqlLanguage.Mql4));
+            Assert.Null(table.Resolve("CHAIN_9", MqlLanguage.Mql4));
+            Assert.Equal(1, table.DepthCapHits);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CrossFile_IncludeCycle_Terminates_BothHeadersVisible()
+    {
+        // Issue #39: two headers including each other must terminate (the
+        // visited set of resolved paths scans each header at most once) and
+        // both headers' defines must land in the table.
+        var dir = Path.Combine(Path.GetTempPath(), "mtb-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "cycle_a.mqh"),
+                "#include \"cycle_b.mqh\"\n" +
+                "#define CYCLE_A(x) int x\n");
+
+            File.WriteAllText(Path.Combine(dir, "cycle_b.mqh"),
+                "#include \"cycle_a.mqh\"\n" +
+                "#define CYCLE_B(x) double x\n");
+
+            var consumer = Path.Combine(dir, "consumer.mq4");
+            File.WriteAllText(consumer,
+                "#include \"cycle_a.mqh\"\n" +
+                "#define LOCAL(x) int x\n");
+
+            var lexer = new Mql4GrammarLexer(new AntlrInputStream(File.ReadAllText(consumer)));
+            var stream = new CommonTokenStream(lexer);
+            // Termination is proven by this call returning at all.
+            var table = MacroTableBuilder.Build(stream, Mql4PreTokens, consumer, MqlLanguage.Mql4);
+
+            Assert.NotNull(table.Resolve("LOCAL", MqlLanguage.Mql4));
+            Assert.NotNull(table.Resolve("CYCLE_A", MqlLanguage.Mql4));
+            Assert.NotNull(table.Resolve("CYCLE_B", MqlLanguage.Mql4));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     // ------------------------------------------------------------------
