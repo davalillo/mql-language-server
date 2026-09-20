@@ -97,6 +97,28 @@ public class MacroTableBuilderTests
     }
 
     [Fact]
+    public void ObjectLikeMacro_IsStoredResolvableAndCounted()
+    {
+        // Issue #38: object-like definitions must reach the expansion pass
+        // through the table (last-definition-wins per dialect, same as
+        // function-like ones).
+        var content = "#define True true\n" +
+                      "#define EA_INPUT(type, name) extern type name\n";
+
+        var table = BuildMql4(content);
+
+        var def = table.Resolve("True", MqlLanguage.Mql4);
+        Assert.NotNull(def);
+        Assert.False(def!.IsFunctionLike);
+        Assert.Equal("true", def.Body);
+        Assert.Equal(1, table.ObjectLikeCount);
+        Assert.Equal(1, table.FunctionLikeCount);
+
+        // Case-insensitive lookup, same as function-like names.
+        Assert.NotNull(table.Resolve("true", MqlLanguage.Mql4));
+    }
+
+    [Fact]
     public void ParseDefine_PasteOperator_PreservedInBody()
     {
         var def = MacroTableBuilder.ParseDefine(
