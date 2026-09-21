@@ -1,4 +1,14 @@
-## [Unreleased]
+## [2.4.0-rc.3] - 2026-09-21
+
+Release candidate 3 for the 2.4.0 line: NuGet publishing enablement — no product code changes.
+
+### Added
+
+- NuGet package authoring best-practices metadata: `Copyright`, `PackageProjectUrl`, `PackageReadmeFile` (embedded README.md), `PackageReleaseNotes` (CHANGELOG link), `PackageIcon` (new 128x128 transparent `packaging/icon.png`), expanded `PackageTags`, `RepositoryType` (#60, #61).
+
+### Changed
+
+- Release workflow now publishes the package to nuget.org via **Trusted Publishing** (OIDC via `NuGet/login@v1`, short-lived single-use API key) instead of relying on release assets only (#60, #61).
 
 ## [2.4.0-rc.2] - 2026-09-21
 
