@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [2.4.0-rc.2] - 2026-09-21
+
+Release candidate 2 for the 2.4.0 line: CI-only fix — the native-ARM smoke tests now complete a real LSP initialize handshake (#58). No product code changes; the rc.1 binaries were verified correct despite the red smoke jobs.
+
+### Fixed
+- fix(ci): ARM smoke tests hold stdin open so the LSP handshake completes (#58) — both smoke jobs piped the initialize request and closed stdin immediately; the server shut down on EOF before processing the queued message, so the response was never written and the handshake assertion failed on any platform (the v2.4.0-rc.1 run misread this as an ARM binary failure — a 43 ms "crash" that was a clean EOF shutdown). Stdin is now held ~12 s after the request, and the assertion (`"capabilities"` in the captured output) keeps its teeth. Verified locally against the published linux-x64 binary.
+
 ## [2.4.0-rc.1] - 2026-09-21
 
 Release candidate 1 for the 2.4.0 line: closes the bulk of the unresolved-symbol false-positive surface for real MQL projects (stdlib enum constants, cross-file include-correlated suppression), makes references/rename scope-aware at function-body granularity, and fixes two parser resolution defects discovered by the new fixtures. First release cut from the complete self-contained matrix (linux-arm64 and win-arm64 ship alongside the existing targets). Not marked as `latest`; the stable channel continues pointing at 2.3.0 until 2.4.0 is sealed.
