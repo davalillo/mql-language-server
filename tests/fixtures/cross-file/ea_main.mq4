@@ -8,8 +8,10 @@
 //|     include reached through trade_lib_mqh)                       |
 //|   - TotallyMissingSymbol is declared nowhere in this fixture set |
 //|     and must keep its diagnostic                                 |
-//| Note: deliberately free of dot characters so the member-access   |
-//| heuristic under test is exercised only where intended            |
+//| The dot-bearing decimal line doubles as a regression guard for   |
+//| issue #52: the member-access offset drift used to eat the        |
+//| TradeOpen diagnostic below (silently misclassified as a member   |
+//| access); with the fix the dot no longer masks free identifiers   |
 //+------------------------------------------------------------------+
 #property strict
 
@@ -17,6 +19,7 @@
 
 int OnInit()
 {
+    double factor = 0.5;
     double lot = NormalizeVolume(1);
     TradeOpen(lot);
     TotallyMissingSymbol(lot);

@@ -169,6 +169,36 @@ public class UnresolvedSymbolRuleTests
     }
 
     [Fact]
+    public void MultiLineDocument_WithEarlyDotBearingTokens_FreeIdentifier_StillFlagged()
+    {
+        // Issue #52: IsMemberAccessPosition rebuilt the absolute offset by
+        // accumulating Split('\n') part lengths without +1 per newline, so the
+        // sampled position drifted left by exactly occurrence.Line characters.
+        // With these three dot-bearing lines the drifted sample lands right
+        // after the '.' of "Point * 0.1", silently classifying the free
+        // identifier 'x' as a member-access receiver — a false negative.
+        const string content =
+            "double tickSize = 0.00001;\n" +
+            "double profit = Bid - 0.007;\n" +
+            "double point = Point * 0.1;\n" +
+            "x();\n";
+        var file = new MqlFile
+        {
+            Occurrences = new List<TokenOccurrence>
+            {
+                new("x", 3, 0, 1)
+            }
+        };
+
+        var diagnostics = _rule.Check(Context(file, content)).ToList();
+
+        var diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("5070", diagnostic.Code);
+        Assert.NotNull(diagnostic.Data);
+        Assert.Equal("x", ReadSymbol(diagnostic.Data));
+    }
+
+    [Fact]
     public void NullFile_NoDiagnostics()
     {
         var diagnostics = _rule.Check(Context(null, "MyHelper();\n"));
