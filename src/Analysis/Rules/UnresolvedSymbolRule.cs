@@ -195,7 +195,11 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
                 absoluteStart = offset;
                 break;
             }
-            offset += part.Length;
+            // +1 for the '\n' consumed by Split('\n') (issue #52): without it
+            // the sampled position drifts left by exactly occurrence.Line
+            // characters, silently misclassifying free identifiers on
+            // multi-line documents as member-access receivers.
+            offset += part.Length + 1;
             line++;
         }
 
