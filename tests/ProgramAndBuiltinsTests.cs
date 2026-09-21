@@ -361,6 +361,65 @@ public class ProgramAndBuiltinsTests
 
     #endregion
 
+    #region Stdlib Enum Constants (issue #46)
+
+    [Theory]
+    [InlineData("PERIOD_M1")]
+    [InlineData("PERIOD_H1")]
+    [InlineData("PERIOD_H12")]
+    [InlineData("PERIOD_D1")]
+    [InlineData("PERIOD_W1")]
+    [InlineData("PERIOD_MN1")]
+    [InlineData("STYLE_SOLID")]
+    [InlineData("STYLE_DASHDOTDOT")]
+    [InlineData("OBJ_VLINE")]
+    [InlineData("OBJ_FIBO")]
+    [InlineData("OBJPROP_COLOR")]
+    [InlineData("OBJPROP_TIME")]
+    [InlineData("OBJPROP_TIME1")]
+    [InlineData("CHART_SCALE")]
+    [InlineData("CHART_WINDOWS_TOTAL")]
+    [InlineData("INDICATOR_SHORTNAME")]
+    [InlineData("DRAW_LINE")]
+    [InlineData("DRAW_ZIGZAG")]
+    [InlineData("MODE_MAIN")]
+    [InlineData("MODE_PLUSDI")]
+    [InlineData("MODE_MINUSDI")]
+    [InlineData("OP_BUYLIMIT")]
+    [InlineData("OP_SELLSTOP")]
+    [InlineData("ENUM_TIMEFRAMES")]
+    [InlineData("ENUM_BASE_CORNER")]
+    [InlineData("ENUM_OBJECT")]
+    public void IsBuiltinVariable_WithStdlibEnumConstant_ShouldReturnTrue(string constant)
+    {
+        // Act
+        var result = Mql4Builtins.IsBuiltinVariable(constant);
+
+        // Assert
+        Assert.True(result, $"{constant} should be registered as an MQL4 stdlib enum constant (issue #46)");
+    }
+
+    [Theory]
+    [InlineData("OP_SELL")]
+    [InlineData("PRICE_CLOSE")]
+    [InlineData("MODE_SMA")]
+    public void IsBuiltinVariable_WithPreExistingConstants_ShouldStillReturnTrue(string constant)
+    {
+        // Guard: the issue #46 enrichment did not displace existing constants.
+        Assert.True(Mql4Builtins.IsBuiltinVariable(constant));
+    }
+
+    [Fact]
+    public void BuiltinVariables_WithStdlibEnumConstants_ShouldExceedThreshold()
+    {
+        // Issue #46 added ~190 enum constants to the MQL4 table; a threshold
+        // (never an exact pin) guards against accidental table truncation.
+        Assert.True(Mql4Builtins.BuiltInVariables.Count > 200,
+            $"Expected > 200 built-in variables after issue #46 enrichment, found {Mql4Builtins.BuiltInVariables.Count}");
+    }
+
+    #endregion
+
     #region Edge Cases
 
     [Fact]
