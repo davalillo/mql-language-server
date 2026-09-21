@@ -20,10 +20,18 @@
     <ToolCommandName>mql-lsp-server</ToolCommandName>
     <PackageId>mql-language-server</PackageId>
     <Version>2.4.0-rc.2</Version>
-    <Authors>MQL Language Server Team</Authors>
+    <Authors>Guillermo Davalillo</Authors>
     <Description>Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5)</Description>
-    <PackageTags>lsp;mql4;mql5;metatrader;language-server</PackageTags>
+    <!-- NuGet package authoring best practices:
+         https://learn.microsoft.com/nuget/create-packages/package-authoring-best-practices -->
+    <Copyright>Copyright (c) Guillermo Davalillo 2026</Copyright>
+    <PackageProjectUrl>https://github.com/davalillo/mql-language-server</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>https://github.com/davalillo/mql-language-server/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>lsp;mql4;mql5;metatrader;metaeditor;mqh;mt4;mt5;expert-advisor;language-server</PackageTags>
     <RepositoryUrl>https://github.com/davalillo/mql-language-server</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
@@ -47,6 +55,13 @@
       <PublishSingleFile>false</PublishSingleFile>
     </PropertyGroup>
   </Target>
+
+  <!-- Files packed into the NuGet package root (readme + icon).
+         Both live at the repository root; the csproj lives in src/. -->
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\packaging\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="MqlLanguageServer.Tests" />

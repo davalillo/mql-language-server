@@ -98,12 +98,29 @@ dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg
 
 **Distribuir**:
 
-**Opción A: NuGet.org**
+**Opción A: NuGet.org (Trusted Publishing — recomendado)**
+
+NuGet.org ya no recomienda API keys de larga duración: se usa *Trusted Publishing* (OIDC).
+El workflow de release (`.github/workflows/build.yml`, job `publish-binaries`) ya está
+configurado: solicita una API key efímera (1h, de un solo uso) con la acción `NuGet/login@v1`
+y publica con `dotnet nuget push`.
+
+Configuración única (manual, en nuget.org y GitHub):
+1. En nuget.org → tu usuario → **Trusted Publishing** → añadir política:
+   - Repository Owner: `davalillo`
+   - Repository: `mql-language-server`
+   - Workflow File: `build.yml` (solo el nombre del archivo)
+2. En GitHub → repo → Settings → Secrets and variables → Actions:
+   crear el secret `NUGET_USER` con tu nombre de perfil de nuget.org (no el email).
+3. Nota: las políticas nuevas quedan provisionales 7 días hasta el primer publish
+   exitoso, que las activa de forma permanente.
+
+Publicación manual (alternativa, no recomendada):
 ```bash
-# Requiere cuenta en nuget.org y API key
 dotnet nuget push ./nupkg/*.nupkg \
-  --api-key TU_API_KEY \
-  --source nuget.org
+  --api-key "$NUGET_API_KEY" \
+  --source https://api.nuget.org/v3/index.json \
+  --skip-duplicate
 
 # Instalación para usuarios:
 dotnet tool install -g mql-language-server
@@ -186,7 +203,7 @@ sha256sum -c CHECKSUMS.txt
 | Standalone Binaries | 71-72MB | Ninguna | Manual | Manual | Usuarios finales |
 | NuGet Tool | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Desarrolladores |
 | GitHub Packages | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Open source |
-| NuGet.org | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Público |
+| NuGet.org | 2-5MB | .NET 10 SDK | `dotnet tool install` | `dotnet tool update` | Público (Trusted Publishing) |
 
 ## 🎯 Recomendación por Audiencia
 
@@ -278,6 +295,15 @@ Para cada release (v2.0.0, v2.1.0, etc.):
 - [Semantic Versioning](https://semver.org/)
 - [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github)
 - [LSP Specification](https://microsoft.github.io/language-server-protocol/)
+
+## 📋 Metadatos del paquete NuGet
+
+El paquete cumple las prácticas recomendadas de autoría de NuGet
+(https://learn.microsoft.com/nuget/create-packages/package-authoring-best-practices):
+`Copyright`, `PackageProjectUrl`, `PackageReadmeFile` (README.md embebido),
+`PackageReleaseNotes` (enlace a CHANGELOG.md), `PackageIcon` (packaging/icon.png),
+`PackageTags` ampliados, `RepositoryType` y expresión de licencia SPDX (`MIT`).
+Definidos en `src/MqlLanguageServer.Server.csproj`.
 
 ---
 

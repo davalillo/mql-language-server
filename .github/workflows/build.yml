@@ -136,6 +136,12 @@ jobs:
     needs: get-effective-tag
     runs-on: ubuntu-latest
     if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
+    permissions:
+      # Create/update the GitHub release and clean up old workflow artifacts
+      contents: write
+      actions: write
+      # GitHub OIDC token issuance for NuGet Trusted Publishing (nuget.org)
+      id-token: write
     outputs:
       tag: ${{ needs.get-effective-tag.outputs.effective_tag }}
     steps:
@@ -214,6 +220,26 @@ jobs:
 
       - name: Pack NuGet
         run: dotnet pack src/MqlLanguageServer.Server.csproj -c Release --no-build --output nupkg/
+
+      # NuGet Trusted Publishing: exchange the GitHub Actions OIDC token for a
+      # short-lived (1h, single-use) API key instead of storing a long-lived secret.
+      # Requires a one-time Trusted Publishing policy on nuget.org for
+      # owner=davalillo, repo=mql-language-server, workflow file=build.yml.
+      # See docs/guides/DISTRIBUTION.md.
+      - name: NuGet login (OIDC -> short-lived API key)
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push NuGet package to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push nupkg/*.nupkg \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
       - name: Cleanup old artifacts BEFORE upload
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
