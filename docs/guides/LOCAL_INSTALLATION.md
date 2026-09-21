@@ -1,6 +1,6 @@
 # Instalación Local - MQL Language Server
 
-Esta guía explica cómo instalar el LSP para MQL4/MQL5 localmente **SIN** publicar en nuget.org.
+Esta guía explica cómo instalar el LSP para MQL4/MQL5. El método recomendado instala el paquete publicado en nuget.org; los métodos locales siguen disponibles para desarrollo.
 
 ## 📋 Requisitos Previos
 
@@ -21,7 +21,29 @@ cd mql-language-server
 
 ---
 
-## 🎯 Método 1: Script Automatizado (Recomendado)
+## 🎯 Método 1: dotnet tool install (nuget.org — recomendado)
+
+Para desarrolladores con el SDK de .NET. No requiere clonar el repositorio.
+
+```bash
+# Versión estable (cuando exista)
+dotnet tool install --global mql-language-server
+
+# Versión prerelease (rc)
+dotnet tool install --global mql-language-server --prerelease
+
+# Actualizar
+dotnet tool update --global mql-language-server
+
+# Desinstalar
+dotnet tool uninstall --global mql-language-server
+```
+
+El binario queda en `~/.dotnet/tools/mql-lsp-server` (añade `~/.dotnet/tools` al PATH si tu shell no lo hace).
+
+---
+
+## 🎯 Método 2: Script Automatizado
 
 ### Ejecutar script de instalación
 ```bash
@@ -38,7 +60,7 @@ cd mql-language-server
 
 ---
 
-## 🎯 Método 2: Instalación Manual
+## 🎯 Método 3: Instalación Manual
 
 ### Paso 1: Crear paquete NuGet
 ```bash
@@ -74,7 +96,7 @@ source ~/.bashrc
 
 ---
 
-## 🎯 Método 3: Instalación desde Binario (Sin .NET)
+## 🎯 Método 4: Instalación desde Binario (Sin .NET)
 
 **Ventajas**: No requiere .NET SDK
 **Desventajas**: Binario más grande (~71MB)
@@ -216,12 +238,13 @@ dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg-local
 
 | Método | Requiere .NET | Tamaño | Actualización |
 |--------|---------------|--------|---------------|
+| dotnet tool install (nuget.org) ✅ | ✅ SDK | ~5MB | `dotnet tool update` |
 | Script Automático | ✅ SDK | ~5MB | Manual |
 | Instalación Manual | ✅ SDK | ~5MB | Manual |
 | Binario Standalone | ❌ | ~71MB | Manual |
-| NuGet.org | ✅ SDK | ~5MB | `dotnet tool update` |
 
 **Recomendación**:
+- **Con .NET SDK**: dotnet tool install (nuget.org) ✅
 - **Desarrollo**: Script Automático o Manual (.NET tool)
 - **Producción**: Binario Standalone
 - **Equipo**: NuGet feed privado
@@ -275,4 +298,4 @@ dotnet pack src/MqlLanguageServer.Server.csproj -c Release -o ./nupkg-local
 
 ---
 
-**MQL Language Server** - Instalación local sin publicación
+**MQL Language Server** - Instalación (nuget.org y local)
