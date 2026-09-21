@@ -30,18 +30,6 @@ This release adds first-class MQL5 support while keeping MQL4 behavior intact:
 - MQL5 built-in functions and predefined variables are included in completion and hover.
 - Diagnostics for MQL5 files use a distinct `MQL5xxx` code range so CI filters can separate MQL4 and MQL5 issues.
 
-## Breaking Rename
-
-The project, package, and binary were renamed from `mql4-language-server` to `mql-language-server` to reflect dual MQL4/MQL5 support.
-
-| Before | After |
-|--------|-------|
-| Binary | `mql4-lsp-server` → `mql-lsp-server` |
-| Package | `mql4-language-server` → `mql-language-server` |
-| Log file | `mql4-lsp-server.log` → `mql-lsp-server.log` |
-
-If you are upgrading from a pre-1.x release, update your editor configuration and CI scripts to use the new binary/package name.
-
 ## Technical Decisions
 
 This section documents the key technical decisions made during development to ease the onboarding of new developers.
