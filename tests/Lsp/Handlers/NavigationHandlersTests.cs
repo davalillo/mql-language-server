@@ -171,6 +171,58 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
         }
 
+        /// <summary>
+        /// Issue #55 regression: a cursor on a USE of a function-local variable
+        /// must resolve to the local, not to the containing function. Companion
+        /// case: the cursor on the function's NAME still resolves to the function.
+        /// </summary>
+        [Fact]
+        public async Task TypeDefinitionHandler_LocalUse_ResolvesLocal_NotContainingFunctionAsync()
+        {
+            var content = "void OnTick()\n{\n    int innerTicks = 0;\n    innerTicks = innerTicks + 1;\n}\n";
+            var path = WriteTempFile("TestTypeDefinitionLocal.mq4", content);
+
+            try
+            {
+                var handler = new TypeDefinitionHandler(
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Cursor on the innerTicks use inside the body (line 3).
+                var useRequest = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(3, 5)
+                };
+                var useResult = await handler.Handle(useRequest, CancellationToken.None);
+
+                Assert.NotNull(useResult);
+                var useLocations = useResult!.Select(l => l.Location).Where(l => l != null).ToList();
+                var useLocation = Assert.Single(useLocations);
+
+                // Location is the local's declaration (line 2), not OnTick (line 0).
+                Assert.Equal(2, useLocation!.Range.Start.Line);
+
+                // Companion: cursor on the function's NAME still resolves to OnTick.
+                var nameRequest = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(0, 5)
+                };
+                var nameResult = await handler.Handle(nameRequest, CancellationToken.None);
+
+                Assert.NotNull(nameResult);
+                var nameLocations = nameResult!.Select(l => l.Location).Where(l => l != null).ToList();
+                var nameLocation = Assert.Single(nameLocations)!;
+                Assert.Equal(0, nameLocation.Range.Start.Line);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
         #endregion
 
         #region ImplementationHandlerTests
@@ -237,6 +289,67 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
 
                 // Assert - should find OnTick as a function implementation
                 Assert.NotNull(result);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Issue #55 regression: a cursor on a USE of a function-local variable
+        /// must resolve to the local (no function implementation exists for it),
+        /// not to the containing function. Companions: the cursor on the callee's
+        /// NAME and on the enclosing function's NAME still resolve to functions.
+        /// </summary>
+        [Fact]
+        public async Task ImplementationHandler_LocalUse_DoesNotResolveContainingFunctionAsync()
+        {
+            var content = "void OnTick()\n{\n    int innerTicks = CalculateHelper();\n    innerTicks++;\n}\nint CalculateHelper()\n{\n    return 1;\n}\n";
+            var path = WriteTempFile("TestImplementationLocal.mq4", content);
+
+            try
+            {
+                var handler = new ImplementationHandler(
+                    Substitute.For<ILogger<ImplementationHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Cursor on the innerTicks use inside the body (line 3): the local
+                // is a variable, so there is no function implementation for it.
+                var useRequest = new ImplementationParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(3, 4)
+                };
+                var useResult = await handler.Handle(useRequest, CancellationToken.None);
+                Assert.Null(useResult);
+
+                // Companion: cursor on the callee's NAME resolves to CalculateHelper.
+                var calleeRequest = new ImplementationParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(2, 24)
+                };
+                var calleeResult = await handler.Handle(calleeRequest, CancellationToken.None);
+
+                Assert.NotNull(calleeResult);
+                var calleeLocations = calleeResult!.Select(l => l.Location).Where(l => l != null).ToList();
+                var calleeLocation = Assert.Single(calleeLocations)!;
+                Assert.Equal(5, calleeLocation.Range.Start.Line);
+
+                // Companion: cursor on the function's NAME still resolves to OnTick.
+                var nameRequest = new ImplementationParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(0, 5)
+                };
+                var nameResult = await handler.Handle(nameRequest, CancellationToken.None);
+
+                Assert.NotNull(nameResult);
+                var nameLocations = nameResult!.Select(l => l.Location).Where(l => l != null).ToList();
+                var nameLocation = Assert.Single(nameLocations)!;
+                Assert.Equal(0, nameLocation.Range.Start.Line);
             }
             finally
             {
@@ -697,6 +810,58 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             // Assert
             Assert.NotNull(result);
             Assert.Empty(result);
+        }
+
+        /// <summary>
+        /// Issue #55 regression: a cursor on a USE of a function-local variable
+        /// must highlight the local's occurrences, not the containing function's
+        /// name. Companion: the cursor on the function's NAME still highlights the
+        /// function.
+        /// </summary>
+        [Fact]
+        public async Task DocumentHighlightHandler_LocalUse_HighlightsLocal_NotContainingFunctionAsync()
+        {
+            var content = "void OnTick()\n{\n    int innerTicks = 0;\n    innerTicks = innerTicks + 1;\n}\n";
+            var path = WriteTempFile("TestDocumentHighlightLocal.mq4", content);
+
+            try
+            {
+                var handler = new DocumentHighlightHandler(
+                    Substitute.For<ILogger<DocumentHighlightHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Cursor on the innerTicks use inside the body (line 3).
+                var useRequest = new DocumentHighlightParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(3, 5)
+                };
+                var useResult = await handler.Handle(useRequest, CancellationToken.None);
+
+                Assert.NotNull(useResult);
+                var useHighlights = useResult!.ToList();
+
+                // The local's declaration (line 2) is highlighted; OnTick's name
+                // (line 0) is not.
+                Assert.Contains(useHighlights, h => h.Range.Start.Line == 2);
+                Assert.DoesNotContain(useHighlights, h => h.Range.Start.Line == 0);
+
+                // Companion: cursor on the function's NAME still highlights OnTick.
+                var nameRequest = new DocumentHighlightParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(0, 5)
+                };
+                var nameResult = await handler.Handle(nameRequest, CancellationToken.None);
+
+                Assert.NotNull(nameResult);
+                Assert.Contains(nameResult!.ToList(), h => h.Range.Start.Line == 0);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         #endregion

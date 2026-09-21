@@ -81,8 +81,18 @@ public class SignatureHelpHandler : LanguageAwareHandlerBase<SignatureHelpParams
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
-            symbol ??= parser.FindSymbolDefinition(mqlFile, content, line, character);
+            // Signature help wants the function the cursor is interacting with.
+            // Prefer the exact identifier under the cursor (e.g. the callee's name):
+            // FindSymbolAtPosition matches by body containment, so inside a function
+            // body it resolves to the enclosing function and the FindSymbolDefinition
+            // fallback below was effectively dead code (issue #55). Fall back to
+            // FindSymbolAtPosition only when there is no identifier at the cursor
+            // (e.g. inside a call's argument list); note containment then still
+            // resolves to the enclosing function — a known limitation until
+            // call-expression analysis exists. Intended: identifier-first, with the
+            // containment result as a best-effort fallback rather than nothing.
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character)
+                ?? parser.FindSymbolAtPosition(mqlFile, line, character);
             if (symbol == null || symbol.Kind != SymbolKind.Function)
             {
                 return null;

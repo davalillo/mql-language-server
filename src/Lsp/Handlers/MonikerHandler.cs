@@ -56,7 +56,14 @@ public class MonikerHandler
                 _documentStore.AddOrUpdate(uri, mql4File, content);
             }
 
-            var symbol = _parser.FindSymbolAtPosition(mql4File, request.Position.Line + 1, request.Position.Character + 1);
+            var line = request.Position.Line + 1;
+            var character = request.Position.Character + 1;
+
+            // Resolve the exact identifier under the cursor (ReferencesHandler/Rename
+            // precedent). FindSymbolAtPosition matches by body containment, so a cursor
+            // inside a function body resolves to the containing function instead of the
+            // local variable or parameter the user is actually on (issue #55).
+            var symbol = _parser.FindSymbolDefinition(mql4File, content, line, character);
             if (symbol == null)
             {
                 return Task.FromResult<Container<Moniker>?>(null);
