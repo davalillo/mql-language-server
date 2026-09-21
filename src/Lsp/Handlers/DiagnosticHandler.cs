@@ -76,9 +76,9 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
     }
 
-    private RelatedFullDocumentDiagnosticReport GenerateReport(MqlFile? file, string content, MqlLanguage language, CancellationToken token)
+    private RelatedFullDocumentDiagnosticReport GenerateReport(MqlFile? file, string content, MqlLanguage language, CancellationToken token, string? documentPath)
     {
-        var diagnostics = GenerateDiagnostics(file, content, language, token);
+        var diagnostics = GenerateDiagnostics(file, content, language, token, documentPath);
 
         return new RelatedFullDocumentDiagnosticReport
         {
@@ -137,7 +137,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
                 _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
-            return GenerateReport(mqlFile, content, language, token);
+            return GenerateReport(mqlFile, content, language, token, request.TextDocument.Uri.GetFileSystemPath());
         }
         catch (OperationCanceledException)
         {
@@ -148,6 +148,37 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         {
             _logger.LogError(ex, "Diagnostic handler failed.");
             return CreateEmptyReport();
+        }
+    }
+
+    /// <summary>
+    /// Issue #44: workspace-correlated suppression of cross-file unresolved-symbol
+    /// false positives. The rule itself stays document-local (REQ-IA-02); this
+    /// downstream filter suppresses base+70 diagnostics whose symbol is declared
+    /// in an included header (tier 1) or anywhere in the indexed workspace (tier 2).
+    /// Best-effort (fail open): any correlator failure keeps the document-local
+    /// diagnostics, and cancellation aborts the request as before.
+    /// </summary>
+    private IReadOnlyList<Diagnostic> ApplyCrossFileSuppression(
+        IReadOnlyList<Diagnostic> semanticDiagnostics,
+        MqlFile? mqlFile,
+        string? documentPath,
+        MqlLanguage language,
+        CancellationToken token)
+    {
+        try
+        {
+            return CrossFileSymbolCorrelator.SuppressWorkspaceResolvable(
+                semanticDiagnostics, mqlFile, documentPath, language, SymbolIndex.Index, token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Cross-file symbol suppression failed; keeping document-local diagnostics.");
+            return semanticDiagnostics;
         }
     }
 
@@ -172,7 +203,7 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         };
     }
 
-    private List<Diagnostic> GenerateDiagnostics(MqlFile? mqlFile, string content, MqlLanguage language, CancellationToken token)
+    private List<Diagnostic> GenerateDiagnostics(MqlFile? mqlFile, string content, MqlLanguage language, CancellationToken token, string? documentPath)
     {
         var diagnostics = new List<Diagnostic>();
         var lines = content.Split('\n');
@@ -205,7 +236,9 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         // swallowed per-rule (best-effort) and must not disturb the existing
         // syntax/typo/underscore diagnostics.
         var semanticAnalyzer = _semanticAnalyzer ?? new SemanticAnalyzer();
-        diagnostics.AddRange(semanticAnalyzer.Analyze(mqlFile, content, language, token));
+        diagnostics.AddRange(ApplyCrossFileSuppression(
+            semanticAnalyzer.Analyze(mqlFile, content, language, token),
+            mqlFile, documentPath, language, token));
 
         for (int i = 0; i < lines.Length; i++)
         {

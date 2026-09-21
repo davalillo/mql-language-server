@@ -105,7 +105,7 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
                     occurrence.Line,
                     occurrence.Column + occurrence.Length),
                 Severity = DiagnosticSeverity.Error,
-                Message = $"Undeclared symbol '{occurrence.Text}' is not defined in this document or the workspace.",
+                Message = $"Undeclared symbol '{occurrence.Text}' is not defined in this document.",
                 Code = (context.BaseCode + UnresolvedSymbolOffset).ToString(),
                 Source = "mql-lsp",
                 // OmniSharp Diagnostic.Data is a JToken (Newtonsoft): serialize
