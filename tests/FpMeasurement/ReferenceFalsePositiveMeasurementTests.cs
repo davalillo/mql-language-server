@@ -225,6 +225,7 @@ public class ReferenceFalsePositiveMeasurementTests
         // Pass 2: run the EXACT ReferencesHandler regex per query x file
         // ------------------------------------------------------------------
         long totalMatches = 0, tpCount = 0, fpCount = 0, defCount = 0;
+        long tpScopeBound = 0, tpScopeAmbiguous = 0;
         var fpByCause = new Dictionary<string, long> { ["comment-line"] = 0, ["string-looking"] = 0, ["preprocessor-line"] = 0, ["other"] = 0 };
         var fpByQuery = new Dictionary<string, long>(StringComparer.Ordinal);
         var fpExamples = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -295,6 +296,19 @@ public class ReferenceFalsePositiveMeasurementTests
                                     break;
                                 }
                             }
+
+                            // Scope-binding tag (issue #45, tier 1):
+                            // classifies each TP as bound to a single
+                            // same-name definition under the document-local
+                            // scope model, or as a scope-level ambiguity
+                            // (multiple same-name defs; the TP sits in a
+                            // function that declares its own same-name local,
+                            // so a caller bound to a different same-name def
+                            // would wrongly attribute it). Measurement-only:
+                            // never asserted, reported below.
+                            var scopeTag = ClassifyScopeBinding(file.Model, name, i, startCol);
+                            if (scopeTag == "scope-ambiguous") tpScopeAmbiguous++;
+                            else if (scopeTag == "bound" || scopeTag == "single-def") tpScopeBound++;
                         }
                         else
                         {
@@ -394,6 +408,7 @@ public class ReferenceFalsePositiveMeasurementTests
 
         _output.WriteLine($"Corpus: {corpusFiles} files, {corpusLines} lines");
         _output.WriteLine($"Matches: {totalMatches}, TP: {tpCount} (definitions: {defCount}), FP: {fpCount} ({fpRate:F2}%)");
+        _output.WriteLine($"Scope-binding tags (issue #45, tier 1): bound={tpScopeBound}, scope-ambiguous={tpScopeAmbiguous}");
         _output.WriteLine($"Suspicious default-channel IDENT tokens on comment/preproc lines: {parsedFiles.Sum(f => f.SuspiciousTokens.Count)}");
         _output.WriteLine($"Parse failures: {parseFailures.Count}");
         _output.WriteLine($"Recall misses: {recallMisses.Count}");
@@ -427,6 +442,8 @@ public class ReferenceFalsePositiveMeasurementTests
         md.AppendLine($"| — of which DEFINITION overlap | {defCount} |");
         md.AppendLine($"| FALSE-POSITIVE (FP) | {fpCount} |");
         md.AppendLine($"| **FP rate** | **{fpRate:F2}%** |");
+        md.AppendLine($"| TP bound to a single same-name definition (scope tag) | {tpScopeBound} |");
+        md.AppendLine($"| TP scope-ambiguous (multiple same-name defs; in-function same-name local) | {tpScopeAmbiguous} |");
         md.AppendLine();
         md.AppendLine("### FP cause breakdown (heuristics)");
         md.AppendLine();
@@ -571,7 +588,7 @@ public class ReferenceFalsePositiveMeasurementTests
         // JSON
         var jsonParts = new List<string>();
         jsonParts.Add($"\"corpus\":{{\"files\":{corpusFiles},\"lines\":{corpusLines},\"parseFailures\":{parseFailures.Count}}}");
-        jsonParts.Add($"\"aggregate\":{{\"queryNames\":{defNames.Count},\"totalMatches\":{totalMatches},\"tp\":{tpCount},\"tpDefinitions\":{defCount},\"fp\":{fpCount},\"fpRate\":{fpRate.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}}}");
+        jsonParts.Add($"\"aggregate\":{{\"queryNames\":{defNames.Count},\"totalMatches\":{totalMatches},\"tp\":{tpCount},\"tpDefinitions\":{defCount},\"tpScopeBound\":{tpScopeBound},\"tpScopeAmbiguous\":{tpScopeAmbiguous},\"fp\":{fpCount},\"fpRate\":{fpRate.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)}}}");
         jsonParts.Add("\"fpCauses\":{" + string.Join(",", fpByCause.Select(kv => "\"" + kv.Key + "\":" + kv.Value)) + "}");
         jsonParts.Add("\"builtinCollisions\":[" + string.Join(",", builtinCollisionVolume
             .OrderByDescending(kv => kv.Value).Take(10)
@@ -813,8 +830,74 @@ public class ReferenceFalsePositiveMeasurementTests
     /// match start (handles trailing `// comment` and string literals
     /// anywhere in the line, not just line-start heuristics).
     /// </summary>
-    private static string ClassifyFp(string line, int startCol, int endCol)
+    /// <summary>
+    /// Issue #45 scope-binding tag for TP matches (measurement-only, mirrors
+    /// the tier-1 document-local scope model of ScopeOccurrenceFilter):
+    ///  - "single-def": at most one same-name definition in the document —
+    ///    no shadowing possible.
+    ///  - "bound": multiple defs, but the position resolves unambiguously
+    ///    under function-body granularity (the innermost containing function
+    ///    declares no same-name variable/parameter, so the position binds to
+    ///    the global or function definition).
+    ///  - "scope-ambiguous": multiple defs and the position sits inside a
+    ///    function that declares its own same-name local — a caller bound to
+    ///    a different same-name definition would wrongly attribute this TP.
+    ///  - "no-model": the file failed to parse; cannot classify.
+    /// </summary>
+    private static string ClassifyScopeBinding(MqlFile? model, string name, int line, int column)
     {
+        if (model == null)
+            return "no-model";
+
+        var defs = model.Symbols
+            .Where(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (defs.Count <= 1)
+            return "single-def";
+
+        var functions = model.Symbols.Where(IsFunctionLikeSymbol).ToList();
+        var containing = functions
+            .Where(f => RangeContains(f.Range, line, column))
+            .OrderBy(f => (f.Range.End.Line - f.Range.Start.Line) * 1_000_000
+                          + (f.Range.End.Character - f.Range.Start.Character))
+            .FirstOrDefault();
+
+        if (containing == null)
+            return "bound"; // outside every function: binds to the global def
+
+        var hasSameNameLocal = defs.Any(d =>
+            !ReferenceEquals(d, containing)
+            && IsVariableLikeSymbol(d)
+            && d.SelectionRange?.Start != null
+            && RangeContains(containing.Range, d.SelectionRange.Start.Line, d.SelectionRange.Start.Character));
+
+        return hasSameNameLocal ? "scope-ambiguous" : "bound";
+    }
+
+    private static bool IsFunctionLikeSymbol(MqlSymbol s) =>
+        s.SymbolType == SymbolType.Function
+        || s.SymbolType == SymbolType.Method
+        || s.Kind == OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.Function
+        || s.Kind == OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.Method;
+
+    private static bool IsVariableLikeSymbol(MqlSymbol s) =>
+        s.SymbolType == SymbolType.Variable
+        || s.Kind == OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.Variable;
+
+    private static bool RangeContains(OmniSharp.Extensions.LanguageServer.Protocol.Models.Range? range, int line, int column)
+    {
+        if (range?.Start == null || range.End == null)
+            return false;
+        if (line < range.Start.Line || line > range.End.Line)
+            return false;
+        if (line == range.Start.Line && column < range.Start.Character)
+            return false;
+        if (line == range.End.Line && column > range.End.Character)
+            return false;
+        return true;
+    }
+
+    private static string ClassifyFp(string line, int startCol, int endCol) {
         // Trailing comment: a `//` (or `/*` start) before the match, with no
         // line terminator after it (we are within one source line already).
         var lineComment = line.IndexOf("//", StringComparison.Ordinal);

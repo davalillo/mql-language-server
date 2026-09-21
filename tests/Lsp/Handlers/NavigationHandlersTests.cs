@@ -492,6 +492,288 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
 
         #endregion
 
+        #region ReferencesHandlerShadowingTests (issue #45, tier 1)
+
+        /// <summary>
+        /// Shadowing fixture: a global "count" and a function-local "count".
+        /// 0-based positions:
+        ///   line 0  col 4  — global declaration
+        ///   line 4  col 8  — local declaration (inside OnTick, lines 2-6)
+        ///   line 5  col 4 / col 12 — local uses
+        ///   line 10 col 16 — global use (inside Other, which has no local "count")
+        /// </summary>
+        private const string ShadowingFixtureContent =
+            "int count = 0;\n" +            // 0: global declaration
+            "\n" +                          // 1
+            "void OnTick()\n" +             // 2
+            "{\n" +                         // 3
+            "    int count = 5;\n" +        // 4: local declaration
+            "    count = count + 1;\n" +    // 5: local uses
+            "}\n" +                         // 6
+            "\n" +                          // 7
+            "void Other()\n" +              // 8
+            "{\n" +                         // 9
+            "    int total = count;\n" +    // 10: global use
+            "}\n";                          // 11
+
+        [Fact]
+        public async Task ReferencesHandler_Shadowing_BindsGlobal_WhenCursorOutsideFunctionAsync()
+        {
+            // Issue #45: references on the global "count" (cursor outside any
+            // function) must NOT return the local's occurrences inside OnTick.
+            var path = WriteTempFile("TestReferencesShadowGlobal.mq4", ShadowingFixtureContent);
+
+            try
+            {
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(ShadowingFixtureContent, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql4,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, ShadowingFixtureContent, MqlLanguage.Mql4);
+
+                var handler = CreateReferencesHandler(documentStore);
+
+                // Cursor on the global declaration (line 0, col 4).
+                var request = new ReferenceParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(0, 4),
+                    Context = new ReferenceContext { IncludeDeclaration = true }
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Only the global occurrences survive: declaration (0,4) and
+                // the use in Other (10,16). The local's declaration and uses
+                // (4,8 / 5,4 / 5,12) belong to the shadowing local.
+                Assert.NotNull(result);
+                var locations = result!.ToList();
+                Assert.Equal(2, locations.Count);
+                Assert.Contains(locations, l => l.Range.Start.Line == 0 && l.Range.Start.Character == 4);
+                Assert.Contains(locations, l => l.Range.Start.Line == 10 && l.Range.Start.Character == 16);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 4);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 5);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task ReferencesHandler_Shadowing_BindsLocal_WhenCursorInsideFunctionAsync()
+        {
+            // Issue #45: references on the local "count" (cursor inside
+            // OnTick) must NOT return the global's occurrences.
+            var path = WriteTempFile("TestReferencesShadowLocal.mq4", ShadowingFixtureContent);
+
+            try
+            {
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(ShadowingFixtureContent, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql4,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, ShadowingFixtureContent, MqlLanguage.Mql4);
+
+                var handler = CreateReferencesHandler(documentStore);
+
+                // Cursor on the local use (line 5, col 4), inside OnTick.
+                var request = new ReferenceParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(5, 4),
+                    Context = new ReferenceContext { IncludeDeclaration = true }
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Only the local's occurrences survive: declaration (4,8) and
+                // both uses (5,4 / 5,12). The global's declaration (0,4) and
+                // its use in Other (10,16) are excluded.
+                Assert.NotNull(result);
+                var locations = result!.ToList();
+                Assert.Equal(3, locations.Count);
+                Assert.Contains(locations, l => l.Range.Start.Line == 4 && l.Range.Start.Character == 8);
+                Assert.Contains(locations, l => l.Range.Start.Line == 5 && l.Range.Start.Character == 4);
+                Assert.Contains(locations, l => l.Range.Start.Line == 5 && l.Range.Start.Character == 12);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 0);
+                Assert.DoesNotContain(locations, l => l.Range.Start.Line == 10);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        #endregion
+
+        #region ScopeOccurrenceFilterTests (issue #45, tier 1)
+
+        /// <summary>
+        /// Manual occurrence set for <see cref="ShadowingFixtureContent"/>:
+        /// the five same-file positions plus one cross-file occurrence that
+        /// must always pass through (tier-2 scope resolution out of scope).
+        /// </summary>
+        private static List<SymbolOccurrence> CountOccurrences(string path) => new()
+        {
+            new SymbolOccurrence { FilePath = path, Text = "count", Line = 0, Column = 4, Length = 5 },
+            new SymbolOccurrence { FilePath = path, Text = "count", Line = 4, Column = 8, Length = 5 },
+            new SymbolOccurrence { FilePath = path, Text = "count", Line = 5, Column = 4, Length = 5 },
+            new SymbolOccurrence { FilePath = path, Text = "count", Line = 5, Column = 12, Length = 5 },
+            new SymbolOccurrence { FilePath = path, Text = "count", Line = 10, Column = 16, Length = 5 },
+            new SymbolOccurrence { FilePath = "/other/include.mqh", Text = "count", Line = 2, Column = 6, Length = 5 },
+        };
+
+        private static IEnumerable<(int Line, int Column)> Positions(IEnumerable<SymbolOccurrence> occurrences) =>
+            occurrences.Select(o => (o.Line, o.Column));
+
+        [Fact]
+        public void BindAndFilter_SingleDefinition_ReturnsOccurrencesUnchanged()
+        {
+            // No shadowing possible with one same-name definition: the helper
+            // must return the input sequence unchanged (same count, same
+            // positions, regardless of cursor).
+            var parser = new Mql4AntlrParser();
+            var mqlFile = parser.ParseFile(ReferencesFixtureContent, "single.mq4");
+            var occurrences = new List<SymbolOccurrence>
+            {
+                new() { FilePath = "single.mq4", Text = "MySignal", Line = 1, Column = 4, Length = 8 },
+                new() { FilePath = "single.mq4", Text = "MySignal", Line = 4, Column = 10, Length = 8 },
+            };
+
+            var result = ScopeOccurrenceFilter.BindAndFilter(mqlFile, "MySignal", 4, 10, occurrences);
+
+            Assert.Equal(occurrences.Count, result.Count);
+            Assert.Equal(Positions(occurrences), Positions(result));
+        }
+
+        [Fact]
+        public void BindAndFilter_Shadowing_BindsLocalInsideFunction()
+        {
+            // Cursor on a local use (5,4): the function-local definition owns
+            // the cursor; only occurrences inside OnTick survive, plus the
+            // cross-file occurrence (unfiltered, tier 2).
+            var parser = new Mql4AntlrParser();
+            var mqlFile = parser.ParseFile(ShadowingFixtureContent, "shadow.mq4");
+
+            var result = ScopeOccurrenceFilter.BindAndFilter(
+                mqlFile, "count", 5, 4, CountOccurrences("shadow.mq4"));
+
+            Assert.Equal(4, result.Count);
+            Assert.Contains((4, 8), Positions(result));
+            Assert.Contains((5, 4), Positions(result));
+            Assert.Contains((5, 12), Positions(result));
+            Assert.Contains((2, 6), Positions(result)); // cross-file pass-through
+            Assert.DoesNotContain((0, 4), Positions(result));
+            Assert.DoesNotContain((10, 16), Positions(result));
+        }
+
+        [Fact]
+        public void BindAndFilter_Shadowing_BindsGlobalOutsideFunction()
+        {
+            // Cursor on the global declaration (0,4): the global definition
+            // owns the cursor; occurrences inside OnTick (which declares its
+            // own local "count") are excluded.
+            var parser = new Mql4AntlrParser();
+            var mqlFile = parser.ParseFile(ShadowingFixtureContent, "shadow.mq4");
+
+            var result = ScopeOccurrenceFilter.BindAndFilter(
+                mqlFile, "count", 0, 4, CountOccurrences("shadow.mq4"));
+
+            Assert.Equal(3, result.Count);
+            Assert.Contains((0, 4), Positions(result));
+            Assert.Contains((10, 16), Positions(result));
+            Assert.Contains((2, 6), Positions(result)); // cross-file pass-through
+            Assert.DoesNotContain((4, 8), Positions(result));
+            Assert.DoesNotContain((5, 4), Positions(result));
+            Assert.DoesNotContain((5, 12), Positions(result));
+        }
+
+        [Fact]
+        public void BindAndFilter_CursorInFunctionWithoutLocal_BindsGlobal()
+        {
+            // Cursor inside Other (10,16), which declares no local "count":
+            // the global definition owns the cursor even though the cursor is
+            // inside a function.
+            var parser = new Mql4AntlrParser();
+            var mqlFile = parser.ParseFile(ShadowingFixtureContent, "shadow.mq4");
+
+            var result = ScopeOccurrenceFilter.BindAndFilter(
+                mqlFile, "count", 10, 16, CountOccurrences("shadow.mq4"));
+
+            Assert.Equal(3, result.Count);
+            Assert.Contains((0, 4), Positions(result));
+            Assert.Contains((10, 16), Positions(result));
+            Assert.Contains((2, 6), Positions(result)); // cross-file pass-through
+            Assert.DoesNotContain((4, 8), Positions(result));
+        }
+
+        [Fact]
+        public void BindAndFilter_NestedSameNameLocals_InnermostDeclarationWins()
+        {
+            // Two same-name locals in one function (function-body granularity:
+            // block nesting is not modeled). The latest-declared local owns a
+            // cursor after it; the other local's declaration token is
+            // excluded, its uses still conflate (documented tier-1 limit).
+            const string content =
+                "void Runner()\n" +           // 0
+                "{\n" +                       // 1
+                "    int count = 1;\n" +      // 2: local A declaration (2,8)
+                "    count = count + 1;\n" +  // 3: uses (3,4) / (3,12)
+                "    int count = 5;\n" +      // 4: local B declaration (4,8)
+                "    count = 5;\n" +          // 5: use (5,4)
+                "}\n";                        // 6
+            var parser = new Mql4AntlrParser();
+            var mqlFile = parser.ParseFile(content, "nested.mq4");
+            var occurrences = new List<SymbolOccurrence>
+            {
+                new() { FilePath = "nested.mq4", Text = "count", Line = 2, Column = 8, Length = 5 },
+                new() { FilePath = "nested.mq4", Text = "count", Line = 3, Column = 4, Length = 5 },
+                new() { FilePath = "nested.mq4", Text = "count", Line = 3, Column = 12, Length = 5 },
+                new() { FilePath = "nested.mq4", Text = "count", Line = 4, Column = 8, Length = 5 },
+                new() { FilePath = "nested.mq4", Text = "count", Line = 5, Column = 4, Length = 5 },
+            };
+
+            var result = ScopeOccurrenceFilter.BindAndFilter(mqlFile, "count", 5, 4, occurrences);
+
+            // Local B (declared last) owns the cursor: everything inside
+            // Runner except A's declaration token (2,8).
+            Assert.Equal(4, result.Count);
+            Assert.Contains((3, 4), Positions(result));
+            Assert.Contains((3, 12), Positions(result));
+            Assert.Contains((4, 8), Positions(result));
+            Assert.Contains((5, 4), Positions(result));
+            Assert.DoesNotContain((2, 8), Positions(result));
+        }
+
+        #endregion
+
         #region DocumentHighlightHandlerTests
 
         [Fact]

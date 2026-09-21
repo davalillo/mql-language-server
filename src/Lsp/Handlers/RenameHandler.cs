@@ -106,7 +106,16 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
+            // Issue #45 (tier 1, coordinator-authorized deviation): resolve the
+            // symbol by the identifier text at the cursor, exactly as
+            // ReferencesHandler does. FindSymbolAtPosition returns the FIRST
+            // symbol whose Range contains the position, so any cursor inside a
+            // function body resolves to the function itself — the helper below
+            // could never see the queried name. Behavior change: rename now
+            // requires the cursor to be on an identifier token (e.g. renaming
+            // a function requires the cursor on its name token); a cursor on
+            // whitespace/punctuation resolves to no symbol.
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
             if (symbol == null)
             {
                 _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
@@ -132,8 +141,19 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
             // Filter to the requested document: the index is name-keyed by
             // design (OCC-05), so unfiltered workspace-wide edits would
             // wrongly rename same-name symbols in other files.
-            var occurrences = SymbolIndex.Index.FindOccurrences(symbol.Name)
+            // Issue #45 (tier 1): within the document, occurrences bound to a
+            // different same-name definition (document-local shadowing) are
+            // filtered by scope; cross-file ambiguity remains name-keyed
+            // (tier 2).
+            IEnumerable<SymbolOccurrence> occurrences = SymbolIndex.Index.FindOccurrences(symbol.Name)
                 .Where(o => o.FilePath == filePath);
+
+            occurrences = ScopeOccurrenceFilter.BindAndFilter(
+                mqlFile,
+                symbol.Name,
+                request.Position.Line,
+                request.Position.Character,
+                occurrences);
 
             foreach (var occurrence in occurrences)
             {
