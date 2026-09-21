@@ -37,3 +37,6 @@ jobs:
           --no-build
           --configuration Release
           --filter "FullyQualifiedName!~Performance&FullyQualifiedName!~FpMeasurement&Category!=RealWorld"
+
+      - name: Vulnerable packages gate
+        run: dotnet list MqlLanguageServer.sln package --vulnerable --include-transitive
