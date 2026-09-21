@@ -105,7 +105,16 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
             // heuristically filtered — only comment/string/preprocessor noise
             // is removed by construction, because occurrences are captured
             // from default-channel IDENTIFIER tokens only.
-            var occurrences = SymbolIndex.Index.FindOccurrences(symbol.Name);
+            // Issue #45 (tier 1): same-document occurrences are now refined
+            // by document-local scope — occurrences bound to a different
+            // same-name definition (shadowing) are filtered out. Cross-file
+            // same-name ambiguity remains name-keyed by design (tier 2).
+            var occurrences = ScopeOccurrenceFilter.BindAndFilter(
+                mqlFile,
+                symbol.Name,
+                request.Position.Line,
+                request.Position.Character,
+                SymbolIndex.Index.FindOccurrences(symbol.Name));
 
             // D7 (corrected): on OmniSharp 0.19.9 IncludeDeclaration lives on
             // ReferenceContext, not as a top-level ReferenceParams property.

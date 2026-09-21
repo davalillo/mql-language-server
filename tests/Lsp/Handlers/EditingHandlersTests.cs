@@ -240,6 +240,173 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
         }
 
+        [Fact]
+        public async Task RenameHandler_Shadowing_RenamesGlobalOccurrencesOnlyAsync()
+        {
+            // Issue #45: renaming the global "count" (cursor on its
+            // declaration, outside any function) must produce edits only at
+            // the global's occurrences — disjoint from the function-local
+            // "count"'s declaration and uses (document-local shadowing,
+            // tier-1 scope refinement).
+            const string content =
+                "int count = 0;\n" +            // 0: global declaration (0,4)
+                "\n" +                          // 1
+                "void OnTick()\n" +             // 2
+                "{\n" +                         // 3
+                "    int count = 5;\n" +        // 4: local declaration (4,8)
+                "    count = count + 1;\n" +    // 5: local uses (5,4) / (5,12)
+                "}\n" +                         // 6
+                "\n" +                          // 7
+                "void Other()\n" +              // 8
+                "{\n" +                         // 9
+                "    int total = count;\n" +    // 10: global use (10,16)
+                "}\n";                          // 11
+            var path = WriteTempFile("TestRenameShadowGlobal.mq4", content);
+
+            try
+            {
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(content, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql4,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, content, MqlLanguage.Mql4);
+
+                var handler = new RenameHandler(
+                    Substitute.For<ILogger<RenameHandler>>(),
+                    parser,
+                    documentStore);
+
+                // Cursor on the global declaration (line 0, col 4).
+                var request = new RenameParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(0, 4),
+                    NewName = "globalCount"
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Exactly the two global occurrences: declaration (0,4) and
+                // the use in Other (10,16). The local's positions (4,8),
+                // (5,4), (5,12) must never be edited.
+                Assert.NotNull(result);
+                Assert.NotNull(result!.Changes);
+                Assert.True(result.Changes.TryGetValue(uri, out var edits),
+                    "WorkspaceEdit should contain edits for the requested document");
+                var editList = edits!.ToList();
+                Assert.Equal(2, editList.Count);
+                Assert.All(editList, e => Assert.Equal("globalCount", e.NewText));
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 0 && e.Range.Start.Character == 4 &&
+                    e.Range.End.Line == 0 && e.Range.End.Character == 9);
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 10 && e.Range.Start.Character == 16 &&
+                    e.Range.End.Line == 10 && e.Range.End.Character == 21);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        [Fact]
+        public async Task RenameHandler_Shadowing_RenamesLocalOccurrencesOnlyAsync()
+        {
+            // Issue #45: renaming the function-local "count" (cursor on one
+            // of its uses inside OnTick) must produce edits only at the
+            // local's declaration and uses — disjoint from the global's
+            // declaration and its use in Other (document-local shadowing,
+            // tier-1 scope refinement).
+            const string content =
+                "int count = 0;\n" +            // 0: global declaration (0,4)
+                "\n" +                          // 1
+                "void OnTick()\n" +             // 2
+                "{\n" +                         // 3
+                "    int count = 5;\n" +        // 4: local declaration (4,8)
+                "    count = count + 1;\n" +    // 5: local uses (5,4) / (5,12)
+                "}\n" +                         // 6
+                "\n" +                          // 7
+                "void Other()\n" +              // 8
+                "{\n" +                         // 9
+                "    int total = count;\n" +    // 10: global use (10,16)
+                "}\n";                          // 11
+            var path = WriteTempFile("TestRenameShadowLocal.mq4", content);
+
+            try
+            {
+                var parser = new Mql4AntlrParser();
+                var mqlFile = parser.ParseFile(content, path);
+                GlobalSymbolIndex.Instance.Clear();
+                GlobalSymbolIndex.Instance.AddFile(path, MqlLanguage.Mql4, mqlFile.Symbols,
+                    mqlFile.Occurrences.Select(o => new SymbolOccurrence
+                    {
+                        FilePath = path,
+                        Language = MqlLanguage.Mql4,
+                        Text = o.Text,
+                        Line = o.Line,
+                        Column = o.Column,
+                        Length = o.Length
+                    }).ToList());
+
+                var documentStore = new OpenDocumentStore();
+                var uri = DocumentUri.FromFileSystemPath(path);
+                documentStore.AddOrUpdate(uri.ToUri(), mqlFile, content, MqlLanguage.Mql4);
+
+                var handler = new RenameHandler(
+                    Substitute.For<ILogger<RenameHandler>>(),
+                    parser,
+                    documentStore);
+
+                // Cursor on the local use (line 5, col 4), inside OnTick.
+                var request = new RenameParams
+                {
+                    TextDocument = new TextDocumentIdentifier(uri),
+                    Position = new Position(5, 4),
+                    NewName = "localCount"
+                };
+
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                // Exactly the three local occurrences: declaration (4,8) and
+                // both uses (5,4) / (5,12). The global's declaration (0,4)
+                // and its use in Other (10,16) must never be edited.
+                Assert.NotNull(result);
+                Assert.NotNull(result!.Changes);
+                Assert.True(result.Changes.TryGetValue(uri, out var edits),
+                    "WorkspaceEdit should contain edits for the requested document");
+                var editList = edits!.ToList();
+                Assert.Equal(3, editList.Count);
+                Assert.All(editList, e => Assert.Equal("localCount", e.NewText));
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 4 && e.Range.Start.Character == 8 &&
+                    e.Range.End.Line == 4 && e.Range.End.Character == 13);
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 5 && e.Range.Start.Character == 4 &&
+                    e.Range.End.Line == 5 && e.Range.End.Character == 9);
+                Assert.Contains(editList, e =>
+                    e.Range.Start.Line == 5 && e.Range.Start.Character == 12 &&
+                    e.Range.End.Line == 5 && e.Range.End.Character == 17);
+            }
+            finally
+            {
+                GlobalSymbolIndex.Instance.Clear();
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
         #endregion
 
         #region DocumentFormattingHandlerTests
