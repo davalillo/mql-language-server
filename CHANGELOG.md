@@ -1,3 +1,28 @@
+## [2.4.0] - 2026-09-21
+
+Stable 2.4.0: promotes the content validated by release candidates 1–3 to the stable channel. See `[2.4.0-rc.1]`, `[2.4.0-rc.2]` and `[2.4.0-rc.3]` below for the full per-item technical detail.
+
+### Added
+- feat(lsp): scope-aware occurrence filtering for references and rename, tier 1 document-local (#45)
+- feat(lsp): workspace-correlated suppression tier for cross-file unresolved-symbol false positives (#44)
+- feat(analysis): MQL standard-library enum constants in the builtin registries (#46)
+- feat(parser): object-like (parameterless) macro expansion (#38)
+- feat(parser): the macro table walks nested include chains transitively (#39)
+- feat(parser): the macro table evaluates conditionals in one continuous include-order stream (#40)
+- feat(ci): win-arm64 release binaries with native-runner smoke tests (#49)
+- feat(packaging): NuGet authoring best-practices metadata — README/icon/copyright/release notes/tags (#60, #61)
+
+### Fixed
+- fix(lsp): symbol-at-position body-containment defect in five handlers (#55)
+- fix(analysis): `UnresolvedSymbolRule.IsMemberAccessPosition` absolute-offset drift (#52)
+- fix(ci): hold stdin open in the ARM smoke tests so the LSP handshake completes (#58)
+
+### Changed
+- ci: the release workflow now pushes the package to nuget.org via Trusted Publishing (OIDC, short-lived single-use API key) (#60, #61)
+- ci: fail the build when vulnerable NuGet packages (direct or transitive) are reported
+- docs: README drops the pre-1.x rename section; the installation guide promotes `dotnet tool install` from nuget.org as the first-class method
+- docs(server): document the intentional didSave omission (pull diagnostics by design)
+
 ## [2.4.0-rc.3] - 2026-09-21
 
 Release candidate 3 for the 2.4.0 line: NuGet publishing enablement — no product code changes.
