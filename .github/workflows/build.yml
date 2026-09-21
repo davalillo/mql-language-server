@@ -71,10 +71,15 @@ jobs:
 
       - name: LSP initialize handshake
         run: |
+          # Issue #58: stdin must stay open after the request — an immediate
+          # EOF shuts the server down before it processes the queued
+          # initialize message, and the response is lost (the original
+          # one-shot printf made every handshake fail this way, on any
+          # platform). Hold stdin ~12s, well inside the 15s timeout.
           REQ='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":null,"capabilities":{}}}'
           set +e
-          printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ" \
-            | timeout 15 bin_temp/arm64/mql-lsp-server > handshake.out
+          (printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ"; sleep 12) \
+            | timeout 15 bin_temp/arm64/mql-lsp-server > handshake.out 2>/dev/null
           set -e
           grep -q '"capabilities"' handshake.out
           echo "LSP initialize handshake OK (linux-arm64 native)"
@@ -109,10 +114,13 @@ jobs:
       - name: LSP initialize handshake
         shell: bash
         run: |
+          # Issue #58: stdin must stay open after the request (see the
+          # linux-arm64 job for the full rationale) — an immediate EOF loses
+          # the response. $! is the pipeline's last element (the server).
           REQ='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":null,"capabilities":{}}}'
           set +e
-          printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ" \
-            | ./bin_temp/arm64/mql-lsp-server.exe > handshake.out &
+          (printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ"; sleep 12) \
+            | ./bin_temp/arm64/mql-lsp-server.exe > handshake.out 2>/dev/null &
           SERVER_PID=$!
           set -e
           for _ in $(seq 1 15); do
