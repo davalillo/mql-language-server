@@ -170,7 +170,11 @@ namespace MqlLanguageServer
                         .WithHandler<DocumentColorHandler>()
                         .WithHandler<ColorPresentationHandler>()
 
-                        // Text-document sync handlers
+                        // Text-document sync handlers. didSave is intentionally
+                        // NOT registered: this server uses pull diagnostics
+                        // (DiagnosticHandler implements IDocumentDiagnosticHandler),
+                        // and didOpen/didChange keep the parse model and symbol
+                        // index current, so there is no didSave-only work to do.
                         .WithHandler<DidOpenTextDocumentHandler>()
                         .WithHandler<DidCloseTextDocumentHandler>()
                         .WithHandler<DidChangeTextDocumentHandler>()
