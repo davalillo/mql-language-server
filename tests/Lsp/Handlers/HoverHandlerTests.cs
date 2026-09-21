@@ -66,4 +66,58 @@ public class HoverHandlerTests
             if (File.Exists(testFilePath)) File.Delete(testFilePath);
         }
     }
+
+    /// <summary>
+    /// Issue #55 regression: a cursor on a USE of a function-local variable must
+    /// hover the local (via the FindSymbolDefinition refinement), not the
+    /// containing function. Companion: the cursor on the function's NAME still
+    /// hovers the function.
+    /// </summary>
+    [Fact]
+    public async Task HoverHandler_LocalUse_HoversLocal_NotContainingFunctionAsync()
+    {
+        // Arrange - a function with a distinctly named local variable
+        var content = "void OnTick()\n{\n    int innerTicks = 0;\n    innerTicks = innerTicks + 1;\n}\n";
+        var testFilePath = Path.Combine(Path.GetTempPath(), "TestHoverLocal.mq4");
+        File.WriteAllText(testFilePath, content);
+
+        try
+        {
+            var documentStore = new OpenDocumentStore();
+            var handler = new HoverHandler(MockLogger<HoverHandler>(), new Mql4AntlrParser(), documentStore);
+
+            // Cursor on the innerTicks use inside the body (line 3).
+            var useRequest = new HoverParams
+            {
+                TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(testFilePath)),
+                Position = new Position(3, 5)
+            };
+
+            var useResult = await handler.Handle(useRequest, CancellationToken.None);
+
+            // Assert - hover shows the local variable, not the containing OnTick.
+            Assert.NotNull(useResult);
+            var useContent = useResult!.Contents.MarkupContent!.Value;
+            Assert.Contains("## innerTicks", useContent);
+            Assert.Contains("**Kind:** Variable", useContent);
+            Assert.DoesNotContain("## OnTick", useContent);
+
+            // Companion: cursor on the function's NAME still hovers OnTick.
+            var nameRequest = new HoverParams
+            {
+                TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(testFilePath)),
+                Position = new Position(0, 5)
+            };
+
+            var nameResult = await handler.Handle(nameRequest, CancellationToken.None);
+
+            Assert.NotNull(nameResult);
+            var nameContent = nameResult!.Contents.MarkupContent!.Value;
+            Assert.Contains("## OnTick", nameContent);
+        }
+        finally
+        {
+            if (File.Exists(testFilePath)) File.Delete(testFilePath);
+        }
+    }
 }

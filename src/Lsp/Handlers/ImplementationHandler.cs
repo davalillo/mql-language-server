@@ -81,7 +81,11 @@ public class ImplementationHandler : LanguageAwareHandlerBase<ImplementationPara
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
 
-            var symbol = parser.FindSymbolAtPosition(mqlFile, line, character);
+            // Resolve the exact identifier under the cursor (ReferencesHandler/Rename
+            // precedent). FindSymbolAtPosition matches by body containment, so a cursor
+            // inside a function body resolves to the containing function instead of the
+            // local variable or parameter the user is actually on (issue #55).
+            var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
 
             if (symbol == null)
             {
