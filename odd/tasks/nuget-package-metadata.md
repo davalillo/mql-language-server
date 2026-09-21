@@ -11,16 +11,21 @@ long-lived API key.
 
 ## Tasks
 
-- [ ] T1. csproj metadata: Copyright, PackageProjectUrl, PackageReadmeFile (+README pack item),
-      PackageReleaseNotes (CHANGELOG link), expanded PackageTags, Authors = "Guillermo Davalillo",
-      PackageIcon (+icon pack item).
-- [ ] T2. Icon: generate `packaging/icon.png` (128x128, transparent background) best effort.
-- [ ] T3. Workflow: publish-binaries job — permissions (contents/actions/id-token), NuGet/login
-      step (pinned 8d196754b4036150537f80ac539e15c2f1028841), `dotnet nuget push` after Pack.
-- [ ] T4. Docs: update docs/guides/DISTRIBUTION.md nuget.org section with the Trusted Publishing
-      process and the one-time manual policy setup.
-- [ ] T5. Verify: local `dotnet pack` + inspect nuspec metadata inside the nupkg.
-- [ ] T6. Work-unit commit on feature branch.
+- [x] T1. csproj metadata (Authors, Copyright, ProjectUrl, Readme, ReleaseNotes, Tags, RepositoryType) — commit e8baeab
+- [x] T2. Icon packaging/icon.png (PIL, 128x128 RGBA) — commit e8baeab
+- [x] T3. Workflow Trusted Publishing push — commit e8baeab
+- [x] T4. DISTRIBUTION.md docs — commit e8baeab
+- [x] T5. Verify pack + nuspec — all recommended metadata present
+- [x] T6. Work-unit commit e8baeab -> PR #61 -> merged 7c18ea7; issue #60
+
+## Outcome
+
+- v2.4.0-rc.3 (451a544) published end-to-end: GitHub Release + first push to nuget.org
+  via Trusted Publishing succeeded (run 35631247966, HTTP 201). Package live at
+  https://www.nuget.org/packages/mql-language-server/ (version 2.4.0-rc.3).
+- First attempt failed 401 because the nuget.org policy did not exist yet; after the
+  user created it (owner davalillo, repo mql-language-server, workflow build.yml,
+  glob mql-language-server) the failed job re-run succeeded.
 
 ## Manual steps left to the user (outside repo)
 
