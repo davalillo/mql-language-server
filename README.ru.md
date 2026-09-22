@@ -12,14 +12,18 @@
 
 ## Возможности
 
-- Извлечение символов (функции, переменные, классы, structs, interfaces, enums, includes)
-- Переход к определению
-- Поиск всех ссылок
-- Символы документа
-- Автодополнение
-- Hover
-- Диагностика
-- Навигация по макросам стандартной библиотеки: макросы карты событий из библиотеки Controls MQL (`ON_EVENT`, `EVENT_MAP_BEGIN`/`EVENT_MAP_END` и связанные макросы `ON_*`) распознаются, поэтому код панелей CAppDialog/Controls корректно разбирается и доступен для навигации
+- Извлечение символов (функции, переменные, классы, structs, interfaces, enums, includes) в MQL4 и MQL5
+- Переход к определению / объявлению / определению типа / реализации
+- Поиск всех ссылок и переименование с учётом локальной области видимости документа (с учётом затенения)
+- Символы документа, символы workspace, подсветка в документе, диапазоны сворачивания, диапазоны выделения
+- Автодополнение (встроенные элементы + локальные символы, с автоматическим импортом `#include` для разрешённых символов) и hover
+- Справка по сигнатурам
+- Диагностика через pull mode (`textDocument/diagnostic`): семантические правила с окнами кодов MQL4 1000 / MQL5 5000, радар миграции API, доступной только в MQL4, для файлов MQL5, константы enum стандартной библиотеки MQL с учётом диалекта, а также подавление межфайловых неразрешённых символов через замыкание include и индекс workspace
+- Code Actions (QuickFix с помощью include) и образцы цвета (`documentColor` / `colorPresentation`)
+- Форматирование документа и диапазона
+- Разбор с учётом препроцессора: раскрытие function-like и object-like макросов, цепочки вложенных include, условное слияние по порядку include и макросы карты событий библиотеки MQL Controls (`ON_EVENT`, `EVENT_MAP_BEGIN`/`END`)
+- LRU-кэш повторного использования разбора между циклами didOpen/didClose для больших файлов
+- Кроссплатформенные бинарные файлы: Linux x64/ARM64, macOS Intel/Apple Silicon, Windows x64/ARM64
 
 ## Поддержка MQL5
 
@@ -36,7 +40,7 @@
 
 ### 1. Стратегия парсера: ANTLR 4.13.1
 
-**Выбрано**: ANTLR 4.13.1 с Antlr4BuildTasks 12.10
+**Выбрано**: ANTLR 4.13.1 с Antlr4BuildTasks 12.14.0
 
 **Рассмотренные альтернативы**:
 - Regex (отклонено — недостаточно для разбора сложного кода MQL)
@@ -53,9 +57,9 @@
 
 **Полученный урок**: для LSP, которому нужно разбирать сложный код, возможностей regex недостаточно. ANTLR предлагает идеальный баланс между надёжностью и простотой использования.
 
-### 2. Инструментарий ANTLR: Antlr4BuildTasks 12.10
+### 2. Инструментарий ANTLR: Antlr4BuildTasks 12.14.0
 
-**Выбрано**: Antlr4BuildTasks 12.10 (автоматически загружает JRE)
+**Выбрано**: Antlr4BuildTasks 12.14.0 (автоматически загружает JRE)
 
 **Альтернатива**: ручная установка ANTLR + Java JDK
 
@@ -68,13 +72,13 @@
 
 **Конфигурация в .csproj**:
 ```xml
-<PackageReference Include="Antlr4BuildTasks" Version="12.10" PrivateAssets="All" />
+<PackageReference Include="Antlr4BuildTasks" Version="12.14.0" PrivateAssets="All" />
 <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
   <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
 </Antlr4>
 ```
 
-**Полученный урок**: Antlr4BuildTasks — оптимальное решение для связки .NET + ANTLR без ручной настройки Java. Версия 12.10 стабильна и надёжна.
+**Полученный урок**: Antlr4BuildTasks — оптимальное решение для связки .NET + ANTLR без ручной настройки Java. Версия 12.14.0 стабильна и надёжна.
 
 ### 3. Библиотеки LSP: OmniSharp.Extensions
 
@@ -210,21 +214,13 @@ dotnet build -c Release
 
 ### Текущее состояние
 
-- ✅ Два парсера ANTLR работают для MQL4 и MQL5
-- ✅ Разбираемые символы: функции, переменные, includes, классы, structs, interfaces, enums (MQL5)
-- ✅ Доступное автодополнение: встроенные элементы MQL4/MQL5 + локальные символы
-- ✅ Ядро LSP-сервера
-  - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
-  - CompletionHandler, HoverHandler, DiagnosticHandler
-  - Обработчики TextDocumentSync (Open/Close/Change)
-- ✅ Точка входа программы с транспортом stdio
-- ✅ Модульные тесты: набор тестов MQL4 без изменений + тесты MQL5 для обработчиков, интеграции и фикстур
-- ✅ Автономная компиляция
-  - Бинарные файлы: Linux x64, macOS x64, Windows x64
-  - Сценарии сборки: build.sh (Linux/macOS), build.ps1 (Windows)
-- ✅ CI/CD: GitHub Actions с матричными сборками
-- ✅ Упаковка NuGet: доступен сценарий pack.ps1
-- ✅ Репозиторий: https://github.com/davalillo/mql-language-server
+- ✅ Два ANTLR-парсера (MQL4 + MQL5) с учётом препроцессора (раскрытие макросов, вложенные include, условная компиляция)
+- ✅ Полная поверхность LSP: более 20 зарегистрированных обработчиков (символы, определения, ссылки, переименование, автодополнение, hover, справка по сигнатурам, диагностика через pull mode, code actions, цвет, форматирование, сворачивание, диапазон выделения, символы workspace, moniker, inlay hints)
+- ✅ Индекс символов: сканирование workspace + индекс вхождений + LRU-кэш повторного использования разбора
+- ✅ Набор тестов: 1192 теста зелёные (`dotnet test`, исключая категории Performance/FpMeasurement)
+- ✅ Бинарные файлы: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64 (самодостаточные, в один файл)
+- ✅ CI/CD: GitHub Actions — CI для PR, релизный конвейер со smoke-тестами на нативном ARM, шлюз уязвимостей зависимостей
+- ✅ Опубликовано: GitHub Releases и nuget.org (`mql-language-server`, стабильная 2.4.0) через Trusted Publishing
 
 ## Безопасность
 
@@ -237,7 +233,7 @@ dotnet build -c Release
 dotnet test
 ```
 
-Покрытие тестами: 827 тестов (актуальное состояние набора см. в [CHANGELOG](CHANGELOG.md)), охватывающих парсер, обработчики LSP и граничные случаи.
+Покрытие тестами: 1192 теста (актуальное состояние набора см. в [CHANGELOG](CHANGELOG.md)), охватывающих парсер, обработчики LSP и граничные случаи.
 
 ### Покрытие кода с помощью Coverlet
 
@@ -422,16 +418,18 @@ git push origin v2.0.1
 
 Скачайте готовый бинарный файл со страницы [GitHub Releases](https://github.com/davalillo/mql-language-server/releases):
 
-- **Linux**: `mql-lsp-server` (71MB, самодостаточный)
-- **macOS**: `mql-lsp-server` (71MB, самодостаточный)
-- **Windows**: `mql-lsp-server.exe` (72MB, самодостаточный)
+- **Linux**: x64 и ARM64 (`mql-lsp-server-linux-*`, самодостаточный)
+- **macOS**: Intel и Apple Silicon (`mql-lsp-server-osx-*`, самодостаточный)
+- **Windows**: x64 и ARM64 (`mql-lsp-server-win-*.exe`, самодостаточный)
 
 Сделайте файл исполняемым (Linux/macOS):
 ```bash
 chmod +x mql-lsp-server
 ```
 
-### Через инструмент .NET (NuGet)
+### Через инструмент .NET (nuget.org)
+
+Пакет опубликован на nuget.org (стабильный канал); релиз-кандидаты устанавливаются с `--prerelease`.
 
 ```bash
 dotnet tool install -g mql-language-server
@@ -473,6 +471,9 @@ cd mql-language-server
 - `src/bin/linux-x64/mql-lsp-server`
 - `src/bin/osx-x64/mql-lsp-server`
 - `src/bin/win-x64/mql-lsp-server.exe`
+- `src/bin/linux-arm64/mql-lsp-server`
+- `src/bin/osx-arm64/mql-lsp-server`
+- `src/bin/win-arm64/mql-lsp-server.exe`
 
 ## Использование
 
@@ -482,17 +483,8 @@ mql-lsp-server --stdio
 ```
 
 ### VSCode
-Добавьте в settings.json:
-```json
-{
-  "languageServers": {
-    "MQL": {
-      "command": "mql-lsp-server",
-      "args": ["--stdio"]
-    }
-  }
-}
-```
+
+VS Code и другие редакторы настраиваются через универсальное расширение LSP-клиента — см. [Интеграцию с редакторами](docs/guides/EDITOR_INTEGRATION.md) для настройки конкретных редакторов (VS Code, Neovim, Emacs, Vim, Sublime Text).
 
 ## Лицензия
 

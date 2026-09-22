@@ -12,14 +12,18 @@ Implementación del Language Server Protocol (LSP) para MQL4 y MQL5 (MetaTrader 
 
 ## Características
 
-- Extracción de símbolos (funciones, variables, clases, structs, interfaces, enums, includes)
-- Ir a Definición
-- Buscar Todas las Referencias
-- Símbolos del Documento
-- Autocompletado
-- Hover
-- Diagnósticos
-- Navegación de macros de la biblioteca estándar: las macros de mapa de eventos de la librería Controls de MQL (`ON_EVENT`, `EVENT_MAP_BEGIN`/`EVENT_MAP_END` y las macros `ON_*` relacionadas) se reconocen para que el código de paneles CAppDialog/Controls se analice y navegue correctamente
+- Extracción de símbolos (funciones, variables, clases, structs, interfaces, enums, includes) en MQL4 y MQL5
+- Ir a Definición / Declaración / Definición de Tipo / Implementación
+- Buscar Todas las Referencias y Renombrar con conciencia de ámbito local del documento (detecta el sombreado)
+- Símbolos del Documento, Símbolos del Workspace, Resaltado de Documento, Rangos de Plegado, Rangos de Selección
+- Autocompletado (builtins + símbolos locales, con auto-import de `#include` para símbolos resueltos) y Hover
+- Ayuda de Firma
+- Diagnósticos vía pull mode (`textDocument/diagnostic`): reglas semánticas con ventanas de códigos MQL4 1000 / MQL5 5000, radar de migración de API exclusiva de MQL4 en archivos MQL5, constantes de enum de la biblioteca estándar MQL según el dialecto, y supresión multiarchivo de símbolos no resueltos mediante la clausura de includes y el índice del workspace
+- Code Actions (QuickFix con asistencia de includes) y Muestras de Color (`documentColor` / `colorPresentation`)
+- Formateo de Documento y Formateo de Rango
+- Análisis consciente del preprocesador: expansión de macros function-like y object-like, cadenas de includes anidados, fusión condicional según el orden de includes y macros de mapa de eventos de la librería MQL Controls (`ON_EVENT`, `EVENT_MAP_BEGIN`/`END`)
+- Caché LRU de reutilización de parseo en ciclos didOpen/didClose para archivos grandes
+- Binarios multiplataforma: Linux x64/ARM64, macOS Intel/Apple Silicon, Windows x64/ARM64
 
 ## Soporte de MQL5
 
@@ -36,7 +40,7 @@ Esta sección documenta las decisiones técnicas clave tomadas durante el desarr
 
 ### 1. Parser Strategy: ANTLR 4.13.1
 
-**Elegido**: ANTLR 4.13.1 con Antlr4BuildTasks 12.10
+**Elegido**: ANTLR 4.13.1 con Antlr4BuildTasks 12.14.0
 
 **Alternativas consideradas**:
 - Regex (rechazado - insuficiente para código MQL complejo)
@@ -53,9 +57,9 @@ La decisión inicial de usar regex se revirtió después de experimentar limitac
 
 **Lección aprendida**: Para un LSP que necesita parsear código complejo, regex es insuficiente. ANTLR ofrece un balance perfecto entre robustez y facilidad de uso.
 
-### 2. ANTLR Tooling: Antlr4BuildTasks 12.10
+### 2. ANTLR Tooling: Antlr4BuildTasks 12.14.0
 
-**Elegido**: Antlr4BuildTasks 12.10 (auto-descarga JRE)
+**Elegido**: Antlr4BuildTasks 12.14.0 (auto-descarga JRE)
 
 **Alternativa**: Instalación manual de ANTLR + Java JDK
 
@@ -68,13 +72,13 @@ Evitar dependencias manuales en el entorno de desarrollo. Antlr4BuildTasks:
 
 **Configuración en .csproj**:
 ```xml
-<PackageReference Include="Antlr4BuildTasks" Version="12.10" PrivateAssets="All" />
+<PackageReference Include="Antlr4BuildTasks" Version="12.14.0" PrivateAssets="All" />
 <Antlr4 Include="Mql4\Grammar\Mql4Grammar.g4">
   <AntOutDir>$(MSBuildProjectDirectory)\Parser\Generated</AntOutDir>
 </Antlr4>
 ```
 
-**Lección aprendida**: Antlr4BuildTasks es la solución ideal para .NET + ANTLR sin configurar Java manualmente. La versión 12.10 es estable y confiable.
+**Lección aprendida**: Antlr4BuildTasks es la solución ideal para .NET + ANTLR sin configurar Java manualmente. La versión 12.14.0 es estable y confiable.
 
 ### 3. LSP Libraries: OmniSharp.Extensions
 
@@ -210,21 +214,13 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 
 ### Estado Actual
 
-- ✅ Parsers ANTLR duales funcionando para MQL4 y MQL5
-- ✅ Símbolos parseados: funciones, variables, includes, clases, structs, interfaces, enums (MQL5)
-- ✅ Completions disponibles: builtins MQL4/MQL5 + símbolos locales
-- ✅ LSP Server Core
-  - DocumentSymbolHandler, DefinitionHandler, ReferencesHandler
-  - CompletionHandler, HoverHandler, DiagnosticHandler
-  - TextDocumentSync handlers (Open/Close/Change)
-- ✅ Program Entry Point con stdio transport
-- ✅ Tests Unitarios: suite MQL4 intacta + tests MQL5 de handlers, integración y fixtures
-- ✅ Standalone Compilation
-  - Binarios: Linux x64, macOS x64, Windows x64
-  - Build scripts: build.sh (Linux/macOS), build.ps1 (Windows)
-- ✅ CI/CD: GitHub Actions con matrix builds
-- ✅ NuGet Packaging: pack.ps1 script disponible
-- ✅ Repository: https://github.com/davalillo/mql-language-server
+- ✅ Dos parsers ANTLR (MQL4 + MQL5), conscientes del preprocesador (expansión de macros, includes anidados, condicionales)
+- ✅ Superficie LSP completa: más de 20 handlers registrados (símbolos, definiciones, referencias, rename, autocompletado, hover, ayuda de firma, diagnósticos en pull mode, code actions, color, formateo, plegado, rango de selección, símbolos del workspace, moniker, inlay hints)
+- ✅ Índice de símbolos: escaneo del workspace + índice de ocurrencias + caché LRU de reutilización de parseo
+- ✅ Suite de pruebas: 1192 pruebas en verde (`dotnet test`, excluye las categorías Performance/FpMeasurement)
+- ✅ Binarios: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64 (autocontenidos, de archivo único)
+- ✅ CI/CD: GitHub Actions — CI de PR, pipeline de release con pruebas de humo en ARM nativo, puerta de vulnerabilidades de dependencias
+- ✅ Publicado: GitHub Releases y nuget.org (`mql-language-server`, estable 2.4.0) vía Trusted Publishing
 
 ## Seguridad
 
@@ -237,7 +233,7 @@ Ejecutar las pruebas unitarias:
 dotnet test
 ```
 
-Cobertura de pruebas: 827 pruebas (consulte el [CHANGELOG](CHANGELOG.md) para conocer el estado actual de la suite) que cubren el parser, los handlers LSP y casos límite.
+Cobertura de pruebas: 1192 pruebas (consulte el [CHANGELOG](CHANGELOG.md) para conocer el estado actual de la suite) que cubren el parser, los handlers LSP y casos límite.
 
 ### Cobertura de código con Coverlet
 
@@ -422,16 +418,18 @@ Consulte [.github/workflows/build.yml](.github/workflows/build.yml) para más de
 
 Descargue un binario precompilado desde [GitHub Releases](https://github.com/davalillo/mql-language-server/releases):
 
-- **Linux**: `mql-lsp-server` (71MB, autocontenido)
-- **macOS**: `mql-lsp-server` (71MB, autocontenido)
-- **Windows**: `mql-lsp-server.exe` (72MB, autocontenido)
+- **Linux**: x64 y ARM64 (`mql-lsp-server-linux-*`, autocontenido)
+- **macOS**: Intel y Apple Silicon (`mql-lsp-server-osx-*`, autocontenido)
+- **Windows**: x64 y ARM64 (`mql-lsp-server-win-*.exe`, autocontenido)
 
 Hacer ejecutable (Linux/macOS):
 ```bash
 chmod +x mql-lsp-server
 ```
 
-### Mediante herramienta .NET (NuGet)
+### Vía herramienta .NET (nuget.org)
+
+El paquete está publicado en nuget.org (canal estable); los release candidates se instalan con `--prerelease`.
 
 ```bash
 dotnet tool install -g mql-language-server
@@ -473,6 +471,9 @@ Después de compilar, los binarios se encuentran en:
 - `src/bin/linux-x64/mql-lsp-server`
 - `src/bin/osx-x64/mql-lsp-server`
 - `src/bin/win-x64/mql-lsp-server.exe`
+- `src/bin/linux-arm64/mql-lsp-server`
+- `src/bin/osx-arm64/mql-lsp-server`
+- `src/bin/win-arm64/mql-lsp-server.exe`
 
 ## Uso
 
@@ -482,17 +483,8 @@ mql-lsp-server --stdio
 ```
 
 ### VSCode
-Añadir a settings.json:
-```json
-{
-  "languageServers": {
-    "MQL": {
-      "command": "mql-lsp-server",
-      "args": ["--stdio"]
-    }
-  }
-}
-```
+
+VS Code y otros editores se configuran mediante una extensión cliente LSP genérica; consulte [Integración con editores](docs/guides/EDITOR_INTEGRATION.md) para la configuración por editor (VS Code, Neovim, Emacs, Vim, Sublime Text).
 
 ## Licencia
 
