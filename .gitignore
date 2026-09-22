@@ -70,3 +70,5 @@ benchmarks/
 
 # Test transient output
 tests/TestResults/
+# CodeGraph generated index
+.codegraph/
