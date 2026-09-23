@@ -1116,6 +1116,171 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
         }
 
+        /// <summary>
+        /// Issue #76 fixture: the #62 shape with a constructor-style
+        /// declaration, which the grammars previously failed to parse —
+        /// error recovery dropped the type-name occurrence and the
+        /// DeclaredType link, so typeDefinition fell back to the variable.
+        /// </summary>
+        private const string EntryPointConstructorFixtureContent =
+            "#include \"person.mqh\"\n" +
+            "\n" +
+            "int OnInit()\n" +
+            "{\n" +
+            "   Person person(\"Alice\", 30);\n" +
+            "   int n = 1;\n" +
+            "   Print(person);\n" +
+            "}\n";
+
+        /// <summary>
+        /// Issue #76: a global constructor-style instantiation must parse as
+        /// a Variable (not be recovered as a Function) and carry DeclaredType.
+        /// </summary>
+        private const string EntryPointGlobalConstructorFixtureContent =
+            "#include \"person.mqh\"\n" +
+            "\n" +
+            "Person person(\"Alice\", 30);\n" +
+            "\n" +
+            "int OnInit()\n" +
+            "{\n" +
+            "   Print(person);\n" +
+            "}\n";
+
+        /// <summary>Parse + index the #62 fixture with a constructor-style declaration.</summary>
+        private (OpenDocumentStore store, string headerPath, string mainPath) IndexClassFixture(
+            string mainContent)
+        {
+            GlobalSymbolIndex.Instance.Clear();
+            var parser = new Mql4AntlrParser();
+            var headerPath = WriteTempFile("TestTypePerson.mqh", ClassHeaderFixtureContent);
+            var mainPath = WriteTempFile("TestTypeMain.mq4", mainContent);
+            var headerFile = parser.ParseFile(ClassHeaderFixtureContent, headerPath);
+            var mainFile = parser.ParseFile(mainContent, mainPath);
+
+            GlobalSymbolIndex.Instance.AddFile(headerPath, MqlLanguage.Mql4, headerFile.Symbols,
+                headerFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = headerPath, Language = MqlLanguage.Mql4,
+                    Text = o.Text, Line = o.Line, Column = o.Column, Length = o.Length
+                }).ToList());
+            GlobalSymbolIndex.Instance.AddFile(mainPath, MqlLanguage.Mql4, mainFile.Symbols,
+                mainFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = mainPath, Language = MqlLanguage.Mql4,
+                    Text = o.Text, Line = o.Line, Column = o.Column, Length = o.Length
+                }).ToList());
+
+            var store = new OpenDocumentStore();
+            store.AddOrUpdate(DocumentUri.FromFileSystemPath(headerPath).ToUri(), headerFile, ClassHeaderFixtureContent, MqlLanguage.Mql4);
+            store.AddOrUpdate(DocumentUri.FromFileSystemPath(mainPath).ToUri(), mainFile, mainContent, MqlLanguage.Mql4);
+            return (store, headerPath, mainPath);
+        }
+
+        /// <summary>
+        /// Issue #76: typeDefinition on the type name of a constructor-style
+        /// declaration ("Person person(\"Alice\", 30);") resolves to the class
+        /// in the included header instead of the variable declaration.
+        /// </summary>
+        [Fact]
+        public async Task TypeDefinitionHandler_ConstructorStyleDeclaration_ResolvesClassInIncludedHeaderAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture(EntryPointConstructorFixtureContent);
+            try
+            {
+                var handler = new TypeDefinitionHandler(
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store);
+
+                // Cursor on "Person" in "Person person(\"Alice\", 30);" (line 4, col 3).
+                var request = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(4, 3)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.First().Location!;
+                Assert.Equal(DocumentUri.File(headerPath), location.Uri);
+                Assert.Equal(0, location.Range.Start.Line);
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
+        /// <summary>
+        /// Issue #76: definition on the type name of a constructor-style
+        /// declaration resolves to the class declaration in the header.
+        /// </summary>
+        [Fact]
+        public async Task DefinitionHandler_ConstructorStyleDeclaration_ResolvesClassInIncludedHeaderAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture(EntryPointConstructorFixtureContent);
+            try
+            {
+                var handler = new DefinitionHandler(
+                    Substitute.For<ILogger<DefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store,
+                    GlobalSymbolIndex.Instance);
+
+                // Cursor on "Person" in "Person person(\"Alice\", 30);" (line 4, col 3).
+                var request = new DefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(4, 3)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.ToList().Single().Location!;
+                Assert.Equal(DocumentUri.File(headerPath), location.Uri);
+                Assert.Equal(0, location.Range.Start.Line);
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
+        /// <summary>
+        /// Issue #76: a GLOBAL constructor-style instantiation parses as a
+        /// Variable carrying DeclaredType (not a Function from error
+        /// recovery), and typeDefinition on it resolves to the header class.
+        /// </summary>
+        [Fact]
+        public async Task TypeDefinitionHandler_GlobalConstructorInstantiation_ResolvesClassInIncludedHeaderAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture(EntryPointGlobalConstructorFixtureContent);
+            try
+            {
+                var handler = new TypeDefinitionHandler(
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store);
+
+                // Cursor on "Person" in global "Person person(\"Alice\", 30);" (line 2, col 0).
+                var request = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(2, 0)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.First().Location!;
+                Assert.Equal(DocumentUri.File(headerPath), location.Uri);
+                Assert.Equal(0, location.Range.Start.Line);
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
         #endregion
     }
 }

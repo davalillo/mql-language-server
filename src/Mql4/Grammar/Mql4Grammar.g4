@@ -231,7 +231,7 @@ variableDeclaration
     ;
 
 variableDeclarator
-    : IDENTIFIER arraySpecifier* (ASSIGN initializer)?
+    : IDENTIFIER arraySpecifier* (ASSIGN initializer | LPAREN argumentList? RPAREN)?
     ;
 
 // FIX: Supports [2][4]
