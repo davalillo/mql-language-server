@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Fixed
+- fix(parser): constructor-style variable declarations (`Person person("Alice", 30);`) parse in both grammars — `variableDeclarator` now accepts a parenthesized initializer (`LPAREN argumentList? RPAREN`), so `typeDefinition`/`definition` on such instances resolve deterministically to the declared class through the include graph instead of falling back to the variable declaration after ANTLR recovery (#76)
+- fix(lsp): `textDocument/signatureHelp` at a method call resolves the called member's signature — receiver's declared type → member lookup, reusing the #64 cross-file machinery — instead of the containing function's; unresolvable call targets return no signature rather than a wrong one, and the label is prefixed with the callee name (#77)
+- fix(ci): the release workflow's *Verify tag matches package version* guard derives the version from the job's effective tag instead of `GITHUB_REF_NAME`, which is the branch name on `workflow_dispatch` runs, so manual release runs can publish again (#79)
+
 ## [2.4.1] - 2026-09-23
 
 Patch release for the 2.4.0 line: three navigation/packaging fixes surfaced by the downstream agent-lsp integration, each verified by runtime reproduction on the integration fixture.
