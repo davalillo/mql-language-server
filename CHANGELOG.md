@@ -1,4 +1,6 @@
-## [Unreleased]
+## [2.4.2] - 2026-09-23
+
+Patch release for the 2.4.x line: parser and LSP navigation fixes surfaced by downstream integration, plus a release-pipeline fix that unblocks manual release runs.
 
 ### Fixed
 - fix(parser): constructor-style variable declarations (`Person person("Alice", 30);`) parse in both grammars — `variableDeclarator` now accepts a parenthesized initializer (`LPAREN argumentList? RPAREN`), so `typeDefinition`/`definition` on such instances resolve deterministically to the declared class through the include graph instead of falling back to the variable declaration after ANTLR recovery (#76)
