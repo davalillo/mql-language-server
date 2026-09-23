@@ -30,8 +30,9 @@ public class TypeDefinitionHandler : LanguageAwareHandlerBase<TypeDefinitionPara
         ILogger<TypeDefinitionHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore documentStore,
-        IMqlBuiltins[] builtins)
-        : base(languageService, documentStore, builtins)
+        IMqlBuiltins[] builtins,
+        GlobalSymbolIndexAccessor? symbolIndex = null)
+        : base(languageService, documentStore, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.LogInformation("TypeDefinitionHandler initialized");
@@ -93,18 +94,53 @@ public class TypeDefinitionHandler : LanguageAwareHandlerBase<TypeDefinitionPara
                 return null;
             }
 
-            var typeSymbol = FindTypeDeclaration(mqlFile, symbol);
+            // Issue #64: real type resolution. A variable (instance) resolves to
+            // its declared class/struct/interface/enum — same-file first, then
+            // cross-file via the workspace index (e.g. the included .mqh).
+            Location? location = null;
 
-            if (typeSymbol == null)
+            if (TypeDeclarationResolver.IsTypeCandidate(symbol))
             {
-                _logger.LogDebug("No type declaration found for symbol '{SymbolName}'", symbol.Name);
-                return null;
+                // Cursor on a type name: its own declaration is the type definition.
+                location = new Location
+                {
+                    Uri = documentUri,
+                    Range = symbol.Range
+                };
+            }
+            // Issue #64: trigger on DeclaredType presence, not SymbolType — the
+            // MQL4 parser keeps SymbolType null (CCR-05 tolerance) while both
+            // parsers capture DeclaredType for variables and parameters.
+            else if (!string.IsNullOrEmpty(symbol.DeclaredType))
+            {
+                var typeName = TypeDeclarationResolver.NormalizeDeclaredType(symbol.DeclaredType);
+                if (typeName != null &&
+                    TypeDeclarationResolver.TryResolveTypeLocation(typeName, mqlFile, documentUri, SymbolIndex.Index, out var typeLocation))
+                {
+                    location = typeLocation;
+                }
+                else
+                {
+                    // Exact-case correction: the parser resolves case-insensitively,
+                    // so a cursor on a class usage ("Person") can resolve to a
+                    // same-file variable ("person"). Prefer a type symbol with the
+                    // exact cursor name from the workspace index.
+                    var cursorIdentifier = TypeDeclarationResolver.GetCursorIdentifier(mqlFile, line - 1, character - 1);
+                    if (!string.IsNullOrEmpty(cursorIdentifier) &&
+                        !string.Equals(cursorIdentifier, symbol.Name, StringComparison.Ordinal) &&
+                        TypeDeclarationResolver.TryResolveTypeLocation(cursorIdentifier, mqlFile, documentUri, SymbolIndex.Index, out var exactType))
+                    {
+                        location = exactType;
+                    }
+                }
             }
 
-            var location = new Location
+            // Preserved behavior for functions/methods/builtins: the resolved
+            // symbol's own declaration range in the current document.
+            location ??= new Location
             {
                 Uri = documentUri,
-                Range = typeSymbol.Range
+                Range = symbol.Range
             };
 
             _logger.LogDebug("Found type definition for symbol '{SymbolName}' at {Range}",
@@ -117,11 +153,6 @@ public class TypeDefinitionHandler : LanguageAwareHandlerBase<TypeDefinitionPara
             _logger.LogError(ex, "Error processing type definition request for {Uri}", request.TextDocument.Uri);
             return null;
         }
-    }
-
-    private MqlSymbol? FindTypeDeclaration(MqlFile mqlFile, MqlSymbol symbol)
-    {
-        return symbol;
     }
 
     public TypeDefinitionRegistrationOptions GetRegistrationOptions(TypeDefinitionCapability capability, ClientCapabilities clientCapabilities)

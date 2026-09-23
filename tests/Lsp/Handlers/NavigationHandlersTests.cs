@@ -953,5 +953,169 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
         }
 
         #endregion
+
+        #region CrossFileTypeDefinitionTests (issue #64)
+
+        /// <summary>
+        /// Issue #64 fixture: a class in an included header + a main file with
+        /// an instance variable. 0-based lines mirror the navigation probes.
+        /// </summary>
+        private const string ClassHeaderFixtureContent =
+            "class Person\n" +
+            "{\n" +
+            "   int age;\n" +
+            "};\n";
+
+        private const string EntryPointFixtureContent =
+            "#include \"person.mqh\"\n" +
+            "\n" +
+            "int OnInit()\n" +
+            "{\n" +
+            "   Person person;\n" +
+            "   int n = 1;\n" +
+            "   Print(person);\n" +
+            "}\n";
+
+        /// <summary>Parse + index both fixture files exactly as didOpen does.</summary>
+        private (OpenDocumentStore store, string headerPath, string mainPath) IndexClassFixture()
+        {
+            GlobalSymbolIndex.Instance.Clear();
+            var parser = new Mql4AntlrParser();
+            var headerPath = WriteTempFile("TestTypePerson.mqh", ClassHeaderFixtureContent);
+            var mainPath = WriteTempFile("TestTypeMain.mq4", EntryPointFixtureContent);
+            var headerFile = parser.ParseFile(ClassHeaderFixtureContent, headerPath);
+            var mainFile = parser.ParseFile(EntryPointFixtureContent, mainPath);
+
+            GlobalSymbolIndex.Instance.AddFile(headerPath, MqlLanguage.Mql4, headerFile.Symbols,
+                headerFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = headerPath, Language = MqlLanguage.Mql4,
+                    Text = o.Text, Line = o.Line, Column = o.Column, Length = o.Length
+                }).ToList());
+            GlobalSymbolIndex.Instance.AddFile(mainPath, MqlLanguage.Mql4, mainFile.Symbols,
+                mainFile.Occurrences.Select(o => new SymbolOccurrence
+                {
+                    FilePath = mainPath, Language = MqlLanguage.Mql4,
+                    Text = o.Text, Line = o.Line, Column = o.Column, Length = o.Length
+                }).ToList());
+
+            var store = new OpenDocumentStore();
+            store.AddOrUpdate(DocumentUri.FromFileSystemPath(headerPath).ToUri(), headerFile, ClassHeaderFixtureContent, MqlLanguage.Mql4);
+            store.AddOrUpdate(DocumentUri.FromFileSystemPath(mainPath).ToUri(), mainFile, EntryPointFixtureContent, MqlLanguage.Mql4);
+            return (store, headerPath, mainPath);
+        }
+
+        private static void CleanupClassFixture(string headerPath, string mainPath)
+        {
+            GlobalSymbolIndex.Instance.Clear();
+            if (File.Exists(headerPath)) File.Delete(headerPath);
+            if (File.Exists(mainPath)) File.Delete(mainPath);
+        }
+
+        /// <summary>
+        /// Issue #64: typeDefinition on an instance variable resolves to the
+        /// declared class — in the INCLUDED HEADER file, not the variable's own
+        /// declaration in the entry point.
+        /// </summary>
+        [Fact]
+        public async Task TypeDefinitionHandler_InstanceVariable_ResolvesClassInIncludedHeaderAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture();
+            try
+            {
+                var handler = new TypeDefinitionHandler(
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store);
+
+                // Cursor on the `person` variable (line 4, col 5 of "Person person;").
+                var request = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(4, 10)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.First().Location!;
+                Assert.Equal(DocumentUri.File(headerPath), location.Uri);
+                Assert.Equal(0, location.Range.Start.Line); // "class Person" name token
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
+        /// <summary>
+        /// Issue #64: definition on a class-usage cursor ("Person") resolves to
+        /// the class declaration in the included header, not the same-file
+        /// case-insensitive variable match.
+        /// </summary>
+        [Fact]
+        public async Task DefinitionHandler_ClassUsage_ResolvesClassInIncludedHeaderAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture();
+            try
+            {
+                var handler = new DefinitionHandler(
+                    Substitute.For<ILogger<DefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store,
+                    GlobalSymbolIndex.Instance);
+
+                // Cursor on "Person" in "Person person;" (line 4, col 3).
+                var request = new DefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(4, 3)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.ToList().Single().Location!;
+                Assert.Equal(DocumentUri.File(headerPath), location.Uri);
+                Assert.Equal(0, location.Range.Start.Line);
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
+        /// <summary>
+        /// Issue #64 boundary: typeDefinition on a primitive-typed variable has
+        /// no user type declaration; the preserved behavior returns the symbol's
+        /// own declaration range (same file).
+        /// </summary>
+        [Fact]
+        public async Task TypeDefinitionHandler_PrimitiveVariable_StaysInSameFileAsync()
+        {
+            var (store, headerPath, mainPath) = IndexClassFixture();
+            try
+            {
+                var handler = new TypeDefinitionHandler(
+                    Substitute.For<ILogger<TypeDefinitionHandler>>(),
+                    new Mql4AntlrParser(),
+                    store);
+
+                var request = new TypeDefinitionParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(mainPath)),
+                    Position = new Position(5, 7) // "n" of "int n = 1;"
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var location = result!.ToList().Single().Location!;
+                Assert.Equal(DocumentUri.File(mainPath), location.Uri);
+            }
+            finally
+            {
+                CleanupClassFixture(headerPath, mainPath);
+            }
+        }
+
+        #endregion
     }
 }

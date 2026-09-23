@@ -97,6 +97,31 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
                 return null;
             }
 
+            // Issue #64: exact-case correction. The parser resolves the cursor
+            // symbol case-insensitively, so a class-usage cursor ("Person") can
+            // resolve to a same-file variable ("person"). When a type symbol with
+            // the exact cursor name exists in the workspace index, prefer it.
+            var cursorIdentifier = TypeDeclarationResolver.GetCursorIdentifier(mqlFile, line - 1, character - 1);
+            if (!string.IsNullOrEmpty(cursorIdentifier) &&
+                !string.Equals(cursorIdentifier, symbol.Name, StringComparison.Ordinal))
+            {
+                foreach (var exactCandidate in SymbolIndex.Index.FindSymbol(cursorIdentifier))
+                {
+                    if (TypeDeclarationResolver.IsTypeCandidate(exactCandidate.Symbol) &&
+                        !string.IsNullOrEmpty(exactCandidate.FilePath) && File.Exists(exactCandidate.FilePath))
+                    {
+                        var exactLocation = new Location
+                        {
+                            Uri = DocumentUri.File(exactCandidate.FilePath),
+                            Range = exactCandidate.Symbol!.Range
+                        };
+                        _logger.LogDebug("Exact-case type definition for '{Identifier}' at {Range}",
+                            cursorIdentifier, exactLocation.Range);
+                        return new LocationOrLocationLinks(exactLocation);
+                    }
+                }
+            }
+
             var allDefinitions = SymbolIndex.Index.FindSymbol(symbol.Name);
 
             Location? definitionLocation = null;
@@ -108,11 +133,24 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
                     continue;
                 }
 
+                // Type declarations carry no paren/brace requirement: a class or
+                // struct candidate is accepted directly (issue #64); other symbols
+                // keep the function-like declaration validation below.
+                if (TypeDeclarationResolver.IsTypeCandidate(defLocation.Symbol))
+                {
+                    definitionLocation = new Location
+                    {
+                        Uri = DocumentUri.File(defLocation.FilePath),
+                        Range = defLocation.Symbol!.Range
+                    };
+                    break;
+                }
+
                 try
                 {
                     var defContent = SourceFileReader.ReadAllText(defLocation.FilePath);
                     var lines = defContent.Split('\n');
-                    var defLine = defLocation.Symbol.Range.Start.Line;
+                    var defLine = defLocation.Symbol!.Range.Start.Line;
                     var defChar = defLocation.Symbol.Range.Start.Character;
 
                     if (defLine >= 0 && defLine < lines.Length &&
