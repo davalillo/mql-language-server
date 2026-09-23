@@ -864,6 +864,94 @@ namespace MqlLanguageServer.Tests.Lsp.Handlers
             }
         }
 
+        /// <summary>
+        /// Issue #63: documentHighlight on a builtin call (Print) must not be
+        /// empty. The identifier-based resolution (issue #55) yields a builtin
+        /// pseudo-symbol with no user symbols to match, so the handler falls
+        /// back to the parse-time occurrence index (Text kind).
+        /// </summary>
+        [Fact]
+        public async Task DocumentHighlightHandler_BuiltinCall_HighlightsOccurrencesAsync()
+        {
+            var content =
+                "void OnStart()\n" +
+                "{\n" +
+                "   Print(\"one\");\n" +
+                "   int n = 1;\n" +
+                "   Print(n);\n" +
+                "}\n";
+            var path = WriteTempFile("TestDocumentHighlightBuiltin.mq4", content);
+
+            try
+            {
+                var handler = new DocumentHighlightHandler(
+                    Substitute.For<ILogger<DocumentHighlightHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Cursor on the first Print call (line 2, col 4).
+                var request = new DocumentHighlightParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(2, 5)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var highlights = result!.ToList();
+                Assert.Equal(2, highlights.Count);
+                Assert.All(highlights, h =>
+                {
+                    Assert.Equal(DocumentHighlightKind.Text, h.Kind);
+                    Assert.Equal(3, h.Range.Start.Character);
+                    Assert.Equal(8, h.Range.End.Character);
+                });
+                Assert.Contains(highlights, h => h.Range.Start.Line == 2);
+                Assert.Contains(highlights, h => h.Range.Start.Line == 4);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Issue #63 companion: a cursor on an event-handler override (OnInit)
+        /// whose name has no user symbols in the index still highlights its
+        /// same-file occurrences instead of returning empty.
+        /// </summary>
+        [Fact]
+        public async Task DocumentHighlightHandler_EventHandlerName_HighlightsOccurrencesAsync()
+        {
+            var content = "int OnInit()\n{\n   Print(\"x\");\n}\n";
+            var path = WriteTempFile("TestDocumentHighlightOnInit.mq4", content);
+
+            try
+            {
+                var handler = new DocumentHighlightHandler(
+                    Substitute.For<ILogger<DocumentHighlightHandler>>(),
+                    new Mql4AntlrParser(),
+                    new OpenDocumentStore());
+
+                // Cursor inside OnInit's name (line 0, col 4 = 'I' of OnInit).
+                var request = new DocumentHighlightParams
+                {
+                    TextDocument = new TextDocumentIdentifier(DocumentUri.FromFileSystemPath(path)),
+                    Position = new Position(0, 4)
+                };
+                var result = await handler.Handle(request, CancellationToken.None);
+
+                Assert.NotNull(result);
+                var highlights = result!.ToList();
+                Assert.NotEmpty(highlights);
+                Assert.Contains(highlights, h => h.Range.Start.Line == 0);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
         #endregion
     }
 }

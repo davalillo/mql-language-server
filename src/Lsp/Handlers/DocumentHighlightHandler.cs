@@ -115,6 +115,30 @@ public class DocumentHighlightHandler : LanguageAwareHandlerBase<DocumentHighlig
                 }
             }
 
+            // Builtin/event-handler fallback (#63): identifier-based resolution
+            // (issue #55) returns a builtin pseudo-symbol (e.g. Print) or a name
+            // that has no user symbols in this file (event handlers such as
+            // OnInit). With zero symbol matches, highlight the same-file textual
+            // occurrences of the identifier (kind Text) from the parse-time
+            // occurrence index (OCC-01) instead of returning an empty result.
+            if (highlights.Count == 0)
+            {
+                foreach (var o in mqlFile.Occurrences)
+                {
+                    if (string.Equals(o.Text, symbol.Name, StringComparison.OrdinalIgnoreCase)
+                        && o.Line >= 0 && o.Column >= 0)
+                    {
+                        highlights.Add(new DocumentHighlight
+                        {
+                            Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                                new Position(o.Line, o.Column),
+                                new Position(o.Line, o.Column + o.Length)),
+                            Kind = DocumentHighlightKind.Text
+                        });
+                    }
+                }
+            }
+
             _logger.LogDebug("Found {Count} highlights for symbol '{SymbolName}'", highlights.Count, symbol.Name);
 
             return new DocumentHighlightContainer(highlights);
