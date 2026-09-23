@@ -173,9 +173,8 @@ void OnTick()
 
         #region Issue #77 — signatureHelp on member calls (person.Greet())
 
-        // NOTE: `Person person("Alice", 30);` constructor-style declarations do
-        // NOT parse on this base (grammar fix for #76 is unmerged PR #80), so the
-        // fixture uses `Person person;`.
+        // Fixture mirrors issue #77 exactly, including the constructor-style
+        // declaration parsed by the #76 grammar fix (PR #80, merged).
         private const string SigHelpPersonHeaderContent =
             "class Person\n" +
             "{\n" +
@@ -191,7 +190,7 @@ void OnTick()
             "\n" +
             "int OnInit()\n" +
             "{\n" +
-            "   Person person;\n" +
+            "   Person person(\"Alice\", 30);\n" +
             "   string message = person.Greet();\n" +
             "   Print(message);\n" +
             "   person.Missing();\n" +
