@@ -7,6 +7,11 @@
     <AssemblyName>mql-lsp-server</AssemblyName>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Run without system ICU (libicu). The server does not need culture-
+         specific globalization: parsing is ASCII-based and the LSP transport
+         is UTF-8. Without this flag the self-contained single-file binaries
+         FailFast at startup on hosts without libicu (#65). -->
+    <InvariantGlobalization>true</InvariantGlobalization>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
 
