@@ -1,3 +1,12 @@
+## [2.4.1] - 2026-09-23
+
+Patch release for the 2.4.0 line: three navigation/packaging fixes surfaced by the downstream agent-lsp integration, each verified by runtime reproduction on the integration fixture.
+
+### Fixed
+- fix(lsp): `textDocument/documentHighlight` falls back to the parse-time occurrence index for builtins and event-handler overrides (Print, OnInit) instead of returning an empty result (#63)
+- fix(lsp): `typeDefinition`/`definition` on an instance resolve to the declared class — same-file first, then cross-file through the include graph via the workspace-published symbol index (#64)
+- fix(packaging): `InvariantGlobalization=true` so self-contained single-file binaries start on hosts without system ICU (libicu); verified with an LSP handshake in a no-ICU container (#65)
+
 ## [2.4.0] - 2026-09-21
 
 Stable 2.4.0: promotes the content validated by release candidates 1–3 to the stable channel. See `[2.4.0-rc.1]`, `[2.4.0-rc.2]` and `[2.4.0-rc.3]` below for the full per-item technical detail.
