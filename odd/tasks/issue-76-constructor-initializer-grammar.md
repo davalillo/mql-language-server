@@ -17,16 +17,16 @@ Diagnosis posted on #76 (comment 5794319793).
 ## Plan
 
 1. [x] ODD tracking doc + Engram mirror
-2. [ ] Impact analysis before edits (gitnexus)
-3. [ ] Mql5Grammar.g4: add ctor-init alternative to `variableDeclarator`;
-       fix `globalConstructorDeclaration` to accept an argument list
-4. [ ] Mql4Grammar.g4: same gap
-5. [ ] Regenerate ANTLR parsers (`verify-antlr-regeneration.sh`), build
-6. [ ] Regression tests: #62 fixture local + global, typeDefinition +
-       definition (NavigationHandlersTests)
-7. [ ] Full test suite + `detect_changes --scope all`
-8. [ ] Work-unit commits + close
+2. [x] Impact analysis before edits (gitnexus: Mql5SymbolVisitor CRITICAL — expected, all parse flows; additive grammar change mitigates)
+3. [x] Mql5Grammar.g4: `(ASSIGN initializer | LPAREN argumentList? RPAREN)?` in variableDeclarator
+4. [x] Mql4Grammar.g4: same
+5. [x] ANTLR regeneration verified (generated VariableDeclaratorContext has LPAREN/RPAREN/argumentList); clean build
+6. [x] 3 regression tests in NavigationHandlersTests (ctor-style local typeDefinition/definition + global instantiation); 31/31 region, 1226/1226 suite
+7. [x] detect_changes scope all: low risk, no partial; grammars map to no C# symbols, generated files gitignored
+8. [x] Commit c680240 on fix/76-constructor-initializer-grammar
 
 ## Evidence log
 
-- (fill per task)
+- Probe (/tmp): v2 local ctor decl → typeDefinition resolves person.mqh (was fallback main.mq5); v4 global → resolves (was NULL + Function misclassification); v1 `Person person;` unaffected.
+- Diagnosis comment on #76: issuecomment-5794319793.
+- Note: globalConstructorDeclaration left unchanged — global instantiations now match variableDeclarationStatement unambiguously (functionDeclaration is listed first in translationUnit and keeps priority for genuine function declarations).
