@@ -15,7 +15,40 @@ Reporter evidence: deterministic 5-scenario matrix on the #62 fixture
 (`main.mq5` includes `person.mqh`, `Person person("Alice", 30);`), raw stdio
 client, identical bytes across arms, v2.4.2.
 
-## Code anchors (pre-fix observations)
+## Root cause (confirmed by raw-stdio reproduction against the real binary, 2026-09-23)
+
+The reporter's mechanism hypothesis (per-file resolution context not rebuilt on
+didChange) was WRONG; the triage rule held. Actual defect — **buffer vs disk
+divergence**:
+
+- `TypeDefinitionHandler` / `DefinitionHandler` read the document text from
+  disk (`SourceFileReader.ReadAllText(filePath)`) while the parse model comes
+  from `OpenDocumentStore` (didOpen/didChange editor buffer).
+- `FindSymbolDefinition(mqlFile, content, line, column)` extracts the cursor
+  identifier from raw `content` (Mql4AntlrParser.ExtractIdentifierAtPosition)
+  and looks it up in the model. With an unsaved buffer edit (didChange content
+  ≠ disk), identifier extraction runs on stale text → mismatch → null → `[]`
+  permanently; reopen keeps the mismatch; only a server restart re-derives
+  both from the same source. Reproduced via /tmp/issue86_driver.py scenario B2
+  (rename of the variable on the probe line, disk stale): `[]` at +2s/+7s and
+  after reopen.
+- Fix: handlers must answer from the store's content (same source as the
+  model) when the document is open; disk is only for never-delivered docs.
+
+Secondary observations:
+
+- `DidOpenTextDocumentHandler`'s include loop (lines 134-156) reads includes
+  from DISK and registers them; `DidChangeTextDocumentHandler.UpdateIncludes`
+  is inert by design comment ("delegated to DidOpen / workspace scan") and the
+  workspace scan indexes everything at initialize, so the include graph stays
+  populated in practice. Did NOT reproduce as a failure in any matrix arm.
+- Reporter's scenarios 3-5 (delivery-channel/open-order fallback) did NOT
+  reproduce either in-process or against the real binary with the #62/#78
+  fixture (all arms resolve to person.mqh). Their exact fixture/harness delta
+  is unexplained; ask the reporter for it (bucket E for that half) before
+  claiming closure of those arms.
+
+Earlier static analysis (superseded by the above):
 
 - `DidChangeTextDocumentHandler.HandleForLanguage`
   (src/Lsp/Handlers/DidChangeTextDocumentHandler.cs:112-116) re-indexes the
