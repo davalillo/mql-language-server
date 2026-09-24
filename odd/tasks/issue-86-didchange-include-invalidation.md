@@ -74,3 +74,27 @@ Earlier static analysis (superseded by the above):
        (reuse/relaxation, no new machinery)
 5. [ ] Full suite green; work-unit commit(s); detect_changes before commit
 6. [ ] Push + PR; comment on #86 naming both failure modes and closing tests
+## Verification (independent, 2026-09-24)
+
+gentle-ai-verify verdict: **verified**, no blockers. Full suite 1243 green.
+
+- (a) Store-first semantics: model+content only ever written atomically via
+  AddOrUpdate (didOpen/didChange) — the desync is structurally impossible on
+  the store path. (Cosmetic: TryGetDocumentContent's bool is always true.)
+- (b) Fallback symmetry: byte-identical in both handlers, only reachable when
+  FindSymbolDefinition returns null (no case-insensitive in-file match).
+- (c) Cross-file defContent read stays on disk — correct; found-symbol loop
+  unchanged.
+- Test pinning: the 2 disk-stale tests pass WITHOUT the fallback (store fix
+  alone), the 2 probe-on-Person tests pass ONLY with the fallback — both
+  defects pinned independently. (Pre-fix RED was observed by the writer at
+  TDD time.)
+
+### Follow-up (low severity, not fixed here)
+
+Unguarded false-positive path: an identifier with no in-file declaration
+whose exact text equals a Class/Struct/Interface/Enum name in another
+workspace-indexed file now resolves there instead of null (e.g. free
+function `Format(string)` + foreign `class Format`). Navigation hint only;
+extends the accepted #64 exact-case heuristic. No test covers it; candidate
+for a follow-up issue with the same-name guard discussion.
