@@ -96,5 +96,4 @@ Unguarded false-positive path: an identifier with no in-file declaration
 whose exact text equals a Class/Struct/Interface/Enum name in another
 workspace-indexed file now resolves there instead of null (e.g. free
 function `Format(string)` + foreign `class Format`). Navigation hint only;
-extends the accepted #64 exact-case heuristic. No test covers it; candidate
-for a follow-up issue with the same-name guard discussion.
+extends the accepted #64 exact-case heuristic. No test covers it; tracked as #89.
