@@ -27,16 +27,19 @@ namespace MqlLanguageServer.Lsp.Handlers;
 public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDocumentParams, Unit>, IDidOpenTextDocumentHandler
 {
     private readonly ILogger<DidOpenTextDocumentHandler> _logger;
+    private readonly DiagnosticPublisher? _diagnosticPublisher;
 
     public DidOpenTextDocumentHandler(
         ILogger<DidOpenTextDocumentHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore openFiles,
         IMqlBuiltins[] builtins,
-        GlobalSymbolIndexAccessor? symbolIndex = null)
+        GlobalSymbolIndexAccessor? symbolIndex = null,
+        DiagnosticPublisher? diagnosticPublisher = null)
         : base(languageService, openFiles, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _diagnosticPublisher = diagnosticPublisher;
         _logger.LogInformation("DidOpenTextDocumentHandler initialized");
     }
 
@@ -160,6 +163,14 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 }
 
                 _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", mqlFile.Symbols.Count);
+
+                // Issue #91: push-model diagnostics for push-only clients (the
+                // majority of editors and MCP agents). Published AFTER the include
+                // indexing above so cross-file suppression (#44) sees the same
+                // index state the pull model observes. Null in legacy/test
+                // constructors: no push, no behavior change.
+                _diagnosticPublisher?.Publish(
+                    documentUri, filePath, mqlFile, content, language, cancellationToken);
             }
         }
         catch (Exception ex)

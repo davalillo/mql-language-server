@@ -27,16 +27,19 @@ namespace MqlLanguageServer.Lsp.Handlers;
 public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTextDocumentParams, Unit>, IDidChangeTextDocumentHandler
 {
     private readonly ILogger<DidChangeTextDocumentHandler> _logger;
+    private readonly DiagnosticPublisher? _diagnosticPublisher;
 
     public DidChangeTextDocumentHandler(
         ILogger<DidChangeTextDocumentHandler> logger,
         MqlLanguageService languageService,
         OpenDocumentStore openFiles,
         IMqlBuiltins[] builtins,
-        GlobalSymbolIndexAccessor? symbolIndex = null)
+        GlobalSymbolIndexAccessor? symbolIndex = null,
+        DiagnosticPublisher? diagnosticPublisher = null)
         : base(languageService, openFiles, builtins, symbolIndex ?? new GlobalSymbolIndexAccessor())
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _diagnosticPublisher = diagnosticPublisher;
         _logger.LogInformation("DidChangeTextDocumentHandler initialized");
     }
 
@@ -116,6 +119,12 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
                 UpdateIncludes(newMqlFile, filePath);
 
                 _logger.LogDebug("Re-parsed {SymbolCount} symbols after document change", newMqlFile.Symbols.Count);
+
+                // Issue #91: push-model diagnostics mirror of the didOpen path —
+                // publish the fresh state (including an empty set, so clients clear
+                // stale squiggles after a fix). Null in legacy/test constructors.
+                _diagnosticPublisher?.Publish(
+                    documentUri, filePath, newMqlFile, newContent, language, cancellationToken);
             }
         }
         catch (Exception ex)
