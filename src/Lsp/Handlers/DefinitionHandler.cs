@@ -106,8 +106,20 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
                     return new LocationOrLocationLinks(usageLocation);
                 }
 
-                _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
-                return null;
+                // Issue #92: call sites of include-declared functions. In-file lookup
+                // (FindSymbolDefinition) searches only the requesting document's own
+                // symbols, so a call to a function declared in an included file (e.g.
+                // StopLong from "stop_utils.mqh") resolves to nothing above. Resolve
+                // the cursor identifier against the global index — populated by
+                // didOpen's include resolution and the workspace scan — and fall
+                // through to the shared all-definitions validation loop below.
+                symbol = IncludeSymbolResolver.TryResolve(mqlFile, line - 1, character - 1, SymbolIndex.Index);
+
+                if (symbol == null)
+                {
+                    _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
+                    return null;
+                }
             }
 
             // Issue #64: exact-case correction. The parser resolves the cursor

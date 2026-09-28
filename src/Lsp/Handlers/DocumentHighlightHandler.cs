@@ -88,7 +88,16 @@ public class DocumentHighlightHandler : LanguageAwareHandlerBase<DocumentHighlig
             var symbol = parser.FindSymbolDefinition(mqlFile, content, line, character);
             if (symbol == null)
             {
-                return new DocumentHighlightContainer();
+                // Issue #92: the cursor may sit on a call site of a function declared
+                // in an included file (e.g. StopLong from "stop_utils.mqh") — in-file
+                // lookup finds nothing. Resolve the identifier against the global
+                // index so the same-file textual-occurrence fallback below highlights
+                // the call sites (kind Text) instead of returning an empty result.
+                symbol = IncludeSymbolResolver.TryResolve(mqlFile, line - 1, character - 1, SymbolIndex.Index);
+                if (symbol == null)
+                {
+                    return new DocumentHighlightContainer();
+                }
             }
 
             var highlights = new List<DocumentHighlight>();

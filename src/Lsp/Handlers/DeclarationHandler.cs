@@ -85,13 +85,32 @@ public class DeclarationHandler : LanguageAwareHandlerBase<DeclarationParams, Lo
 
             if (symbol == null)
             {
+                // Issue #92: the cursor may sit on a call site of a function declared
+                // in an included file. In-file lookup finds nothing; resolve the
+                // identifier against the global index, whose candidate symbols carry
+                // the declaration range in the included file.
+                symbol = IncludeSymbolResolver.TryResolve(mqlFile, line - 1, character - 1, SymbolIndex.Index);
+            }
+
+            if (symbol == null)
+            {
                 _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
                 return null;
             }
 
+            // Issue #92: an include-declared symbol (resolved via the global
+            // index fallback above) carries the included file's path on its
+            // FilePath; point the location there instead of the requesting
+            // document. Same-file symbols keep the request URI.
+            var declarationUri = !string.IsNullOrEmpty(symbol.FilePath)
+                && !string.Equals(symbol.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                && File.Exists(symbol.FilePath)
+                    ? DocumentUri.File(symbol.FilePath)
+                    : documentUri;
+
             var location = new Location
             {
-                Uri = documentUri,
+                Uri = declarationUri,
                 Range = symbol.Range
             };
 
