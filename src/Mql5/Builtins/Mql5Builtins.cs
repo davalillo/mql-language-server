@@ -100,6 +100,58 @@ public class Mql5Builtins : IMqlBuiltins
         { "MathCos", "double MathCos(double value)" },
         { "MathTan", "double MathTan(double value)" },
 
+        // --- Issue #109: standard-library functions missing from the registry ---
+        // Terminal information (both dialects)
+        { "TerminalInfoInteger", "int TerminalInfoInteger(int property_id)" },
+        { "TerminalInfoDouble", "double TerminalInfoDouble(int property_id)" },
+        { "TerminalInfoString", "string TerminalInfoString(int property_id)" },
+        { "MQLInfoInteger", "int MQLInfoInteger(int property_id)" },
+        { "MQLInfoString", "string MQLInfoString(int property_id)" },
+
+        // Type conversion (both dialects)
+        { "CharToString", "string CharToString(uchar char_value)" },
+        { "DoubleToString", "string DoubleToString(double value, int digits)" },
+        { "IntegerToString", "string IntegerToString(long number, int str_len, ushort fill_symbol)" },
+        { "StringToDouble", "double StringToDouble(string value)" },
+        { "StringToInteger", "long StringToInteger(string value)" },
+        { "StringToDateTime", "datetime StringToDateTime(string value)" },
+        { "DateTimeToString", "string DateTimeToString(datetime value, int mode)" },
+
+        // String manipulation (both dialects)
+        { "StringSplit", "int StringSplit(string string_value, ushort separator, string& result[])" },
+        { "StringReplace", "int StringReplace(string& string_var, string find, string replacement)" },
+        { "StringConcatenate", "string StringConcatenate(...)" },
+        { "StringTrimLeft", "string StringTrimLeft(string string_var)" },
+        { "StringTrimRight", "string StringTrimRight(string string_var)" },
+        { "StringFormat", "string StringFormat(string format, ...)" },
+
+        // Arrays (both dialects)
+        { "ArraySize", "int ArraySize(const void& array[])" },
+        { "ArrayInitialize", "int ArrayInitialize(void& array[], double value)" },
+        { "ArrayResize", "int ArrayResize(void& array[], int new_size, int reserve_size)" },
+        { "ArrayCopy", "int ArrayCopy(void& dst_array[], const void& src_array[], int dst_start, int src_start, int count)" },
+        { "ArraySort", "bool ArraySort(void& array[])" },
+        { "ArrayFill", "void ArrayFill(void& array[], int start, int count, double value)" },
+
+        // Timeseries access (both dialects)
+        { "iOpen", "double iOpen(string symbol, int timeframe, int shift)" },
+        { "iHigh", "double iHigh(string symbol, int timeframe, int shift)" },
+        { "iLow", "double iLow(string symbol, int timeframe, int shift)" },
+        { "iClose", "double iClose(string symbol, int timeframe, int shift)" },
+        { "iVolume", "long iVolume(string symbol, int timeframe, int shift)" },
+        { "iTime", "datetime iTime(string symbol, int timeframe, int shift)" },
+        { "iBars", "int iBars(string symbol, int timeframe)" },
+        { "iBarShift", "int iBarShift(string symbol, int timeframe, datetime time)" },
+        { "iHighest", "int iHighest(string symbol, int timeframe, int type, int count, int start)" },
+        { "iLowest", "int iLowest(string symbol, int timeframe, int type, int count, int start)" },
+        { "CopyRates", "int CopyRates(string symbol_name, int timeframe, int start_pos, int count, MqlRates rates_array[])" },
+
+        // Chart / UI / misc (both dialects)
+        { "PlaySound", "bool PlaySound(string filename)" },
+        { "WebRequest", "int WebRequest(const string method, const string url, const string cookie, const string referer, int timeout, const char& data[], char& result[], string& result_headers)" },
+        { "SendMail", "bool SendMail(string subject, string some_text)" },
+        { "SendNotification", "bool SendNotification(string some_text)" },
+
         // Event handlers
         { "OnInit", "int OnInit()" },
         { "OnDeinit", "void OnDeinit(int reason)" },
@@ -124,6 +176,10 @@ public class Mql5Builtins : IMqlBuiltins
         { "EMPTY_VALUE", "Empty value for indicators" },
         { "INVALID_HANDLE", "Invalid indicator handle" },
         { "WRONG_VALUE", "Generic wrong value" },
+
+        // Boolean keywords — case-insensitive in the MQL compiler (issue #109)
+        { "true", "Boolean literal true" },
+        { "false", "Boolean literal false" },
 
         // Trade actions
         { "TRADE_ACTION_DEAL", "Place a market order" },

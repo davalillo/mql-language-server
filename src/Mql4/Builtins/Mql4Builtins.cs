@@ -77,7 +77,49 @@ namespace MqlLanguageServer.Mql4.Builtins
             { "HistoryOrderSelect", "bool HistoryOrderSelect(int index, int select, int pool)" },
             { "HistoryDealSelect", "bool HistoryDealSelect(int index, int select)" },
 
-            // Mathematical Functions
+                    // --- Issue #109: standard-library functions missing from the registry ---
+        // Terminal information (both dialects)
+        { "TerminalInfoInteger", "int TerminalInfoInteger(int property_id)" },
+        { "TerminalInfoDouble", "double TerminalInfoDouble(int property_id)" },
+        { "TerminalInfoString", "string TerminalInfoString(int property_id)" },
+        { "MQLInfoInteger", "int MQLInfoInteger(int property_id)" },
+        { "MQLInfoString", "string MQLInfoString(int property_id)" },
+
+        // Type conversion (both dialects)
+        { "CharToString", "string CharToString(uchar char_value)" },
+        { "DoubleToString", "string DoubleToString(double value, int digits)" },
+        { "IntegerToString", "string IntegerToString(int number, int str_len, ushort fill_symbol)" },
+        { "StringToDouble", "double StringToDouble(string value)" },
+        { "StringToInteger", "int StringToInteger(string value)" },
+        { "StringToDateTime", "datetime StringToDateTime(string value)" },
+
+        // String manipulation (both dialects)
+        { "StringSplit", "int StringSplit(string string_value, ushort separator, string& result[])" },
+        { "StringReplace", "int StringReplace(string& string_var, string find, string replacement)" },
+        { "StringTrimLeft", "string StringTrimLeft(string string_var)" },
+        { "StringTrimRight", "string StringTrimRight(string string_var)" },
+        { "StringFormat", "string StringFormat(string format, ...)" },
+
+        // Arrays (both dialects)
+        { "ArrayInitialize", "int ArrayInitialize(void& array[], double value)" },
+        { "ArrayCopy", "int ArrayCopy(void& dst_array[], const void& src_array[], int dst_start, int src_start, int count)" },
+        { "ArrayFill", "void ArrayFill(void& array[], int start, int count, double value)" },
+
+        // Timeseries access (both dialects)
+        { "iOpen", "double iOpen(string symbol, int timeframe, int shift)" },
+        { "iHigh", "double iHigh(string symbol, int timeframe, int shift)" },
+        { "iLow", "double iLow(string symbol, int timeframe, int shift)" },
+        { "iVolume", "long iVolume(string symbol, int timeframe, int shift)" },
+        { "iBarShift", "int iBarShift(string symbol, int timeframe, datetime time)" },
+        { "iHighest", "int iHighest(string symbol, int timeframe, int type, int count, int start)" },
+        { "iLowest", "int iLowest(string symbol, int timeframe, int type, int count, int start)" },
+
+        // Chart / UI / misc (both dialects)
+        { "PlaySound", "bool PlaySound(string filename)" },
+        { "SendMail", "bool SendMail(string subject, string some_text)" },
+        { "SendNotification", "bool SendNotification(string some_text)" },
+
+// Mathematical Functions
             { "MathAbs", "double MathAbs(double value)" },
             { "MathMax", "double MathMax(double value1, double value2)" },
             { "MathMin", "double MathMin(double value1, double value2)" },
@@ -151,7 +193,11 @@ namespace MqlLanguageServer.Mql4.Builtins
         // Lazy-initialized dictionary for built-in variables
         private static readonly Lazy<Dictionary<string, string>> LazyBuiltInVariables = new(() => new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
-            // Price Variables
+                    // Boolean keywords — case-insensitive in the MQL compiler (issue #109)
+        { "True", "Boolean literal true" },
+        { "False", "Boolean literal false" },
+
+// Price Variables
             { "Ask", "Current Ask price" },
             { "Bid", "Current Bid price" },
             { "Digits", "Number of decimal places" },
