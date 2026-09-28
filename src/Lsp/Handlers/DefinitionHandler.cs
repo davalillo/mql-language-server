@@ -75,16 +75,14 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
             }
 
             var parser = ResolveParser(language);
-            var content = SourceFileReader.ReadAllText(filePath);
             var uri = documentUri.ToUri();
 
-            MqlFile? mqlFile = null;
-            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
-            {
-                _logger.LogDebug("Document not in cache, parsing: {DocumentUri}", documentUri);
-                mqlFile = parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
-            }
+            // Issue #86: prefer the open-document store over disk — the stored
+            // content is the exact text the stored model was parsed from (the
+            // editor buffer), while the disk file can be stale for unsaved edits.
+            // The cross-file target read below stays on disk: that file is
+            // legitimately not the open document.
+            TryGetDocumentContent(uri, filePath, parser, language, out var mqlFile, out var content);
 
             var line = request.Position.Line + 1;
             var character = request.Position.Character + 1;
@@ -93,6 +91,21 @@ public class DefinitionHandler : LanguageAwareHandlerBase<DefinitionParams, Loca
 
             if (symbol == null)
             {
+                // Issue #86: a cursor on a type-usage identifier can find no
+                // case-insensitive in-file declaration match (e.g. after a
+                // buffer edit renamed the variable). Generalize the #64
+                // exact-case correction to the no-symbol-found case:
+                // GetCursorIdentifier is parse-time occurrence-index based
+                // (model text), never raw disk text, so the #86
+                // buffer-vs-disk divergence cannot poison it.
+                var usageIdentifier = TypeDeclarationResolver.GetCursorIdentifier(mqlFile, line - 1, character - 1);
+                if (!string.IsNullOrEmpty(usageIdentifier) &&
+                    TypeDeclarationResolver.TryResolveTypeLocation(usageIdentifier, mqlFile, documentUri, SymbolIndex.Index, out var usageLocation))
+                {
+                    _logger.LogDebug("Resolved type usage '{Identifier}' at {Range}", usageIdentifier, usageLocation.Range);
+                    return new LocationOrLocationLinks(usageLocation);
+                }
+
                 _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
                 return null;
             }

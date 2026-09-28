@@ -109,6 +109,39 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
     }
 
     /// <summary>
+    /// Issue #86: resolve the document text and parsed model for a request,
+    /// preferring the open-document store over the disk file. didOpen/didChange
+    /// feed the editor buffer into the store, so for an open document the
+    /// stored content is the exact text the stored model was parsed from;
+    /// reading the disk file instead desynchronizes the cursor-identifier
+    /// extraction (stale text) from the fresh model and permanently degrades
+    /// cross-file resolution until restart. When the document is not open,
+    /// read from disk and register the parse result in the store so later
+    /// requests behave identically.
+    /// </summary>
+    protected bool TryGetDocumentContent(
+        Uri uri,
+        string filePath,
+        IMqlParser parser,
+        MqlLanguage language,
+        out MqlFile mqlFile,
+        out string content)
+    {
+        if (_documentStore.TryGetValue(uri, out var storedFile, out var storedContent) &&
+            storedFile != null && storedContent != null)
+        {
+            mqlFile = storedFile;
+            content = storedContent;
+            return true;
+        }
+
+        content = SourceFileReader.ReadAllText(filePath);
+        mqlFile = parser.ParseFile(content, filePath);
+        _documentStore.AddOrUpdate(uri, mqlFile, content, language);
+        return true;
+    }
+
+    /// <summary>
     /// Language-specific handling to be implemented by each concrete handler.
     /// </summary>
     protected abstract TResult HandleForLanguage(TParams request, MqlLanguage language, CancellationToken cancellationToken);
