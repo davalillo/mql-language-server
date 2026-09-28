@@ -227,6 +227,22 @@ namespace MqlLanguageServer
                                 }
                             }
 
+                            // Issue #95: legacy clients (and the agent probes from the
+                            // issue reports) declare rootUri WITHOUT workspaceFolders —
+                            // for them the workspace scan never started at all, so NO
+                            // file was ever scan-indexed and workspace/symbol only saw
+                            // didOpen'ed documents. rootUri is the pre-3.4 way of
+                            // declaring the single workspace root: honor it as one.
+                            if (workspaceFoldersSnapshot.Count == 0 && request.RootUri is not null)
+                            {
+                                var rootPath = request.RootUri.ToUri().AbsolutePath;
+                                if (!string.IsNullOrEmpty(rootPath) && System.IO.Directory.Exists(rootPath))
+                                {
+                                    workspaceFoldersSnapshot.Add(rootPath);
+                                    Log.Information("Workspace root from rootUri (no workspaceFolders declared): {RootPath}", rootPath);
+                                }
+                            }
+
                             // Issue #18: register the declared roots for the central
                             // read guard in SourceFileReader. From this point on,
                             // every client-driven disk read must be inside one of
@@ -300,6 +316,29 @@ namespace MqlLanguageServer
                         {
                             lspSerializer.ReapplyDiagnosticContractResolver();
                             Log.Information("Diagnostic report contract resolver re-applied (issue #91)");
+
+                            // Issue #95: always declare workspaceSymbolProvider.
+                            //
+                            // OmniSharp 0.19.9 computes ServerCapabilities through the
+                            // registration-options converters, whose descriptor lookup
+                            // consults the CLIENT's declared workspace.symbol capability:
+                            // a client that does not declare it gets no
+                            // workspaceSymbolProvider key at all ("null" on the wire) —
+                            // and a client that trusts the null disables workspace
+                            // symbol search even though this server can always answer.
+                            // Per the LSP spec the SERVER may declare the provider
+                            // regardless of the client capability. The OnInitialized
+                            // delegates run AFTER ReadServerCapabilities built the
+                            // result and BEFORE the response is sent, so the public
+                            // property assignment here is the deterministic hook.
+                            result.Capabilities.WorkspaceSymbolProvider =
+                                new BooleanOr<WorkspaceSymbolRegistrationOptions.StaticOptions>(
+                                    new WorkspaceSymbolRegistrationOptions.StaticOptions
+                                    {
+                                        ResolveProvider = false,
+                                        WorkDoneProgress = false
+                                    });
+                            Log.Information("workspaceSymbolProvider declared unconditionally (issue #95)");
                             return Task.CompletedTask;
                         })
 

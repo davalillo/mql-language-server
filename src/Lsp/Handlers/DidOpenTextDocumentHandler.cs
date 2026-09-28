@@ -134,33 +134,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 // include parser based on content sniffing here — that would break the single-language
                 // symbol keying that D2 relies on. If a header needs MQL5-only constructs, it must be
                 // included only from MQL5 sources.
-                foreach (var include in mqlFile.Includes)
-                {
-                    // Issue #25a: `Includes` entries are the extracted paths
-                    // stored by the symbol visitors (bare path for quoted
-                    // includes, <path> for angle-bracket system includes) —
-                    // NOT raw directive text. The previous copy re-ran the
-                    // directive regex over these entries, which never matched,
-                    // leaving this loop inert. IncludePathResolver consumes the
-                    // stored-entry shape, applies the PathSecurity containment
-                    // guard, and returns false for system includes.
-                    if (IncludePathResolver.TryResolveContained(filePath, include, out var includeFullPath))
-                    {
-                        var includeContent = SourceFileReader.ReadAllText(includeFullPath);
-                        // Force the includer's language for shared headers so symbols are
-                        // indexed under one key (D2 dual-key coexistence). The include's own
-                        // sniffed language is intentionally ignored here.
-                        var includeLanguage = language;
-
-                        var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
-                        includeFile.Language = includeLanguage;
-                        // OCC-03: occurrence-aware re-index, same rationale as above.
-                        SymbolIndex.Index.AddFile(
-                            includeFullPath, includeLanguage, includeFile.Symbols,
-                            SymbolOccurrenceMapper.Map(includeFile, includeFullPath, includeLanguage));
-                        SymbolIndex.Index.AddDependency(filePath, includeFullPath);
-                    }
-                }
+                IndexIncludesRecursively(parser, filePath, mqlFile, language, cancellationToken);
 
                 _logger.LogDebug("Parsed {SymbolCount} symbols from opened document", mqlFile.Symbols.Count);
 
@@ -184,4 +158,75 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
     // Issue #25a: ExtractIncludePath/ResolveIncludePath/IsContainedInWorkspace
     // private copies were replaced by the single IncludePathResolver service
     // (regex extraction + relative resolution + PathSecurity containment).
+
+    /// <summary>
+    /// Issue #95: index the opened document's include chain RECURSIVELY.
+    ///
+    /// <para>The old loop indexed only the DIRECT includes, so in a project
+    /// with nested includes (A → mid.mqh → deep.mqh), opening A left deep.mqh
+    /// unindexed until the background workspace scan happened to reach it —
+    /// on a 60+ file tree that window is minutes of empty workspace/symbol
+    /// results for include-reachable symbols (the reporter's case: open A,
+    /// query for a symbol declared in the transitively-included B → []).
+    /// The chain is exactly what the document's compilation needs, so it is
+    /// indexable immediately, cycle-safe, and PathSecurity-guarded per
+    /// hop (same TryResolveContained containment as before).</para>
+    ///
+    /// <para>D2 semantics are unchanged: every header in the chain is parsed
+    /// and indexed under the ROOT document's language key (single-language
+    /// symbol keying — see the DESIGN WARNING above), and each hop records
+    /// its dependency edge (the include graph the #90 rename guard and the
+    /// #89 type-fallback guard rely on).</para>
+    /// </summary>
+    private void IndexIncludesRecursively(
+        IMqlParser parser, string rootFilePath, MqlFile rootFile, MqlLanguage rootLanguage,
+        CancellationToken cancellationToken)
+    {
+        var processed = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Guard against a self-including cycle on the root document.
+            Path.GetFullPath(rootFilePath)
+        };
+        IndexIncludes(parser, rootFilePath, rootFile, rootLanguage, processed, cancellationToken);
+    }
+
+    private void IndexIncludes(
+        IMqlParser parser, string includerFilePath, MqlFile includerFile, MqlLanguage language,
+        HashSet<string> processed, CancellationToken cancellationToken)
+    {
+        foreach (var include in includerFile.Includes)
+        {
+            // Issue #25a: `Includes` entries are the extracted paths stored by
+            // the symbol visitors (bare path for quoted includes, <path> for
+            // angle-bracket system includes) — NOT raw directive text.
+            // IncludePathResolver consumes the stored-entry shape, applies
+            // the PathSecurity containment guard, and returns false for
+            // system includes.
+            if (!IncludePathResolver.TryResolveContained(includerFilePath, include, out var includeFullPath))
+            {
+                continue;
+            }
+
+            // Cycle/diamond safety: each header is indexed once per open.
+            if (!processed.Add(Path.GetFullPath(includeFullPath)))
+            {
+                continue;
+            }
+
+            var includeContent = SourceFileReader.ReadAllText(includeFullPath);
+            // Force the includer's language for shared headers so symbols are
+            // indexed under one key (D2 dual-key coexistence). The include's
+            // own sniffed language is intentionally ignored here.
+            var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
+            includeFile.Language = language;
+            // OCC-03: occurrence-aware re-index, same rationale as AddFile above.
+            SymbolIndex.Index.AddFile(
+                includeFullPath, language, includeFile.Symbols,
+                SymbolOccurrenceMapper.Map(includeFile, includeFullPath, language));
+            SymbolIndex.Index.AddDependency(includerFilePath, includeFullPath);
+
+            // Issue #95: recurse into the include's own includes.
+            IndexIncludes(parser, includeFullPath, includeFile, language, processed, cancellationToken);
+        }
+    }
 }
