@@ -78,20 +78,27 @@ Also affected by the same double registration: didChange and didClose (built-in 
 lambdas vs DidChangeTextDocumentHandler/DidCloseTextDocumentHandler) — same swallow
 risk, matches the #86-era symptoms.
 
-### Phase 2 — fixes (root cause now known; awaiting authorization)
-- [ ] P2-1 (primary) Eliminate the competing registration: wire OnTextDocumentSync's
-      didOpen/didChange/didClose lambdas to delegate to the DI-resolved custom handlers
-      (or otherwise guarantee exactly one real handler for each method), so OmniSharp's
-      one-of-two routing can no longer swallow a document notification.
-- [ ] P2-2 (defense) TryGetDocumentContent request-path parse also calls
-      GlobalSymbolIndex.AddFile (same as the scan path) so a request-parsed document is
-      indexed, not only stored.
-- [ ] P2-3 (defense) didOpen parse-reuse early return still runs AddFile +
-      IndexIncludesRecursively (idempotent).
-- [ ] P2-4 Tests: unit tests for P2-2/P2-3 (request-path parse indexed; reuse path
-      indexes); Ducibus 30-session probe -> 0 null; small-fixture probe -> 0 null;
-      detect_changes before each commit.
-- [ ] P2-5 Re-verify #86 on the fixed build (blocked by this bug per the issue).
+### Phase 2 — fixes (completed)
+- [x] P2-1 (primary) f31fdba: OnTextDocumentSync lambdas delegate to the DI-resolved
+      custom didOpen/didChange/didClose handlers via a synchronous HandleSync entry
+      point; both routing branches now run the real logic. Handlers' Handle semantics
+      unchanged (HandleCore extraction). 4 forwarding tests + source-scan wiring test.
+- [x] P2-2 (defense) 7d8807f: TryGetDocumentContent store-miss path also indexes the
+      fresh parse (AddFile with SymbolOccurrenceMapper.Map + defensive symbol-list
+      copy). 3 tests incl. rename-first-request aliasing regression.
+- [x] P2-3 (defense) 8144782: didOpen parse-reuse path heals the index when the
+      (file, language) key is missing (AddFile with copies + include-chain walk on the
+      same branch; zero cost when the root is already indexed). didClose analysis:
+      RemoveFile has no production call sites, didClose never removes index entries.
+      3 healing tests.
+- [x] P2-4 Verification: full suite 1304/1304 pass; authoritative Ducibus 30-session
+      probe -> 30/30 OK (baseline was 40-50% null, stable per session); small-fixture
+      probe 6/6 OK; .mqh-includer shape 6/6 OK (resolves into the header). Working
+      tree clean; graph change analysis (detect_changes) run before every commit
+      (critical/high risk flags are the notification-entry blast radius, accepted with
+      the full-suite + probe evidence).
+- [ ] P2-5 Re-verify #86 end-to-end on the fixed build (blocker removed; unit-level
+      Issue86DidChangeDegradationTests already green in the 1304 run).
 
 ## Evidence log
 
@@ -107,5 +114,10 @@ risk, matches the #86-era symptoms.
 
 ## Commit evidence
 
-- (pending — Phase 1 produced no source commits; all instrumentation reverted,
-  working tree clean; probes live in /tmp)
+- f31fdba fix(server): forward OnTextDocumentSync lambdas to the real
+  didOpen/didChange/didClose handlers (issue #116)
+- 7d8807f fix(lsp): index request-path parses, not just store them (issue #116 defense)
+- 8144782 fix(lsp): heal the index on didOpen's parse-reuse path (issue #116 defense)
+- Branch: fix/116-didopen-swallowed-notifications (from main 1209403). Push/PR/merge
+  remain the user's decision. 10 new tests: Issue116DidOpenForwardingTests (4),
+  Issue116RequestPathIndexingTests (3), Issue116ReusePathIndexHealingTests (3).
