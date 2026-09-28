@@ -182,6 +182,9 @@ namespace MqlLanguageServer
                         .WithHandler<DeclarationHandler>()
                         .WithHandler<ImplementationHandler>()
                         .WithHandler<WorkspaceSymbolHandler>()
+                        // Issue #96: LSP 3.17 call hierarchy — the capability is
+                        // derived from the prepare handler's registration.
+                        .WithHandler<CallHierarchyHandler>()
                         .WithHandler<DiagnosticHandler>()
                         // Issue #30: color swatches. colorProvider capability
                         // derives automatically from DocumentColorHandler's
@@ -339,6 +342,18 @@ namespace MqlLanguageServer
                                         WorkDoneProgress = false
                                     });
                             Log.Information("workspaceSymbolProvider declared unconditionally (issue #95)");
+
+                            // Issue #96: same client-conditional mechanism — the
+                            // callHierarchy capability key is omitted for clients that
+                            // do not declare workspace.symbol; the server implements
+                            // it, so declare it unconditionally.
+                            result.Capabilities.CallHierarchyProvider =
+                                new BooleanOr<CallHierarchyRegistrationOptions.StaticOptions>(
+                                    new CallHierarchyRegistrationOptions.StaticOptions
+                                    {
+                                        WorkDoneProgress = false
+                                    });
+                            Log.Information("callHierarchyProvider declared unconditionally (issue #96)");
                             return Task.CompletedTask;
                         })
 
