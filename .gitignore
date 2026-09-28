@@ -72,3 +72,7 @@ benchmarks/
 tests/TestResults/
 # CodeGraph generated index
 .codegraph/
+
+# vscode extension build artifacts
+vscode/**/node_modules/
+*.vsix
