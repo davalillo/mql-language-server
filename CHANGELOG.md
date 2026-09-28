@@ -1,3 +1,10 @@
+## [2.5.0-rc.4] - 2026-09-28
+
+Release candidate 4: closes the last false-positive family found by the wire-level verification of the published rc.3 binary on the real integration project — `Botlidator_ver_2_90.mqh` now publishes ZERO diagnostics (232 on rc.1 → 187 on rc.2 → 41 on rc.3 → 0).
+
+### Fixed
+- fix(analysis): MQL4 registry third sweep — the wire-level probe on the real project file with the freshly published rc.3 binary routed MQL4 (code 1070, not the MQL5 route the in-process measurement used) and the MQL4 registry missed another set of standard-library names — 41 diagnostics (`ENUM_CRYPT_METHOD`, `CRYPT_BASE64`, `AccountInfoInteger`, `GlobalVariableTemp`, `IsStopped`, `IsDllsAllowed`, `TERMINAL_DLLS_ALLOWED`, `MB_ICONINFORMATION`, `ACCOUNT_*`…). The MQL4 registry now carries the `CRYPT_*` constants (the stdlib `Crypt.mqh` is bundled in MQL4 builds too) and the `AccountInfo*`/terminal/misc families the probe surfaced; duplicates against pre-existing entries removed (`AccountInfo*` and `IsTradeAllowed` already existed in other sections). The multi-declarator fix from rc.3 verified clean on the same scenario (the `dst`/`key` locals are gone from the flagged list).
+
 ## [2.5.0-rc.3] - 2026-09-28
 
 Release candidate 3: fixes the two surviving false-positive families measured by the rc.2 battery (5070 unresolved-symbol noise down 232 → 187 → expected ~0 after this release), both isolated by repro on the real integration project.
