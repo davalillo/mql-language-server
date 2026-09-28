@@ -95,6 +95,16 @@ public class ReferencesHandler : LanguageAwareHandlerBase<ReferenceParams, Locat
 
             if (symbol == null)
             {
+                // Issue #92: references requested at a call site of a function declared
+                // in an included file. FindSymbolDefinition searches the requesting
+                // document's own symbols only; resolve the cursor identifier against
+                // the global index (occurrences are name-keyed by design, OCC-05, so
+                // the cross-file call sites and definition resolve below).
+                symbol = IncludeSymbolResolver.TryResolve(mqlFile, line - 1, character - 1, SymbolIndex.Index);
+            }
+
+            if (symbol == null)
+            {
                 _logger.LogDebug("No symbol found at position {Line}:{Character}", line, character);
                 return null;
             }

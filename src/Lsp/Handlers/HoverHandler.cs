@@ -112,7 +112,7 @@ public class HoverHandler : LanguageAwareHandlerBase<HoverParams, Hover?>, IHove
             {
                 symbol = parser.FindSymbolAtPosition(mqlFile!, line, character);
 
-                // FindSymbolAtPosition tends to return the containing declaration (e.g.
+                // Issue #92: FindSymbolAtPosition tends to return the containing declaration (e.g.
                 // the enclosing function) when the cursor is inside a function body. Try
                 // FindSymbolDefinition as a refinement: it extracts the exact identifier
                 // at the position and resolves builtins/references more precisely. Only
@@ -125,8 +125,25 @@ public class HoverHandler : LanguageAwareHandlerBase<HoverParams, Hover?>, IHove
                     {
                         symbol = refined;
                     }
+                    else if (refined == null)
+                    {
+                        // Issue #92: the identifier at the cursor may resolve into a
+                        // symbol declared in an included file (e.g. a call site of
+                        // StopLong declared in "stop_utils.mqh"). In-file lookup found
+                        // nothing, so the refinement above keeps the enclosing function —
+                        // resolve the cursor identifier against the global index, which
+                        // didOpen's include resolution keeps populated.
+                        var includeSymbol = IncludeSymbolResolver.TryResolve(
+                            mqlFile!, line - 1, character - 1, SymbolIndex.Index);
+                        if (includeSymbol != null && includeSymbol.Name != symbol.Name)
+                        {
+                            symbol = includeSymbol;
+                        }
+                    }
                 }
                 symbol ??= parser.FindSymbolDefinition(mqlFile!, content, line, character);
+                // Issue #92: same fallback when no containing symbol was found at all.
+                symbol ??= IncludeSymbolResolver.TryResolve(mqlFile!, line - 1, character - 1, SymbolIndex.Index);
             }
             catch (Exception ex)
             {
