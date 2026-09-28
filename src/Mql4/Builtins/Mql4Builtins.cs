@@ -53,16 +53,7 @@ namespace MqlLanguageServer.Mql4.Builtins
             { "TimeSeconds", "int TimeSeconds(datetime time)" },
 
             // Account Information
-            { "AccountBalance", "double AccountBalance()" },
-            { "AccountEquity", "double AccountEquity()" },
-            { "AccountMargin", "double AccountMargin()" },
-            { "AccountFreeMargin", "double AccountFreeMargin()" },
-            { "AccountFreeMarginCheck", "double AccountFreeMarginCheck(string symbol, int cmd, double volume)" },
-            { "AccountInfoDouble", "double AccountInfoDouble(int prop_id)" },
-            { "AccountInfoString", "string AccountInfoString(int prop_id)" },
-            { "AccountStopoutLevel", "double AccountStopoutLevel()" },
-            { "AccountStopoutMode", "int AccountStopoutMode()" },
-
+                                    
             // Position Management
             { "PositionsTotal", "int PositionsTotal()" },
             { "PositionSelect", "bool PositionSelect(string symbol)" },
@@ -124,6 +115,28 @@ namespace MqlLanguageServer.Mql4.Builtins
         { "CryptDecode", "int CryptDecode(ENUM_CRYPT_METHOD function, const uchar& data[], const uchar& key[], uchar& result[])" },
         { "CryptMethod", "ENUM_CRYPT_METHOD CryptMethod(const string method_name)" },
         { "CharArrayToString", "string CharArrayToString(uchar& array[], int start, int count, ushort codepage)" },
+        // --- Issue #109 third sweep (MQL4 registry gaps from the rc.2 wire probe) ---
+        { "ENUM_CRYPT_METHOD", "Crypt methods enumeration" },
+        { "CRYPT_DES", "CRYPT method: DES 56-bit" },
+        { "CRYPT_AES128", "CRYPT method: AES 128-bit" },
+        { "CRYPT_AES192", "CRYPT method: AES 192-bit" },
+        { "CRYPT_AES256", "CRYPT method: AES 256-bit" },
+        { "CRYPT_HASH_SHA1", "CRYPT hash method: SHA1" },
+        { "CRYPT_HASH_SHA256", "CRYPT hash method: SHA256" },
+        { "CRYPT_ARCH_ZIP", "CRYPT archiving method: ZIP" },
+        { "AccountInfoInteger", "long AccountInfoInteger(int prop_id)" },
+        { "AccountInfoDouble", "double AccountInfoDouble(int prop_id)" },
+        { "AccountInfoString", "string AccountInfoString(int prop_id)" },
+        { "GlobalVariableTemp", "bool GlobalVariableTemp(string name)" },
+        { "IsStopped", "bool IsStopped()" },
+        { "IsDllsAllowed", "bool IsDllsAllowed()" },
+        { "IsOptimization", "bool IsOptimization()" },
+        { "IsVisualMode", "bool IsVisualMode()" },
+        { "IsTesting", "bool IsTesting()" },
+        { "MB_ICONINFORMATION", "MessageBox flag: information icon" },
+        { "ACCOUNT_COMPANY", "Account property: company" },
+        { "ACCOUNT_LOGIN", "Account property: login" },
+        { "ACCOUNT_NAME", "Account property: name" },
 
 // Mathematical Functions
             { "MathAbs", "double MathAbs(double value)" },
