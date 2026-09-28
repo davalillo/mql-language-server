@@ -138,6 +138,36 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
         content = SourceFileReader.ReadAllText(filePath);
         mqlFile = parser.ParseFile(content, filePath);
         _documentStore.AddOrUpdate(uri, mqlFile, content, language);
+
+        // Issue #116 (defense layer): a request-path parse must be indexed, not
+        // merely stored. The workspace scan skips any document the store holds,
+        // so before this fix a request that parsed a never-opened file (or one
+        // whose didOpen was swallowed) left the OpenDocumentStore as the only
+        // record; the scan then skipped it and the file stayed permanently
+        // absent from GlobalSymbolIndex. Mirror didOpen/the scan exactly:
+        // symbols plus the occurrence-aware SymbolOccurrenceMapper.Map overload
+        // (passing null would purge scan-indexed occurrences with an empty list
+        // — the CRITICAL-2 hazard documented in DidOpenTextDocumentHandler).
+        //
+        // Language choice: use the caller-resolved `language`, not
+        // _documentStore.TryGetLanguage. This branch runs only on a store miss,
+        // so TryGetLanguage would always report false and fall back to the MQL4
+        // default, mis-keying MQL5 documents. Handlers resolve the language via
+        // ResolveLanguage before calling here, which for an unopened file sniffs
+        // the on-disk content (and routes indexed .mqh headers by includer).
+        //
+        // Defensive copy of Symbols: AddOrUpdate just stored mqlFile, and
+        // GlobalSymbolIndex.AddFile stores the list it is given BY REFERENCE.
+        // If a later AddFile receives that same instance (RenameHandler
+        // re-indexes a never-opened document after this method returns), the
+        // updater runs existing.Clear(); existing.AddRange(symbols) against the
+        // identical list and wipes the file's symbols from the index (#36). The
+        // copy keeps the index's list distinct from the store's model, so the
+        // redundant second AddFile replaces content instead of self-clearing.
+        SymbolIndex.Index.AddFile(
+            filePath, language, mqlFile.Symbols.ToList(),
+            SymbolOccurrenceMapper.Map(mqlFile, filePath, language));
+
         return true;
     }
 

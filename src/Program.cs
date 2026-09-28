@@ -39,6 +39,22 @@ namespace MqlLanguageServer
         // completes, so the initialize response is never delayed by the scan.
         private static List<string> workspaceFoldersSnapshot = new();
 
+        // Issue #116: OmniSharp 0.19.9 routes each textDocument/didOpen|didChange|
+        // didClose notification to EXACTLY ONE of two handlers registered for the
+        // same method — the custom handler (real logic) or the built-in
+        // TextDocumentSync handler registered by OnTextDocumentSync below (whose
+        // lambdas previously did nothing). Which one wins is decided per process
+        // by the router, so in roughly half of the sessions the notification was
+        // silently swallowed: the document was never indexed and cross-file
+        // textDocument/definition returned null forever. The lambdas below now
+        // delegate to these DI-resolved custom handlers, so routing no longer
+        // matters. They are populated in OnInitialized (the container exists by
+        // then) and remain null for a notification that somehow arrives before
+        // initialization completes.
+        private static DidOpenTextDocumentHandler? didOpenTextDocumentHandler;
+        private static DidChangeTextDocumentHandler? didChangeTextDocumentHandler;
+        private static DidCloseTextDocumentHandler? didCloseTextDocumentHandler;
+
         /// <summary>
         /// Reads the build date embedded as assembly metadata ("BuildDate") by the
         /// 'StampBuildDate' MSBuild target. Falls back to "unknown" when the metadata
@@ -52,6 +68,49 @@ namespace MqlLanguageServer
                 ?.Value;
 
             return string.IsNullOrEmpty(value) ? "unknown" : value;
+        }
+
+        // Issue #116: synchronous forwarders for the built-in TextDocumentSync
+        // lambdas. The handlers' Handle methods complete synchronously
+        // (Task.FromResult over a synchronous core), and their HandleSync entry
+        // point is that same core, so no Task needs to be awaited or blocked on
+        // here. The null guard covers a notification that races initialization:
+        // the custom handler cannot be resolved yet, and the defense layer in
+        // LanguageAwareHandlerBase covers the request path, so dropping is safe.
+        private static void ForwardDidOpen(DidOpenTextDocumentParams request)
+        {
+            var handler = didOpenTextDocumentHandler;
+            if (handler is null)
+            {
+                Log.Warning("didOpen received before handler resolution; dropping (issue #116)");
+                return;
+            }
+
+            handler.HandleSync(request, CancellationToken.None);
+        }
+
+        private static void ForwardDidChange(DidChangeTextDocumentParams request)
+        {
+            var handler = didChangeTextDocumentHandler;
+            if (handler is null)
+            {
+                Log.Warning("didChange received before handler resolution; dropping (issue #116)");
+                return;
+            }
+
+            handler.HandleSync(request, CancellationToken.None);
+        }
+
+        private static void ForwardDidClose(DidCloseTextDocumentParams request)
+        {
+            var handler = didCloseTextDocumentHandler;
+            if (handler is null)
+            {
+                Log.Warning("didClose received before handler resolution; dropping (issue #116)");
+                return;
+            }
+
+            handler.HandleSync(request, CancellationToken.None);
         }
 
         static async Task<int> Main(string[] args)
@@ -335,6 +394,16 @@ namespace MqlLanguageServer
                             lspSerializer.ReapplyDiagnosticContractResolver();
                             Log.Information("Diagnostic report contract resolver re-applied (issue #91)");
 
+                            // Issue #116: resolve the real text-document-sync handlers
+                            // once the container is built so the built-in
+                            // OnTextDocumentSync lambdas can delegate to them. See the
+                            // field declarations above for the one-of-two routing
+                            // explanation.
+                            didOpenTextDocumentHandler = server.Services.GetRequiredService<DidOpenTextDocumentHandler>();
+                            didChangeTextDocumentHandler = server.Services.GetRequiredService<DidChangeTextDocumentHandler>();
+                            didCloseTextDocumentHandler = server.Services.GetRequiredService<DidCloseTextDocumentHandler>();
+                            Log.Information("Text-document sync forwarders resolved (issue #116)");
+
                             // Issue #95: always declare workspaceSymbolProvider.
                             //
                             // OmniSharp 0.19.9 computes ServerCapabilities through the
@@ -372,11 +441,25 @@ namespace MqlLanguageServer
                             return Task.CompletedTask;
                         })
 
-                        // This is fine for forcing the sync configuration
+                        // This is fine for forcing the sync configuration. The
+                        // registration itself (Full sync + attributes provider) is
+                        // required to declare the capability; the lambdas are the
+                        // built-in handler's notification callbacks. Issue #116:
+                        // delegate them to the custom handlers instead of leaving
+                        // them empty, so both registered handlers run the real
+                        // logic and OmniSharp's one-of-two routing cannot swallow a
+                        // document notification.
                         .OnTextDocumentSync(
                             TextDocumentSyncKind.Full,
                             uri => new TextDocumentAttributes(uri, LanguageDetection.GetLanguageIdFromUri(uri.ToUri())),
-                            _ => { }, _ => { }, _ => { }, _ => { },
+                            ForwardDidOpen,
+                            // Positional order matches the OmniSharp 0.19.9 overload:
+                            // open, close, change, save.
+                            ForwardDidClose,
+                            ForwardDidChange,
+                            // didSave is intentionally unhandled: the server uses pull
+                            // diagnostics and didOpen/didChange keep the model current.
+                            _ => { },
                             new TextDocumentSyncRegistrationOptions())
                         
                             ;
