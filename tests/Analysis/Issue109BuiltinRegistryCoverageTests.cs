@@ -29,7 +29,12 @@ public class Issue109BuiltinRegistryCoverageTests
         "StringReplace", "StringFormat", "StringToInteger", "StringToDateTime",
         "ArrayInitialize", "ArrayFill", "iOpen", "iHigh", "iLow", "iBarShift",
         "iHighest", "iLowest", "PlaySound", "SendMail", "SendNotification",
-        "MQLInfoInteger", "MQLInfoString"
+        "MQLInfoInteger", "MQLInfoString",
+        // crypto family (MQL5 builtin since the compiler bundles Crypt.mqh)
+        "CryptEncode", "CryptDecode", "CryptMethod", "CharArrayToString",
+        // second sweep (real-project analyze findings)
+        "StringGetChar", "StringGetCharacter", "StringSetChar",
+        "StringToCharArray", "GlobalVariableCheck", "WindowExpertName", "MessageBox"
     };
 
     [Fact]
@@ -63,6 +68,15 @@ public class Issue109BuiltinRegistryCoverageTests
     public void Mql5Registry_CoversTheAdditionalSweep()
     {
         foreach (var name in AdditionalBothDialects)
+        {
+            Assert.True(_mql5.IsBuiltin(name), $"MQL5 registry is missing '{name}' (issue #109)");
+        }
+    }
+
+    [Fact]
+    public void Mql5Registry_CoversCryptConstants()
+    {
+        foreach (var name in new[] { "CRYPT_DES", "CRYPT_AES256", "CRYPT_HASH_SHA256", "CRYPT_ARCH_ZIP" })
         {
             Assert.True(_mql5.IsBuiltin(name), $"MQL5 registry is missing '{name}' (issue #109)");
         }

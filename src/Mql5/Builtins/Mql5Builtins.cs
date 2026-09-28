@@ -146,11 +146,31 @@ public class Mql5Builtins : IMqlBuiltins
         { "iLowest", "int iLowest(string symbol, int timeframe, int type, int count, int start)" },
         { "CopyRates", "int CopyRates(string symbol_name, int timeframe, int start_pos, int count, MqlRates rates_array[])" },
 
+        // --- Issue #109 (crypto family): MQL5 stdlib <Crypto/Crypt.mqh> is
+        // actually builtin since the compiler bundles it — names absent from
+        // the registry produced walls of 5070 false positives.
+
+        // Cryptography functions
+        { "CryptEncode", "int CryptEncode(ENUM_CRYPT_METHOD function, const uchar& src[], const uchar& key[], uchar& dst[])" },
+        { "CryptDecode", "int CryptDecode(ENUM_CRYPT_METHOD function, const uchar& data[], const uchar& key[], uchar& result[])" },
+        { "CryptMethod", "ENUM_CRYPT_METHOD CryptMethod(const string method_name)" },
+        { "CharArrayToString", "string CharArrayToString(uchar& array[], int start, int count, ushort codepage)" },
+
         // Chart / UI / misc (both dialects)
         { "PlaySound", "bool PlaySound(string filename)" },
         { "WebRequest", "int WebRequest(const string method, const string url, const string cookie, const string referer, int timeout, const char& data[], char& result[], string& result_headers)" },
         { "SendMail", "bool SendMail(string subject, string some_text)" },
         { "SendNotification", "bool SendNotification(string some_text)" },
+        { "MessageBox", "int MessageBox(string text, string caption, int flags)" },
+        { "StringGetChar", "ushort StringGetChar(string string_value, int pos)" },
+        { "StringGetCharacter", "ushort StringGetCharacter(string string_value, int pos)" },
+        { "StringSetChar", "string StringSetChar(string string_var, int pos, ushort char_value)" },
+        { "StringToCharArray", "int StringToCharArray(string text, uchar& array[], int start, int count, ushort codepage)" },
+        { "GlobalVariableCheck", "bool GlobalVariableCheck(string name)" },
+        { "WindowExpertName", "string WindowExpertName()" },
+        { "TERMINAL_DLLS_ALLOWED", "Terminal property: DLL imports allowed" },
+        { "TERMINAL_DATA_PATH", "Terminal property: data folder path" },
+
 
         // Event handlers
         { "OnInit", "int OnInit()" },
@@ -180,6 +200,22 @@ public class Mql5Builtins : IMqlBuiltins
         // Boolean keywords — case-insensitive in the MQL compiler (issue #109)
         { "true", "Boolean literal true" },
         { "false", "Boolean literal false" },
+
+        // Cryptography constants (issue #109: ENUM_CRYPT_METHOD / CRYPT_* flags)
+        { "ENUM_CRYPT_METHOD", "Crypt methods enumeration (CRYPT_DES..CRYPT_AES256, CRYPT_HASH_MD5, CRYPT_HASH_SHA1..)" },
+        { "CRYPT_DES", "CRYPT method: DES 56-bit" },
+        { "CRYPT_AES128", "CRYPT method: AES 128-bit" },
+        { "CRYPT_AES192", "CRYPT method: AES 192-bit" },
+        { "CRYPT_AES256", "CRYPT method: AES 256-bit" },
+        { "CRYPT_GOST28147_89", "CRYPT method: GOST 28147-89" },
+        { "CRYPT_HASH_MD5", "CRYPT hash method: MD5" },
+        { "CRYPT_HASH_SHA1", "CRYPT hash method: SHA1" },
+        { "CRYPT_HASH_SHA256", "CRYPT hash method: SHA256" },
+        { "CRYPT_HASH_SHA512", "CRYPT hash method: SHA512" },
+        { "CRYPT_ARCH_ZIP", "CRYPT archiving method: ZIP" },
+        { "CRYPT_GOST28147_89_PRO", "CRYPT method: GOST 28147-89 extended key set" },
+        { "CRYPT_ARCH_GZIP", "CRYPT archiving method: GZIP" },
+        { "CRYPT_ARCH_ZLIB", "CRYPT archiving method: ZLIB" },
 
         // Trade actions
         { "TRADE_ACTION_DEAL", "Place a market order" },
