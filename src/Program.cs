@@ -132,7 +132,22 @@ namespace MqlLanguageServer
                             services.AddTransient<Mql4AntlrParser>();
                             services.AddTransient<Mql5AntlrParser>();
                             services.AddSingleton<OpenDocumentStore>();
-                            services.AddSingleton<GlobalSymbolIndex>();
+                            // Issue #22 wiring: the DI singleton MUST be the static
+                            // GlobalSymbolIndex.Instance — DryIo otherwise creates a
+                            // SECOND index (the class's private parameterless ctor is
+                            // usable under the container's non-public-constructor rule)
+                            // and the accessor-based handlers (didOpen, definition,
+                            // references, rename, workspace/symbol...) end up sharing
+                            // a different index than the handlers that construct
+                            // GlobalSymbolIndexAccessor's parameterless overload
+                            // (hover, documentHighlight, declaration...) — two live
+                            // indexes: include-declared symbols visible to some
+                            // handlers and invisible to the rest (the residual
+                            // "go_to_definition returns the enclosing function" the
+                            // rc.1 battery observed in agent-lsp; its hover→
+                            // workspace-symbol fuzzy fallback turns the empty index
+                            // hover into the wrong answer).
+                            services.AddSingleton<GlobalSymbolIndex>(_ => GlobalSymbolIndex.Instance);
                             // Issue #25c: handlers receive the shared index
                             // through this accessor instead of touching the
                             // static GlobalSymbolIndex.Instance singleton.
