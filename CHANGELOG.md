@@ -1,3 +1,11 @@
+## [2.5.0-rc.5] - 2026-09-28
+
+Release candidate 5: closes the 22 diagnostics the published rc.4 binary still emitted on the real project file — the rc.4 wire battery (raw LSP + agent-lsp probes) found the third sweep's diff had only added a subset of the families its message listed. Progression: 232 → 187 → 41 → 22 → **0** (rc.5 target, verified post-release).
+
+### Fixed
+- fix(analysis): MQL4 registry fourth sweep — 19×1070 remained: `CRYPT_BASE64` (MQL4-only `ENUM_CRYPT_METHOD` value), `ACCOUNT_SERVER/CURRENCY/BALANCE/EQUITY/PROFIT/LEVERAGE/MARGIN_SO_SO/TRADE_ALLOWED/TRADE_MODE(+_DEMO)`, `TERMINAL_DLLS_ALLOWED`, `TERMINAL_DATA_PATH`, `IsExpertEnabled`, `MODE_MINLOT`, `MathRand`. The sweep adds those plus the full `CRYPT_*`/`ACCOUNT_*`/`TERMINAL_*` and MarketInfo `MODE_*` families so the next probe surface is covered too.
+- fix(analysis): removed the legacy `Variable 'X' starts with underscore` hint rule (1003/5003) — it fired on the project's own parameters and locals (`string _str`, `uchar& _arr[]`, `uchar _tmpChar[]`), legal MQL identifiers MetaEditor does not warn on; a false-positive generator on real code.
+
 ## [2.5.0-rc.4] - 2026-09-28
 
 Release candidate 4: closes the last false-positive family found by the wire-level verification of the published rc.3 binary on the real integration project — `Botlidator_ver_2_90.mqh` now publishes ZERO diagnostics (232 on rc.1 → 187 on rc.2 → 41 on rc.3 → 0).
