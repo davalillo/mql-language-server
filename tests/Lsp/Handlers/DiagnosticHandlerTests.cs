@@ -302,7 +302,7 @@ public class DiagnosticHandlerTests
     }
 
     [SkippableFact]
-    public async Task Handle_FileWithDiagnostics_DetectsUnderscoreVariableHintsAsync()
+    public async Task Handle_FileWithDiagnostics_DoesNotFlagUnderscoreVariablesAsync()
     {
         Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
             "Skipping test in CI due to potential timeout with file processing");
@@ -322,13 +322,14 @@ public class DiagnosticHandlerTests
         var result = await handler.Handle(request, CancellationToken.None);
 
         // Assert
+        // Issue #109 fourth sweep: underscore-prefixed variable names are legal
+        // MQL identifiers (Botlidator uses `string _str`, `uchar& _arr[]`) and
+        // MetaEditor does not warn on them — the legacy hint rule produced
+        // false positives on real code and was removed.
         Assert.NotNull(result);
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
-        // Should have hint for underscore variable
         var underscoreHint = report.Items.FirstOrDefault(d => d.Code?.String == "1003");
-        Assert.NotNull(underscoreHint);
-        Assert.Equal(DiagnosticSeverity.Hint, underscoreHint.Severity);
-        Assert.Contains("_internalVar", underscoreHint.Message);
+        Assert.Null(underscoreHint);
     }
 
     [SkippableFact]
@@ -359,11 +360,11 @@ public class DiagnosticHandlerTests
         var codes = report.Items.Select(d => d.Code?.String).Distinct().ToList();
         Assert.Contains("1001", codes); // Typo errors
         Assert.Contains("1002", codes); // Empty OnInit warning
-        Assert.Contains("1003", codes); // Underscore variable hint
+        Assert.DoesNotContain("1003", codes); // underscore hint removed (issue #109 fourth sweep)
         // Verify we have diagnostics of different severities
         Assert.Contains(DiagnosticSeverity.Error, report.Items.Select(d => d.Severity));
         Assert.Contains(DiagnosticSeverity.Warning, report.Items.Select(d => d.Severity));
-        Assert.Contains(DiagnosticSeverity.Hint, report.Items.Select(d => d.Severity));
+        Assert.DoesNotContain(DiagnosticSeverity.Hint, report.Items.Select(d => d.Severity));
     }
 
     #endregion

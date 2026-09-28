@@ -93,4 +93,37 @@ public class Issue109BuiltinRegistryCoverageTests
             Assert.True(_mql5.IsBuiltin(variant), $"MQL5 registry is missing boolean literal '{variant}'");
         }
     }
+
+    // Fourth sweep: the exact names the published rc.4 binary still flagged on
+    // Botlidator_ver_2_90.mqh (22 diagnostics: 19x1070 + 3x1003).
+    private static readonly string[] FourthSweepMql4 =
+    {
+        "CRYPT_BASE64", "CRYPT_HASH_SHA512", "CRYPT_HASH_SHA3_256", "CRYPT_HASH_SHA3_512",
+        "CRYPT_ARCH_GZIP", "CRYPT_ARCH_ZLIB", "CRYPT_ARCH_RLE",
+        "ACCOUNT_SERVER", "ACCOUNT_CURRENCY", "ACCOUNT_BALANCE", "ACCOUNT_EQUITY",
+        "ACCOUNT_PROFIT", "ACCOUNT_LEVERAGE", "ACCOUNT_MARGIN", "ACCOUNT_MARGIN_FREE",
+        "ACCOUNT_MARGIN_LEVEL", "ACCOUNT_MARGIN_SO_SO", "ACCOUNT_MARGIN_SO_CALL",
+        "ACCOUNT_MARGIN_SO_STOP", "ACCOUNT_MARGIN_SO_MODE", "ACCOUNT_CREDIT",
+        "ACCOUNT_TRADE_ALLOWED", "ACCOUNT_TRADE_EXPERT", "ACCOUNT_TRADE_MODE",
+        "ACCOUNT_TRADE_MODE_DEMO", "ACCOUNT_TRADE_MODE_CONTEST", "ACCOUNT_TRADE_MODE_REAL",
+        "ACCOUNT_LIMIT_ORDERS", "ACCOUNT_TRADE_STOPOUT_LEVEL", "ACCOUNT_ASSETS",
+        "ACCOUNT_LIABILITIES", "ACCOUNT_COMMISSION_BLOCKED",
+        "TERMINAL_DLLS_ALLOWED", "TERMINAL_DATA_PATH", "TERMINAL_CONNECTED",
+        "TERMINAL_TRADE_ALLOWED", "TERMINAL_EXPERTS_ALLOWED", "TERMINAL_COMMONDATA_PATH",
+        "TERMINAL_LANGUAGE", "TERMINAL_BUILD", "TERMINAL_NAME", "TERMINAL_PATH",
+        "TERMINAL_EMAIL", "TERMINAL_FTP_ENABLED",
+        "IsExpertEnabled", "MathRand", "MathSrand",
+        "MODE_MINLOT", "MODE_MAXLOT", "MODE_LOTSIZE", "MODE_LOTSTEP", "MODE_POINT",
+        "MODE_DIGITS", "MODE_SPREAD", "MODE_STOPLEVEL", "MODE_FREEZELEVEL",
+        "MODE_BID", "MODE_ASK", "MODE_HIGH", "MODE_LOW", "MODE_TIME", "MODE_TRADEALLOWED"
+    };
+
+    [Fact]
+    public void Mql4Registry_CoversFourthSweep()
+    {
+        foreach (var name in FourthSweepMql4)
+        {
+            Assert.True(Mql4Builtins.IsBuiltin(name), $"MQL4 registry is missing '{name}' (issue #109 fourth sweep)");
+        }
+    }
 }

@@ -120,26 +120,6 @@ public static class DocumentDiagnostics
             }
         }
 
-        if (mqlFile?.Symbols != null)
-        {
-            foreach (var symbol in mqlFile.Symbols)
-            {
-                token.ThrowIfCancellationRequested();
-
-                if (symbol.Name.StartsWith("_") && symbol.Kind == SymbolKind.Variable)
-                {
-                    diagnostics.Add(new Diagnostic
-                    {
-                        Range = symbol.Range,
-                        Severity = DiagnosticSeverity.Hint,
-                        Message = $"Variable '{symbol.Name}' starts with underscore",
-                        Code = (baseCode + 3).ToString(),
-                        Source = "mql-lsp"
-                    });
-                }
-            }
-        }
-
         return diagnostics;
     }
 
