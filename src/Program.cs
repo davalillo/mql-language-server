@@ -214,6 +214,53 @@ namespace MqlLanguageServer
                             // them (fail-open only while the set is empty).
                             WorkspaceRoots.Set(workspaceFoldersSnapshot);
 
+                            // Issue #93 (fix A): open the receiver gate NOW instead of
+                            // at the end of the initialize handling.
+                            //
+                            // OmniSharp 0.19.9's LspServerReceiver.GetRequests rejects
+                            // every incoming message except initialize/initialized with a
+                            // ServerNotInitialized (-32002) error until IReceiver.Initialized()
+                            // is called — which the library only does at the END of the
+                            // initialize request handling (after capability registration).
+                            // Worse, the -32002 response is then swallowed by
+                            // LspServerOutputFilter ("will be sent later" — never sent),
+                            // so requests pipelined by clients during the initialize
+                            // handling window (agent MCP relays commonly pipeline
+                            // didOpen + queries right after initialize, without waiting
+                            // for the response) are silently dropped: no reply, no error,
+                            // no log on the wire. Opening the gate here — at the START of
+                            // the initialize handling — collapses that window: every
+                            // message arriving after initialize handling begins is routed
+                            // to the real handlers (already constructed and registered at
+                            // server build time) and answered normally. Messages batched
+                            // in the same OS pipe read as the initialize request itself
+                            // (i.e. written before the server even starts processing)
+                            // remain out of reach — those clients are pre-spec anyway.
+                            try
+                            {
+                                // Resolve the concrete receiver the connection was built
+                                // with (the LspServerReceiver singleton). Verified by
+                                // A/B probe: the same instance is resolved via IReceiver.
+                                server.Services
+                                    .GetRequiredService<OmniSharp.Extensions.LanguageServer.Server.LspServerReceiver>()
+                                    .Initialized();
+                                Log.Information("Receiver gate opened early (issue #93): incoming requests are routed immediately");
+                            }
+                            catch (Exception gateEx)
+                            {
+                                // Defense-in-depth only: without this, behavior falls back
+                                // to the library's own gate (opens right before the
+                                // initialize response is sent).
+                                Log.Warning(gateEx, "Could not open the receiver gate early; falling back to the library default");
+                            }
+
+                            // Issue #93 (fix B): pay the one-time parse-pipeline costs
+                            // (ANTLR ATN deserialization + JIT) on a background thread,
+                            // concurrent with the initialize round-trip, instead of on the
+                            // first didOpen — which on a cold machine stalls OmniSharp's
+                            // serial request queue for the whole cold-start duration.
+                            _ = Task.Run(ParserWarmup.WarmUp);
+
                             // The InitializeResult for this handler's return type is
                             // built by the library from options.ServerInfo (set below
                             // via WithServerInfo, issue #22); this delegate's return
