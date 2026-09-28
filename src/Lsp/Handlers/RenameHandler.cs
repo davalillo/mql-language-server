@@ -20,9 +20,9 @@ using MqlLanguageServer.Mql5.Parser;
 namespace MqlLanguageServer.Lsp.Handlers;
 
 /// <summary>
-/// Handles textDocument/rename requests.
+/// Handles textDocument/rename and textDocument/prepareRename requests.
 /// </summary>
-public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdit?>, IRenameHandler
+public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdit?>, IRenameHandler, IPrepareRenameHandler
 {
     private readonly ILogger<RenameHandler> _logger;
 
@@ -264,5 +264,85 @@ public class RenameHandler : LanguageAwareHandlerBase<RenameParams, WorkspaceEdi
             DocumentSelector = MqlServerCapabilities.GetDocumentSelector(),
             PrepareProvider = true
         };
+    }
+
+    /// <summary>
+    /// Issue #94: the registration options above declare prepareProvider: true,
+    /// but the server never implemented textDocument/prepareRename —
+    /// capability-driven clients sent the request and hit an unexpected
+    /// -32601 mid-flow. The spec-shaped answer for "rename not valid at this
+    /// position" is a null result, which is exactly what this returns when
+    /// the cursor is not on a renamable identifier.
+    /// </summary>
+    // Public overload (implicit interface implementation): the two Handle
+    // methods differ by params type, so plain overloading binds both
+    // IRenameHandler and IPrepareRenameHandler.
+    public Task<RangeOrPlaceholderRange?> Handle(PrepareRenameParams request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var documentUri = request.TextDocument.Uri;
+            var filePath = documentUri.GetFileSystemPath();
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                return Task.FromResult<RangeOrPlaceholderRange?>(null);
+            }
+
+            var uri = documentUri.ToUri();
+            var language = ResolveLanguage(uri);
+            var parser = ResolveParser(language);
+            TryGetDocumentContent(uri, filePath, parser, language, out var mqlFile, out var content);
+
+            var line0 = request.Position.Line;
+            var character0 = request.Position.Character;
+
+            // The rename target range is the identifier TOKEN under the cursor
+            // (0-based occurrence index — model text, immune to the #86
+            // buffer-vs-disk divergence), not the definition range: for an
+            // include-declared symbol renamed from a usage, the prompt must
+            // cover the token the user sees, in the requested document.
+            var occurrence = mqlFile.Occurrences.FirstOrDefault(o =>
+                o.Line == line0 && o.Column <= character0 && character0 < o.Column + o.Length);
+            if (occurrence == null)
+            {
+                _logger.LogDebug("prepareRename: no identifier token at {Line}:{Character}", line0, character0);
+                return Task.FromResult<RangeOrPlaceholderRange?>(null);
+            }
+
+            // The identifier must resolve to a DECLARED symbol — mirroring
+            // what rename itself would do at this position, so the prompt only
+            // appears where a rename would actually produce edits:
+            //   1. an in-file declaration by name (bypasses FindSymbolDefinition's
+            //      builtin short-circuit: a USER-declared OnInit/OnTick is
+            //      renamable even though the name is also a builtin);
+            //   2. else an include-declared symbol (issues #90/#92).
+            // A pure builtin call (Print, OrderSend, ...) matches neither and
+            // yields null — the spec-shaped "rename not valid here".
+            var declaredInFile = parser.FindSymbolsByName(mqlFile, occurrence.Text).FirstOrDefault();
+            var symbol = declaredInFile
+                        ?? IncludeSymbolResolver.TryResolve(mqlFile, line0, character0, SymbolIndex.Index);
+
+            if (symbol == null)
+            {
+                _logger.LogDebug("prepareRename: identifier '{Identifier}' does not resolve to a renamable symbol", occurrence.Text);
+                return Task.FromResult<RangeOrPlaceholderRange?>(null);
+            }
+
+            return Task.FromResult<RangeOrPlaceholderRange?>(new RangeOrPlaceholderRange(
+                new PlaceholderRange
+                {
+                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                        new Position(occurrence.Line, occurrence.Column),
+                        new Position(occurrence.Line, occurrence.Column + occurrence.Length)),
+                    Placeholder = occurrence.Text
+                }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing prepareRename request for {Uri}", request.TextDocument.Uri);
+            // A null result is the spec-shaped "rename not valid here" answer;
+            // never leak an error for a position probe.
+            return Task.FromResult<RangeOrPlaceholderRange?>(null);
+        }
     }
 }
