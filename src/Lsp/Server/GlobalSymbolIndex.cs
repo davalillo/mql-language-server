@@ -521,6 +521,31 @@ public class GlobalSymbolIndex
     }
 
     /// <summary>
+    /// Issue #90: get files that INCLUDE the given file (reverse lookup of
+    /// <see cref="GetDependencies"/>). Used by the rename reachability guard:
+    /// a cross-file rename edit is only emitted when the queried file and the
+    /// occurrence file are connected through the include graph (either
+    /// direction). Mirrors GetIncluderLanguages' linear scan; the graph is
+    /// small (one edge list per indexed file).
+    /// </summary>
+    public List<string> GetDependentFiles(string filePath)
+    {
+        var result = new List<string>();
+        if (string.IsNullOrEmpty(filePath))
+            return result;
+
+        foreach (var kvp in _fileDependencies)
+        {
+            if (kvp.Value.Contains(filePath, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(kvp.Key);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Clear all indexed data
     /// </summary>
     public void Clear()
