@@ -298,6 +298,12 @@ public class WorkspaceIndexer
             if (resolved == null)
                 continue;
 
+            // Issue #90: record the include edge in the dependency graph too —
+            // the scan sees every file, so this completes the graph beyond
+            // the didOpen-populated edges (rename's cross-file reachability
+            // guard, and #96 call-hierarchy navigation later).
+            _symbolIndex.Index.AddDependency(path, resolved);
+
             if (!includerLanguagesByMqh.TryGetValue(resolved, out var languages))
             {
                 languages = new HashSet<MqlLanguage>();
