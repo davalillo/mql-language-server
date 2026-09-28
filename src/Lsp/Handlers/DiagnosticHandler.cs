@@ -33,14 +33,6 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
     /// </summary>
     private readonly SemanticAnalyzer? _semanticAnalyzer;
 
-    // A-007: LSP 3.17 diagnostic codes are string|number. We emit numeric codes in
-    // dedicated ranges so clients can route/interpret them without parsing prefixes.
-    //   MQL4 diagnostics: 1000-1999
-    //   MQL5 diagnostics: 5000-5999
-    // Offsets are shared across both languages (001 typo, 002 empty OnInit, 003 underscore).
-    private const int Mql4DiagnosticBase = 1000;
-    private const int Mql5DiagnosticBase = 5000;
-
     public DiagnosticHandler(
         ILogger<DiagnosticHandler> logger,
         MqlLanguageService languageService,
@@ -78,7 +70,10 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
 
     private RelatedFullDocumentDiagnosticReport GenerateReport(MqlFile? file, string content, MqlLanguage language, CancellationToken token, string? documentPath)
     {
-        var diagnostics = GenerateDiagnostics(file, content, language, token, documentPath);
+        // Issue #91: the rule set lives in the shared DocumentDiagnostics service
+        // (identical output to the push channel — one rule set, two channels).
+        var diagnostics = DocumentDiagnostics.Generate(
+            _logger, file, content, language, token, documentPath, _semanticAnalyzer, SymbolIndex.Index);
 
         return new RelatedFullDocumentDiagnosticReport
         {
@@ -151,37 +146,6 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         }
     }
 
-    /// <summary>
-    /// Issue #44: workspace-correlated suppression of cross-file unresolved-symbol
-    /// false positives. The rule itself stays document-local (REQ-IA-02); this
-    /// downstream filter suppresses base+70 diagnostics whose symbol is declared
-    /// in an included header (tier 1) or anywhere in the indexed workspace (tier 2).
-    /// Best-effort (fail open): any correlator failure keeps the document-local
-    /// diagnostics, and cancellation aborts the request as before.
-    /// </summary>
-    private IReadOnlyList<Diagnostic> ApplyCrossFileSuppression(
-        IReadOnlyList<Diagnostic> semanticDiagnostics,
-        MqlFile? mqlFile,
-        string? documentPath,
-        MqlLanguage language,
-        CancellationToken token)
-    {
-        try
-        {
-            return CrossFileSymbolCorrelator.SuppressWorkspaceResolvable(
-                semanticDiagnostics, mqlFile, documentPath, language, SymbolIndex.Index, token);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Cross-file symbol suppression failed; keeping document-local diagnostics.");
-            return semanticDiagnostics;
-        }
-    }
-
     private RelatedFullDocumentDiagnosticReport CreateEmptyReport()
     {
         return new RelatedFullDocumentDiagnosticReport
@@ -203,98 +167,4 @@ public class DiagnosticHandler : LanguageAwareHandlerBase<DocumentDiagnosticPara
         };
     }
 
-    private List<Diagnostic> GenerateDiagnostics(MqlFile? mqlFile, string content, MqlLanguage language, CancellationToken token, string? documentPath)
-    {
-        var diagnostics = new List<Diagnostic>();
-        var lines = content.Split('\n');
-        var baseCode = language == MqlLanguage.Mql5 ? Mql5DiagnosticBase : Mql4DiagnosticBase;
-
-        // Publish real syntax errors from the parser.
-        // ANTLR uses 1-based lines and 0-based columns; LSP uses 0-based for both.
-        if (mqlFile?.SyntaxErrors != null)
-        {
-            foreach (var syntaxError in mqlFile.SyntaxErrors)
-            {
-                token.ThrowIfCancellationRequested();
-
-                var length = syntaxError.OffendingSymbol?.Length ?? 1;
-                diagnostics.Add(new Diagnostic
-                {
-                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                        syntaxError.Line - 1, syntaxError.Column,
-                        syntaxError.Line - 1, syntaxError.Column + length),
-                    Severity = DiagnosticSeverity.Error,
-                    Message = syntaxError.Message,
-                    Code = (baseCode + 100).ToString(),  // 1100 for MQL4, 5100 for MQL5
-                    Source = "mql-lsp"
-                });
-            }
-        }
-
-        // Issue #28: MQL-native semantic rules run after syntax errors and
-        // before the line-scan heuristics. Failures inside the analyzer are
-        // swallowed per-rule (best-effort) and must not disturb the existing
-        // syntax/typo/underscore diagnostics.
-        var semanticAnalyzer = _semanticAnalyzer ?? new SemanticAnalyzer();
-        diagnostics.AddRange(ApplyCrossFileSuppression(
-            semanticAnalyzer.Analyze(mqlFile, content, language, token),
-            mqlFile, documentPath, language, token));
-
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (i % 100 == 0) token.ThrowIfCancellationRequested();
-
-            var line = lines[i];
-
-            if (line.Contains("UnkownFunction") || line.Contains("UnkownVariable"))
-            {
-                diagnostics.Add(new Diagnostic
-                {
-                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
-                    Severity = DiagnosticSeverity.Error,
-                    Message = "Potential typo: 'Unkown' should be 'Unknown'",
-                    Code = (baseCode + 1).ToString(),
-                    Source = "mql-lsp"
-                });
-            }
-
-            if (line.Contains("int OnInit()") && i + 1 < lines.Length)
-            {
-                var nextLine = lines[i + 1].Trim();
-                if (string.IsNullOrEmpty(nextLine) || nextLine == "{}")
-                {
-                    diagnostics.Add(new Diagnostic
-                    {
-                        Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(i, 0, i, line.Length),
-                        Severity = DiagnosticSeverity.Warning,
-                        Message = "OnInit function appears to be empty.",
-                        Code = (baseCode + 2).ToString(),
-                        Source = "mql-lsp"
-                    });
-                }
-            }
-        }
-
-        if (mqlFile?.Symbols != null)
-        {
-            foreach (var symbol in mqlFile.Symbols)
-            {
-                token.ThrowIfCancellationRequested();
-
-                if (symbol.Name.StartsWith("_") && symbol.Kind == SymbolKind.Variable)
-                {
-                    diagnostics.Add(new Diagnostic
-                    {
-                        Range = symbol.Range,
-                        Severity = DiagnosticSeverity.Hint,
-                        Message = $"Variable '{symbol.Name}' starts with underscore",
-                        Code = (baseCode + 3).ToString(),
-                        Source = "mql-lsp"
-                    });
-                }
-            }
-        }
-
-        return diagnostics;
-    }
 }

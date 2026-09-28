@@ -22,6 +22,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 
@@ -103,6 +104,18 @@ namespace MqlLanguageServer
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
                 Log.Information("=================================================");
 
+                // Issue #91: OmniSharp 0.19.9's [JsonConverter] on the abstract
+                // RelatedDocumentDiagnosticReport throws NotImplementedException
+                // from WriteJson, so textDocument/diagnostic responses could never
+                // be serialized — the exception hit the OutputHandler loop, whose
+                // only recourse is a TRACE-level log plus disposing the output
+                // pipeline permanently (silent hang + permanent server wedge).
+                // Settings-level converters do NOT take precedence over the
+                // attribute (it is baked into the CONTRACT converter), so the fix
+                // subclasses LspSerializer and rewrites the contract via a wrapping
+                // contract resolver (MqlLspSerializer).
+                var lspSerializer = new MqlLspSerializer();
+
                 // Use 'From' instead of 'Create': it is asynchronous and
                 // guarantees the server initializes correctly.
                 var server = await LanguageServer.From(options =>
@@ -111,6 +124,7 @@ namespace MqlLanguageServer
                         //.WithInput(Console.OpenStandardInput())
                         .WithInput(new DisconnectAwareStream(Console.OpenStandardInput()))
                         .WithOutput(Console.OpenStandardOutput())
+                        .WithSerializer(lspSerializer)
                         .WithLoggerFactory(LoggerFactory.Create(builder => builder.AddSerilog()))
                         .WithServices(services =>
                         {
@@ -127,6 +141,11 @@ namespace MqlLanguageServer
                             services.AddSingleton<MqlLspServer>();
                             services.AddSingleton<MqlLanguageService>();
                             services.AddSingleton<WorkspaceIndexer>();
+                            // Issue #91: push-model diagnostics (publishDiagnostics after
+                            // didOpen/didChange). The ILanguageServer dependency is Func-wrapped
+                            // inside (see DiagnosticPublisher) to avoid the startup
+                            // resolution cycle.
+                            services.AddSingleton<DiagnosticPublisher>();
 
                             // Issue #32 (D3): DI-constructed so the builtin
                             // registries reach SemanticAnalyzer rules (the
@@ -267,6 +286,20 @@ namespace MqlLanguageServer
                             // value is ignored by OmniSharp 0.19.9 (Task-returning
                             // delegate), so capabilities are derived from the
                             // registered handlers.
+                            return Task.CompletedTask;
+                        })
+
+                        // Issue #91: LspSerializer.SetClientCapabilities runs during
+                        // initialize handling (before the OnInitialize delegates above)
+                        // and its private Reset() REPLACES the ContractResolver on both
+                        // the settings and the serializer — silently discarding the
+                        // diagnostic-report contract wrapper installed by MqlLspSerializer.
+                        // Re-apply it here: OnInitialized runs after SetClientCapabilities
+                        // and before the first client request can be answered.
+                        .OnInitialized((server, request, result, token) =>
+                        {
+                            lspSerializer.ReapplyDiagnosticContractResolver();
+                            Log.Information("Diagnostic report contract resolver re-applied (issue #91)");
                             return Task.CompletedTask;
                         })
 
