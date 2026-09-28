@@ -75,27 +75,24 @@ public class HoverHandler : LanguageAwareHandlerBase<HoverParams, Hover?>, IHove
                 return null;
             }
 
+            var uri = documentUri.ToUri();
+            var parser = ResolveParser(language);
+            var builtins = ResolveBuiltins(language);
+
             string content;
+            MqlFile? mqlFile;
             try
             {
-                content = SourceFileReader.ReadAllText(filePath);
+                // Issue #88 (the #86 pattern): store-first — the stored
+                // content is the exact text the stored model was parsed from
+                // (the editor buffer); disk text can be stale for unsaved
+                // edits, desynchronizing hover resolution until a restart.
+                TryGetDocumentContent(uri, filePath, parser, language, out mqlFile, out content);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "[{CorrelationId}] Failed to read file: {FilePath}", correlationId, filePath);
                 return null;
-            }
-
-            var uri = documentUri.ToUri();
-            var parser = ResolveParser(language);
-            var builtins = ResolveBuiltins(language);
-
-            MqlFile? mqlFile = null;
-            if (!_documentStore.TryGetValue(uri, out mqlFile) || mqlFile == null)
-            {
-                _logger.LogDebug("[{CorrelationId}] Document not in cache, parsing: {DocumentUri}", correlationId, documentUri);
-                mqlFile = parser.ParseFile(content, filePath);
-                _documentStore.AddOrUpdate(uri, mqlFile, content, language);
             }
 
             var line = request.Position.Line + 1;
