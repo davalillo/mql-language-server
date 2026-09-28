@@ -119,6 +119,12 @@ namespace MqlLanguageServer.Mql4.Builtins
         { "SendMail", "bool SendMail(string subject, string some_text)" },
         { "SendNotification", "bool SendNotification(string some_text)" },
 
+        // --- Issue #109: cryptography functions (MQL4 build 600+) ---
+        { "CryptEncode", "int CryptEncode(ENUM_CRYPT_METHOD function, const uchar& src[], const uchar& key[], uchar& dst[])" },
+        { "CryptDecode", "int CryptDecode(ENUM_CRYPT_METHOD function, const uchar& data[], const uchar& key[], uchar& result[])" },
+        { "CryptMethod", "ENUM_CRYPT_METHOD CryptMethod(const string method_name)" },
+        { "CharArrayToString", "string CharArrayToString(uchar& array[], int start, int count, ushort codepage)" },
+
 // Mathematical Functions
             { "MathAbs", "double MathAbs(double value)" },
             { "MathMax", "double MathMax(double value1, double value2)" },
@@ -137,6 +143,12 @@ namespace MqlLanguageServer.Mql4.Builtins
             { "StringFind", "int StringFind(string string, string match, int start)" },
             { "StringGetCharacter", "ushort StringGetCharacter(string string, int pos)" },
             { "StringSetCharacter", "string StringSetCharacter(string string, int pos, ushort character)" },
+            { "StringGetChar", "ushort StringGetChar(string string_value, int pos)" },
+            { "StringSetChar", "string StringSetChar(string string_var, int pos, ushort char_value)" },
+            { "StringToCharArray", "int StringToCharArray(string text, uchar& array[], int start, int count, ushort codepage)" },
+            { "GlobalVariableCheck", "bool GlobalVariableCheck(string name)" },
+            { "WindowExpertName", "string WindowExpertName()" },
+            { "MessageBox", "int MessageBox(string text, string caption, int flags)" },
             { "StringConcatenate", "string StringConcatenate(...)" },
             { "StringToUpper", "string StringToUpper(string string)" },
             { "StringToLower", "string StringToLower(string string)" },

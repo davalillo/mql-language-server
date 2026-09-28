@@ -209,31 +209,39 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
 
     public override MqlSymbol? VisitVariableDeclaration([NotNull] Mql5GrammarParser.VariableDeclarationContext context)
     {
+        // Issue #109 (follow-up): a declaration can carry multiple declarators
+        // ("uchar src[], dst[], key[32];") — every declarator declares a
+        // name. Only the first was emitted, so the rest became unresolved-
+        // symbol false positives whenever they were referenced later.
         var declarators = context.variableDeclarator();
         if (declarators != null && declarators.Length > 0)
         {
-            var firstDeclarator = declarators[0];
-            var nameToken = firstDeclarator.IDENTIFIER();
-            if (nameToken != null)
+            var modifierTokens = new List<string>();
+            for (int i = 0; i < context.modifiers().Length; i++)
             {
-                var name = nameToken.GetText();
-                var range = CreateRangeFromToken(nameToken.Symbol);
+                var modifiersContext = context.modifiers(i);
+                if (modifiersContext.K_INPUT() != null) modifierTokens.Add("input");
+                if (modifiersContext.K_EXTERN() != null) modifierTokens.Add("extern");
+                if (modifiersContext.K_STATIC() != null) modifierTokens.Add("static");
+                if (modifiersContext.K_CONST() != null) modifierTokens.Add("const");
+                if (modifiersContext.K_SINPUT() != null) modifierTokens.Add("sinput");
+                if (modifiersContext.K_VIRTUAL() != null) modifierTokens.Add("virtual");
+                if (modifiersContext.K_FINAL() != null) modifierTokens.Add("final");
+            }
 
-                var modifierTokens = new List<string>();
-                for (int i = 0; i < context.modifiers().Length; i++)
+            string modifier = string.Join(" ", modifierTokens);
+            var typeText = context.type().GetText();
+
+            foreach (var declarator in declarators)
+            {
+                var nameToken = declarator.IDENTIFIER();
+                if (nameToken == null)
                 {
-                    var modifiersContext = context.modifiers(i);
-                    if (modifiersContext.K_INPUT() != null) modifierTokens.Add("input");
-                    if (modifiersContext.K_EXTERN() != null) modifierTokens.Add("extern");
-                    if (modifiersContext.K_STATIC() != null) modifierTokens.Add("static");
-                    if (modifiersContext.K_CONST() != null) modifierTokens.Add("const");
-                    if (modifiersContext.K_SINPUT() != null) modifierTokens.Add("sinput");
-                    if (modifiersContext.K_VIRTUAL() != null) modifierTokens.Add("virtual");
-                    if (modifiersContext.K_FINAL() != null) modifierTokens.Add("final");
+                    continue;
                 }
 
-                string modifier = string.Join(" ", modifierTokens);
-                var typeText = context.type().GetText();
+                var name = nameToken.GetText();
+                var range = CreateRangeFromToken(nameToken.Symbol);
                 string detail = string.IsNullOrEmpty(modifier)
                     ? $"{typeText} {name}"
                     : $"{modifier} {typeText} {name}";

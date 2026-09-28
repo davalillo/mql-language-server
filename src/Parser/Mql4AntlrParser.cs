@@ -957,13 +957,16 @@ namespace MqlLanguageServer.Parser
 
         public override Mql4Symbol? VisitVariableDeclaration([NotNull] Mql4GrammarParser.VariableDeclarationContext context)
         {
-            // Get variable name from variableDeclarator (new grammar structure)
-            // Note: variableDeclarator() returns an array because there can be multiple declarators
+            // Get variable names from variableDeclarator (new grammar structure)
+            // Note: variableDeclarator() returns an array — every declarator
+            // declares a name ("uchar src[], dst[], key[32];"): issue #109's
+            // unresolved-symbol false positives came from emitting only the first.
             var declarators = context.variableDeclarator();
             if (declarators != null && declarators.Length > 0)
             {
-                var firstDeclarator = declarators[0];
-                var nameToken = firstDeclarator.IDENTIFIER();
+              foreach (var declarator in declarators)
+              {
+                var nameToken = declarator.IDENTIFIER();
                 if (nameToken != null)
                 {
                     var name = nameToken.GetText();
@@ -1023,6 +1026,7 @@ namespace MqlLanguageServer.Parser
                     Symbols.Add(symbol);
                     AttachMember(symbol);
                 }
+              }
             }
 
             return base.VisitVariableDeclaration(context);
