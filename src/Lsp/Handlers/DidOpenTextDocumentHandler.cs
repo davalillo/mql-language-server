@@ -67,6 +67,27 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
 
     public Task<Unit> Handle(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
     {
+        return Task.FromResult(HandleCore(request, cancellationToken));
+    }
+
+    /// <summary>
+    /// Issue #116: synchronous forwarding entry point used by the built-in
+    /// TextDocumentSync handler registered in Program.cs. OmniSharp 0.19.9
+    /// routes each textDocument/didOpen notification to EXACTLY ONE of the two
+    /// handlers registered for the method — this custom handler, or the built-in
+    /// delegating handler whose lambdas previously did nothing — and which one
+    /// wins is decided per process. The built-in lambdas are synchronous
+    /// <see cref="Action{T}"/> delegates, so this method exposes the same
+    /// synchronous core (no Task hop) and guarantees the real logic runs no
+    /// matter which handler the router picks.
+    /// </summary>
+    public void HandleSync(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
+    {
+        HandleCore(request, cancellationToken);
+    }
+
+    private Unit HandleCore(DidOpenTextDocumentParams request, CancellationToken cancellationToken)
+    {
         var documentUri = request.TextDocument.Uri.ToUri();
         var content = request.TextDocument.Text;
         var languageId = request.TextDocument.LanguageId;
@@ -79,7 +100,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
             ? indexedLanguage
             : LanguageDetection.Detect(documentUri, languageId, content);
 
-        return Task.FromResult(HandleForLanguage(request, language, cancellationToken));
+        return HandleForLanguage(request, language, cancellationToken);
     }
 
     protected override Unit HandleForLanguage(DidOpenTextDocumentParams request, MqlLanguage language, CancellationToken cancellationToken)
