@@ -21,8 +21,10 @@ in OnInitialized (Program.cs).
 - [ ] T3 Verify: full test suite green; raw-stdio probe shows diagnosticProvider in
       the initialize result and a live textDocument/diagnostic answer.
 - [ ] T4 PR for the fix (issue-first: status:approved + type:bug).
-- [ ] T5 Release 2.5.0 stable: version bump, CHANGELOG entry (#116, #120, #86 closing),
-      release PR, tag v2.5.0 per the repo's tag<->csproj gate (issue #22).
+- [x] T5 Release 2.5.0 stable: PR #122 merged (347532c), tag v2.5.0 pushed,
+      Build-and-Release workflow succeeded, GitHub release published as STABLE
+      (isPrerelease=false) with 6 binaries (linux/osx/win × x64/arm64), nupkg and
+      CHECKSUMS.txt. Tag↔csproj gate passed.
 
 ## Evidence log
 
@@ -30,4 +32,7 @@ in OnInitialized (Program.cs).
 
 ## Commit evidence
 
-- (pending)
+- 7f8b076 fix(lsp): declare diagnosticProvider unconditionally in initialize (issue #120)
+  — PR #121 merged (a1dcdad); native review review-545d72b46f59c322 approved + acknowledged
+- 485e633 chore(release): bump version to 2.5.0 — PR #122 merged (347532c)
+- Tag v2.5.0 pushed; release https://github.com/davalillo/mql-language-server/releases/tag/v2.5.0
