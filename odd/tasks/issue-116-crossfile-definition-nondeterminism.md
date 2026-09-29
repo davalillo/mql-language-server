@@ -97,8 +97,8 @@ risk, matches the #86-era symptoms.
       tree clean; graph change analysis (detect_changes) run before every commit
       (critical/high risk flags are the notification-entry blast radius, accepted with
       the full-suite + probe evidence).
-- [ ] P2-5 Re-verify #86 end-to-end on the fixed build (blocker removed; unit-level
-      Issue86DidChangeDegradationTests already green in the 1304 run).
+- [x] P2-5 Re-verify #86 end-to-end on the fixed build — confirmed by the user
+      ("Verificado. Ok") after the merge of PR #119 (main @ 1147fa2).
 
 ## Evidence log
 
