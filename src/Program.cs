@@ -438,6 +438,27 @@ namespace MqlLanguageServer
                                         WorkDoneProgress = false
                                     });
                             Log.Information("callHierarchyProvider declared unconditionally (issue #96)");
+
+                            // Issue #120: same client-conditional mechanism — the
+                            // diagnostic capability is omitted for clients that do
+                            // not declare textDocument.diagnostic, although the
+                            // server implements the full pull model
+                            // (DiagnosticHandler implements IDocumentDiagnosticHandler
+                            // and answers textDocument/diagnostic). Spec-conformant
+                            // clients gate pull on the declared capability, so they
+                            // silently lose it. Declare it unconditionally, with the
+                            // produces for the capability payload (the static
+                            // options carry the diagnostic flags; the document
+                            // selector stays on the handler's registration
+                            // options): no inter-file dependencies, no
+                            // workspace-wide diagnostics.
+                            result.Capabilities.DiagnosticProvider =
+                                new DiagnosticsRegistrationOptions.StaticOptions
+                                {
+                                    InterFileDependencies = false,
+                                    WorkspaceDiagnostics = false
+                                };
+                            Log.Information("diagnosticProvider declared unconditionally (issue #120)");
                             return Task.CompletedTask;
                         })
 
