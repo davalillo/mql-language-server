@@ -61,6 +61,7 @@ public class Mql5FixtureTests
     [InlineData("NewDelete.mq5")]
     [InlineData("AbstractFinalModifiers.mq5")]
     [InlineData("PureVirtualMembers.mq5")]
+    [InlineData("DeleteMethodSpecifier.mq5")]
     public void Fixture_Parses_WithoutErrors(string fileName)
     {
         ParseFixture(fileName);
@@ -174,6 +175,25 @@ public class Mql5FixtureTests
         AssertHasSymbol(file, "CBird", SymbolType.Class);
         AssertHasSymbol(file, "CCat", SymbolType.Class);
         AssertHasSymbol(file, "CDog", SymbolType.Class);
+        AssertHasSymbol(file, "OnStart", SymbolType.Function);
+    }
+
+    /// <summary>
+    /// Issue #145: the documented `= delete` method specifier
+    /// (MQL5Book, classes_final_delete) must parse without spurious syntax
+    /// errors, and the declared/defined/pure-virtual regression guards in
+    /// the same fixture must keep parsing (the #143 pureSpecifier rule is
+    /// deliberately separate — compile error 381 closes it to "=0"/"=NULL").
+    /// </summary>
+    [Fact]
+    public void DeleteMethodSpecifier_Extracts_Types_Without_Errors()
+    {
+        var file = ParseFixture("DeleteMethodSpecifier.mq5");
+
+        AssertHasSymbol(file, "Base", SymbolType.Class);
+        AssertHasSymbol(file, "Derived", SymbolType.Class);
+        AssertHasSymbol(file, "CAnimal", SymbolType.Class);
+        AssertHasSymbol(file, "CCat", SymbolType.Class);
         AssertHasSymbol(file, "OnStart", SymbolType.Function);
     }
 }

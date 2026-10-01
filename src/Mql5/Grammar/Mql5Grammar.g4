@@ -272,7 +272,7 @@ arrayInitializer
 
 // --- Functions ---
 functionDeclaration
-    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | pureSpecifier? SEMICOLON)
+    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | (pureSpecifier? | deleteSpecifier) SEMICOLON)
     ;
 
 // Issue #143: pure virtual specifier. The MQL5 compiler accepts exactly two
@@ -280,6 +280,19 @@ functionDeclaration
 // function, only \"=NULL\" or \"=0\" are allowed") — nothing else.
 pureSpecifier
     : ASSIGN (INTEGER | K_NULL)
+    ;
+
+// Issue #145: `= delete` method specifier. Documented in the official
+// MQL5Book (oop/classes_and_interfaces/classes_final_delete: "The delete
+// keyword can be specified in the header of a method to make it
+// inaccessible in the current class and its descendants") with the exact
+// shape `void method() = delete;`. Kept separate from pureSpecifier:
+// compile error 381 closes that rule to "=NULL"/"=0" only, and deletion
+// is a different construct than purity. Not documented for MQL4
+// (docs.mql4.com only carries `delete` as the memory operator), so this
+// alternative is MQL5-only.
+deleteSpecifier
+    : ASSIGN K_DELETE
     ;
 
 // Constructor outside of class: Crypter::Crypter() { }
