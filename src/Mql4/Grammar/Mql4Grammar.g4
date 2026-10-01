@@ -250,7 +250,15 @@ arrayInitializer
 
 // --- Functions ---
 functionDeclaration
-    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | SEMICOLON)
+    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | pureSpecifier? SEMICOLON)
+    ;
+
+// Issue #143: pure virtual specifier. The MQL4 compiler (build 600+) accepts
+// exactly the same two spellings as MQL5 (docs.mql4.com compile error 381:
+// "Illegal syntax when declaring pure virtual function, only \"=NULL\" or
+// \"=0\" are allowed") — nothing else.
+pureSpecifier
+    : ASSIGN (INTEGER | K_NULL)
     ;
 
 // Constructor outside of class: Crypter::Crypter() { }

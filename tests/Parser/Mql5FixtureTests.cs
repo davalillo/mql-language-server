@@ -60,6 +60,7 @@ public class Mql5FixtureTests
     [InlineData("NullptrUnionEnumClass.mq5")]
     [InlineData("NewDelete.mq5")]
     [InlineData("AbstractFinalModifiers.mq5")]
+    [InlineData("PureVirtualMembers.mq5")]
     public void Fixture_Parses_WithoutErrors(string fileName)
     {
         ParseFixture(fileName);
@@ -155,5 +156,24 @@ public class Mql5FixtureTests
 
         var cShape = file.Symbols.First(s => s.Name == "CShape");
         Assert.Equal("CObject", cShape.BaseClass);
+    }
+
+    /// <summary>
+    /// Issue #143: pure virtual specifiers (`= 0` and the documented `= NULL`
+    /// spelling) must parse without spurious syntax errors, and normal
+    /// declared/defined virtual members must keep parsing (regression guard
+    /// for the relaxed member rule). Also pins `override` as a member
+    /// modifier (documented MQL5 access specifier).
+    /// </summary>
+    [Fact]
+    public void PureVirtualMembers_Extracts_Types_Without_Errors()
+    {
+        var file = ParseFixture("PureVirtualMembers.mq5");
+
+        AssertHasSymbol(file, "CAnimal", SymbolType.Class);
+        AssertHasSymbol(file, "CBird", SymbolType.Class);
+        AssertHasSymbol(file, "CCat", SymbolType.Class);
+        AssertHasSymbol(file, "CDog", SymbolType.Class);
+        AssertHasSymbol(file, "OnStart", SymbolType.Function);
     }
 }
