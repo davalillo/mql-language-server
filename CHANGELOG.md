@@ -1,3 +1,18 @@
+## [2.5.1-rc.2] - 2026-10-01
+
+Release candidate 2 of the 2.5.1 line: closes the registry-completeness root cause behind the recurring `1070` false-positive class (#46 → #109 → #126 → #136) by replacing the hand-curated builtin registries with documentation-driven golden lists, and unifies the MQL4→MQL5 migration layer (#34) onto the same data.
+
+### Changed
+- refactor(builtins): builtin registries are now documentation-driven (issue #136). The hand-curated, incident-patched dictionary initializers in `Mql4Builtins`/`Mql5Builtins` are gone; both registries load lazily (startup behavior preserved) from embedded golden lists (`data/builtins/{mql4,mql5}.json`, 541/484 entries) that carry per-entry provenance, documentation URL, API tier (`legacy`/`build600`/`shared`) and, for MQL4, an optional `mql5Mapping` (replacement, kind, semantics-changed flag, note) feeding the migration layer. Adding a documented name is now a data change, never a code edit. The public registry API is unchanged (adapters, `Mql4AntlrParser`, `CompletionHandler` and the 1070/5060/5040 rules consume the same `Dictionary<string,string>` surfaces, still `OrdinalIgnoreCase`).
+- refactor(analysis): `Mql4OnlyApiRegistry` (rule 5060) is no longer a parallel hand-curated table — its 47 REQ-MA-02 admissions (issue #34) are migrated into explicit `mql4OnlyApi` metadata on the MQL4 golden list and projected from it at load time (`Mql4OnlyApiKind`/`Mql4OnlyApiEntry` and case-sensitive `Ordinal` semantics unchanged). Admission policy is still deliberate, never derived from API tier. 27 of the 47 admitted names were absent from the hand-curated builtin registry — a latent gap now closed (the `TimeHour` family, the zero-arg `Order*` property getters, `RefreshRates`, `IsDemo`, the `Window*` family, and the `Close`/`High`/`Low`/`Open` series arrays).
+
+### Fixed
+- fix(analysis): the #126 real-corpus residue (20 `1070` FPs) and the issue-#136 documented-API probe are registered: core functions `StringInit`, `EventKillTimer`, `EventSetMillisecondTimer` (both dialects) and `EventSetTimer`, `iBars`, `GlobalVariableSetOnCondition`, `IsConnected`, `WindowFind`, `TimeToStr`, `StrToTime` (MQL4); predefined variables `_LastError`, `_StopFlag`, `_UninitReason`, `_AppliedTo`; stdlib enum constants `REASON_TEMPLATE/CHARTCHANGE/REMOVE/PROGRAM/ACCOUNT/INITFAILED/CLOSE/PARAMETERS`, `TERMINAL_SCREEN_DPI`, `FILE_BIN`, `FILE_SHARE_READ/WRITE` (both dialects, per their official references). Genuinely-undeclared identifiers still error (negative control green).
+
+### Added
+- test(ci): registry ↔ golden-list parity gate (`RegistryGoldenListParityTests`) — exact per-dialect set and value equality with actionable missing/extra output; a registry completeness failure is now a build failure instead of a future issue report. Regression pins for every #136-reported name (`Issue136BuiltinRegistryCoverageTests`). The reported corpora stay regression fixtures, never a source of truth.
+- chore(data): golden-list schema, provenance and maintenance rules documented in `data/builtins/README.md`; one-off migration/seed tooling in `tools/generate-golden-lists/`.
+
 ## [2.5.1-rc.1] - 2026-10-01
 
 Release candidate 1 of the 2.5.1 line: closes the opened-EA unresolved-symbol false-positive class (#126 — the synthetic fixture produced 25 deterministic `1070` errors on any real EA), makes `.mqh` dialect sniffing comment-aware (#124), and brings enum members into the workspace name index so Tier-2 correlation, go-to-definition, references and hover see nested declarations. All three verified with the raw-stdio probe and the synthetic regression fixtures (no third-party code in the tracker or the tests).

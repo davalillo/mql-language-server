@@ -24,7 +24,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>mql-lsp-server</ToolCommandName>
     <PackageId>mql-language-server</PackageId>
-    <Version>2.5.1-rc.1</Version>
+    <Version>2.5.1-rc.2</Version>
     <Authors>Guillermo Davalillo</Authors>
     <Description>Language Server Protocol implementation for MQL4 and MQL5 (MetaTrader 4/5)</Description>
     <!-- NuGet package authoring best practices:
@@ -99,6 +99,14 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageReference Include="Antlr4BuildTasks" Version="12.14.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Issue #136: documentation-driven golden lists, embedded as the
+         single source of truth for Mql4Builtins / Mql5Builtins and the
+         Mql4OnlyApiRegistry (5060) projection. -->
+    <EmbeddedResource Include="..\data\builtins\mql4.json" LogicalName="MqlLanguageServer.Builtins.builtins.mql4.json" />
+    <EmbeddedResource Include="..\data\builtins\mql5.json" LogicalName="MqlLanguageServer.Builtins.builtins.mql5.json" />
   </ItemGroup>
 
   <ItemGroup>
