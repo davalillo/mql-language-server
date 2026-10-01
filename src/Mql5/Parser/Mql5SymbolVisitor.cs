@@ -47,6 +47,8 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         {
             var parentName = context.qualifiedName().GetText();
             symbol.Detail = $"class {name} : {parentName}";
+            // Issue #123: structured capture for typeHierarchy supertypes.
+            symbol.BaseClass = parentName;
         }
 
         Symbols.Add(symbol);
@@ -78,6 +80,8 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         {
             var parentName = context.qualifiedName().GetText();
             symbol.Detail = $"struct {name} : {parentName}";
+            // Issue #123: structured capture for typeHierarchy supertypes.
+            symbol.BaseClass = parentName;
         }
 
         Symbols.Add(symbol);
@@ -109,6 +113,8 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
         {
             var parentName = context.qualifiedName().GetText();
             symbol.Detail = $"interface {name} : {parentName}";
+            // Issue #123: structured capture for typeHierarchy supertypes.
+            symbol.BaseClass = parentName;
         }
 
         Symbols.Add(symbol);
