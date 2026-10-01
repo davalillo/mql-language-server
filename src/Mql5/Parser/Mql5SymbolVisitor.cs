@@ -153,25 +153,64 @@ public class Mql5SymbolVisitor : Mql5GrammarBaseVisitor<MqlSymbol?>
 
     public override MqlSymbol? VisitEnumDeclaration([NotNull] Mql5GrammarParser.EnumDeclarationContext context)
     {
+        // Issue #126 follow-up: the enum node was captured but its members never
+        // were, and an anonymous enum contributed nothing — enum constants then
+        // surfaced as unresolved-symbol false positives in including documents.
+        // Members attach as Children (Kind EnumMember) so AddFile can flatten
+        // them into the workspace name index; an anonymous enum contributes
+        // top-level members (its constants are still file-scope).
         var nameToken = context.IDENTIFIER()?.Symbol;
-        if (nameToken == null)
-            return base.VisitEnumDeclaration(context);
-
-        var name = nameToken.Text;
-        var range = CreateRangeFromToken(nameToken);
-        var symbol = new MqlSymbol
+        MqlSymbol? enumSymbol = null;
+        if (nameToken != null)
         {
-            Name = name,
-            Kind = SymbolType.Enum.ToLspSymbolKind(),
-            SymbolType = SymbolType.Enum,
-            Range = range,
-            SelectionRange = range,
-            Detail = context.K_CLASS() != null ? $"enum class {name}" : $"enum {name}",
-            FilePath = _filePath
-        };
+            var name = nameToken.Text;
+            var range = CreateRangeFromToken(nameToken);
+            var symbol = new MqlSymbol
+            {
+                Name = name,
+                Kind = SymbolType.Enum.ToLspSymbolKind(),
+                SymbolType = SymbolType.Enum,
+                Range = range,
+                SelectionRange = range,
+                Detail = context.K_CLASS() != null ? $"enum class {name}" : $"enum {name}",
+                FilePath = _filePath
+            };
 
-        Symbols.Add(symbol);
-        _symbolsByName[name] = symbol;
+            Symbols.Add(symbol);
+            _symbolsByName[name] = symbol;
+            enumSymbol = symbol;
+        }
+
+        foreach (var member in context.enumMember())
+        {
+            var memberToken = member.IDENTIFIER()?.Symbol;
+            if (memberToken == null)
+            {
+                continue;
+            }
+
+            var memberSymbol = new MqlSymbol
+            {
+                Name = memberToken.Text,
+                Kind = OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.EnumMember,
+                Range = CreateRangeFromToken(memberToken),
+                SelectionRange = CreateRangeFromToken(memberToken),
+                Detail = enumSymbol != null ? $"enum member of {enumSymbol.Name}" : "enum member (anonymous enum)",
+                FilePath = _filePath
+            };
+
+            if (enumSymbol != null)
+            {
+                if (!enumSymbol.Children.Contains(memberSymbol))
+                {
+                    enumSymbol.Children.Add(memberSymbol);
+                }
+            }
+            else
+            {
+                Symbols.Add(memberSymbol);
+            }
+        }
 
         return base.VisitEnumDeclaration(context);
     }

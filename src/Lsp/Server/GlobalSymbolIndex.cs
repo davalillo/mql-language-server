@@ -88,8 +88,13 @@ public class GlobalSymbolIndex
         // OCC-04/D2: mark occurrences that fall inside a definition's
         // SelectionRange of the same name in the same file as definitions
         // (fallback: inside Range). No query-time recomputation.
+        // Issue #126 follow-up: the definition/name-index sets include enum
+        // members (see CollectNameIndexedSymbols) so nested declarations are
+        // resolvable workspace-wide without leaking function/method locals.
         var definitionsByName = new Dictionary<string, List<MqlSymbol>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var symbol in symbols)
+        var nameIndexedSymbols = new List<MqlSymbol>();
+        CollectNameIndexedSymbols(symbols, nameIndexedSymbols);
+        foreach (var symbol in nameIndexedSymbols)
         {
             if (string.IsNullOrEmpty(symbol.Name))
                 continue;
@@ -161,7 +166,9 @@ public class GlobalSymbolIndex
             }
 
             // Update symbol name index
-            foreach (var symbol in symbols)
+            // Issue #126 follow-up: iterate the name-indexed set (top-level
+            // symbols plus enum members) instead of the top-level list only.
+            foreach (var symbol in nameIndexedSymbols)
             {
                 if (string.IsNullOrEmpty(symbol.Name))
                     continue;
@@ -195,6 +202,41 @@ public class GlobalSymbolIndex
                         return existing;
                     }
                 });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Issue #126 follow-up: symbols eligible for the workspace NAME index.
+    /// Top-level symbols always qualify; among children, only enum members
+    /// (Kind EnumMember, plus members of nested enums) cross the boundary.
+    /// Deliberately NOT flattened: class/struct fields and method locals —
+    /// indexing them would change completion/references/rename behavior and
+    /// needs its own impact analysis. The file symbol tree itself
+    /// (<c>_symbolsByFile</c>) is unaffected and keeps the full hierarchy.
+    /// </summary>
+    private static void CollectNameIndexedSymbols(IEnumerable<MqlSymbol> symbols, List<MqlSymbol> into)
+    {
+        foreach (var symbol in symbols)
+        {
+            into.Add(symbol);
+
+            if (symbol.Children is not { Count: > 0 })
+            {
+                continue;
+            }
+
+            foreach (var child in symbol.Children)
+            {
+                if (child.Kind == OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.EnumMember)
+                {
+                    into.Add(child);
+                }
+                else if (child.Kind == OmniSharp.Extensions.LanguageServer.Protocol.Models.SymbolKind.Enum)
+                {
+                    // Nested enum: descend so its members are indexed too.
+                    CollectNameIndexedSymbols(new[] { child }, into);
+                }
             }
         }
     }
