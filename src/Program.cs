@@ -259,6 +259,9 @@ namespace MqlLanguageServer
                         // Issue #96: LSP 3.17 call hierarchy — the capability is
                         // derived from the prepare handler's registration.
                         .WithHandler<CallHierarchyHandler>()
+                        // Issue #123: LSP 3.17 type hierarchy — same pattern,
+                        // declared unconditionally (per #95/#96/#120).
+                        .WithHandler<TypeHierarchyHandler>()
                         .WithHandler<DiagnosticHandler>()
                         // Issue #30: color swatches. colorProvider capability
                         // derives automatically from DocumentColorHandler's
@@ -438,6 +441,18 @@ namespace MqlLanguageServer
                                         WorkDoneProgress = false
                                     });
                             Log.Information("callHierarchyProvider declared unconditionally (issue #96)");
+
+                            // Issue #123: LSP 3.17 type hierarchy — same pattern,
+                            // declared unconditionally (per #95/#96/#120). OmniSharp's
+                            // automatic capability derivation covers callHierarchy but
+                            // not typeHierarchy, so it is declared explicitly.
+                            result.Capabilities.TypeHierarchyProvider =
+                                new BooleanOr<TypeHierarchyRegistrationOptions.StaticOptions>(
+                                    new TypeHierarchyRegistrationOptions.StaticOptions
+                                    {
+                                        WorkDoneProgress = false
+                                    });
+                            Log.Information("typeHierarchyProvider declared unconditionally (issue #123)");
 
                             // Issue #120: same client-conditional mechanism — the
                             // diagnostic capability is omitted for clients that do

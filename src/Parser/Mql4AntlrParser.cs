@@ -870,13 +870,20 @@ namespace MqlLanguageServer.Parser
             if (nameToken == null)
                 return base.VisitClassDeclaration(context);
 
+            // Issue #123: capture the base class from the grammar's
+            // `COLON accessModifier qualifiedName` clause (single inheritance).
+            string? baseClass = context.qualifiedName()?.GetText();
+
             var symbol = new Mql4Symbol
             {
                 Name = nameToken.GetText(),
                 Kind = LspSymbolKind.Class,
                 Range = CreateRangeFromToken(nameToken.Symbol),
                 SelectionRange = CreateRangeFromToken(nameToken.Symbol),
-                Detail = $"class {nameToken.GetText()}",
+                Detail = baseClass != null
+                    ? $"class {nameToken.GetText()} : {baseClass}"
+                    : $"class {nameToken.GetText()}",
+                BaseClass = baseClass,
                 FilePath = _filePath
             };
 
