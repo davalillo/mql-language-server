@@ -59,6 +59,7 @@ public class Mql5FixtureTests
     [InlineData("ResourceAndPragma.mq5")]
     [InlineData("NullptrUnionEnumClass.mq5")]
     [InlineData("NewDelete.mq5")]
+    [InlineData("AbstractFinalModifiers.mq5")]
     public void Fixture_Parses_WithoutErrors(string fileName)
     {
         ParseFixture(fileName);
@@ -127,5 +128,32 @@ public class Mql5FixtureTests
         Assert.True(file.Symbols.Count > 0, "Should extract symbols from NewDelete");
         AssertHasSymbol(file, "PriceSeries", SymbolType.Class);
         AssertHasSymbol(file, "OnTick", SymbolType.Function);
+    }
+
+    /// <summary>
+    /// Issue #141: `abstract`/`final` class modifiers must parse without
+    /// spurious syntax errors, as one declaration — and the base clause must
+    /// still be captured into MqlSymbol.BaseClass (issue #123) regardless of
+    /// the modifiers.
+    /// </summary>
+    [Fact]
+    public void AbstractFinalModifiers_Extracts_Types_And_BaseClass()
+    {
+        var file = ParseFixture("AbstractFinalModifiers.mq5");
+
+        AssertHasSymbol(file, "CAnimal", SymbolType.Class);
+        AssertHasSymbol(file, "CFoo", SymbolType.Class);
+        AssertHasSymbol(file, "CBar", SymbolType.Class);
+        AssertHasSymbol(file, "Settings", SymbolType.Struct);
+        AssertHasSymbol(file, "CCat", SymbolType.Class);
+
+        var cBar = file.Symbols.First(s => s.Name == "CBar");
+        Assert.Equal("CFoo", cBar.BaseClass);
+
+        var cCat = file.Symbols.First(s => s.Name == "CCat");
+        Assert.Equal("CAnimal", cCat.BaseClass);
+
+        var cShape = file.Symbols.First(s => s.Name == "CShape");
+        Assert.Equal("CObject", cShape.BaseClass);
     }
 }
