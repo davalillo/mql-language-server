@@ -922,6 +922,67 @@ namespace MqlLanguageServer.Parser
             }
         }
 
+        public override Mql4Symbol? VisitEnumDeclaration([NotNull] Mql4GrammarParser.EnumDeclarationContext context)
+        {
+            // Issue #126 follow-up: enums were not visited at all, so neither the
+            // enum type name nor its members reached the symbol tree — both surfaced
+            // as unresolved-symbol false positives in including documents. Members
+            // attach as Children (Kind EnumMember) so AddFile can flatten them into
+            // the workspace name index; an anonymous enum contributes top-level
+            // members (its constants are still file-scope). Tolerance per CCR-05:
+            // Kind is set, SymbolType stays null.
+            var nameToken = context.IDENTIFIER();
+            Mql4Symbol? enumSymbol = null;
+            if (nameToken != null)
+            {
+                enumSymbol = new Mql4Symbol
+                {
+                    Name = nameToken.GetText(),
+                    Kind = LspSymbolKind.Enum,
+                    Range = CreateRangeFromToken(nameToken.Symbol),
+                    SelectionRange = CreateRangeFromToken(nameToken.Symbol),
+                    Detail = $"enum {nameToken.GetText()}",
+                    FilePath = _filePath
+                };
+
+                Symbols.Add(enumSymbol);
+                AttachMember(enumSymbol);
+            }
+
+            foreach (var member in context.enumMember())
+            {
+                var memberToken = member.IDENTIFIER();
+                if (memberToken == null)
+                {
+                    continue;
+                }
+
+                var memberSymbol = new Mql4Symbol
+                {
+                    Name = memberToken.GetText(),
+                    Kind = LspSymbolKind.EnumMember,
+                    Range = CreateRangeFromToken(memberToken.Symbol),
+                    SelectionRange = CreateRangeFromToken(memberToken.Symbol),
+                    Detail = enumSymbol != null ? $"enum member of {enumSymbol.Name}" : "enum member (anonymous enum)",
+                    FilePath = _filePath
+                };
+
+                if (enumSymbol != null)
+                {
+                    if (!enumSymbol.Children.Contains(memberSymbol))
+                    {
+                        enumSymbol.Children.Add(memberSymbol);
+                    }
+                }
+                else
+                {
+                    Symbols.Add(memberSymbol);
+                }
+            }
+
+            return base.VisitEnumDeclaration(context);
+        }
+
         public override Mql4Symbol? VisitFunctionDeclaration([NotNull] Mql4GrammarParser.FunctionDeclarationContext context)
         {
             // Get function name (now uses qualifiedName to support Class::Method syntax)
