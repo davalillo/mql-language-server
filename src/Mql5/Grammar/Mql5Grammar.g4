@@ -229,8 +229,12 @@ baseType
     | qualifiedName
     ;
 
+// Issue #143: `override` is a documented MQL5 access specifier
+// (docs/basis/syntax/reserved) and a valid member modifier
+// (`void F() override { }`). The lexer already had K_OVERRIDE; the parser
+// just never matched it.
 modifiers
-    : (K_CONST | K_STATIC | K_INPUT | K_SINPUT | K_EXTERN | K_VIRTUAL | K_FINAL | K_INLINE)+
+    : (K_CONST | K_STATIC | K_INPUT | K_SINPUT | K_EXTERN | K_VIRTUAL | K_FINAL | K_OVERRIDE | K_INLINE)+
     ;
 
 qualifiedName
@@ -268,7 +272,14 @@ arrayInitializer
 
 // --- Functions ---
 functionDeclaration
-    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | SEMICOLON)
+    : templateDefinition? modifiers? type modifiers? qualifiedName LPAREN parameterList? RPAREN modifiers? (block | pureSpecifier? SEMICOLON)
+    ;
+
+// Issue #143: pure virtual specifier. The MQL5 compiler accepts exactly two
+// spellings (compile error 381: "Illegal syntax when declaring pure virtual
+// function, only \"=NULL\" or \"=0\" are allowed") — nothing else.
+pureSpecifier
+    : ASSIGN (INTEGER | K_NULL)
     ;
 
 // Constructor outside of class: Crypter::Crypter() { }
