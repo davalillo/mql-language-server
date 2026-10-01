@@ -1418,6 +1418,288 @@
         "semanticsChanged": false,
         "note": "MQL4 order-property getter; not in MQL5"
       }
+    },
+    "NormalizeDouble": {
+      "signature": "double NormalizeDouble(double value, int digits)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/convert",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathArccos": {
+      "signature": "double MathArccos(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathArcsin": {
+      "signature": "double MathArcsin(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathArctan": {
+      "signature": "double MathArctan(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathArctan2": {
+      "signature": "double MathArctan2(double y, double x)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathCeil": {
+      "signature": "double MathCeil(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathFloor": {
+      "signature": "double MathFloor(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathLog10": {
+      "signature": "double MathLog10(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathMod": {
+      "signature": "double MathMod(double value1, double value2)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathIsValidNumber": {
+      "signature": "bool MathIsValidNumber(double number)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "GetTickCount": {
+      "signature": "uint GetTickCount()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SendFTP": {
+      "signature": "bool SendFTP(string filename, string ftp_path=NULL)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Year": {
+      "signature": "int Year()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Month": {
+      "signature": "int Month()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Day": {
+      "signature": "int Day()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "DayOfWeek": {
+      "signature": "int DayOfWeek()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "DayOfYear": {
+      "signature": "int DayOfYear()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Hour": {
+      "signature": "int Hour()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Minute": {
+      "signature": "int Minute()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "Seconds": {
+      "signature": "int Seconds()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "TimeDaylightSavings": {
+      "signature": "int TimeDaylightSavings(datetime value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/dateandtime",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectCreate": {
+      "signature": "bool ObjectCreate(long chart_id, string name, ENUM_OBJECT type, int sub_window, datetime time1, double price1)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectDelete": {
+      "signature": "bool ObjectDelete(long chart_id, string name)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectGet": {
+      "signature": "double ObjectGet(string name, int prop_id)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectGetDouble": {
+      "signature": "double ObjectGetDouble(long chart_id, string name, ENUM_OBJECT_PROPERTY_DOUBLE prop_id, int prop_modifier=0)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectGetInteger": {
+      "signature": "long ObjectGetInteger(long chart_id, string name, ENUM_OBJECT_PROPERTY_INTEGER prop_id, int prop_modifier=0)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectGetString": {
+      "signature": "string ObjectGetString(long chart_id, string name, ENUM_OBJECT_PROPERTY_STRING prop_id, int prop_modifier=0)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectFind": {
+      "signature": "int ObjectFind(long chart_id, string name)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectName": {
+      "signature": "string ObjectName(long chart_id, int pos, int sub_window=-1, int type=-1)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectSet": {
+      "signature": "bool ObjectSet(string name, int prop_id, double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectSetDouble": {
+      "signature": "bool ObjectSetDouble(long chart_id, string name, ENUM_OBJECT_PROPERTY_DOUBLE prop_id, double prop_value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectSetInteger": {
+      "signature": "bool ObjectSetInteger(long chart_id, string name, ENUM_OBJECT_PROPERTY_INTEGER prop_id, long prop_value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectSetString": {
+      "signature": "bool ObjectSetString(long chart_id, string name, ENUM_OBJECT_PROPERTY_STRING prop_id, string prop_value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectSetText": {
+      "signature": "bool ObjectSetText(string name, string text, int font_size=10, string font=NULL, color text_color=clrNONE)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ObjectsDeleteAll": {
+      "signature": "int ObjectsDeleteAll(long chart_id, int sub_window=-1, int type=-1)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/objects",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolInfoTick": {
+      "signature": "bool SymbolInfoTick(string symbol, MqlTick &tick)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolInfoSessionQuote": {
+      "signature": "bool SymbolInfoSessionQuote(string name, ENUM_DAY_OF_WEEK day_of_week, uint session_index, datetime &from, datetime &to)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolInfoSessionOrder": {
+      "signature": "bool SymbolInfoSessionOrder(string name, ENUM_DAY_OF_WEEK day_of_week, uint session_index, datetime &from, datetime &to)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolsTotal": {
+      "signature": "int SymbolsTotal(bool selected)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolName": {
+      "signature": "string SymbolName(int pos, bool selected)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolSelect": {
+      "signature": "bool SymbolSelect(string name, bool select)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "OrdersHistoryTotal": {
+      "signature": "int OrdersHistoryTotal()",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/series",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "StringCompare": {
+      "signature": "int StringCompare(const string &string1, const string &string2, bool case_sensitive=true)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/strings",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MathRound": {
+      "signature": "double MathRound(double value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/math",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SymbolInfoString": {
+      "signature": "string SymbolInfoString(string name, int prop_id)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "DoubleToStr": {
+      "signature": "string DoubleToStr(double value, int digits)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/convert",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "StrToDouble": {
+      "signature": "double StrToDouble(string value)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/convert",
+      "provenance": "mql4-reference-enrichment-rc2"
     }
   },
   "variables": {
@@ -2621,6 +2903,1884 @@
         "semanticsChanged": false,
         "note": "MQL4 predefined series array; rejected by MQL5"
       }
+    },
+    "clrAliceBlue": {
+      "description": "Web color constant (AliceBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrAntiqueWhite": {
+      "description": "Web color constant (AntiqueWhite)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrAqua": {
+      "description": "Web color constant (Aqua)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrAquamarine": {
+      "description": "Web color constant (Aquamarine)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrAzure": {
+      "description": "Web color constant (Azure)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBeige": {
+      "description": "Web color constant (Beige)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBisque": {
+      "description": "Web color constant (Bisque)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBlack": {
+      "description": "Web color constant (Black)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBlanchedAlmond": {
+      "description": "Web color constant (BlanchedAlmond)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBlue": {
+      "description": "Web color constant (Blue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBlueViolet": {
+      "description": "Web color constant (BlueViolet)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBrown": {
+      "description": "Web color constant (Brown)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrBurlyWood": {
+      "description": "Web color constant (BurlyWood)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCadetBlue": {
+      "description": "Web color constant (CadetBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrChartreuse": {
+      "description": "Web color constant (Chartreuse)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrChocolate": {
+      "description": "Web color constant (Chocolate)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCoral": {
+      "description": "Web color constant (Coral)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCornflowerBlue": {
+      "description": "Web color constant (CornflowerBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCornsilk": {
+      "description": "Web color constant (Cornsilk)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCrimson": {
+      "description": "Web color constant (Crimson)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrCyan": {
+      "description": "Web color constant (Cyan)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkBlue": {
+      "description": "Web color constant (DarkBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkCyan": {
+      "description": "Web color constant (DarkCyan)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkGoldenrod": {
+      "description": "Web color constant (DarkGoldenrod)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkGray": {
+      "description": "Web color constant (DarkGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkGreen": {
+      "description": "Web color constant (DarkGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkKhaki": {
+      "description": "Web color constant (DarkKhaki)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkMagenta": {
+      "description": "Web color constant (DarkMagenta)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkOliveGreen": {
+      "description": "Web color constant (DarkOliveGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkOrange": {
+      "description": "Web color constant (DarkOrange)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkOrchid": {
+      "description": "Web color constant (DarkOrchid)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkRed": {
+      "description": "Web color constant (DarkRed)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkSalmon": {
+      "description": "Web color constant (DarkSalmon)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkSeaGreen": {
+      "description": "Web color constant (DarkSeaGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkSlateBlue": {
+      "description": "Web color constant (DarkSlateBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkSlateGray": {
+      "description": "Web color constant (DarkSlateGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkTurquoise": {
+      "description": "Web color constant (DarkTurquoise)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDarkViolet": {
+      "description": "Web color constant (DarkViolet)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDeepPink": {
+      "description": "Web color constant (DeepPink)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDeepSkyBlue": {
+      "description": "Web color constant (DeepSkyBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDimGray": {
+      "description": "Web color constant (DimGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrDodgerBlue": {
+      "description": "Web color constant (DodgerBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrFireBrick": {
+      "description": "Web color constant (FireBrick)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrFloralWhite": {
+      "description": "Web color constant (FloralWhite)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrForestGreen": {
+      "description": "Web color constant (ForestGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrFuchsia": {
+      "description": "Web color constant (Fuchsia)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGainsboro": {
+      "description": "Web color constant (Gainsboro)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGhostWhite": {
+      "description": "Web color constant (GhostWhite)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGold": {
+      "description": "Web color constant (Gold)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGoldenrod": {
+      "description": "Web color constant (Goldenrod)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGray": {
+      "description": "Web color constant (Gray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGreen": {
+      "description": "Web color constant (Green)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrGreenYellow": {
+      "description": "Web color constant (GreenYellow)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrHoneydew": {
+      "description": "Web color constant (Honeydew)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrHotPink": {
+      "description": "Web color constant (HotPink)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrIndianRed": {
+      "description": "Web color constant (IndianRed)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrIndigo": {
+      "description": "Web color constant (Indigo)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrIvory": {
+      "description": "Web color constant (Ivory)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrKhaki": {
+      "description": "Web color constant (Khaki)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLavender": {
+      "description": "Web color constant (Lavender)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLavenderBlush": {
+      "description": "Web color constant (LavenderBlush)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLawnGreen": {
+      "description": "Web color constant (LawnGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLemonChiffon": {
+      "description": "Web color constant (LemonChiffon)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightBlue": {
+      "description": "Web color constant (LightBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightCoral": {
+      "description": "Web color constant (LightCoral)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightCyan": {
+      "description": "Web color constant (LightCyan)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightGoldenrodYellow": {
+      "description": "Web color constant (LightGoldenrodYellow)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightGray": {
+      "description": "Web color constant (LightGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightGreen": {
+      "description": "Web color constant (LightGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightPink": {
+      "description": "Web color constant (LightPink)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightSalmon": {
+      "description": "Web color constant (LightSalmon)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightSeaGreen": {
+      "description": "Web color constant (LightSeaGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightSkyBlue": {
+      "description": "Web color constant (LightSkyBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightSlateGray": {
+      "description": "Web color constant (LightSlateGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightSteelBlue": {
+      "description": "Web color constant (LightSteelBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLightYellow": {
+      "description": "Web color constant (LightYellow)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLime": {
+      "description": "Web color constant (Lime)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLimeGreen": {
+      "description": "Web color constant (LimeGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrLinen": {
+      "description": "Web color constant (Linen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMagenta": {
+      "description": "Web color constant (Magenta)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMaroon": {
+      "description": "Web color constant (Maroon)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumAquamarine": {
+      "description": "Web color constant (MediumAquamarine)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumBlue": {
+      "description": "Web color constant (MediumBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumOrchid": {
+      "description": "Web color constant (MediumOrchid)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumPurple": {
+      "description": "Web color constant (MediumPurple)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumSeaGreen": {
+      "description": "Web color constant (MediumSeaGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumSlateBlue": {
+      "description": "Web color constant (MediumSlateBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumSpringGreen": {
+      "description": "Web color constant (MediumSpringGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumTurquoise": {
+      "description": "Web color constant (MediumTurquoise)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMediumVioletRed": {
+      "description": "Web color constant (MediumVioletRed)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMidnightBlue": {
+      "description": "Web color constant (MidnightBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMintCream": {
+      "description": "Web color constant (MintCream)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMistyRose": {
+      "description": "Web color constant (MistyRose)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrMoccasin": {
+      "description": "Web color constant (Moccasin)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrNavajoWhite": {
+      "description": "Web color constant (NavajoWhite)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrNavy": {
+      "description": "Web color constant (Navy)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOldLace": {
+      "description": "Web color constant (OldLace)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOlive": {
+      "description": "Web color constant (Olive)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOliveDrab": {
+      "description": "Web color constant (OliveDrab)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOrange": {
+      "description": "Web color constant (Orange)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOrangeRed": {
+      "description": "Web color constant (OrangeRed)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrOrchid": {
+      "description": "Web color constant (Orchid)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPaleGoldenrod": {
+      "description": "Web color constant (PaleGoldenrod)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPaleGreen": {
+      "description": "Web color constant (PaleGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPaleTurquoise": {
+      "description": "Web color constant (PaleTurquoise)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPaleVioletRed": {
+      "description": "Web color constant (PaleVioletRed)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPapayaWhip": {
+      "description": "Web color constant (PapayaWhip)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPeachPuff": {
+      "description": "Web color constant (PeachPuff)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPeru": {
+      "description": "Web color constant (Peru)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPink": {
+      "description": "Web color constant (Pink)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPlum": {
+      "description": "Web color constant (Plum)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPowderBlue": {
+      "description": "Web color constant (PowderBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrPurple": {
+      "description": "Web color constant (Purple)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrRed": {
+      "description": "Web color constant (Red)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrRosyBrown": {
+      "description": "Web color constant (RosyBrown)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrRoyalBlue": {
+      "description": "Web color constant (RoyalBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSaddleBrown": {
+      "description": "Web color constant (SaddleBrown)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSalmon": {
+      "description": "Web color constant (Salmon)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSandyBrown": {
+      "description": "Web color constant (SandyBrown)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSeaGreen": {
+      "description": "Web color constant (SeaGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSeaShell": {
+      "description": "Web color constant (SeaShell)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSienna": {
+      "description": "Web color constant (Sienna)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSilver": {
+      "description": "Web color constant (Silver)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSkyBlue": {
+      "description": "Web color constant (SkyBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSlateBlue": {
+      "description": "Web color constant (SlateBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSlateGray": {
+      "description": "Web color constant (SlateGray)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSnow": {
+      "description": "Web color constant (Snow)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSpringGreen": {
+      "description": "Web color constant (SpringGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrSteelBlue": {
+      "description": "Web color constant (SteelBlue)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrTan": {
+      "description": "Web color constant (Tan)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrTeal": {
+      "description": "Web color constant (Teal)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrThistle": {
+      "description": "Web color constant (Thistle)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrTomato": {
+      "description": "Web color constant (Tomato)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrTurquoise": {
+      "description": "Web color constant (Turquoise)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrViolet": {
+      "description": "Web color constant (Violet)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrWheat": {
+      "description": "Web color constant (Wheat)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrWhite": {
+      "description": "Web color constant (White)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrWhiteSmoke": {
+      "description": "Web color constant (WhiteSmoke)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrYellow": {
+      "description": "Web color constant (Yellow)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrYellowGreen": {
+      "description": "Web color constant (YellowGreen)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CORNER_LEFT_UPPER": {
+      "description": "ENUM_BASE_CORNER: upper-left corner",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_base_corner",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CORNER_LEFT_LOWER": {
+      "description": "ENUM_BASE_CORNER: lower-left corner",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_base_corner",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CORNER_RIGHT_UPPER": {
+      "description": "ENUM_BASE_CORNER: upper-right corner",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_base_corner",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CORNER_RIGHT_LOWER": {
+      "description": "ENUM_BASE_CORNER: lower-right corner",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_base_corner",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ALIGN_LEFT": {
+      "description": "ENUM_ALIGN_MODE: left alignment",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_align_mode",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ALIGN_CENTER": {
+      "description": "ENUM_ALIGN_MODE: center alignment",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_align_mode",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ALIGN_RIGHT": {
+      "description": "ENUM_ALIGN_MODE: right alignment",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_align_mode",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_LEFT_UPPER": {
+      "description": "ENUM_ANCHOR_POINT: upper-left anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_LEFT": {
+      "description": "ENUM_ANCHOR_POINT: left anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_LEFT_LOWER": {
+      "description": "ENUM_ANCHOR_POINT: lower-left anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_LOWER": {
+      "description": "ENUM_ANCHOR_POINT: lower anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_RIGHT_LOWER": {
+      "description": "ENUM_ANCHOR_POINT: lower-right anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_RIGHT": {
+      "description": "ENUM_ANCHOR_POINT: right anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_RIGHT_UPPER": {
+      "description": "ENUM_ANCHOR_POINT: upper-right anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_UPPER": {
+      "description": "ENUM_ANCHOR_POINT: upper anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ANCHOR_CENTER": {
+      "description": "ENUM_ANCHOR_POINT: center anchor",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_anchor",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "BORDER_FLAT": {
+      "description": "ENUM_BORDER_TYPE: flat border",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_border_type",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "BORDER_RAISED": {
+      "description": "ENUM_BORDER_TYPE: raised border",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_border_type",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "BORDER_SUNKEN": {
+      "description": "ENUM_BORDER_TYPE: sunken border",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_border_type",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_KEYDOWN": {
+      "description": "Chart event: key press",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_MOUSE_MOVE": {
+      "description": "Chart event: mouse move",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_MOUSE_WHEEL": {
+      "description": "Chart event: mouse wheel",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_CLICK": {
+      "description": "Chart event: chart click",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_OBJECT_CLICK": {
+      "description": "Chart event: object click",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_OBJECT_DRAG": {
+      "description": "Chart event: object drag",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_OBJECT_ENDEDIT": {
+      "description": "Chart event: object text-edit end",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_OBJECT_CREATE": {
+      "description": "Chart event: object create",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_OBJECT_DELETE": {
+      "description": "Chart event: object delete",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_CHART_CHANGE": {
+      "description": "Chart event: chart size/property change",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_CUSTOM": {
+      "description": "Chart event: custom event base",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CHARTEVENT_CUSTOM_LAST": {
+      "description": "Chart event: last custom event id",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/chartconstants/chartevents",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_OK": {
+      "description": "MessageBox flag: OK button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_OKCANCEL": {
+      "description": "MessageBox flag: OK and Cancel buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_YESNO": {
+      "description": "MessageBox flag: Yes and No buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_YESNOCANCEL": {
+      "description": "MessageBox flag: Yes, No and Cancel buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_ABORTRETRYIGNORE": {
+      "description": "MessageBox flag: Abort, Retry and Ignore buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_RETRYCANCEL": {
+      "description": "MessageBox flag: Retry and Cancel buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_CANCELTRYCONTINUE": {
+      "description": "MessageBox flag: Cancel, Try Again and Continue buttons",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_ICONERROR": {
+      "description": "MessageBox flag: error icon",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_ICONQUESTION": {
+      "description": "MessageBox flag: question icon",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_ICONWARNING": {
+      "description": "MessageBox flag: warning icon",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_ICONINFORMATION": {
+      "description": "MessageBox flag: information icon",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_DEFBUTTON1": {
+      "description": "MessageBox flag: default button 1",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_DEFBUTTON2": {
+      "description": "MessageBox flag: default button 2",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_DEFBUTTON3": {
+      "description": "MessageBox flag: default button 3",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MB_DEFBUTTON4": {
+      "description": "MessageBox flag: default button 4",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDOK": {
+      "description": "MessageBox result: OK button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDCANCEL": {
+      "description": "MessageBox result: Cancel button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDYES": {
+      "description": "MessageBox result: Yes button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDNO": {
+      "description": "MessageBox result: No button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDABORT": {
+      "description": "MessageBox result: Abort button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDRETRY": {
+      "description": "MessageBox result: Retry button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDIGNORE": {
+      "description": "MessageBox result: Ignore button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "IDCLOSE": {
+      "description": "MessageBox result: Close button",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/common",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SELECT_BY_POS": {
+      "description": "OrderSelect flag: select by position",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/trading",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SELECT_BY_TICKET": {
+      "description": "OrderSelect flag: select by ticket",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/trading",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_TRADES": {
+      "description": "Order pool: active market orders",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/trading",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_HISTORY": {
+      "description": "Order pool: closed/history orders",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/trading",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_ASCEND": {
+      "description": "Series/array sorting: ascending",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/series",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_DESCEND": {
+      "description": "Series/array sorting: descending",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/series",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_ASK": {
+      "description": "MarketInfo: current ask price",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_BID": {
+      "description": "MarketInfo: current bid price",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_POINT": {
+      "description": "MarketInfo: point size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_DIGITS": {
+      "description": "MarketInfo: digits after the decimal point",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_SPREAD": {
+      "description": "MarketInfo: spread in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_STOPLEVEL": {
+      "description": "MarketInfo: minimum stop distance in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_FREEZELEVEL": {
+      "description": "MarketInfo: freeze distance in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_LOTSIZE": {
+      "description": "MarketInfo: contract lot size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_TICKVALUE": {
+      "description": "MarketInfo: tick value",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_TICKSIZE": {
+      "description": "MarketInfo: tick size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MINLOT": {
+      "description": "MarketInfo: minimum lot size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_LOTSTEP": {
+      "description": "MarketInfo: lot step",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MAXLOT": {
+      "description": "MarketInfo: maximum lot size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_SWAPLONG": {
+      "description": "MarketInfo: long swap value",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_SWAPSHORT": {
+      "description": "MarketInfo: short swap value",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_TRADEALLOWED": {
+      "description": "MarketInfo: trading allowed for the symbol",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MARGININIT": {
+      "description": "MarketInfo: initial margin requirement",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MARGINMAINTENANCE": {
+      "description": "MarketInfo: maintenance margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MARGINHEDGED": {
+      "description": "MarketInfo: hedged margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MARGINREQUIRED": {
+      "description": "MarketInfo: margin required for one lot",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_PROFITCALCMODE": {
+      "description": "MarketInfo: profit calculation mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MODE_MARGINCALCMODE": {
+      "description": "MarketInfo: margin calculation mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SELECT": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: symbol is in Market Watch",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_DIGITS": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: digits after the decimal point",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SPREAD": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: spread in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_CALC_MODE": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: profit calculation mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: trading mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE_DISABLED": {
+      "description": "ENUM_SYMBOL_TRADE_MODE: trading disabled",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE_LONGONLY": {
+      "description": "ENUM_SYMBOL_TRADE_MODE: long only",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE_SHORTONLY": {
+      "description": "ENUM_SYMBOL_TRADE_MODE: short only",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE_CLOSEONLY": {
+      "description": "ENUM_SYMBOL_TRADE_MODE: close only",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_MODE_FULL": {
+      "description": "ENUM_SYMBOL_TRADE_MODE: full trading",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_STOPS_LEVEL": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: minimum stop distance in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_FREEZE_LEVEL": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: freeze distance in points",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_EXEMODE": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: trade execution mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SWAP_MODE": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: swap calculation mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SWAP_ROLLOVER3DAYS": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: 3-day swap rollover day",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_POINT": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: point size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_TICK_VALUE": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: tick value",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_TICK_SIZE": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: tick size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TRADE_CONTRACT_SIZE": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: contract size",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUME_MIN": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: minimum volume",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUME_MAX": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: maximum volume",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUME_STEP": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: volume step",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUME_LIMIT": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: max aggregate volume",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SWAP_LONG": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: long swap",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_SWAP_SHORT": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: short swap",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_MARGIN_INITIAL": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: initial margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_MARGIN_MAINTENANCE": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: maintenance margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_ASK": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: current ask price",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_BID": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: current bid price",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_LAST": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: last deal price",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUME": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: last deal volume",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUMEHIGH": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: max volume of the day",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_VOLUMELOW": {
+      "description": "ENUM_SYMBOL_INFO_DOUBLE: min volume of the day",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TIME": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: last quote time",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_TIME_MSC": {
+      "description": "ENUM_SYMBOL_INFO_INTEGER: last quote time in ms",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_CURRENCY_BASE": {
+      "description": "ENUM_SYMBOL_INFO_STRING: base currency",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_CURRENCY_PROFIT": {
+      "description": "ENUM_SYMBOL_INFO_STRING: profit currency",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "SYMBOL_CURRENCY_MARGIN": {
+      "description": "ENUM_SYMBOL_INFO_STRING: margin currency",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_LOGIN": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: account number",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_MODE": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: account trade mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_MODE_DEMO": {
+      "description": "ENUM_ACCOUNT_TRADE_MODE: demo account",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_MODE_CONTEST": {
+      "description": "ENUM_ACCOUNT_TRADE_MODE: contest account",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_MODE_REAL": {
+      "description": "ENUM_ACCOUNT_TRADE_MODE: real account",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_LEVERAGE": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: leverage",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_LIMIT_ORDERS": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: max active pending orders",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN_MODE": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: margin calculation mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_ALLOWED": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: trading allowed for the account",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_TRADE_EXPERT": {
+      "description": "ENUM_ACCOUNT_INFO_INTEGER: EA trading allowed",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_BALANCE": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: balance",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_CREDIT": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: credit",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_PROFIT": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: current profit",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_EQUITY": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: equity",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: used margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN_FREE": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: free margin",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN_LEVEL": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: margin level %",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN_SO_CALL": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: margin call level",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_MARGIN_SO_SO": {
+      "description": "ENUM_ACCOUNT_INFO_DOUBLE: stop-out level",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_STOPOUT_MODE_PERCENT": {
+      "description": "ENUM_ACCOUNT_STOPOUT_MODE: stop-out as percentage",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_STOPOUT_MODE_MONEY": {
+      "description": "ENUM_ACCOUNT_STOPOUT_MODE: stop-out as money",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_NAME": {
+      "description": "ENUM_ACCOUNT_INFO_STRING: account name",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_SERVER": {
+      "description": "ENUM_ACCOUNT_INFO_STRING: trade server",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_CURRENCY": {
+      "description": "ENUM_ACCOUNT_INFO_STRING: account currency",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ACCOUNT_COMPANY": {
+      "description": "ENUM_ACCOUNT_INFO_STRING: broker company",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_TESTER": {
+      "description": "ENUM_MQL_INFO_INTEGER: running in the tester",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_OPTIMIZATION": {
+      "description": "ENUM_MQL_INFO_INTEGER: running in optimization",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_VISUAL_MODE": {
+      "description": "ENUM_MQL_INFO_INTEGER: visual testing mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_TRADE_ALLOWED": {
+      "description": "ENUM_MQL_INFO_INTEGER: EA trading allowed",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_TRADE_EXPERT": {
+      "description": "ENUM_MQL_INFO_INTEGER: an EA is running",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_TRADE_MODE": {
+      "description": "ENUM_MQL_INFO_INTEGER: MQLInfo trade mode",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_PROGRAM_NAME": {
+      "description": "ENUM_MQL_INFO_STRING: program name",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MQL_PROGRAM_PATH": {
+      "description": "ENUM_MQL_INFO_STRING: program path",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "REASON_CHARTCLOSE": {
+      "description": "ENUM_UNINIT_REASON constant: terminal closed the chart",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/uninitialization_reasons",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "TERMINAL_CONNECTED": {
+      "description": "Terminal property: terminal connected to the server",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/terminalconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "TERMINAL_TRADE_ALLOWED": {
+      "description": "Terminal property: AutoTrading enabled",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/terminalconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "TERMINAL_DLLS_ALLOWED": {
+      "description": "Terminal property: DLL imports allowed",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/terminalconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "OBJ_RECTANGLE_LABEL": {
+      "description": "ENUM_OBJECT type: rectangle label object",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/objectconstants/enum_object",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_ACCOUNT_TRADE_MODE": {
+      "description": "Enumeration type: account trade modes",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_SYMBOL_INFO_INTEGER": {
+      "description": "Enumeration type: symbol integer properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_SYMBOL_INFO_DOUBLE": {
+      "description": "Enumeration type: symbol double properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_SYMBOL_INFO_STRING": {
+      "description": "Enumeration type: symbol string properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_SYMBOL_TRADE_MODE": {
+      "description": "Enumeration type: symbol trading modes",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_ACCOUNT_INFO_INTEGER": {
+      "description": "Enumeration type: account integer properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_ACCOUNT_INFO_DOUBLE": {
+      "description": "Enumeration type: account double properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_ACCOUNT_INFO_STRING": {
+      "description": "Enumeration type: account string properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_ACCOUNT_STOPOUT_MODE": {
+      "description": "Enumeration type: account stop-out modes",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/accountconstants",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_MQL_INFO_INTEGER": {
+      "description": "Enumeration type: MQLInfoInteger properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_MQL_INFO_STRING": {
+      "description": "Enumeration type: MQLInfoString properties",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/environment_state/mqlinfointeger",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "ENUM_DAY_OF_WEEK": {
+      "description": "Enumeration type: days of the week",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/marketinformation",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "clrNONE": {
+      "description": "Special color constant: no color (transparent)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/webcolors",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MqlTick": {
+      "description": "Structure: latest quote prices (tick data)",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/structures/mqltick",
+      "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "MqlDateTime": {
+      "description": "Structure: date/time components",
+      "apiTier": "shared",
+      "docUrl": "https://docs.mql4.com/constants/structures/mqldatetime",
+      "provenance": "mql4-reference-enrichment-rc2"
     }
   }
 }
