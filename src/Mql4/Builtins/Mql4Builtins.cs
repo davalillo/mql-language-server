@@ -276,7 +276,33 @@ namespace MqlLanguageServer.Mql4.Builtins
             { "GetLastError", "int GetLastError()" },
 
             // Constants and Enums
-            { "EnumToString", "string EnumToString(Enum value)" }
+            { "EnumToString", "string EnumToString(Enum value)" },
+
+            // --- Issue #126 (EA-document sweep): core MQL4 functions missing from the
+            // registry. All are documented MQL4 (build 600+) API; the flagged set is
+            // pinned by the Issue126EaDocumentFalsePositivesTests regression guard.
+            { "Sleep", "void Sleep(int milliseconds)" },
+            { "ChartID", "long ChartID()" },
+            { "ChartGetInteger", "long ChartGetInteger(long chart_id, int property_id, int sub_window=0)" },
+            { "ChartSetInteger", "bool ChartSetInteger(long chart_id, int property_id, long value)" },
+            { "ChartGetString", "string ChartGetString(long chart_id, int property_id)" },
+            { "ChartGetDouble", "double ChartGetDouble(long chart_id, int property_id)" },
+            { "ChartRedraw", "void ChartRedraw(long chart_id=0)" },
+            { "iTime", "datetime iTime(string symbol, int timeframe, int shift)" },
+            { "PrintFormat", "void PrintFormat(string format, ...)" },
+            { "GlobalVariableSet", "datetime GlobalVariableSet(string name, double value)" },
+            { "GlobalVariableGet", "double GlobalVariableGet(string name)" },
+            { "StringToTime", "datetime StringToTime(string value)" },
+            { "FileWriteInteger", "uint FileWriteInteger(int handle, int value, int size=INT_VALUE)" },
+            { "FileReadInteger", "int FileReadInteger(int handle, int size=INT_VALUE)" },
+            { "FileFlush", "void FileFlush(int handle)" },
+            { "ZeroMemory", "void ZeroMemory(void &variable)" },
+            { "TerminalClose", "void TerminalClose(int result)" },
+            { "ExpertRemove", "void ExpertRemove()" },
+            { "ObjectsTotal", "int ObjectsTotal(long chart_id, int sub_window=-1, int type=-1)" },
+            { "ResetLastError", "void ResetLastError()" },
+            { "rand", "int rand()" },
+            { "round", "double round(double value)" }
         });
 
         // Lazy-initialized dictionary for built-in variables
@@ -573,7 +599,24 @@ namespace MqlLanguageServer.Mql4.Builtins
             { "ENUM_ARROW_ANCHOR", "Enumeration type: arrow anchor points" },
             { "ENUM_ALIGN_MODE", "Enumeration type: text alignment modes" },
             { "ENUM_LINE_STYLE", "Enumeration type: line styles" },
-            { "ENUM_OBJECT", "Enumeration type: object types" }
+            { "ENUM_OBJECT", "Enumeration type: object types" },
+
+            // --- Issue #126 (EA-document sweep): underscore predefined variables are
+            // valid MQL4 (build 600+). Their exclusion from dialect *sniffing markers*
+            // (issue #16) is orthogonal: here they are API, not routing evidence.
+            { "_Digits", "Number of decimal places in the current symbol prices" },
+            { "_Point", "Point size of the current symbol in the quote currency" },
+            { "_Symbol", "Current chart symbol" },
+            { "_Period", "Current chart timeframe" },
+
+            // --- Issue #126: stdlib enum constants flagged by the EA fixture.
+            // ENUM_TIMEFRAMES / ENUM_CHART_MODE / object properties exist in MQL4
+            // build 600+ with the same names as MQL5.
+            { "PERIOD_CURRENT", "ENUM_TIMEFRAMES constant: current chart period" },
+            { "CHART_BARS", "ENUM_CHART_MODE constant: bars" },
+            { "CHART_CANDLES", "ENUM_CHART_MODE constant: candles" },
+            { "CHART_LINE", "ENUM_CHART_MODE constant: line" },
+            { "OBJPROP_BMPFILE", "Object property: BMP file name for the Bitmap/Bitmap Label objects" }
         });
 
         /// <summary>
