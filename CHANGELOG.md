@@ -1,3 +1,13 @@
+## [2.5.1-rc.3] - 2026-10-01
+
+Release candidate 3 of the 2.5.1 line: the empirical verification of rc.2 against the real-world MQL4 fixtures exposed that the golden lists inherited unreported gaps from the hand-curated registries — 499 registry-attributable `1070` false positives from documented API no incident had ever filed. This release closes them with a documentation-driven enrichment pass; the registry-attributable fp-1070 count on the corpus is now **0** (18 remaining diagnostics are identifiers inside system includes absent from the workspace — correct behavior).
+
+### Fixed
+- fix(data): MQL4 reference-enrichment pass (#138) — +360 entries enumerated from `docs.mql4.com` (MQL4 registry now 901): the full `Object*` function family, `Math*`, legacy datetime helpers (`Hour`, `Day`, …), `MarketInfo`/`SymbolInfo*` families and their `ENUM_SYMBOL_INFO_*`/`MODE_*` constants, the 140 web colors plus `clrNONE`, `MessageBox` constants (`MB_*`, `ID*`), chart events (`CHARTEVENT_*`), `ENUM_BASE_CORNER`/`ENUM_ALIGN_MODE`/`ENUM_ANCHOR_POINT`/`ENUM_BORDER_TYPE`, `ENUM_ACCOUNT_*`, `ENUM_MQL_INFO_*`, and the `MqlTick`/`MqlDateTime` structures. Every entry carries `provenance: mql4-reference-enrichment-rc2` + a documentation URL — the corpus was the trigger, never the source of truth.
+
+### Added
+- test: 49 regression pins for the enriched names (`Issue136BuiltinRegistryCoverageTests`); suite 1397 passing.
+
 ## [2.5.1-rc.2] - 2026-10-01
 
 Release candidate 2 of the 2.5.1 line: closes the registry-completeness root cause behind the recurring `1070` false-positive class (#46 → #109 → #126 → #136) by replacing the hand-curated builtin registries with documentation-driven golden lists, and unifies the MQL4→MQL5 migration layer (#34) onto the same data.
