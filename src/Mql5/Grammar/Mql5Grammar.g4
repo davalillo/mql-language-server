@@ -76,6 +76,11 @@ K_CONST     : 'const';
 K_VIRTUAL   : 'virtual';
 K_OVERRIDE  : 'override';
 K_FINAL     : 'final';
+// Issue #141: `abstract` class modifier. NOTE: unlike `final`, `abstract` is
+// not in the official MQL5 reserved-words list; classes become abstract via
+// pure virtual functions. We still accept `abstract class ...` so documented
+// style examples (and legacy authoring habits) parse without spurious errors.
+K_ABSTRACT  : 'abstract';
 // Issue #26: `inline` storage-class keyword on out-of-class member definitions
 // (e.g. `inline bool CClass::Method(...)`). Valid MQL4/MQL5.
 K_INLINE    : 'inline';
@@ -290,12 +295,20 @@ parameter
     ;
 
 // --- Classes & Structs & Unions & Interfaces ---
+// Issue #141: documented class modifiers. Per the MQL5 reference
+// (docs/basis/types/classes#final_class) and the official MQL5Book examples
+// (`class Derived final : public Base`), `final` goes AFTER the class name,
+// BEFORE the optional base clause. `abstract` is accepted as a leading
+// modifier (`abstract class CAnimal { ... };`) so such declarations parse as
+// a single declaration instead of relying on ANTLR error recovery.
 classDeclaration
-    : K_CLASS IDENTIFIER (COLON accessModifier qualifiedName)? LBRACE classBody RBRACE SEMICOLON
+    : K_ABSTRACT? K_CLASS IDENTIFIER K_FINAL? (COLON accessModifier qualifiedName)? LBRACE classBody RBRACE SEMICOLON
     ;
 
+// Issue #141: the reference documents the same `final` suffix for structures
+// (docs/basis/types/classes#final_struct: `struct settings final { ... };`).
 structDeclaration
-    : K_STRUCT IDENTIFIER (COLON accessModifier qualifiedName)? LBRACE classBody RBRACE SEMICOLON
+    : K_STRUCT IDENTIFIER K_FINAL? (COLON accessModifier qualifiedName)? LBRACE classBody RBRACE SEMICOLON
     ;
 
 unionDeclaration
