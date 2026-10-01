@@ -263,6 +263,14 @@ public class Mql5Builtins : IMqlBuiltins
         { "PERIOD_W1", "ENUM_TIMEFRAMES chart period constant: 1 week" },
         { "PERIOD_MN1", "ENUM_TIMEFRAMES chart period constant: 1 month" },
 
+        // --- Issue #126 (EA-document sweep): stdlib enum constants flagged by the
+        // synthetic EA fixture; pinned by Issue126EaDocumentFalsePositivesTests.
+        { "PERIOD_CURRENT", "ENUM_TIMEFRAMES constant: current chart period" },
+        { "CHART_BARS", "ENUM_CHART_MODE constant: bars" },
+        { "CHART_CANDLES", "ENUM_CHART_MODE constant: candles" },
+        { "CHART_LINE", "ENUM_CHART_MODE constant: line" },
+        { "OBJPROP_BMPFILE", "Object property: BMP file name for the Bitmap/Bitmap Label objects" },
+
         // ENUM_APPLIED_PRICE constants
         { "PRICE_CLOSE", "ENUM_APPLIED_PRICE constant: close price" },
         { "PRICE_OPEN", "ENUM_APPLIED_PRICE constant: open price" },

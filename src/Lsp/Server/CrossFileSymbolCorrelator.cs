@@ -90,7 +90,7 @@ public static class CrossFileSymbolCorrelator
         }
 
         // Tier 1: names declared anywhere in the document's include closure.
-        var closureNames = CollectIncludeClosureDeclaredNames(mqlFile, documentPath, language, index, token);
+        var (closureNames, closurePaths) = CollectIncludeClosureDeclaredNames(mqlFile, documentPath, language, index, token);
 
         var result = new List<Diagnostic>(diagnostics.Count);
         foreach (var diagnostic in diagnostics)
@@ -110,6 +110,21 @@ public static class CrossFileSymbolCorrelator
                 continue;
             }
 
+            // Tier 1b (issue #126) — declared in an included header even though
+            // the symbol tree does not model it: enum members and enum type
+            // names are not captured as symbols by the dialect visitors, but
+            // they ARE lexer identifier occurrences in the header (indexed by
+            // the workspace scan). A name with any occurrence inside the
+            // closure files is resolvable from the document's point of view.
+            // Tradeoff (accepted, mirrors the doc-local rule's own flattening):
+            // an identifier that only ever appears inside a header function
+            // body also suppresses. Comments/strings never yield identifier
+            // occurrences, so prose cannot silence diagnostics.
+            if (HasOccurrenceInClosure(index, symbolName, language, closurePaths))
+            {
+                continue;
+            }
+
             // Tier 2 — declared elsewhere in the indexed workspace (same language).
             if (index.FindSymbol(symbolName, language).Count > 0)
             {
@@ -123,12 +138,35 @@ public static class CrossFileSymbolCorrelator
     }
 
     /// <summary>
+    /// Issue #126: true when the index holds at least one identifier occurrence
+    /// of <paramref name="symbolName"/> in a file belonging to the document's
+    /// include closure. Read-only index query (O(1) name bucket); the closure
+    /// set is built once per diagnostics request.
+    /// </summary>
+    private static bool HasOccurrenceInClosure(
+        GlobalSymbolIndex index,
+        string symbolName,
+        MqlLanguage language,
+        HashSet<string> closurePaths)
+    {
+        foreach (var occurrence in index.FindOccurrences(symbolName, language))
+        {
+            if (closurePaths.Contains(occurrence.FilePath))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Walks the document's include closure (quoted includes only, visited-set
     /// cycle guard, depth cap of 8) and collects the names of every symbol the
     /// index knows for the closure files in <paramref name="language"/>.
     /// Unreadable or unresolvable headers degrade silently (fail open).
     /// </summary>
-    private static HashSet<string> CollectIncludeClosureDeclaredNames(
+    private static (HashSet<string> Names, HashSet<string> Paths) CollectIncludeClosureDeclaredNames(
         MqlFile? mqlFile,
         string documentPath,
         MqlLanguage language,
@@ -139,6 +177,7 @@ public static class CrossFileSymbolCorrelator
         // casing differs from the declaration is a genuine error and must
         // still surface. Filesystem paths stay case-insensitive (Windows).
         var names = new HashSet<string>(StringComparer.Ordinal);
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // Seed: the document's own stored include entries (canonical
@@ -171,6 +210,8 @@ public static class CrossFileSymbolCorrelator
                 continue;
             }
 
+            paths.Add(headerPath);
+
             var declared = index.GetFileSymbols(headerPath, language);
             if (declared != null)
             {
@@ -198,7 +239,7 @@ public static class CrossFileSymbolCorrelator
             }
         }
 
-        return names;
+        return (names, paths);
     }
 
     /// <summary>
