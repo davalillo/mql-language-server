@@ -72,11 +72,9 @@ public class DiagnosticHandlerTests
 
     #region Valid File Tests
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_ValidFile_ReturnsDiagnosticReportWithResultIdAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var serviceProviderMock = Substitute.For<IServiceProvider>();
@@ -100,11 +98,9 @@ public class DiagnosticHandlerTests
         Assert.NotEmpty(report.ResultId);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_RealFile_CanProcessFileWithoutErrorsAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var serviceProviderMock = Substitute.For<IServiceProvider>();
@@ -128,12 +124,10 @@ public class DiagnosticHandlerTests
         Assert.NotNull(report.ResultId);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_SameFileTwice_ReturnsConsistentReportAsync()
     {
         // Skip if running in CI (this test can be flaky due to timing)
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping flaky test in CI environment");
 
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
@@ -172,11 +166,9 @@ public class DiagnosticHandlerTests
         Assert.NotEqual(report1.ResultId, report2.ResultId);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_RealFile_CanReadAndProcessFileAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with real file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         
@@ -209,11 +201,9 @@ public class DiagnosticHandlerTests
 
     #region Documents With Diagnostics Tests
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_FileWithDiagnostics_ReturnsNonEmptyDiagnosticItemsAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
@@ -240,11 +230,9 @@ public class DiagnosticHandlerTests
         Assert.NotEmpty(report.Items);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_FileWithDiagnostics_DetectsTypoErrorsAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
@@ -271,11 +259,9 @@ public class DiagnosticHandlerTests
         Assert.All(typoDiagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_FileWithDiagnostics_DetectsEmptyOnInitWarningAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
@@ -301,11 +287,9 @@ public class DiagnosticHandlerTests
         Assert.Contains("OnInit", onInitWarning.Message);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_FileWithDiagnostics_DoesNotFlagUnderscoreVariablesAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
@@ -332,11 +316,9 @@ public class DiagnosticHandlerTests
         Assert.Null(underscoreHint);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Handle_FileWithDiagnostics_ContainsAllDiagnosticTypesAsync()
     {
-        Skip.If(Environment.GetEnvironmentVariable("CI") == "true",
-            "Skipping test in CI due to potential timeout with file processing");
         // Arrange
         var loggerMock = Substitute.For<ILogger<DiagnosticHandler>>();
         var parser = new Mql4AntlrParser();
