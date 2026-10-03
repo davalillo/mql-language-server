@@ -1700,6 +1700,124 @@
       "apiTier": "shared",
       "docUrl": "https://docs.mql4.com/convert",
       "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "CharToStr": {
+      "signature": "string CharToStr(uchar char_code)",
+      "mql4OnlyApi": true,
+      "mql5Mapping": {
+        "replacement": "CharToString",
+        "kind": "rename",
+        "semanticsChanged": false,
+        "note": "Deprecated MQL4 alias; MQL5 documents CharToString(uchar,char_code) with identical semantics"
+      },
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "StrToInteger": {
+      "signature": "int StrToInteger(string value)",
+      "mql4OnlyApi": true,
+      "mql5Mapping": {
+        "replacement": "StringToInteger",
+        "kind": "rename",
+        "semanticsChanged": false,
+        "note": "Deprecated MQL4 alias; StringToInteger(string) with identical semantics"
+      },
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "FileDelete": {
+      "signature": "bool FileDelete(const string file_name, int common_flag=0)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "FileIsExist": {
+      "signature": "bool FileIsExist(const string file_name, int common_flag=0)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TesterStatistics": {
+      "signature": "double TesterStatistics(ENUM_STATISTICS statistic_id)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TimeToStruct": {
+      "signature": "bool TimeToStruct(datetime dt, MqlDateTime& dt_struct)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ArrayFree": {
+      "signature": "void ArrayFree(void& array[])",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ShortArrayToString": {
+      "signature": "string ShortArrayToString(ushort array[], int start=0, int count=-1)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "StringToShortArray": {
+      "signature": "int StringToShortArray(string text, ushort& array[], int start=0, int count=-1)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ObjectMove": {
+      "signature": "bool ObjectMove(long chart_id, string object_name, int point_index, datetime time, double price)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ObjectGetValueByShift": {
+      "signature": "double ObjectGetValueByShift(string object_name, int shift)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ChartClose": {
+      "signature": "bool ChartClose(long chart_id=0)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ChartFirst": {
+      "signature": "long ChartFirst()",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ChartNext": {
+      "signature": "long ChartNext(long chart_id)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ChartOpen": {
+      "signature": "long ChartOpen(string symbol, int period)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "ChartXYToTimePrice": {
+      "signature": "bool ChartXYToTimePrice(long chart_id, int x, int y, int sub_window, datetime& time, double& price)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "CopyTime": {
+      "signature": "int CopyTime(string symbol_name, ENUM_TIMEFRAMES timeframe, datetime start_time, int count, datetime& time_array[])",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "EventChartCustom": {
+      "signature": "bool EventChartCustom(long chart_id, ushort eventid, long lparam, double dparam, string sparam)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "HideTestIndicators": {
+      "signature": "void HideTestIndicators(bool hide)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TextGetSize": {
+      "signature": "bool TextGetSize(string text, uint& width, uint& height)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TextSetFont": {
+      "signature": "bool TextSetFont(string name, int size=0, uint flags=0, int orientation=0)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "WindowBarsPerChart": {
+      "signature": "int WindowBarsPerChart()",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "WindowFirstVisibleBar": {
+      "signature": "int WindowFirstVisibleBar()",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "WindowHandle": {
+      "signature": "int WindowHandle(string symbol, int timeframe)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "WindowPriceMax": {
+      "signature": "double WindowPriceMax(int shift=0)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "WindowPriceMin": {
+      "signature": "double WindowPriceMin(int shift=0)",
+      "provenance": "issue152-corpus-enrichment"
     }
   },
   "variables": {
@@ -4781,6 +4899,122 @@
       "apiTier": "shared",
       "docUrl": "https://docs.mql4.com/constants/structures/mqldatetime",
       "provenance": "mql4-reference-enrichment-rc2"
+    },
+    "STAT_INITIAL_DEPOSIT": {
+      "description": "ENUM_STATISTICS: the initial deposit",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_PROFIT": {
+      "description": "ENUM_STATISTICS: current net profit",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_GROSS_PROFIT": {
+      "description": "ENUM_STATISTICS: total gross profit",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_GROSS_LOSS": {
+      "description": "ENUM_STATISTICS: total gross loss",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_EQUITY_DD": {
+      "description": "ENUM_STATISTICS: maximal equity drawdown in money",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_EQUITYDD_PERCENT": {
+      "description": "ENUM_STATISTICS: maximal equity drawdown in percents",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_PROFIT_FACTOR": {
+      "description": "ENUM_STATISTICS: profit factor",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_TRADES": {
+      "description": "ENUM_STATISTICS: number of trading deals",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_PROFIT_TRADES": {
+      "description": "ENUM_STATISTICS: number of profitable trades",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "STAT_LOSS_TRADES": {
+      "description": "ENUM_STATISTICS: number of losing trades",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "FILE_CSV": {
+      "description": "File open flag: CSV file (of the selected type), all elements have the specified type",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "FILE_READ": {
+      "description": "File open flag: file is opened for reading",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "FILE_WRITE": {
+      "description": "File open flag: file is opened for writing",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "SEEK_END": {
+      "description": "File pointer seek origin: end of file",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TIME_DATE": {
+      "description": "TimeToString flag: result string in 'yyyy.mm.dd' format",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "TIME_SECONDS": {
+      "description": "TimeToString flag: result string in 'hh:mi:ss' format",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "Aqua": {
+      "description": "Web color constant #00FFFF",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "Blue": {
+      "description": "Web color constant #0000FF",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "Red": {
+      "description": "Web color constant #FF0000",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "Yellow": {
+      "description": "Web color constant #FFFF00",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "Lime": {
+      "description": "Web color constant #00FF00",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "HotPink": {
+      "description": "Web color constant #FF69B4",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "DeepSkyBlue": {
+      "description": "Web color constant #00BFFF",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "White": {
+      "description": "Web color constant #FFFFFF",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "CHARTS_MAX": {
+      "description": "Named constant: the maximum possible number of simultaneously open charts in the terminal (100)",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "CHART_COLOR_BACKGROUND": {
+      "description": "ENUM_CHART_PROPERTY_INTEGER: chart background color",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "CHART_SHOW_TRADE_LEVELS": {
+      "description": "ENUM_CHART_PROPERTY_INTEGER: displaying trade levels in the chart",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "OBJPROP_RAY_RIGHT": {
+      "description": "ENUM_OBJECT_PROPERTY_INTEGER: ray goes to the right",
+      "provenance": "issue152-corpus-enrichment"
+    },
+    "__FUNCTION__": {
+      "description": "Predefined macro substitution: name of the function in whose body the macro is located",
+      "provenance": "issue152-corpus-enrichment"
     }
   }
 }
