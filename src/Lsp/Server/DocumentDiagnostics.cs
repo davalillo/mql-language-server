@@ -33,6 +33,51 @@ public static class DocumentDiagnostics
     public const int Mql5DiagnosticBase = 5000;
 
     /// <summary>
+    /// Parse-level diagnostics only (issue #150): the ANTLR syntax errors of a
+    /// parsed model, already projected to the dialect's diagnostic code range
+    /// (1100 for MQL4, 5100 for MQL5).
+    ///
+    /// <para>Used by the pull channel as the degraded-but-honest answer when
+    /// the full rule set overruns its generation budget: parse errors are the
+    /// cheapest and most actionable signal, and returning them instead of an
+    /// empty report guarantees a budget overrun can never masquerade as
+    /// "document is clean".</para>
+    /// </summary>
+    public static List<Diagnostic> GenerateSyntaxErrors(
+        MqlFile? mqlFile,
+        MqlLanguage language,
+        CancellationToken token)
+    {
+        var diagnostics = new List<Diagnostic>();
+        var baseCode = language == MqlLanguage.Mql5 ? Mql5DiagnosticBase : Mql4DiagnosticBase;
+
+        // ANTLR uses 1-based lines and 0-based columns; LSP uses 0-based for both.
+        if (mqlFile?.SyntaxErrors == null)
+        {
+            return diagnostics;
+        }
+
+        foreach (var syntaxError in mqlFile.SyntaxErrors)
+        {
+            token.ThrowIfCancellationRequested();
+
+            var length = syntaxError.OffendingSymbol?.Length ?? 1;
+            diagnostics.Add(new Diagnostic
+            {
+                Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                    syntaxError.Line - 1, syntaxError.Column,
+                    syntaxError.Line - 1, syntaxError.Column + length),
+                Severity = DiagnosticSeverity.Error,
+                Message = syntaxError.Message,
+                Code = (baseCode + 100).ToString(),  // 1100 for MQL4, 5100 for MQL5
+                Source = "mql-lsp"
+            });
+        }
+
+        return diagnostics;
+    }
+
+    /// <summary>
     /// Generate the full diagnostic set for one document state (model +
     /// content MUST come from the same source — for open documents, the
     /// store's buffer, per the #86 buffer-vs-disk rule).
@@ -55,26 +100,7 @@ public static class DocumentDiagnostics
         var baseCode = language == MqlLanguage.Mql5 ? Mql5DiagnosticBase : Mql4DiagnosticBase;
 
         // Publish real syntax errors from the parser.
-        // ANTLR uses 1-based lines and 0-based columns; LSP uses 0-based for both.
-        if (mqlFile?.SyntaxErrors != null)
-        {
-            foreach (var syntaxError in mqlFile.SyntaxErrors)
-            {
-                token.ThrowIfCancellationRequested();
-
-                var length = syntaxError.OffendingSymbol?.Length ?? 1;
-                diagnostics.Add(new Diagnostic
-                {
-                    Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
-                        syntaxError.Line - 1, syntaxError.Column,
-                        syntaxError.Line - 1, syntaxError.Column + length),
-                    Severity = DiagnosticSeverity.Error,
-                    Message = syntaxError.Message,
-                    Code = (baseCode + 100).ToString(),  // 1100 for MQL4, 5100 for MQL5
-                    Source = "mql-lsp"
-                });
-            }
-        }
+        diagnostics.AddRange(GenerateSyntaxErrors(mqlFile, language, token));
 
         // Issue #28: MQL-native semantic rules run after syntax errors and
         // before the line-scan heuristics. Failures inside the analyzer are
