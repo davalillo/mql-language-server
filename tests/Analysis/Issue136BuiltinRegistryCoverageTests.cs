@@ -102,6 +102,49 @@ public class Issue136BuiltinRegistryCoverageTests
         return data;
     }
 
+    // --- Issue #152 real-corpus enrichment: documented MQL4 functions ------
+    // --- flagged as unresolved on the Botlidator/Optimator/Ducibus corpus -
+    private static readonly string[] Mql4CorpusEnrichmentFunctions =
+    {
+        // deprecated MQL4 aliases (REQ-MA-02 admissions, mql5Mapping present)
+        "CharToStr", "StrToInteger",
+        // file operations
+        "FileDelete", "FileIsExist",
+        // tester + date conversion
+        "TesterStatistics", "TimeToStruct",
+        // arrays + string conversions
+        "ArrayFree", "ShortArrayToString", "StringToShortArray",
+        // objects + chart operations + series + common + window + text
+        "ObjectMove", "ObjectGetValueByShift",
+        "ChartClose", "ChartFirst", "ChartNext", "ChartOpen", "ChartXYToTimePrice",
+        "CopyTime", "EventChartCustom", "HideTestIndicators",
+        "TextGetSize", "TextSetFont",
+        "WindowBarsPerChart", "WindowFirstVisibleBar", "WindowHandle",
+        "WindowPriceMax", "WindowPriceMin",
+    };
+
+    // --- Issue #152 real-corpus enrichment: documented MQL4 constants and --
+    // --- predefined macros flagged as unresolved on the same corpus -------
+    // (MQL4-only assertions: several of these are absent from mql5.json by
+    // design — the corpus is MQL4 and the MQL5 side is a separate dataset.)
+    private static readonly string[] Mql4CorpusEnrichmentConstants =
+    {
+        // ENUM_STATISTICS (TesterStatistics)
+        "STAT_INITIAL_DEPOSIT", "STAT_PROFIT", "STAT_GROSS_PROFIT", "STAT_GROSS_LOSS",
+        "STAT_EQUITY_DD", "STAT_EQUITYDD_PERCENT", "STAT_PROFIT_FACTOR",
+        "STAT_TRADES", "STAT_PROFIT_TRADES", "STAT_LOSS_TRADES",
+        // file open flags + seek origin
+        "FILE_CSV", "FILE_READ", "FILE_WRITE", "SEEK_END",
+        // TimeToString flags
+        "TIME_DATE", "TIME_SECONDS",
+        // web colors
+        "Aqua", "Blue", "Red", "Yellow", "Lime", "HotPink", "DeepSkyBlue", "White",
+        // chart / object properties + named constant
+        "CHARTS_MAX", "CHART_COLOR_BACKGROUND", "CHART_SHOW_TRADE_LEVELS", "OBJPROP_RAY_RIGHT",
+        // predefined macro substitution
+        "__FUNCTION__",
+    };
+
     [Theory]
     [MemberData(nameof(ReferenceEnrichmentNames))]
     public void Mql4ReferenceEnrichedNames_AreRegistered(string name)
@@ -109,10 +152,26 @@ public class Issue136BuiltinRegistryCoverageTests
         Assert.True(Mql4Builtins.IsBuiltin(name), $"MQL4 registry is missing documented name '{name}'");
     }
 
+    [Theory]
+    [MemberData(nameof(CorpusEnrichmentFunctionNames))]
+    public void Mql4CorpusEnrichedFunctions_AreRegistered(string name)
+    {
+        Assert.True(Mql4Builtins.IsBuiltinFunction(name), $"MQL4 registry is missing documented function '{name}' (issue #152 corpus)");
+    }
+
+    [Theory]
+    [MemberData(nameof(CorpusEnrichmentConstantNames))]
+    public void Mql4CorpusEnrichedConstants_AreRegistered(string name)
+    {
+        Assert.True(Mql4Builtins.IsBuiltinVariable(name), $"MQL4 registry is missing documented constant '{name}' (issue #152 corpus)");
+    }
+
     public static TheoryData<string> CoreFunctionNames() => ToTheoryData(CoreFunctionsBothDialects);
     public static TheoryData<string> Mql4FunctionNames() => ToTheoryData(Mql4Functions);
     public static TheoryData<string> UnderscoreVariableNames() => ToTheoryData(Mql4UnderscoreVariables);
     public static TheoryData<string> EnumConstantNames() => ToTheoryData(StdlibEnumConstants);
+    public static TheoryData<string> CorpusEnrichmentFunctionNames() => ToTheoryData(Mql4CorpusEnrichmentFunctions);
+    public static TheoryData<string> CorpusEnrichmentConstantNames() => ToTheoryData(Mql4CorpusEnrichmentConstants);
 
     private static TheoryData<string> ToTheoryData(string[] names)
     {

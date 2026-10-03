@@ -36,7 +36,9 @@ public class Mql4OnlyApiRuleTests
         // Dedup: FrozenDictionary keys are unique by construction, but the
         // check documents the curated-table invariant explicitly.
         Assert.Equal(names.Count, names.Distinct().Count());
-        Assert.Equal(47, names.Count);
+        // 47 pre-#152 admissions + CharToStr and StrToInteger (issue #152
+        // corpus enrichment: deprecated MQL4 aliases with mql5Mapping).
+        Assert.Equal(49, names.Count);
 
         foreach (var (key, entry) in Mql4OnlyApiRegistry.Entries)
         {
