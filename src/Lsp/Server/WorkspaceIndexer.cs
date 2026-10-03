@@ -54,6 +54,27 @@ public class WorkspaceIndexer
     private readonly GlobalSymbolIndexAccessor _symbolIndex;
     private CancellationTokenSource? _cts;
 
+    /// <summary>
+    /// Issue #95: optional client-facing scan-lifecycle notifier. Null by
+    /// default (production wires it in Program.cs; tests may capture it).
+    /// The indexer stays decoupled from the LSP facade — the caller maps
+    /// (LogLevel, message) onto window/logMessage. Notifications are
+    /// best-effort on both sides.
+    /// </summary>
+    public Action<LogLevel, string>? ScanNotifier { get; set; }
+
+    private void Notify(LogLevel level, string message)
+    {
+        try
+        {
+            ScanNotifier?.Invoke(level, message);
+        }
+        catch
+        {
+            // Observability is best-effort; never break the scan (WI-05).
+        }
+    }
+
     public WorkspaceIndexer(
         ILogger<WorkspaceIndexer> logger,
         MqlLanguageService languageService,
@@ -109,7 +130,18 @@ public class WorkspaceIndexer
                     if (token.IsCancellationRequested)
                         break;
 
-                    ScanWorkspaceFolder(folder, token, onFileIndexed);
+                    // Issue #95: a folder-level failure (inaccessible root,
+                    // pathological tree) must not prevent the remaining folders
+                    // from being scanned — WI-05 extended from files to folders.
+                    try
+                    {
+                        ScanWorkspaceFolder(folder, token, onFileIndexed);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Workspace scan failed for folder {Folder}; continuing with the next folder.", folder);
+                        Notify(LogLevel.Warning, $"Workspace scan failed for folder '{folder}'; continuing with a partial index. ({ex.GetType().Name})");
+                    }
                 }
             }
             catch (OperationCanceledException)
@@ -154,9 +186,10 @@ public class WorkspaceIndexer
             AttributesToSkip = FileAttributes.Hidden | FileAttributes.System
         };
 
-        var files = ScanDirectory(folder, options, token).ToList();
+        var files = ScanDirectory(folder, options, token, new HashSet<string>(StringComparer.OrdinalIgnoreCase)).ToList();
 
         _logger.LogInformation("Workspace scan started: {Folder} ({FileCount} candidate files)", folder, files.Count);
+        Notify(LogLevel.Information, $"Workspace scan started: {folder} ({files.Count} candidate files)");
 
         // Issue #16 Phase 2: a .mqh file's language is decided by who includes
         // it, not by its content. Pass A indexes only the unambiguous
@@ -221,22 +254,48 @@ public class WorkspaceIndexer
         }
 
         _logger.LogInformation("Workspace scan finished: {Folder} ({IndexedCount}/{FileCount} files indexed)", folder, indexed, files.Count);
+        Notify(LogLevel.Information, $"Workspace scan finished: {indexed}/{files.Count} files indexed in {folder}");
     }
 
     /// <summary>
     /// Recursively enumerate supported files, pruning excluded directories
     /// (WI-04) and hidden dot-directories.
+    ///
+    /// <para>Issue #95 hardening, driven by a real-project failure where a
+    /// Wine prefix inside the workspace (dosdevices/z: → the filesystem
+    /// root) made the recursion re-enter the project infinitely and the scan
+    /// abort on UnauthorizedAccessException with an EMPTY index —
+    /// indistinguishable, from the client's side, from a silent failure:</para>
+    ///
+    /// <list type="bullet">
+    /// <item>Reparse points (symlinks, junctions, wine dosdevices links) are
+    /// never followed — a symlinked directory cannot re-enter the tree.</item>
+    /// <item>A cycle guard on the resolved final link target catches loops
+    /// that are not plain symlinks (bind mounts, duplicated trees).</item>
+    /// <item>Enumeration errors are contained per directory: an inaccessible
+    /// or unreadable subtree is pruned, never aborting the whole scan
+    /// (WI-05 extended from files to directories). The per-directory eager
+    /// materialization is what makes the containment possible — the old
+    /// lazy iterator surfaced exceptions at MoveNext() and killed the
+    /// entire scan.</item>
+    /// </list>
     /// </summary>
-    private static IEnumerable<string> ScanDirectory(string directory, EnumerationOptions options, CancellationToken token)
+    private static IEnumerable<string> ScanDirectory(string directory, EnumerationOptions options, CancellationToken token,
+        HashSet<string> visitedDirectories)
     {
-        IEnumerable<string> entries;
+        string[] entries;
         try
         {
-            entries = Directory.EnumerateFileSystemEntries(directory);
+            // Per-directory eager materialization: the containment catch below
+            // can only cover exceptions raised inside it, so a lazy enumerator
+            // would defeat it. Directories are small; the cost is bounded by
+            // the folder's breadth.
+            entries = Directory.GetFileSystemEntries(directory);
         }
-        catch
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or DirectoryNotFoundException)
         {
-            // Inaccessible directory: skip, never abort the scan (WI-05).
+            // Inaccessible directory: prune the subtree, never abort the
+            // scan (WI-05).
             yield break;
         }
 
@@ -245,13 +304,48 @@ public class WorkspaceIndexer
             if (token.IsCancellationRequested)
                 yield break;
 
-            if (Directory.Exists(entry))
+            bool isDirectory;
+            try
+            {
+                isDirectory = Directory.Exists(entry);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                continue;
+            }
+
+            if (isDirectory)
             {
                 var name = Path.GetFileName(entry);
                 if (ExcludedDirectoryNames.Contains(name) || name.StartsWith(".", StringComparison.Ordinal))
                     continue;
 
-                foreach (var nested in ScanDirectory(entry, options, token))
+                DirectoryInfo info;
+                try
+                {
+                    info = new DirectoryInfo(entry);
+
+                    // Issue #95: never follow reparse points. A Wine prefix's
+                    // dosdevices/z: symlink points at the filesystem root —
+                    // following it re-enters the workspace (and /proc, and
+                    // everything else) and previously aborted the whole scan.
+                    if (info.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                        continue;
+
+                    // Cycle guard on the resolved final target: catches loops
+                    // that are not a single symlink (bind mounts, duplicated
+                    // trees reached through several links).
+                    var finalTarget = info.ResolveLinkTarget(returnFinalTarget: true);
+                    var key = (finalTarget?.FullName ?? info.FullName).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    if (!visitedDirectories.Add(key))
+                        continue;
+                }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+                {
+                    continue;
+                }
+
+                foreach (var nested in ScanDirectory(entry, options, token, visitedDirectories))
                     yield return nested;
             }
             else if (SupportedExtensions.Contains(Path.GetExtension(entry)))
