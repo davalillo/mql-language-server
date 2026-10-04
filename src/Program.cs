@@ -510,7 +510,33 @@ namespace MqlLanguageServer
                     var workspaceFolders = workspaceFoldersSnapshot;
                     if (workspaceFolders.Count > 0)
                     {
-                        server.GetRequiredService<WorkspaceIndexer>().StartIndexing(workspaceFolders);
+                        // Issue #95: surface the scan lifecycle to the client via
+                        // window/logMessage (started / finished / failed) so the
+                        // three states — in progress, finished without results,
+                        // failed silently — are distinguishable. Best-effort.
+                        var indexer = server.GetRequiredService<WorkspaceIndexer>();
+                        indexer.ScanNotifier = (level, message) =>
+                        {
+                            try
+                            {
+                                var messageType = level switch
+                                {
+                                    LogLevel.Error => MessageType.Error,
+                                    LogLevel.Warning => MessageType.Warning,
+                                    _ => MessageType.Info
+                                };
+                                server.Window.SendNotification(new LogMessageParams
+                                {
+                                    Type = messageType,
+                                    Message = message
+                                });
+                            }
+                            catch
+                            {
+                                // Never break the scan for an observability emit.
+                            }
+                        };
+                        indexer.StartIndexing(workspaceFolders);
                         Log.Information("Workspace scan started for {FolderCount} folder(s)", workspaceFolders.Count);
                     }
                 }

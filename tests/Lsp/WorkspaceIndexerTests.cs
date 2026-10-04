@@ -182,6 +182,87 @@ public class WorkspaceIndexerTests : IDisposable
     }
 
     // ------------------------------------------------------------------
+    // Issue #95: the recursion must survive symlink cycles (a Wine prefix's
+    // dosdevices/z: symlink re-enters the workspace and previously aborted
+    // the ENTIRE scan on UnauthorizedAccessException, leaving an empty index
+    // — workspace/symbol answered [] for everything not opened) and must
+    // prune inaccessible subtrees instead of dying on them.
+    // ------------------------------------------------------------------
+
+    [Fact]
+    public void Scan_SkipsReparsePointDirectories_SymlinkCycleDoesNotAbortScan()
+    {
+        var source = Path.Combine(_workspace, "src");
+        Directory.CreateDirectory(source);
+        var header = Path.Combine(source, "riesgo_utils_mqh.mqh");
+        File.WriteAllText(header, "double CalculaRiesgoTicks(int id){ return id; }\n");
+
+        // The Wine-prefix shape: dosdevices/z: is a symlink re-entering the
+        // workspace root itself. Following it used to loop forever (and die
+        // on /proc or other unreadable paths reached through it).
+        var dosdevices = Path.Combine(_workspace, "wine-mt4", "dosdevices");
+        Directory.CreateDirectory(dosdevices);
+        Directory.CreateSymbolicLink(Path.Combine(dosdevices, "z:"), _workspace);
+
+        CreateIndexer().StartIndexingAndWaitForIdle(new[] { _workspace });
+
+        Assert.Contains(header, _index.GetIndexedFiles());
+        Assert.Contains(_index.GetAllSymbols(),
+            s => s.Symbols.Any(sym => sym.Name == "CalculaRiesgoTicks"));
+    }
+
+    [Fact]
+    public void Scan_ContinuesPastInaccessibleSubdirectory()
+    {
+        var before = Path.Combine(_workspace, "before");
+        var locked = Path.Combine(_workspace, "locked");
+        var after = Path.Combine(_workspace, "after");
+        Directory.CreateDirectory(before);
+        Directory.CreateDirectory(locked);
+        Directory.CreateDirectory(after);
+
+        File.WriteAllText(Path.Combine(before, "before.mq4"), "int BeforeSymbol = 1;\n");
+        File.WriteAllText(Path.Combine(locked, "locked.mq4"), "int LockedSymbol = 2;\n");
+        File.WriteAllText(Path.Combine(after, "after.mq4"), "int AfterSymbol = 3;\n");
+
+        // Prune the locked subtree from enumeration (non-root on Linux).
+        if (!OperatingSystem.IsLinux())
+        {
+            return; // UnixFileMode-based lock simulation is Linux-only
+        }
+        var originalMode = File.GetUnixFileMode(locked);
+        File.SetUnixFileMode(locked, UnixFileMode.None);
+        try
+        {
+            CreateIndexer().StartIndexingAndWaitForIdle(new[] { _workspace });
+        }
+        finally
+        {
+            File.SetUnixFileMode(locked, originalMode);
+        }
+
+        var indexed = _index.GetIndexedFiles().ToList();
+        Assert.Contains(Path.Combine(before, "before.mq4"), indexed);
+        Assert.Contains(Path.Combine(after, "after.mq4"), indexed);
+        Assert.DoesNotContain(Path.Combine(locked, "locked.mq4"), indexed);
+    }
+
+    [Fact]
+    public void Scan_NotifiesLifecycleStartedAndFinished()
+    {
+        var header = Path.Combine(_workspace, "riesgo_utils_mqh.mqh");
+        File.WriteAllText(header, "double CalculaRiesgoTicks(int id){ return id; }\n");
+
+        var notifications = new List<(LogLevel Level, string Message)>();
+        var indexer = CreateIndexer();
+        indexer.ScanNotifier = (level, message) => notifications.Add((level, message));
+        indexer.StartIndexingAndWaitForIdle(new[] { _workspace });
+
+        Assert.Contains(notifications, n => n.Level == LogLevel.Information && n.Message.Contains("scan started"));
+        Assert.Contains(notifications, n => n.Level == LogLevel.Information && n.Message.Contains("scan finished") && n.Message.Contains("1/1 files indexed"));
+    }
+
+    // ------------------------------------------------------------------
     // WI-05: open documents skipped (client buffer is authoritative)
     // ------------------------------------------------------------------
 
