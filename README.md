@@ -23,6 +23,7 @@ Language Server Protocol (LSP) implementation for MQL4 and MQL5 (MetaTrader 4/5)
 - Document Formatting and Range Formatting
 - Preprocessor-aware parsing: function-like and object-like macro expansion, nested include chains, include-order conditional merge, and MQL Controls library event-map macros (`ON_EVENT`, `EVENT_MAP_BEGIN`/`END`)
 - Parse-reuse LRU cache across didOpen/didClose cycles for large files
+- Project-local `.mqlignore` to exclude paths (backup copies, installed terminals) from the workspace scan
 - Cross-platform binaries: Linux x64/ARM64, macOS Intel/Apple Silicon, Windows x64/ARM64
 
 ## MQL5 Support
@@ -33,6 +34,27 @@ This release adds first-class MQL5 support while keeping MQL4 behavior intact:
 - MQL5-specific syntax is parsed: classes, structs, interfaces, inheritance, templates, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, reference parameters, `using`, `#resource`, initialization lists, and heap `new`/`delete`.
 - MQL5 built-in functions and predefined variables are included in completion and hover.
 - Diagnostics for MQL5 files use a distinct `MQL5xxx` code range so CI filters can separate MQL4 and MQL5 issues.
+
+## Workspace Scan Exclusions (`.mqlignore`)
+
+The startup workspace scan indexes every `.mq4`/`.mq5`/`.mqh` file under each workspace folder, pruning built-in directories (`.git`, `bin`, `obj`, …) and dot-directories. A project can exclude its own paths by placing a **`.mqlignore`** file at the root of the workspace folder (issue #157).
+
+Syntax (gitignore subset, last match wins):
+
+- `#` comments and blank lines are ignored.
+- `backup-utf8/` — a trailing `/` makes the pattern directory-only (it never matches a same-named file).
+- `/src/gen.mq4` — a leading `/` anchors the pattern to the folder root; without it, the pattern matches at any depth.
+- `*.mq4`, `?`, `**` — wildcards; `**` as a full segment matches zero or more segments.
+- `!keep.mq4` — negation re-includes a path matched by an earlier pattern (last match wins).
+- CRLF and a UTF-8 BOM are handled; malformed lines are skipped; matching is case-insensitive.
+
+Semantics:
+
+- A matched directory is pruned entirely — the scan pays zero cost for ignored subtrees, and the scan-start notification counts reflect the pruned candidate count.
+- `.mqlignore` can only ADD exclusions: negation cannot resurrect built-in exclusions (`.git`, dot-directories) or enumeration rules (hidden/system attributes, reparse points).
+- The ignore governs the **workspace index only**: opening an ignored file (`didOpen`) still gives it full document-level analysis.
+- An ignored `.mqh` is not indexed; sources that include it may report unresolved symbols for its declarations ("ignored" means "outside the index").
+- The file is read once per scan at startup — there is no watcher, so editing it requires a server restart.
 
 ## Technical Decisions
 

@@ -23,6 +23,7 @@ Implementación del Language Server Protocol (LSP) para MQL4 y MQL5 (MetaTrader 
 - Formateo de Documento y Formateo de Rango
 - Análisis consciente del preprocesador: expansión de macros function-like y object-like, cadenas de includes anidados, fusión condicional según el orden de includes y macros de mapa de eventos de la librería MQL Controls (`ON_EVENT`, `EVENT_MAP_BEGIN`/`END`)
 - Caché LRU de reutilización de parseo en ciclos didOpen/didClose para archivos grandes
+- `.mqlignore` por proyecto para excluir rutas (copias de backup, terminales instalados) del escaneo del workspace
 - Binarios multiplataforma: Linux x64/ARM64, macOS Intel/Apple Silicon, Windows x64/ARM64
 
 ## Soporte de MQL5
@@ -33,6 +34,27 @@ Esta versión añade soporte de primera clase para MQL5 manteniendo intacto el c
 - Se analiza la sintaxis específica de MQL5: clases, structs, interfaces, herencia, plantillas, `enum class`, `nullptr`, `union`, `final`, `pack(n)`, parámetros por referencia, `using`, `#resource`, listas de inicialización y `new`/`delete` en el heap.
 - Las funciones integradas y variables predefinidas de MQL5 se incluyen en el autocompletado y hover.
 - Los diagnósticos de archivos MQL5 usan un rango de códigos distinto `MQL5xxx` para que los filtros de CI puedan separar los problemas de MQL4 y MQL5.
+
+## Exclusiones del Escaneo del Workspace (`.mqlignore`)
+
+El escaneo del workspace al arranque indexa cada archivo `.mq4`/`.mq5`/`.mqh` bajo cada carpeta del workspace, podando directorios integrados (`.git`, `bin`, `obj`, …) y directorios ocultos. Un proyecto puede excluir sus propias rutas colocando un archivo **`.mqlignore`** en la raíz de la carpeta del workspace (issue #157).
+
+Sintaxis (subconjunto de gitignore, gana la última coincidencia):
+
+- `#` comentarios y líneas en blanco se ignoran.
+- `backup-utf8/` — la `/` final hace el patrón solo-de-directorios (nunca coincide con un archivo del mismo nombre).
+- `/src/gen.mq4` — la `/` inicial ancla el patrón a la raíz de la carpeta; sin ella, el patrón coincide a cualquier profundidad.
+- `*.mq4`, `?`, `**` — comodines; `**` como segmento completo coincide con cero o más segmentos.
+- `!keep.mq4` — la negación re-incluye una ruta que coincidió con un patrón anterior (gana la última coincidencia).
+- Se manejan CRLF y BOM UTF-8; las líneas malformadas se omiten; la coincidencia es insensible a mayúsculas.
+
+Semántica:
+
+- Un directorio que coincide se poda por completo — el escaneo no paga coste por los subárboles ignorados, y el recuento de la notificación de inicio refleja los candidatos podados.
+- `.mqlignore` solo puede AÑADIR exclusiones: la negación no puede resucitar las exclusiones integradas (`.git`, directorios ocultos) ni las reglas de enumeración (atributos ocultos/sistema, reparse points).
+- El ignore gobierna solo el **índice del workspace**: abrir un archivo ignorado (`didOpen`) sigue dándole análisis completo a nivel de documento.
+- Un `.mqh` ignorado no se indexa; los fuentes que lo incluyan pueden reportar símbolos no resueltos para sus declaraciones ("ignorado" significa "fuera del índice").
+- El archivo se lee una vez por escaneo al arranque — no hay watcher, así que editarlo requiere reiniciar el servidor.
 
 ## Decisiones Tecnológicas
 

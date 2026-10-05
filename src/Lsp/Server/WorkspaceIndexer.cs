@@ -179,6 +179,22 @@ public class WorkspaceIndexer
             return;
         }
 
+        // Issue #157: project-local exclusions. A .mqlignore at the folder
+        // root is parsed once and threaded into the enumeration; each
+        // workspace folder gets its own spec — no global state. An absent or
+        // unreadable file behaves exactly as if the feature did not exist
+        // (fail-open, WI-05 spirit). The file is read once per scan; there is
+        // no watcher, so editing it requires a restart (documented).
+        MqlIgnoreSpec? ignore = null;
+        var ignorePath = Path.Combine(folder, ".mqlignore");
+        if (File.Exists(ignorePath) &&
+            MqlIgnoreSpec.TryParseFile(ignorePath, out var parsedIgnore) &&
+            parsedIgnore != null)
+        {
+            ignore = parsedIgnore;
+            _logger.LogInformation("Loaded .mqlignore from {Folder} ({PatternCount} patterns)", folder, ignore.PatternCount);
+        }
+
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = false,
@@ -186,7 +202,7 @@ public class WorkspaceIndexer
             AttributesToSkip = FileAttributes.Hidden | FileAttributes.System
         };
 
-        var files = ScanDirectory(folder, options, token, new HashSet<string>(StringComparer.OrdinalIgnoreCase)).ToList();
+        var files = ScanDirectory(folder, options, token, new HashSet<string>(StringComparer.OrdinalIgnoreCase), folder, ignore).ToList();
 
         _logger.LogInformation("Workspace scan started: {Folder} ({FileCount} candidate files)", folder, files.Count);
         Notify(LogLevel.Information, $"Workspace scan started: {folder} ({files.Count} candidate files)");
@@ -279,9 +295,23 @@ public class WorkspaceIndexer
     /// lazy iterator surfaced exceptions at MoveNext() and killed the
     /// entire scan.</item>
     /// </list>
+    ///
+    /// <para>Issue #157: <paramref name="ignore"/> (the folder's parsed
+    /// .mqlignore, matched relative to <paramref name="root"/>) is a THIRD
+    /// prune source alongside the name-based rules. It is checked with the
+    /// cheap name rules and before the #95 hardening below — which still runs
+    /// before any descent, so .mqlignore only ADDS pruning and never
+    /// re-enables it. A matched directory is pruned entirely (the ignored
+    /// subtree's enumeration cost is zero, not deferred); dir-only patterns
+    /// never match files and vice versa. Negation can only re-include paths
+    /// matched by earlier .mqlignore patterns — never the built-in
+    /// exclusions. A live file whose include resolves into an ignored
+    /// directory is still indexed, and the dependency edge to the
+    /// non-indexed target is still recorded (harmless: no symbols are found
+    /// there).</para>
     /// </summary>
     private static IEnumerable<string> ScanDirectory(string directory, EnumerationOptions options, CancellationToken token,
-        HashSet<string> visitedDirectories)
+        HashSet<string> visitedDirectories, string root, MqlIgnoreSpec? ignore)
     {
         string[] entries;
         try
@@ -320,6 +350,13 @@ public class WorkspaceIndexer
                 if (ExcludedDirectoryNames.Contains(name) || name.StartsWith(".", StringComparison.Ordinal))
                     continue;
 
+                // Issue #157: third prune source — checked with the cheap
+                // name rules, before the #95 hardening (which still runs
+                // before any descent; .mqlignore only adds pruning). On
+                // match, do not descend: the ignored subtree costs zero.
+                if (ignore != null && ignore.IsMatch(GetRelativePath(root, entry), isDirectory: true))
+                    continue;
+
                 DirectoryInfo info;
                 try
                 {
@@ -345,11 +382,16 @@ public class WorkspaceIndexer
                     continue;
                 }
 
-                foreach (var nested in ScanDirectory(entry, options, token, visitedDirectories))
+                foreach (var nested in ScanDirectory(entry, options, token, visitedDirectories, root, ignore))
                     yield return nested;
             }
             else if (SupportedExtensions.Contains(Path.GetExtension(entry)))
             {
+                // Issue #157: dir-only patterns must not match files (and
+                // file patterns never match directories).
+                if (ignore != null && ignore.IsMatch(GetRelativePath(root, entry), isDirectory: false))
+                    continue;
+
                 yield return entry;
             }
         }
@@ -489,4 +531,11 @@ public class WorkspaceIndexer
 
         return resolved;
     }
+
+    /// <summary>
+    /// Issue #157: entry path relative to the scanned workspace-folder root,
+    /// '/'-separated for .mqlignore matching (never cwd-relative).
+    /// </summary>
+    private static string GetRelativePath(string root, string entry)
+        => Path.GetRelativePath(root, entry).Replace(Path.DirectorySeparatorChar, '/');
 }
