@@ -24,6 +24,7 @@ Language Server Protocol (LSP) implementation for MQL4 and MQL5 (MetaTrader 4/5)
 - Preprocessor-aware parsing: function-like and object-like macro expansion, nested include chains, include-order conditional merge, and MQL Controls library event-map macros (`ON_EVENT`, `EVENT_MAP_BEGIN`/`END`)
 - Parse-reuse LRU cache across didOpen/didClose cycles for large files
 - Project-local `.mqlignore` to exclude paths (backup copies, installed terminals) from the workspace scan
+- Startup readiness signals: the workspace scan emits `$/progress` (`workDoneProgress`) tokens to clients that declare the capability, and requests batched with the `initialize` handshake are answered instead of dropped (#160)
 - Cross-platform binaries: Linux x64/ARM64, macOS Intel/Apple Silicon, Windows x64/ARM64
 
 ## MQL5 Support

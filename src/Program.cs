@@ -24,7 +24,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Serialization;
 
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server.WorkDone;
 
 namespace MqlLanguageServer
 {
@@ -113,6 +115,53 @@ namespace MqlLanguageServer
             handler.HandleSync(request, CancellationToken.None);
         }
 
+        /// <summary>
+        /// Issue #160: create a workDoneProgress observer for the startup
+        /// workspace scan. Per the LSP spec the server may only send
+        /// window/workDoneProgress/create (and then $/progress) when the
+        /// client declared window.workDoneProgress — IsSupported reflects
+        /// exactly that. The create round-trip is bounded so a client that
+        /// declares the capability but never answers cannot delay the scan.
+        /// Returns null when unsupported or on any failure: progress is
+        /// observability, never a startup dependency.
+        /// </summary>
+        private static async Task<IWorkDoneObserver?> TryCreateScanProgressObserverAsync(ILanguageServer server)
+        {
+            try
+            {
+                var manager = server.WorkDoneManager;
+                if (manager is null || !manager.IsSupported)
+                {
+                    Log.Information(
+                        "Client did not declare window.workDoneProgress; workspace scan runs without $/progress (issue #160)");
+                    return null;
+                }
+
+                // Numeric token: ProgressToken only serializes int/string tokens.
+                // The value only has to be unique for this server instance.
+                var observer = await manager.Create(
+                    new ProgressToken(Random.Shared.NextInt64(1, long.MaxValue)),
+                    new WorkDoneProgressBegin
+                    {
+                        Title = "Indexing MQL workspace",
+                        Percentage = 0,
+                        Message = "Starting workspace scan"
+                    },
+                    onError: _ => new WorkDoneProgressEnd { Message = "Workspace scan failed" },
+                    onComplete: () => new WorkDoneProgressEnd { Message = "Workspace scan finished" },
+                    CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
+
+                Log.Information("$/progress observer created for the workspace scan (issue #160)");
+                return observer;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex,
+                    "Could not create workDoneProgress for the workspace scan; continuing without progress (issue #160)");
+                return null;
+            }
+        }
+
         static async Task<int> Main(string[] args)
         {
             // Build date is embedded as assembly metadata by the 'StampBuildDate'
@@ -190,6 +239,18 @@ namespace MqlLanguageServer
                             // Keep only our own services here.
                             services.AddTransient<Mql4AntlrParser>();
                             services.AddTransient<Mql5AntlrParser>();
+                            // Issue #160: replace the library's pre-initialization
+                            // receiver. LspServerReceiver rejects batched-with-
+                            // initialize requests with a swallowed -32002 and drops
+                            // their notifications; QueuingReceiver dispatches them
+                            // instead. Registering for the SAME service types the
+                            // library's RegisterMany would claim (and first: its
+                            // registration uses IfAlreadyRegistered.Keep) routes the
+                            // connection's IReceiver resolution to the subclass.
+                            services.AddSingleton<Lsp.Server.QueuingReceiver>();
+                            services.AddSingleton<OmniSharp.Extensions.JsonRpc.IReceiver>(sp => sp.GetRequiredService<Lsp.Server.QueuingReceiver>());
+                            services.AddSingleton<OmniSharp.Extensions.JsonRpc.Receiver>(sp => sp.GetRequiredService<Lsp.Server.QueuingReceiver>());
+                            services.AddSingleton<LspServerReceiver>(sp => sp.GetRequiredService<Lsp.Server.QueuingReceiver>());
                             services.AddSingleton<OpenDocumentStore>();
                             // Issue #22 wiring: the DI singleton MUST be the static
                             // GlobalSymbolIndex.Instance — DryIo otherwise creates a
@@ -536,7 +597,43 @@ namespace MqlLanguageServer
                                 // Never break the scan for an observability emit.
                             }
                         };
-                        indexer.StartIndexing(workspaceFolders);
+
+                        // Issue #160: surface the scan lifecycle via $/progress
+                        // (workDoneProgress) so clients have an event-driven
+                        // readiness signal — they no longer need fixed timeouts
+                        // or busy-poll probes to know when indexing completed.
+                        // Spec-gated: only for clients that declared
+                        // window.workDoneProgress (IsSupported checks it).
+                        var progressObserver = await TryCreateScanProgressObserverAsync(server);
+                        if (progressObserver is not null)
+                        {
+                            indexer.ScanProgressNotifier = (percentage, message) =>
+                            {
+                                try
+                                {
+                                    progressObserver.OnNext(message, percentage, null);
+                                }
+                                catch
+                                {
+                                    // Never break the scan for an observability emit.
+                                }
+                            };
+                        }
+
+                        indexer.StartIndexing(
+                            workspaceFolders,
+                            onScanCompleted: () =>
+                            {
+                                if (progressObserver is null) return;
+                                try
+                                {
+                                    progressObserver.OnCompleted();
+                                }
+                                catch
+                                {
+                                    // Never break shutdown for an observability emit.
+                                }
+                            });
                         Log.Information("Workspace scan started for {FolderCount} folder(s)", workspaceFolders.Count);
                     }
                 }

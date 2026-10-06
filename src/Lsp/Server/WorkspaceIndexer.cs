@@ -63,6 +63,17 @@ public class WorkspaceIndexer
     /// </summary>
     public Action<LogLevel, string>? ScanNotifier { get; set; }
 
+    /// <summary>
+    /// Issue #160: optional client-facing scan-progress hook. Null by
+    /// default (production wires it in Program.cs to a $/progress
+    /// workDoneProgress observer; tests may capture it). Invoked with a
+    /// percentage 0-100 computed across ALL workspace folders plus a short
+    /// message, when the folder enumeration completes (0%), after each
+    /// per-file index attempt (both passes) and at folder completion (100%).
+    /// Best-effort on both sides, like <see cref="ScanNotifier"/>.
+    /// </summary>
+    public Action<int?, string>? ScanProgressNotifier { get; set; }
+
     private void Notify(LogLevel level, string message)
     {
         try
@@ -125,8 +136,9 @@ public class WorkspaceIndexer
         {
             try
             {
-                foreach (var folder in folders)
+                for (var folderIndex = 0; folderIndex < folders.Length; folderIndex++)
                 {
+                    var folder = folders[folderIndex];
                     if (token.IsCancellationRequested)
                         break;
 
@@ -135,7 +147,7 @@ public class WorkspaceIndexer
                     // from being scanned — WI-05 extended from files to folders.
                     try
                     {
-                        ScanWorkspaceFolder(folder, token, onFileIndexed);
+                        ScanWorkspaceFolder(folder, folderIndex, folders.Length, token, onFileIndexed);
                     }
                     catch (Exception ex)
                     {
@@ -169,8 +181,11 @@ public class WorkspaceIndexer
 
     /// <summary>
     /// Scan a single workspace folder: enumerate, filter, parse, and index.
+    /// <paramref name="folderIndex"/> and <paramref name="folderCount"/>
+    /// locate the folder inside the whole scan so progress percentages cover
+    /// all folders (issue #160).
     /// </summary>
-    private void ScanWorkspaceFolder(string folder, CancellationToken token,
+    private void ScanWorkspaceFolder(string folder, int folderIndex, int folderCount, CancellationToken token,
         Action<string>? onFileIndexed)
     {
         if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
@@ -207,6 +222,10 @@ public class WorkspaceIndexer
         _logger.LogInformation("Workspace scan started: {Folder} ({FileCount} candidate files)", folder, files.Count);
         Notify(LogLevel.Information, $"Workspace scan started: {folder} ({files.Count} candidate files)");
 
+        // Issue #160: 0% for this folder the moment its enumeration is done.
+        NotifyProgress(OverallPercentage(folderIndex, folderCount, 0),
+            $"Indexing {folder}: {files.Count} candidate files");
+
         // Issue #16 Phase 2: a .mqh file's language is decided by who includes
         // it, not by its content. Pass A indexes only the unambiguous
         // .mq4/.mq5 sources and records their resolved includes; pass B routes
@@ -216,6 +235,7 @@ public class WorkspaceIndexer
         var mqhPaths = new List<string>();
 
         var indexed = 0;
+        var processed = 0;
         foreach (var path in files)
         {
             if (token.IsCancellationRequested)
@@ -236,6 +256,10 @@ public class WorkspaceIndexer
                 {
                     _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", path);
                 }
+
+                processed++;
+                NotifyProgress(OverallPercentage(folderIndex, folderCount, processed, files.Count),
+                    $"Indexing {Path.GetFileName(path)} ({processed}/{files.Count})");
 
                 // Test seam (WI-02): per-file hook invoked on the scan thread
                 // after each IndexFile attempt. Null in production; no locks,
@@ -266,11 +290,47 @@ public class WorkspaceIndexer
                 _logger.LogWarning(ex, "Failed to index workspace file, continuing: {FilePath}", mqhPath);
             }
 
+            processed++;
+            NotifyProgress(OverallPercentage(folderIndex, folderCount, processed, files.Count),
+                $"Indexing {Path.GetFileName(mqhPath)} ({processed}/{files.Count})");
+
             onFileIndexed?.Invoke(mqhPath);
         }
 
         _logger.LogInformation("Workspace scan finished: {Folder} ({IndexedCount}/{FileCount} files indexed)", folder, indexed, files.Count);
         Notify(LogLevel.Information, $"Workspace scan finished: {indexed}/{files.Count} files indexed in {folder}");
+        NotifyProgress(OverallPercentage(folderIndex, folderCount, 1),
+            $"Workspace scan finished: {indexed}/{files.Count} files indexed in {folder}");
+    }
+
+    /// <summary>
+    /// Issue #160: overall scan percentage — the completed folders count
+    /// fully, the current folder contributes its own processed/total
+    /// fraction. <paramref name="folderFraction"/> is 0 (starting),
+    /// processed/total mid-folder, or 1 (finished).
+    /// </summary>
+    private static int OverallPercentage(int folderIndex, int folderCount, double folderFraction)
+    {
+        if (folderCount <= 0)
+            return 100;
+        return (int)Math.Round(100.0 * (folderIndex + Math.Clamp(folderFraction, 0.0, 1.0)) / folderCount);
+    }
+
+    private static int OverallPercentage(int folderIndex, int folderCount, int processed, int total)
+        => total <= 0
+            ? OverallPercentage(folderIndex, folderCount, 1)
+            : OverallPercentage(folderIndex, folderCount, (double)processed / total);
+
+    private void NotifyProgress(int? percentage, string message)
+    {
+        try
+        {
+            ScanProgressNotifier?.Invoke(percentage, message);
+        }
+        catch
+        {
+            // Observability is best-effort; never break the scan (WI-05).
+        }
     }
 
     /// <summary>
