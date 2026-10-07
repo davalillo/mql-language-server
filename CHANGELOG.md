@@ -1,4 +1,4 @@
-## [Unreleased]
+## [2.6.1] - 2026-10-06
 
 Closes #160 (root-cause fix for the agent-lsp cold-start symptom): the server now emits `$/progress` (`workDoneProgress`) around the startup workspace scan and no longer silently drops requests batched with the `initialize` request. Verified end-to-end with raw stdio probes: a batched `textDocument/hover` that previously got no reply at all is now answered, and clients that declare `window.workDoneProgress` receive `begin`/`report`/`end` progress tokens spanning the whole scan. Full suite 1494 passing.
 
