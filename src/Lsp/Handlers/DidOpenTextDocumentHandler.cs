@@ -292,7 +292,12 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 // dependency edge is still refreshed so the #90 rename and
                 // #89 type-fallback reachability guards see it.
                 var existingSymbols = SymbolIndex.Index.GetFileSymbols(includeFullPath, language);
-                if (existingSymbols != null && existingSymbols.Count > 0)
+                // A null list means "no entry for this (path, language) key";
+                // a non-null list means the header IS indexed even when it is
+                // empty. A comments-only or defines-only header legitimately
+                // parses to zero symbols, and using "has symbols" as the marker
+                // re-read and re-parsed it on every didOpen of every includer.
+                if (existingSymbols != null)
                 {
                     SymbolIndex.Index.AddDependency(includerFilePath, includeFullPath);
                     continue;
@@ -305,20 +310,44 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 continue;
             }
 
-            var includeContent = SourceFileReader.ReadAllText(includeFullPath);
-            // Force the includer's language for shared headers so symbols are
-            // indexed under one key (D2 dual-key coexistence). The include's
-            // own sniffed language is intentionally ignored here.
-            var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
-            includeFile.Language = language;
-            // OCC-03: occurrence-aware re-index, same rationale as AddFile above.
-            SymbolIndex.Index.AddFile(
-                includeFullPath, language, includeFile.Symbols,
-                SymbolOccurrenceMapper.Map(includeFile, includeFullPath, language));
-            SymbolIndex.Index.AddDependency(includerFilePath, includeFullPath);
+            // The resolver can hand back a path the process-wide read guard
+            // does not admit: a system root only IncludePathResolver knows
+            // about, or a symlink escaping the declared tree. Reading it would
+            // throw and abort the rest of this document's include closure, so
+            // the guard is consulted here as the single source of truth and the
+            // header is skipped like any other unresolved entry.
+            if (!WorkspaceRoots.IsReadAllowed(includeFullPath))
+            {
+                _logger.LogDebug(
+                    "Skipping include outside the readable roots: {IncludePath}", includeFullPath);
+                continue;
+            }
 
-            // Issue #95: recurse into the include's own includes.
-            IndexIncludes(parser, includeFullPath, includeFile, language, processed, cancellationToken);
+            try
+            {
+                var includeContent = SourceFileReader.ReadAllText(includeFullPath);
+                // Force the includer's language for shared headers so symbols are
+                // indexed under one key (D2 dual-key coexistence). The include's
+                // own sniffed language is intentionally ignored here.
+                var includeFile = parser.ParseFile(includeContent, includeFullPath, cancellationToken);
+                includeFile.Language = language;
+                // OCC-03: occurrence-aware re-index, same rationale as AddFile above.
+                SymbolIndex.Index.AddFile(
+                    includeFullPath, language, includeFile.Symbols,
+                    SymbolOccurrenceMapper.Map(includeFile, includeFullPath, language));
+                SymbolIndex.Index.AddDependency(includerFilePath, includeFullPath);
+
+                // Issue #95: recurse into the include's own includes.
+                IndexIncludes(parser, includeFullPath, includeFile, language, processed, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // One bad header must cost only that header: the rest of this
+                // document's include closure keeps being indexed. Previously the
+                // exception reached the handler's outer catch, which logged the
+                // whole document and left the remaining includes unindexed.
+                _logger.LogWarning(ex, "Skipping unreadable include: {IncludePath}", includeFullPath);
+            }
         }
     }
 }

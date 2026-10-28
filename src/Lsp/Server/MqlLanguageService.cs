@@ -14,11 +14,14 @@ namespace MqlLanguageServer.Lsp.Server;
 /// </summary>
 public class MqlLanguageService
 {
-    private readonly Mql4AntlrParser _mql4Parser;
-    private readonly Mql5AntlrParser _mql5Parser;
+    // Held as IMqlParser: ResolveParser already exposes that interface, and the
+    // widening lets a test inject a counting decorator to pin "a header is
+    // indexed once" without reaching into GlobalSymbolIndex internals.
+    private readonly IMqlParser _mql4Parser;
+    private readonly IMqlParser _mql5Parser;
     private readonly ILogger<MqlLanguageService>? _logger;
 
-    public MqlLanguageService(Mql4AntlrParser mql4Parser, Mql5AntlrParser mql5Parser, ILogger<MqlLanguageService>? logger = null)
+    public MqlLanguageService(IMqlParser mql4Parser, IMqlParser mql5Parser, ILogger<MqlLanguageService>? logger = null)
     {
         _mql4Parser = mql4Parser ?? throw new ArgumentNullException(nameof(mql4Parser));
         _mql5Parser = mql5Parser ?? throw new ArgumentNullException(nameof(mql5Parser));
