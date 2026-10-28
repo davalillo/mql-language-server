@@ -130,6 +130,33 @@ public static class WorkspaceRoots
         return string.IsNullOrWhiteSpace(path) ? null : path;
     }
 
+    /// <summary>
+    /// Issue #214: the same conversion for a raw <see cref="System.Uri"/>, so
+    /// every client-supplied URI that names a file on disk reaches one helper.
+    /// Handlers key their stores on the <c>System.Uri</c> form while the index
+    /// holds real paths; routing both through here keeps them equal.
+    /// </summary>
+    /// <returns>The filesystem path, or null when the URI is malformed or does
+    /// not yield a path (the caller keeps its previous fallback).</returns>
+    public static string? FromUri(Uri? uri)
+    {
+        if (uri == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return FromUri(DocumentUri.From(uri));
+        }
+        catch
+        {
+            // Unsupported scheme or malformed URI: drop it rather than throw
+            // inside a request handler (same policy as the DocumentUri form).
+            return null;
+        }
+    }
+
     private static string? Normalize(string folder)
     {
         try

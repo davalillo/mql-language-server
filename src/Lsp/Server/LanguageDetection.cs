@@ -58,7 +58,9 @@ public static class LanguageDetection
         // Unknown or null languageId: fall through to extension/content sniff.
         // A non-null but unrecognized languageId (e.g. "mqh") must NOT short-circuit
         // to the MQL4 default; the extension and content carry the real signal.
-        var extension = Path.GetExtension(uri.AbsolutePath);
+        // Issue #214: the extension comes from the real path, not the escaped
+        // URI path.
+        var extension = Path.GetExtension(WorkspaceRoots.FromUri(uri) ?? string.Empty);
 
         if (extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase))
             return MqlLanguage.Mql5;
@@ -179,7 +181,8 @@ public static class LanguageDetection
     /// </remarks>
     public static string GetLanguageIdFromUri(Uri uri)
     {
-        var extension = Path.GetExtension(uri.AbsolutePath);
+        // Issue #214: real path, not the percent-encoded URI path.
+        var extension = Path.GetExtension(WorkspaceRoots.FromUri(uri) ?? string.Empty);
         return extension.Equals(".mq5", StringComparison.OrdinalIgnoreCase)
             ? Constants.Languages.Mql5
             : Constants.Languages.Mql4;

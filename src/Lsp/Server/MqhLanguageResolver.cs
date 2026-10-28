@@ -34,11 +34,15 @@ public static class MqhLanguageResolver
         if (uri == null || index == null || !uri.IsFile)
             return false;
 
-        var extension = Path.GetExtension(uri.AbsolutePath);
-        if (!extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
+        // Issue #214: index keys are real paths — the escaped URI path matched
+        // nothing, so an indexed header fell through to default routing.
+        var path = WorkspaceRoots.FromUri(uri);
+        if (string.IsNullOrEmpty(path))
             return false;
 
-        var path = uri.AbsolutePath;
+        var extension = Path.GetExtension(path);
+        if (!extension.Equals(".mqh", StringComparison.OrdinalIgnoreCase))
+            return false;
 
         // 1. Directly indexed: the scan (or a prior open) already decided.
         var indexed = index.GetIndexedLanguage(path);
