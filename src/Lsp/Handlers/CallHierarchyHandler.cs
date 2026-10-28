@@ -432,8 +432,18 @@ public class CallHierarchyHandler : LanguageAwareHandlerBase<CallHierarchyPrepar
     /// </summary>
     private List<MqlSymbol>? GetFileSymbolsForQuery(string filePath)
     {
-        var language = ResolveLanguage(new Uri("file://" + filePath));
-        return SymbolIndex.Index.GetFileSymbols(filePath, language);
+        // #172 review advisories: answer from the language key the index already
+        // holds instead of rebuilding a URI with `new Uri("file://" + filePath)`
+        // and re-resolving the language from it. That concatenation is not a
+        // conversion — a '#' or '?' in the path becomes a fragment/query that
+        // hides the extension, so the query was answered for the wrong dialect —
+        // and the resolution repeated a disk sniff on every call for files that
+        // only ever reach this method through the index. An ambiguous key (a .mqh
+        // indexed under both dialects) answers nothing rather than picking a
+        // winner, which is the index's own documented contract (#207/#214 shape).
+        return SymbolIndex.Index.GetIndexedLanguage(filePath) is { } language
+            ? SymbolIndex.Index.GetFileSymbols(filePath, language)
+            : null;
     }
 
     private MqlSymbol? FindEnclosingFunction(string filePath, int line, int column)
