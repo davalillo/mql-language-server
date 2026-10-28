@@ -73,9 +73,11 @@ cross-file suppression keeps hiding a legitimate 5070 after `didChange`. User de
      se ANDa con el del marco exterior (anidamiento).
    - `__MQL4__`/`__MQL5__`: semántica de existencia **por dialecto del documento** (un `.mq5` tiene
      `__MQL5__` definido y `__MQL4__` no), de modo que el caso `#ifdef __MQL4__` en `.mq5` queda inactivo.
-     Cualquier otro marcador predefinido del compilador (p. ej. `_InnerPoint`, flags por `-D`) **no** se
-     conoce ⇒ si una condición depende de un marcador que nunca aparece como `#define`/`#undef` en el
-     flujo **y** no es `__MQL4__`/`__MQL5__`, la rama se considera **activa** (fail-open, S9).
+     Cualquier otro marcador **ausente del flujo** está indefinido, como en el compilador: eso es
+     precisamente el caso A (`WalkForfardPro` nunca aparece ⇒ `#ifndef` verdadero ⇒ `#else` inactivo),
+     verificado con MetaEditor. Fail-open (S9) aplica solo a lo que **no** puede evaluarse: formas de
+     directiva no soportadas (`#if`, `#elif`), marcador ilegible, marcos que cruzan la frontera de
+     include y `#endif` que no pertenece al archivo principal ⇒ activo.
    - Transiciones provocadas por directivas **de un header** (marcos que cruzan la frontera de include)
      ⇒ no se marca inactividad en ese segmento: activo (fail-open). Solo se abren/cierran runs inactivos
      en líneas de directivas del archivo principal.
@@ -115,21 +117,37 @@ cross-file suppression keeps hiding a legitimate 5070 after `didChange`. User de
 
 ## Tasks
 
-- T1 — S2, S3, S5, S6, S8 — RED: `tests/Analysis/PreprocessorBranchDiagnosticsTests.cs` (casos A–H,
-  `#ifdef __MQL4__`, par MQL4) y `tests/Parser/PreprocessorActivityMapTests.cs` — route: worker
-  `gentle-ai-worker` (background) — commit: pendiente
-- T2 — S1, S2, S3, S9, S10 — GREEN: `PreprocessorActivityMap` + `PRE_UNDEF` en `MacroTableBuilder`/
-  `LineScanner` + `MacroTable.InactiveLines` + `MqlFile.InactiveLines` + wiring en ambos parsers + filtro
-  en `UnresolvedSymbolRule`/`Mql4OnlyApiRule` — route: worker (background) — commit: pendiente
-- T3 — S7 — LSP: prueba `didChange` A → B → A en `tests/Lsp/Handlers/` (canal pull y push) —
-  route: worker (background, después de T2 si hace falta) — commit: pendiente
-- T4 — S11 — `GlobalSymbolIndex.AddFile`: podar de `_symbolsByName`/`_symbolsByNameAndLanguage` los
-  nombres del modelo anterior ausentes en el nuevo + tests — route: parent inline — commit: pendiente
-- T5 — S1..S11 — Verificación: suite completa, `dotnet build -c Release`, sonda LSP A–H
-  (`/tmp/mql-macro-probe/probe.py`, `/tmp/mql-macro-probe/probe2.py`), contraste MetaEditor (MT4/wine) —
-  route: parent inline — commit: pendiente
-- T6 — Documentación: `CHANGELOG.md` (entrada Fixed bajo [Unreleased]) — route: parent inline —
-  commit: pendiente
+- T1 — S2, S3, S5, S6, S8 — DONE — RED: `tests/Analysis/PreprocessorBranchDiagnosticsTests.cs`
+  (casos A–H, `#ifdef __MQL4__`, par MQL4) y `tests/Parser/PreprocessorActivityMapTests.cs`
+  (RED observado: 7 de 15 fallos en el primer archivo) — route: parent inline (el worker falló) —
+  commit: 404d813, 13e6e10
+- T2 — S1, S2, S3, S9, S10 — DONE — GREEN: `PreprocessorActivityMap` + `PRE_UNDEF` + `MacroTable.InactiveLines`
+  + `MqlFile.InactiveLines` + wiring en ambos parsers + filtro en las dos reglas — commit: 13e6e10 (cómputo),
+  404d813 (consumo) — evidencia: 99/99 en los filtros enfocados
+- T3 — S7 — DONE — `didChange` A → B → A en `tests/Lsp/Handlers/PreprocessorBranchDiagnosticsLspTests.cs`
+  (rango 8:3–8:26 verificado) — commit: 404d813
+- T4 — S11 — DONE — poda de nombres obsoletos en `GlobalSymbolIndex.AddFile` + 4 tests
+  (`GlobalSymbolIndexVanishedNameTests`, `StaleWorkspaceIndexSuppressionTests`); RED observado al revertir la
+  poda: 3 de 4 fallos — commit: 39caaa4
+- T5 — S1..S11 — DONE — suite completa 1.852 pruebas en verde; `dotnet build -c Release` 0 errores / 0
+  advertencias; sonda A–H sobre el binario construido: GATE PASS (A/D/F/G ausentes, B/C/E/H presentes con
+  rango del identificador) + `probe2`/`probe4` post-fix; contraste MetaEditor sin cambios (0 errores en
+  A/D/F/G, error 168 en B/C/E/H) — commit: n/a (verificación)
+- T6 — DONE — `CHANGELOG.md` bajo `[Unreleased] / Fixed` (dos entradas) — commit: ver el commit de este
+  documento
+
+### Slice boundaries (commits revisables)
+
+| Corte | Contenido | Líneas |
+|---|---|---|
+| `fcfdf19` | documento ODD | 160 |
+| `13e6e10` | cómputo de actividad + propagación + tests unitarios del mapa | ~627 |
+| `404d813` | consumo en las reglas + tests A–H y LSP A→B→A | ~482 |
+| `39caaa4` | poda del índice + tests de índice y de supresión obsoleta | ~308 |
+| commit de cierre | CHANGELOG + este documento | ~120 |
+
+Cada corte es autocontenido (compila y pasa sus filtros). El corte `404d813` toca el contrato observable de
+diagnósticos (`Risk: item 3`); por eso lleva su propia matriz de regresión A–H y el test incremental.
 
 ## Log
 
@@ -158,3 +176,13 @@ cross-file suppression keeps hiding a legitimate 5070 after `didChange`. User de
 - **L4** — Routing: T1+T2+T3 a un worker en background (unidad de comportamiento independiente y pesada);
   T4/T5/T6 inline en el parent **después** de que el worker termine, porque ambos writers compartirían el
   árbol de build (`bin`/`obj`) y `dotnet test` del mismo proyecto.
+
+- **L5** — Corrección de diseño durante la implementación: la regla de fail-open de L3 se aplica solo a lo
+  NO evaluable (formas de directiva no soportadas, marcador ilegible, marcos que cruzan include, `#endif`
+  ajeno). Un marcador **ausente del flujo** está indefinido, como en el compilador — es el caso A y lo
+  confirma MetaEditor. El texto de §1 se corrigió en consecuencia antes de implementar.
+- **L6** — Evidencia de verificación (binario construido desde esta rama, build 20261028_225932): suite
+  `1.852/1.852`; `dotnet build -c Release` 0/0; gate `/tmp/mql-macro-probe/verify_cases.py` → `GATE: PASS`
+  con `A absent, B present line 8, C present line 8, D absent, E present line 8, F absent, G absent,
+  H present line 6` y `A(v1) absent / B(v2) present / A(v3) absent`; `probe2` reproducción del usuario sin
+  macro → sin 5070; `probe4` `sibling_after_close` recupera el 5070 (defecto 2 corregido).
