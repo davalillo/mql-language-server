@@ -81,6 +81,19 @@ vscode/mql-language-server/*.vsix
 tools/generate-golden-lists/data/pdf/
 tools/generate-golden-lists/data/page-cache/
 tools/generate-golden-lists/data/raw/
+
+# Per-run audit/description dumps (regenerable from pdf/, page-cache/, raw/);
+# the adjudication evidence JSONs committed by #173/#192 stay tracked
+tools/generate-golden-lists/data/mql4-dataset-audit.json
+tools/generate-golden-lists/data/mql4-descriptions.json
+tools/generate-golden-lists/data/mql5-constants-audit.json
+tools/generate-golden-lists/data/mql5-dataset-audit.json
+tools/generate-golden-lists/data/mql5-descriptions.json
+tools/generate-golden-lists/data/mql5-enum-extraction*.json
+
+# Pi agent npm package install (derived from .pi/settings.json packages)
+.pi/npm/
+
 # CodeGraph generated index
 .codegraph/
 
