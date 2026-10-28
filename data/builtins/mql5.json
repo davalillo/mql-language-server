@@ -4089,6 +4089,14 @@
       "description": "Boolean literal false",
       "provenance": "hand-curated-registry-v2.5.1-rc.1; adjudicated-kept-grammar-keyword-2026-10-26"
     },
+    "TRUE": {
+      "description": "Predefined boolean constant TRUE (the uppercase compat spelling of true)",
+      "provenance": "issue-206-case-and-completeness-2026-10-28"
+    },
+    "FALSE": {
+      "description": "Predefined boolean constant FALSE (the uppercase compat spelling of false)",
+      "provenance": "issue-206-case-and-completeness-2026-10-28"
+    },
     "ENUM_CRYPT_METHOD": {
       "description": "Crypt methods enumeration (CRYPT_DES..CRYPT_AES256, CRYPT_HASH_MD5, CRYPT_HASH_SHA1..)",
       "provenance": "hand-curated-registry-v2.5.1-rc.1"

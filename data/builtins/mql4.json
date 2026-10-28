@@ -1802,9 +1802,13 @@
     }
   },
   "variables": {
-    "True": {
-      "description": "Boolean literal true",
-      "provenance": "hand-curated-registry-v2.5.1-rc.1"
+    "TRUE": {
+      "description": "Predefined boolean constant TRUE (the uppercase compat spelling of true)",
+      "provenance": "hand-curated-registry-v2.5.1-rc.1; issue-206-case-and-completeness-2026-10-28"
+    },
+    "FALSE": {
+      "description": "Predefined boolean constant FALSE (the uppercase compat spelling of false)",
+      "provenance": "issue-206-case-and-completeness-2026-10-28"
     },
     "Ask": {
       "description": "Current Ask price",

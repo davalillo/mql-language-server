@@ -21,7 +21,7 @@ public class Issue109BuiltinRegistryCoverageTests
     // entry was dead weight. The MQL5 table keeps lowercase `false`.
     private static readonly string[] ReportedNames =
     {
-        "True", "TerminalInfoInteger", "CharToString", "StringSplit"
+        "TRUE", "TerminalInfoInteger", "CharToString", "StringSplit"
     };
 
     // A broader sweep of common standard-library names that the same grep
@@ -134,24 +134,26 @@ public class Issue109BuiltinRegistryCoverageTests
     }
 
     [Fact]
-    public void BooleanKeywords_ResolveCaseInsensitively()
+    public void BooleanConstants_ResolveOnlyInTheirDocumentedCase()
     {
-        // The MQL compiler accepts True/true/TRUE — the registries compare
-        // OrdinalIgnoreCase, so one canonical entry per dialect covers all.
-        // MQL4 `False` left the registry in the issue #173 round-3
-        // adjudication (zero CHM evidence; the literals are grammar keywords,
-        // so no 1070 is produced without the registry entry); the MQL5 table
-        // keeps lowercase `false`.
-        foreach (var variant in new[] { "true", "TRUE", "True" })
-        {
-            Assert.True(Mql4Builtins.IsBuiltin(variant), $"MQL4 registry is missing boolean literal '{variant}'");
-        }
-        foreach (var variant in new[] { "true", "TRUE", "True", "false", "FALSE", "False" })
-        {
-            Assert.True(_mql5.IsBuiltin(variant), $"MQL5 registry is missing boolean literal '{variant}'");
-        }
-        Assert.False(Mql4Builtins.IsBuiltin("False"),
-            "MQL4 'False' should not be registry-covered (zero CHM evidence; see mql4-dataset-audit.json)");
+        // Issue #206 supersedes the former `BooleanKeywords_ResolveCaseInsensitively`
+        // pin. The registries are keyed ordinally now (MQL is case-sensitive, decided
+        // in #34 and enforced for macros in #205), and both dialects register the
+        // uppercase compat constants. Lowercase true/false never reach the registry
+        // from source — the grammar lexes them as keywords — so MQL5 keeps them as
+        // the adjudicated keyword entries from #192 while MQL4 needs no lowercase
+        // entry at all.
+        Assert.True(Mql4Builtins.IsBuiltin("TRUE"), "MQL4 registry must cover TRUE");
+        Assert.True(Mql4Builtins.IsBuiltin("FALSE"), "MQL4 registry must cover FALSE");
+        Assert.False(Mql4Builtins.IsBuiltin("True"), "MQL4 `True` is not a documented spelling");
+        Assert.False(Mql4Builtins.IsBuiltin("False"), "MQL4 `False` is not a documented spelling");
+
+        Assert.True(_mql5.IsBuiltin("TRUE"), "MQL5 registry must cover TRUE");
+        Assert.True(_mql5.IsBuiltin("FALSE"), "MQL5 registry must cover FALSE");
+        Assert.True(_mql5.IsBuiltin("true"), "MQL5 keeps the lowercase keyword entries (#192)");
+        Assert.True(_mql5.IsBuiltin("false"), "MQL5 keeps the lowercase keyword entries (#192)");
+        Assert.False(_mql5.IsBuiltin("True"), "the case-insensitive lookup is what #206 removed");
+        Assert.False(_mql5.IsBuiltin("False"), "the case-insensitive lookup is what #206 removed");
     }
 
     // Fourth sweep: the exact names the published rc.4 binary still flagged on

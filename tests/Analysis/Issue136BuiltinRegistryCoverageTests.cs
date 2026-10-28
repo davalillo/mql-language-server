@@ -532,7 +532,11 @@ public class Issue136BuiltinRegistryCoverageTests
         // (2026-10-22): no occurrence anywhere in the CHM build; keeps and
         // their evidence live in the audit report's unknown_bucket.
         "ACCOUNT_MARGIN_SO_STOP", "ACCOUNT_TRADE_STOPOUT_LEVEL",
-        "AccountSymbol", "BarsIsTradeAllowed", "False", "IDCLOSE",
+        // `False` was removed from this list in #206: TRUE/FALSE are the
+        // uppercase boolean constants MetaEditor compiles (ground truth in the
+        // #206 repro), not fabricated API names — the Reference CHM simply does
+        // not enumerate boolean literals among API entries.
+        "AccountSymbol", "BarsIsTradeAllowed", "IDCLOSE",
         "LastError", "MQL_TRADE_EXPERT", "MQL_TRADE_MODE", "TERMINAL_EMAIL",
         "TERMINAL_EXPERTS_ALLOWED", "clrLightGoldenrodYellow",
     };
@@ -1047,8 +1051,8 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql5.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var functions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var functions = new Dictionary<string, string>(StringComparer.Ordinal);
+        var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("functions").EnumerateObject())
         {
             functions[entry.Name] = entry.Value.TryGetProperty("description", out var desc)
@@ -1073,7 +1077,7 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql5.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("variables").EnumerateObject())
         {
             result[entry.Name] = entry.Value.TryGetProperty("provenance", out var provenance)
@@ -1091,7 +1095,7 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql4.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("variables").EnumerateObject())
         {
             result[entry.Name] = entry.Value.TryGetProperty("provenance", out var provenance)
@@ -1110,7 +1114,7 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql4.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("functions").EnumerateObject())
         {
             result[entry.Name] = entry.Value.TryGetProperty("signature", out var signature)
@@ -1124,8 +1128,8 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql4.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var functions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var functions = new Dictionary<string, string>(StringComparer.Ordinal);
+        var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("functions").EnumerateObject())
         {
             functions[entry.Name] = entry.Value.TryGetProperty("description", out var desc)
@@ -1145,7 +1149,7 @@ public class Issue136BuiltinRegistryCoverageTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", "mql5.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("functions").EnumerateObject())
         {
             result[entry.Name] = entry.Value.TryGetProperty("description", out var desc)

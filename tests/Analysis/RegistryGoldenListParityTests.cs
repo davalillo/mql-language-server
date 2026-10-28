@@ -36,8 +36,8 @@ public class RegistryGoldenListParityTests
     {
         var path = Path.Combine(FindRepoRoot(), "data", "builtins", $"{dialect}.json");
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
-        var functions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var functions = new Dictionary<string, string>(StringComparer.Ordinal);
+        var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var entry in doc.RootElement.GetProperty("functions").EnumerateObject())
         {
             functions[entry.Name] = entry.Value.TryGetProperty("signature", out var sig)
@@ -58,7 +58,7 @@ public class RegistryGoldenListParityTests
         Dictionary<string, string> actual,
         string label)
     {
-        var comparer = StringComparer.OrdinalIgnoreCase;
+        var comparer = StringComparer.Ordinal;
         var missing = expected.Keys.Except(actual.Keys, comparer).OrderBy(n => n, comparer).ToList();
         var extra = actual.Keys.Except(expected.Keys, comparer).OrderBy(n => n, comparer).ToList();
 
