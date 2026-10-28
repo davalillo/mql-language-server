@@ -114,8 +114,31 @@ public class MacroTableBuilderTests
         Assert.Equal(1, table.ObjectLikeCount);
         Assert.Equal(1, table.FunctionLikeCount);
 
-        // Case-insensitive lookup, same as function-like names.
-        Assert.NotNull(table.Resolve("true", MqlLanguage.Mql4));
+        // Issue #205: macro names are matched EXACTLY, as in C/MQL. This test
+        // used to pin case-insensitive lookup, which is the defect: it let
+        // `#define INFO 0x01` rewrite the unrelated identifier `info`.
+        Assert.Null(table.Resolve("true", MqlLanguage.Mql4));
+        Assert.Null(table.Resolve("TRUE", MqlLanguage.Mql4));
+    }
+
+    [Fact]
+    public void Resolve_MacroNamesAreCaseSensitive_BothShapes()
+    {
+        // Issue #205: MQL identifiers are case-sensitive (INFO and info are
+        // different symbols), so the table key is ordinal for object-like AND
+        // function-like definitions — they share the same lookup.
+        var content = "#define INFO 0x01\n" +
+                      "#define FOO(x) x\n";
+
+        var table = BuildMql4(content);
+
+        Assert.NotNull(table.Resolve("INFO", MqlLanguage.Mql4));
+        Assert.Null(table.Resolve("info", MqlLanguage.Mql4));
+        Assert.Null(table.Resolve("Info", MqlLanguage.Mql4));
+
+        Assert.NotNull(table.Resolve("FOO", MqlLanguage.Mql4));
+        Assert.Null(table.Resolve("foo", MqlLanguage.Mql4));
+        Assert.Null(table.Resolve("Foo", MqlLanguage.Mql4));
     }
 
     [Fact]

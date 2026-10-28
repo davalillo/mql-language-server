@@ -807,15 +807,17 @@ public static class MacroTableBuilder
 }
 
 /// <summary>
-/// The built macro table (issue #37): macro definitions by case-insensitive
-/// name, in first-seen order. Function-like definitions expand at their
+/// The built macro table (issue #37): macro definitions by name, in
+/// first-seen order. Lookup is ORDINAL (issue #205): MQL identifiers are
+/// case-sensitive, exactly as in C, so `#define INFO 0x01` must never rewrite
+/// the unrelated identifier `info`. Function-like definitions expand at their
 /// invocation span (issue #37); object-like (parameterless) definitions
 /// expand at the invocation identifier itself (issue #38).
 /// </summary>
 public sealed class MacroTable
 {
     private readonly Dictionary<string, List<MacroDefinition>> _byName =
-        new(StringComparer.OrdinalIgnoreCase);
+        new(StringComparer.Ordinal);
 
     public static MacroTable Empty { get; } = new();
 
