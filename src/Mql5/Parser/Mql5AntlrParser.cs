@@ -131,8 +131,14 @@ public class Mql5AntlrParser : IMqlParser
             var macroTable = MqlLanguageServer.Parser.MacroTableBuilder.Build(
                 tokenStream, new MqlLanguageServer.Parser.MacroTableBuilder.PreTokenTypes(
                     Mql5GrammarLexer.PRE_DEFINE, Mql5GrammarLexer.PRE_IFDEF, Mql5GrammarLexer.PRE_IFNDEF,
-                    Mql5GrammarLexer.PRE_ELSE, Mql5GrammarLexer.PRE_ENDIF, Mql5GrammarLexer.PRE_INCLUDE),
+                    Mql5GrammarLexer.PRE_ELSE, Mql5GrammarLexer.PRE_ENDIF, Mql5GrammarLexer.PRE_INCLUDE,
+                    Mql5GrammarLexer.PRE_UNDEF),
                 filePath, MqlLanguage.Mql5);
+
+            // Feature preprocessor-branch-diagnostics: which lines the
+            // preprocessor excludes. Occurrences stay complete (navigation);
+            // the semantic rules consult this set before reporting.
+            parsedFile.InactiveLines = macroTable.InactiveLines;
             var expandedTokenSource = MqlLanguageServer.Parser.MacroExpansionFilter.Apply(
                 tokenStream, macroTable, MqlLanguage.Mql5,
                 new MqlLanguageServer.Parser.ExpansionTokenTypes(

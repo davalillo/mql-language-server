@@ -106,7 +106,7 @@ public static class MacroTableBuilder
             // go-to-definition); defines/conditionals sit on channel 1.
             if (token.Channel == TokenConstants.DefaultChannel && token.Type == preTokenTypes.Include)
             {
-                directives.Add(new PreDirective(PreDirectiveKind.Include, token.Text ?? string.Empty, filePath));
+                directives.Add(new PreDirective(PreDirectiveKind.Include, token.Text ?? string.Empty, filePath, token.Line - 1));
                 continue;
             }
 
@@ -118,21 +118,27 @@ public static class MacroTableBuilder
             var type = token.Type;
             if (type == preTokenTypes.Define)
             {
-                directives.Add(new PreDirective(PreDirectiveKind.Define, token.Text ?? string.Empty, filePath));
+                directives.Add(new PreDirective(PreDirectiveKind.Define, token.Text ?? string.Empty, filePath, token.Line - 1));
+            }
+            else if (type == preTokenTypes.Undef && preTokenTypes.Undef > 0)
+            {
+                // #undef flips marker existence for branch activity (PRE_UNDEF is
+                // already a channel-1 token in both grammars: no grammar change).
+                directives.Add(new PreDirective(PreDirectiveKind.Undef, token.Text ?? string.Empty, filePath, token.Line - 1));
             }
             else if (type == preTokenTypes.Ifdef || type == preTokenTypes.Ifndef)
             {
                 directives.Add(new PreDirective(
                     type == preTokenTypes.Ifdef ? PreDirectiveKind.Ifdef : PreDirectiveKind.Ifndef,
-                    token.Text ?? string.Empty, filePath));
+                    token.Text ?? string.Empty, filePath, token.Line - 1));
             }
             else if (type == preTokenTypes.Else)
             {
-                directives.Add(new PreDirective(PreDirectiveKind.Else, token.Text ?? string.Empty, filePath));
+                directives.Add(new PreDirective(PreDirectiveKind.Else, token.Text ?? string.Empty, filePath, token.Line - 1));
             }
             else if (type == preTokenTypes.Endif)
             {
-                directives.Add(new PreDirective(PreDirectiveKind.Endif, token.Text ?? string.Empty, filePath));
+                directives.Add(new PreDirective(PreDirectiveKind.Endif, token.Text ?? string.Empty, filePath, token.Line - 1));
             }
         }
 
@@ -181,6 +187,11 @@ public static class MacroTableBuilder
                     conditional.Pop();
                     break;
 
+                case PreDirectiveKind.Undef:
+                    // Marker existence for the branch-activity map; the dialect
+                    // tagging above keeps its own (unchanged) semantics.
+                    break;
+
                 case PreDirectiveKind.Include:
                     // Already spliced into the merged stream by MergeIncludes.
                     break;
@@ -202,6 +213,22 @@ public static class MacroTableBuilder
             ApplyDefine(table, text, conditional.DialectAt(frames), sourceFile);
         }
 
+        // Feature preprocessor-branch-diagnostics: branch activity is a SECOND
+        // question over the same include-order stream — "which branch compiles
+        // at all", evaluated by marker existence — and it deliberately does not
+        // reuse the dialect walk above ("which body is valid for this dialect").
+        // Fail open: anything unevaluable leaves the branch active.
+        // Last line that actually carries content: the EOF token sits on the
+        // line after a trailing newline, which would mark a phantom line.
+        var lastTokenLine = tokens
+            .Where(t => t.Type != TokenConstants.EOF)
+            .Select(t => t.Line)
+            .DefaultIfEmpty(1)
+            .Max();
+        var lastLine = lastTokenLine - 1;
+        table.SetActivity(PreprocessorActivityMap.Build(
+            merged.Select(ToActivityDirective).ToList(), documentLanguage, lastLine));
+
         return table;
     }
 
@@ -212,11 +239,15 @@ public static class MacroTableBuilder
     /// <param name="Else">PRE_ELSE token type.</param>
     /// <param name="Endif">PRE_ENDIF token type.</param>
     /// <param name="Include">PRE_INCLUDE token type.</param>
-    public sealed record PreTokenTypes(int Define, int Ifdef, int Ifndef, int Else, int Endif, int Include);
+    /// <param name="Undef">PRE_UNDEF token type (channel 1 in both grammars);
+    /// -1 when the caller does not pass it, which keeps <c>#undef</c> out of the
+    /// directive stream (the pre-feature behavior for existing callers).</param>
+    public sealed record PreTokenTypes(int Define, int Ifdef, int Ifndef, int Else, int Endif, int Include, int Undef = -1);
 
     private enum PreDirectiveKind
     {
         Define,
+        Undef,
         Ifdef,
         Ifndef,
         Else,
@@ -224,7 +255,27 @@ public static class MacroTableBuilder
         Include,
     }
 
-    private sealed record PreDirective(PreDirectiveKind Kind, string Text, string SourceFile);
+    /// <summary>
+    /// One directive of the merged stream. <see cref="Line"/> is the 0-based line
+    /// in the document being parsed; <c>-1</c> for a directive read out of an
+    /// included header (its numbering does not map onto the document).
+    /// </summary>
+    private sealed record PreDirective(PreDirectiveKind Kind, string Text, string SourceFile, int Line);
+
+    /// <summary>Project a merged directive onto the branch-activity input shape.</summary>
+    private static ActivityDirective ToActivityDirective(PreDirective directive) => new(
+        directive.Kind switch
+        {
+            PreDirectiveKind.Define => ActivityDirectiveKind.Define,
+            PreDirectiveKind.Undef => ActivityDirectiveKind.Undef,
+            PreDirectiveKind.Ifdef => ActivityDirectiveKind.Ifdef,
+            PreDirectiveKind.Ifndef => ActivityDirectiveKind.Ifndef,
+            PreDirectiveKind.Else => ActivityDirectiveKind.Else,
+            PreDirectiveKind.Endif => ActivityDirectiveKind.Endif,
+            _ => ActivityDirectiveKind.Other,
+        },
+        directive.Text,
+        directive.Line);
 
     /// <summary>
     /// Tracks the conditional context while walking directives. Nested
@@ -454,6 +505,18 @@ public static class MacroTableBuilder
     /// </summary>
     private static string? ParseConditionalMarker(string directiveText)
     {
+        var marker = ExtractConditionalMarker(directiveText);
+        return marker != null && KnownMarkers.Contains(marker) ? marker : null;
+    }
+
+    /// <summary>
+    /// Extracts the raw marker of an <c>#ifdef</c>/<c>#ifndef</c> directive
+    /// without the known-dialect filter. The branch-activity map evaluates ANY
+    /// marker (by existence); the dialect walk keeps its known-markers-only view.
+    /// Returns null when the directive text carries no marker.
+    /// </summary>
+    internal static string? ExtractConditionalMarker(string directiveText)
+    {
         // Token text: "#ifdef X" / "#ifndef X" (whitespace-prefixed variants
         // possible). Span parse: identifier chars after the directive keyword.
         var span = directiveText.AsSpan().TrimStart();
@@ -483,7 +546,7 @@ public static class MacroTableBuilder
         }
 
         var marker = span.Slice(start, pos - start).ToString();
-        return KnownMarkers.Contains(marker) ? marker : null;
+        return marker;
     }
 
     private static void ApplyDefine(MacroTable table, string directiveText, MqlDialect dialect, string sourceFile)
@@ -651,7 +714,7 @@ public static class MacroTableBuilder
             // and are merged recursively: its own #include entries splice
             // at their points, before the includer's remaining directives.
             var includeDirectives = LineScanner.Scan(content)
-                .Select(d => new PreDirective(d.Kind, d.Text, resolved))
+                .Select(d => new PreDirective(d.Kind, d.Text, resolved, -1))
                 .ToList();
             merged.AddRange(MergeIncludes(includeDirectives, resolved, depth + 1, scannedIncludes, table));
         }
@@ -745,6 +808,11 @@ public static class MacroTableBuilder
                 return (PreDirectiveKind.Endif, trimmed);
             }
 
+            if (trimmed.StartsWith("#undef", StringComparison.Ordinal))
+            {
+                return (PreDirectiveKind.Undef, trimmed);
+            }
+
             if (trimmed.StartsWith("#include", StringComparison.Ordinal))
             {
                 return (PreDirectiveKind.Include, trimmed);
@@ -820,6 +888,20 @@ public sealed class MacroTable
         new(StringComparer.Ordinal);
 
     public static MacroTable Empty { get; } = new();
+
+    /// <summary>
+    /// Branch activity of the parsed document (feature
+    /// preprocessor-branch-diagnostics): which lines the preprocessor excludes.
+    /// Occurrences stay captured for navigation; semantic diagnostics consult
+    /// <see cref="InactiveLines"/> so they never report errors over excluded code.
+    /// </summary>
+    public PreprocessorActivityMap Activity { get; private set; } = PreprocessorActivityMap.Empty;
+
+    /// <summary>Inactive document lines (0-based); empty when everything is active.</summary>
+    public IReadOnlySet<int> InactiveLines => Activity.InactiveLines;
+
+    /// <summary>Attach the evaluated branch activity. Fresh instances only.</summary>
+    internal void SetActivity(PreprocessorActivityMap activity) => Activity = activity;
 
     /// <summary>Number of function-like definitions in the table.</summary>
     public int FunctionLikeCount { get; private set; }
