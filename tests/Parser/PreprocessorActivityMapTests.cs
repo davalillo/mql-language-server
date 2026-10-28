@@ -246,6 +246,93 @@ public class PreprocessorActivityMapTests
     }
 
     [Fact]
+    public void DefineInsideInactiveBranch_IsNotRegistered()
+    {
+        var content = Lines(
+            "#ifndef " + MacroName,                // 0
+            "   criterion = 1.0;",                  // 1
+            "#else",                               // 2
+            "#define REGISTERED_HERE",             // 3  (excluded: never happens)
+            "#endif",                              // 4
+            "#ifdef REGISTERED_HERE",              // 5
+            "void A();",                           // 6
+            "#endif");                              // 7
+
+        // The define never took effect, so the second branch stays inactive;
+        // the compiler excludes defines inside excluded branches alike.
+        Assert.Equal(new[] { 6 }, InactiveLines(content).OrderBy(l => l).ToArray());
+    }
+
+    [Fact]
+    public void UndefInsideInactiveBranch_IsIgnored()
+    {
+        var content = Lines(
+            "#define " + MacroName,                // 0
+            "#ifdef " + MacroName,                 // 1 (true: first branch active)
+            "void A();",                           // 2
+            "#else",                               // 3
+            "#undef " + MacroName,                 // 4 (INACTIVE branch: never happens)
+            "#endif",                              // 5
+            "#ifdef " + MacroName,                 // 6 (still defined: the undef was excluded)
+            "void B();",                           // 7
+            "#else",                               // 8
+            "void C();",                           // 9
+            "#endif");                              // 10
+
+        Assert.Equal(new[] { 9 }, InactiveLines(content).OrderBy(l => l).ToArray());
+    }
+
+    [Fact]
+    public void SequentialBlocks_AreEvaluatedIndependently()
+    {
+        var content = Lines(
+            "#define FIRST",                       // 0
+            "#ifdef FIRST",                        // 1
+            "void A();",                           // 2
+            "#endif",                              // 3
+            "#ifdef FIRST",                        // 4
+            "void B();",                           // 5
+            "#else",                               // 6
+            "void C();",                           // 7
+            "#endif");                              // 8
+
+        Assert.Equal(new[] { 7 }, InactiveLines(content).OrderBy(l => l).ToArray());
+    }
+
+    [Fact]
+    public void HeaderOpensFrame_IncluderClosesIt_IsEvaluated()
+    {
+        // Issue #40 design: a header may OPEN a conditional the includer
+        // CLOSES. The activity walk evaluates that frame across the include
+        // boundary exactly like the dialect walk and the compiler do.
+        var dir = Path.Combine(Path.GetTempPath(), "pam-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "open_frame.mqh"), "#ifdef " + MacroName + "\n");
+            var consumerPath = Path.Combine(dir, "consumer.mq5");
+            var content = Lines(
+                "#include \"open_frame.mqh\"",      // 0 (frame opens here: the include line is part of the marked range, a directive line with no occurrences)
+                "void A();",                           // 1 (inside the frame)
+                "#endif");                              // 2 (includer closes it)
+            File.WriteAllText(consumerPath, content);
+
+            Assert.Equal(new[] { 0, 1 }, InactiveLines(content, consumerPath).OrderBy(l => l).ToArray());
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(dir, recursive: true);
+            }
+            catch (IOException)
+            {
+                // Best-effort cleanup.
+            }
+        }
+    }
+
+    [Fact]
     public void EmptyMap_IsAlwaysActive()
     {
         Assert.True(PreprocessorActivityMap.Empty.IsInactive(0) == false);

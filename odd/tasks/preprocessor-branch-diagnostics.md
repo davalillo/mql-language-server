@@ -76,8 +76,13 @@ cross-file suppression keeps hiding a legitimate 5070 after `didChange`. User de
      Cualquier otro marcador **ausente del flujo** está indefinido, como en el compilador: eso es
      precisamente el caso A (`WalkForfardPro` nunca aparece ⇒ `#ifndef` verdadero ⇒ `#else` inactivo),
      verificado con MetaEditor. Fail-open (S9) aplica solo a lo que **no** puede evaluarse: formas de
-     directiva no soportadas (`#if`, `#elif`), marcador ilegible, marcos que cruzan la frontera de
-     include y `#endif` que no pertenece al archivo principal ⇒ activo.
+     directiva no soportadas (`#if`, `#elif`) y marcador ilegible ⇒ activo. CORRECCIÓN L7: los marcos que
+     cruzan la frontera de include **sí se evalúan** (diseño de issue #40, igual que el compilador y el
+     recorrido de dialecto), no se degradan a activo; una línea de directiva (`#include`, `#ifdef`…) puede
+     caer dentro de un rango marcado pero nunca lleva ocurrencias, así que la marca es inofensiva. Un
+     marco desbalanceado que proviene de un header deja inactivo el código posterior del includer: el
+     compilador rechazaría ese archivo por condicional sin cerrar, de modo que el efecto práctico se
+     limita a suprimir diagnósticos sobre un archivo que de todos modos no compila.
    - Transiciones provocadas por directivas **de un header** (marcos que cruzan la frontera de include)
      ⇒ no se marca inactividad en ese segmento: activo (fail-open). Solo se abren/cierran runs inactivos
      en líneas de directivas del archivo principal.
@@ -186,3 +191,16 @@ diagnósticos (`Risk: item 3`); por eso lleva su propia matriz de regresión A�
   con `A absent, B present line 8, C present line 8, D absent, E present line 8, F absent, G absent,
   H present line 6` y `A(v1) absent / B(v2) present / A(v3) absent`; `probe2` reproducción del usuario sin
   macro → sin 5070; `probe4` `sibling_after_close` recupera el 5070 (defecto 2 corregido).
+- **L7** — Revisión del PR (solicitud «revisa el trabajo del PR #225»): sin defectos de código; cuatro pins
+  de revisión añadidos a `PreprocessorActivityMapTests` (`DefineInsideInactiveBranch_IsNotRegistered`,
+  `UndefInsideInactiveBranch_IsIgnored`, `SequentialBlocks_AreEvaluatedIndependently`,
+  `HeaderOpensFrame_IncluderClosesIt_IsEvaluated`). Dos fallaron al principio y ambos fueron ERRORES DE
+  AUTORÍA del test, no del código: (1) el `#undef` estaba en la rama del `#else` de un `#ifndef` falso, que
+  es la rama ACTIVA (el compilador ejecutaría ese undef; el test esperaba que se ignorara) — reescrito con
+  el undef en la rama realmente inactiva; (2) `MergeIncludes` no emite la directiva `#include` en el stream
+  fusionado, así que el marco abierto por un header entra en vigor antes de la línea del include y el rango
+  marcado incluye esa línea de directiva (sin ocurrencias; inofensivo) — expectativa corregida a {0,1}. La
+  corrección de §1 sobre marcos entre include se registra arriba. Suite completa 1.856/1.856 (+4). El
+  veredicto estático de Gortex (`BLOCK` por blast-radius heurístico, sin hallazgos de regla) se reportó al
+  usuario como contexto; los «símbolos sin cubrir» que alega son el recuento granular por línea del grafo,
+  no métodos sin test.
