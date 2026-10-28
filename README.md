@@ -296,11 +296,11 @@ No additional steps required. Antlr4BuildTasks handles everything automatically.
 - ✅ Dual ANTLR parsers (MQL4 + MQL5), preprocessor-aware (macro expansion, nested includes, conditionals)
 - ✅ Full LSP surface: 20+ registered handlers (symbols, definitions, references, rename, completion, hover, signature help, diagnostics pull mode, code actions, color, formatting, folding, selection range, workspace symbols, moniker, inlay hints)
 - ✅ Symbol index: workspace scan + occurrence index + parse-reuse LRU cache
-- ✅ Test suite: 1,813 tests green (`dotnet test`, excludes the Performance category)
+- ✅ Test suite: 1,856 tests green (`dotnet test`, excludes the Performance category)
 - ✅ Builtin dataset: 3,673 documentation-driven entries (887 MQL4 / 2,786 MQL5) with per-entry provenance, grown and audited by issue-driven dataset passes
 - ✅ Binaries: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64 (self-contained, single-file)
 - ✅ CI/CD: GitHub Actions — PR CI, release pipeline with native-ARM smoke tests, dependency vulnerability gate
-- ✅ Published: GitHub Releases and nuget.org (`mql-language-server`, stable 2.7.1) via Trusted Publishing
+- ✅ Published: GitHub Releases and nuget.org (`mql-language-server`, stable 2.7.3) via Trusted Publishing
 
 ## Security
 
@@ -313,7 +313,7 @@ Run unit tests:
 dotnet test
 ```
 
-Test coverage: 1,813 tests (see the [CHANGELOG](CHANGELOG.md) for the current suite status) covering the parser, LSP handlers, and edge cases.
+Test coverage: 1,856 tests (see the [CHANGELOG](CHANGELOG.md) for the current suite status) covering the parser, LSP handlers, and edge cases.
 
 ### Code Coverage with Coverlet
 

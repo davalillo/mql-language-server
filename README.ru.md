@@ -304,7 +304,7 @@ dotnet build -c Release
 - ✅ Dataset встроенных функций: 3 673 записей на основе документации (887 MQL4 / 2 786 MQL5) с происхождением каждой записи, наращиваемых и проверяемых в рамках проходов по dataset
 - ✅ Бинарные файлы: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64 (самодостаточные, в один файл)
 - ✅ CI/CD: GitHub Actions — CI для PR, релизный конвейер со smoke-тестами на нативном ARM, шлюз уязвимостей зависимостей
-- ✅ Опубликовано: GitHub Releases и nuget.org (`mql-language-server`, стабильная 2.7.1) через Trusted Publishing
+- ✅ Опубликовано: GitHub Releases и nuget.org (`mql-language-server`, стабильная 2.7.3) через Trusted Publishing
 
 ## Безопасность
 

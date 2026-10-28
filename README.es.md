@@ -300,7 +300,7 @@ No requiere pasos adicionales. Antlr4BuildTasks maneja todo automáticamente.
 - ✅ Dataset de builtins: 3.673 entradas guiadas por la documentación (887 MQL4 / 2.786 MQL5) con procedencia por entrada, crecidas y auditadas por pases de dataset guiados por issues
 - ✅ Binarios: Linux x64/ARM64, macOS x64/ARM64, Windows x64/ARM64 (autocontenidos, de archivo único)
 - ✅ CI/CD: GitHub Actions — CI de PR, pipeline de release con pruebas de humo en ARM nativo, puerta de vulnerabilidades de dependencias
-- ✅ Publicado: GitHub Releases y nuget.org (`mql-language-server`, estable 2.7.1) vía Trusted Publishing
+- ✅ Publicado: GitHub Releases y nuget.org (`mql-language-server`, estable 2.7.3) vía Trusted Publishing
 
 ## Seguridad
 
