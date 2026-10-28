@@ -133,7 +133,10 @@ jobs:
 
   publish-binaries:
     name: Publish all platforms
-    needs: get-effective-tag
+    # v2.7.1 published binaries that could not answer `initialize` (a DI regression
+    # in the composition root) because the release job never started the server it
+    # was about to upload. The smoke jobs do start it, so publication waits for them.
+    needs: [get-effective-tag, smoke-test-linux-arm64, smoke-test-win-arm64]
     runs-on: ubuntu-latest
     if: needs.get-effective-tag.outputs.is_tag_trigger == 'true' || startsWith(needs.get-effective-tag.outputs.effective_tag, 'v')
     permissions:
@@ -302,6 +305,24 @@ jobs:
       #       bin/
       #       nupkg/
       #     retention-days: 1  # Auto-delete after 1 day
+
+      # Prove the linux-x64 asset built in this job actually starts before it is
+      # published. v2.7.1 shipped a startup regression (DryIoc could not build
+      # MqlLanguageService after issue #169 widened its constructor to IMqlParser)
+      # that no unit test observed, and the release went out with every binary
+      # exiting before answering `initialize`.
+      - name: LSP initialize handshake (linux-x64)
+        run: |
+          # Same shape as the native-ARM smoke jobs (issue #58): stdin must stay
+          # open after the request, or the server shuts down before it processes
+          # the queued initialize message.
+          REQ='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":null,"capabilities":{}}}'
+          set +e
+          (printf 'Content-Length: %d\r\n\r\n%s' "${#REQ}" "$REQ"; sleep 12) \
+            | timeout 15 bin/mql-lsp-server-linux-x64 > handshake.out 2>/dev/null
+          set -e
+          grep -q '"capabilities"' handshake.out
+          echo "LSP initialize handshake OK (linux-x64)"
 
       - name: Create/Update release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3

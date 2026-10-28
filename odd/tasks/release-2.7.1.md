@@ -30,3 +30,8 @@ after `v2.7.0`, then install the published binary and make it available to Seren
 - L1: "Tenemos cambios suficientes como para publicar una nueva versión"
 - L2: "publica.\n\nPrepara, una vez disponible el ejecutable, su disponibilidad para Serena y Gortex"
 - L3: evidence at authorization time — 22 commits / 9 merged PRs since `v2.7.0`, 0 open PRs, no open Dependabot alerts, CI + CodeQL green on `main`, all seven fixes documented under `[Unreleased]`.
+- L4: `v2.7.1` cut and published (merge `d674044`, tag `v2.7.1`, CI run 40716016333). The release run reported `failure`: both native-ARM smoke jobs failed the `initialize` handshake, and `publish-binaries` did not depend on them, so all six binaries, the VSIX and the NuGet package shipped anyway.
+- L5: reproduced on linux-x64 against a Release build — stdout empty, exit 1, `DryIoc.ContainerException: Error.UnableToResolveFromRegisteredServices` naming `CallHierarchyHandler`. `v2.7.0` answers `Content-Length: 401` + `capabilities`. Every asset of `v2.7.1` is unusable.
+- L6: cause — the #169 seam changed `MqlLanguageService`'s constructor to two `IMqlParser` parameters while `Program.cs` registered only the concrete parsers, so the container could not build the service and every handler depending on it.
+- L7: user decision on the broken release — fix forward with `v2.7.2`, warn in the `v2.7.1` release notes, and unlist the NuGet `2.7.1` package (reversible; nothing deleted).
+- L8: fix, composition-root pin and CI delivery gate implemented; issue #223 filed. `gentle-ai-worker` failed twice on this unit ("assistant reported an error", working tree left clean both times), so the unit was done inline.

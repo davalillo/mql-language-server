@@ -269,8 +269,12 @@ namespace MqlLanguageServer
                         .WithServices(services =>
                         {
                             // Keep only our own services here.
-                            services.AddTransient<Mql4AntlrParser>();
-                            services.AddTransient<Mql5AntlrParser>();
+                            // Issue #169 widened MqlLanguageService to two
+                            // IMqlParser parameters. The concrete parsers stay
+                            // the registered types, so the pair is bound by an
+                            // explicit factory instead of letting the container
+                            // guess which parser satisfies which parameter.
+                            services.AddLanguageServices();
                             // Issue #160: replace the library's pre-initialization
                             // receiver. LspServerReceiver rejects batched-with-
                             // initialize requests with a swallowed -32002 and drops
@@ -306,7 +310,6 @@ namespace MqlLanguageServer
                             services.AddSingleton<GlobalSymbolIndexAccessor>();
                             services.AddSingleton<MetricsCollector>();
                             services.AddSingleton<MqlLspServer>();
-                            services.AddSingleton<MqlLanguageService>();
                             services.AddSingleton<WorkspaceIndexer>();
                             // Issue #91: push-model diagnostics (publishDiagnostics after
                             // didOpen/didChange). The ILanguageServer dependency is Func-wrapped
