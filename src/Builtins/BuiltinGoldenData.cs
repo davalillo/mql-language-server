@@ -61,9 +61,12 @@ internal static class BuiltinGoldenData
 
     /// <summary>
     /// Load (and cache) the golden list for <paramref name="dialect"/>.
-    /// Function and variable dictionaries keep the case-insensitive
-    /// (OrdinalIgnoreCase) semantics of the hand-curated registries they
-    /// replace.
+    /// Function and variable dictionaries are keyed ORDINALLY: MQL is
+    /// case-sensitive (decided in #34, enforced for macros in #205), so a
+    /// builtin used in the wrong case is a real compile error and must not be
+    /// silently resolved. The hand-curated registries this loader replaced were
+    /// case-insensitive, which is how the mixed-case `True` entry let `TRUE`
+    /// resolve while `FALSE` was reported undeclared (#206).
     /// </summary>
     public static GoldenDocument Load(string dialect)
     {
@@ -76,8 +79,8 @@ internal static class BuiltinGoldenData
         using var doc = JsonDocument.Parse(json);
 
         var root = doc.RootElement;
-        var functions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var functions = new Dictionary<string, string>(StringComparer.Ordinal);
+        var variables = new Dictionary<string, string>(StringComparer.Ordinal);
         var admissions = new List<Mql4OnlyAdmission>();
 
         if (root.TryGetProperty("functions", out var fSection))
