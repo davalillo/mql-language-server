@@ -48,6 +48,12 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
             yield break;
         }
 
+        // Feature preprocessor-branch-diagnostics: code inside an inactive
+        // #ifdef/#ifndef branch is not compiled, so it is not an error. The
+        // occurrence stays in the list (navigation), it just never becomes a
+        // diagnostic. Fail open: an empty set means "everything is active".
+        var inactiveLines = context.File?.InactiveLines;
+
         var declared = CollectDeclaredNames(context.File?.Symbols, context.File?.Macros);
         var builtins = context.Builtins ?? Array.Empty<IMqlBuiltins>();
         var dialectRegistry = SelectDialectRegistry(context.Language, builtins);
@@ -57,6 +63,11 @@ public sealed class UnresolvedSymbolRule : ISemanticRule
             context.Token.ThrowIfCancellationRequested();
 
             if (string.IsNullOrEmpty(occurrence.Text))
+            {
+                continue;
+            }
+
+            if (inactiveLines != null && inactiveLines.Count > 0 && inactiveLines.Contains(occurrence.Line))
             {
                 continue;
             }

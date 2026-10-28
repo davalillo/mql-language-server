@@ -56,6 +56,11 @@ public sealed class Mql4OnlyApiRule : ISemanticRule
         var entries = Mql4OnlyApiRegistry.Entries;
         var lines = context.Content.Split('\n');
 
+        // Feature preprocessor-branch-diagnostics: an occurrence inside an
+        // inactive #ifdef/#ifndef branch is never compiled, so it must not
+        // become a code-5060 diagnostic either (fail open: empty => active).
+        var inactiveLines = context.File?.InactiveLines;
+
         for (var i = 0; i < occurrences.Count; i++)
         {
             if (i % 100 == 0)
@@ -64,6 +69,11 @@ public sealed class Mql4OnlyApiRule : ISemanticRule
             }
 
             var occurrence = occurrences[i];
+
+            if (inactiveLines != null && inactiveLines.Count > 0 && inactiveLines.Contains(occurrence.Line))
+            {
+                continue;
+            }
 
             // Case-sensitive (Ordinal) lookup against the curated registry:
             // MQL identifiers are case-sensitive like C++, so `TimeHour` and

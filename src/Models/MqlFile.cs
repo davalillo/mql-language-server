@@ -49,6 +49,15 @@ public class MqlFile
     public IReadOnlyList<TokenOccurrence> Occurrences { get; set; } = new List<TokenOccurrence>();
 
     /// <summary>
+    /// Lines (0-based) that sit inside an INACTIVE preprocessor branch
+    /// (<c>#ifdef</c>/<c>#ifndef</c>/<c>#else</c>/<c>#endif</c>). Occurrences are
+    /// still captured for navigation (references/rename/hover); semantic
+    /// diagnostics consult this set so they never report errors over code the
+    /// compiler excludes. Empty when nothing could be evaluated (fail open).
+    /// </summary>
+    public IReadOnlySet<int> InactiveLines { get; set; } = new HashSet<int>();
+
+    /// <summary>
     /// Color literal occurrences (C'r,g,b', hex, clr* names) captured during
     /// the last parse (REQ-CP-01..03). Additive, replaced wholesale per parse
     /// (Occurrences pattern), refreshed by didChange re-parsing (REQ-CP-10).

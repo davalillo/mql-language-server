@@ -139,8 +139,12 @@ namespace MqlLanguageServer.Parser
                 var macroTable = MacroTableBuilder.Build(
                     tokenStream, new MacroTableBuilder.PreTokenTypes(
                         Mql4GrammarLexer.PRE_DEFINE, Mql4GrammarLexer.PRE_IFDEF, Mql4GrammarLexer.PRE_IFNDEF,
-                        Mql4GrammarLexer.PRE_ELSE, Mql4GrammarLexer.PRE_ENDIF, Mql4GrammarLexer.PRE_INCLUDE),
+                        Mql4GrammarLexer.PRE_ELSE, Mql4GrammarLexer.PRE_ENDIF, Mql4GrammarLexer.PRE_INCLUDE,
+                        Mql4GrammarLexer.PRE_UNDEF),
                     filePath, MqlLanguage.Mql4);
+
+                // Feature preprocessor-branch-diagnostics: same wiring as MQL5.
+                parsedFile.InactiveLines = macroTable.InactiveLines;
                 var expandedTokenSource = MacroExpansionFilter.Apply(
                     tokenStream, macroTable, MqlLanguage.Mql4,
                     new ExpansionTokenTypes(
