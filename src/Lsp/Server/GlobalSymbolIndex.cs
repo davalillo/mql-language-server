@@ -108,6 +108,19 @@ public class GlobalSymbolIndex
 
         lock (_lock)
         {
+            // Feature preprocessor-branch-diagnostics (S11): names this file
+            // used to declare and no longer does must leave the NAME index.
+            // The re-add loop below only refreshes the names present in the new
+            // model, so without this pass a declaration removed by didChange
+            // (or by a re-open) keeps suppressing legitimate diagnostics —
+            // CrossFileSymbolCorrelator tier 2 reads exactly this index — until
+            // the process restarts, because RemoveFile only prunes the names its
+            // current model still knows about.
+            if (_symbolsByFile.TryGetValue(key, out var previousSymbols))
+            {
+                PruneVanishedNames(filePath, language, previousSymbols, nameIndexedSymbols);
+            }
+
             // Store symbols by (file, language)
             _symbolsByFile.AddOrUpdate(key, symbols, (key, existing) =>
             {
@@ -202,6 +215,66 @@ public class GlobalSymbolIndex
                         return existing;
                     }
                 });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Feature preprocessor-branch-diagnostics (S11): drop the name-index
+    /// entries of every symbol the file's PREVIOUS model declared but the new
+    /// model no longer declares. Both indexes the correlator reads
+    /// (<c>_symbolsByName</c> and <c>_symbolsByNameAndLanguage</c>) are pruned;
+    /// the occurrence buckets are replaced wholesale elsewhere.
+    /// </summary>
+    private void PruneVanishedNames(
+        string filePath,
+        MqlLanguage language,
+        List<MqlSymbol> previousSymbols,
+        List<MqlSymbol> currentIndexedSymbols)
+    {
+        var stillDeclared = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var symbol in currentIndexedSymbols)
+        {
+            if (!string.IsNullOrEmpty(symbol.Name))
+            {
+                stillDeclared.Add(symbol.Name);
+            }
+        }
+
+        var previousIndexed = new List<MqlSymbol>();
+        CollectNameIndexedSymbols(previousSymbols, previousIndexed);
+
+        foreach (var symbol in previousIndexed)
+        {
+            var name = symbol.Name;
+            if (string.IsNullOrEmpty(name) || stillDeclared.Contains(name))
+            {
+                continue;
+            }
+
+            if (_symbolsByName.TryGetValue(name, out var locations))
+            {
+                lock (locations)
+                {
+                    locations.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+                    if (locations.Count == 0)
+                    {
+                        _symbolsByName.TryRemove(name, out _);
+                    }
+                }
+            }
+
+            var langKey = (name, language);
+            if (_symbolsByNameAndLanguage.TryGetValue(langKey, out var langLocations))
+            {
+                lock (langLocations)
+                {
+                    langLocations.RemoveAll(loc => loc.FilePath == filePath && loc.Language == language);
+                    if (langLocations.Count == 0)
+                    {
+                        _symbolsByNameAndLanguage.TryRemove(langKey, out _);
+                    }
+                }
             }
         }
     }
