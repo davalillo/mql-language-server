@@ -116,7 +116,9 @@ public class DidChangeTextDocumentHandler : LanguageAwareHandlerBase<DidChangeTe
                     return Unit.Value;
                 }
 
-                var filePath = documentUri.AbsolutePath ?? "unknown";
+                // Issue #214: same conversion as didOpen — the re-parsed model
+                // must carry the real path the index keys on.
+                var filePath = WorkspaceRoots.FromUri(documentUri) ?? "unknown";
 
                 var parser = ResolveParser(language);
                 // Issue #20: propagate the request's CancellationToken into

@@ -125,7 +125,9 @@ public class CodeActionResolveHandler : LanguageAwareHandlerBase<CodeAction, Cod
         // IA-06: language-filtered lookup; a dual-key target (GetIndexedLanguage
         // null) never matches FindSymbol's single-language buckets, so
         // ambiguity degrades to a no-edit action without guessing.
-        var includerPath = includerUri.IsFile ? includerUri.AbsolutePath : includerUri.LocalPath;
+        // Issue #214: GetFileSystemPath, never AbsolutePath — the escaped form
+        // is not a path on disk, so the File.Exists guard below silently failed.
+        var includerPath = includerUri.IsFile ? WorkspaceRoots.FromUri(includerUri) : includerUri.LocalPath;
         if (string.IsNullOrEmpty(includerPath) || !File.Exists(includerPath))
         {
             return action;
@@ -201,7 +203,8 @@ public class CodeActionResolveHandler : LanguageAwareHandlerBase<CodeAction, Cod
             return content;
         }
 
-        var fsPath = uri.IsFile ? uri.AbsolutePath : null;
+        // Issue #214: the disk fallback needs the real path (see includerPath).
+        var fsPath = uri.IsFile ? WorkspaceRoots.FromUri(uri) : null;
         if (!string.IsNullOrEmpty(fsPath) && File.Exists(fsPath))
         {
             try

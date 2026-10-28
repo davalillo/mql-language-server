@@ -114,7 +114,10 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
 
             if (content != null)
             {
-                var filePath = documentUri.AbsolutePath ?? "unknown";
+                // Issue #214: a real filesystem path, never the percent-encoded
+                // URI path — the parse, the index key and the include walk must
+                // all agree on one string.
+                var filePath = WorkspaceRoots.FromUri(documentUri) ?? "unknown";
 
                 // Issue #36: a didOpen that follows a didClose on unchanged
                 // content reuses the parse retained by the store's LRU cache.

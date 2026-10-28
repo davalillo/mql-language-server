@@ -92,11 +92,14 @@ public abstract class LanguageAwareHandlerBase<TParams, TResult>
 
         // For files not yet opened via didOpen, read content from disk for
         // accurate sniffing.
-        if (uri.IsFile && File.Exists(uri.AbsolutePath))
+        // Issue #214: the disk path comes from the shared conversion; the
+        // escaped URI path never exists, which silently skipped the sniff.
+        var diskPath = uri.IsFile ? WorkspaceRoots.FromUri(uri) : null;
+        if (diskPath != null && File.Exists(diskPath))
         {
             try
             {
-                var content = SourceFileReader.ReadAllText(uri.AbsolutePath);
+                var content = SourceFileReader.ReadAllText(diskPath);
                 return LanguageDetection.Detect(uri, null, content);
             }
             catch

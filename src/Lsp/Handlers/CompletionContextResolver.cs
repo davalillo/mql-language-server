@@ -594,8 +594,11 @@ public sealed class CompletionContextResolver
             // Exclude any indexed symbol whose declaration starts inside the
             // enclosing function's body (tier 1 territory), regardless of
             // hash-set identity.
+            // Issue #214: the index key is the real path; comparing it against
+            // the escaped URI path was always false for a spaced/non-ASCII
+            // path, so the self-file exclusion silently stopped applying.
             var isSelfFile = enclosingFunction != null &&
-                string.Equals(indexedFilePath.AbsolutePath, file.FilePath, StringComparison.Ordinal);
+                string.Equals(WorkspaceRoots.FromUri(indexedFilePath), file.FilePath, StringComparison.Ordinal);
 
             foreach (var symbol in symbols.Take(MaxSymbolsPerIndexedFile))
             {

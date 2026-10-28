@@ -279,7 +279,9 @@ public class CodeActionHandler : LanguageAwareHandlerBase<CodeActionParams, Comm
             return content;
         }
 
-        var fsPath = uri.IsFile ? uri.AbsolutePath : null;
+        // Issue #214: the disk fallback needs the real path, not the escaped
+        // URI path.
+        var fsPath = uri.IsFile ? WorkspaceRoots.FromUri(uri) : null;
         if (!string.IsNullOrEmpty(fsPath) && File.Exists(fsPath))
         {
             try
