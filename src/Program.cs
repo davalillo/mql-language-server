@@ -392,7 +392,13 @@ namespace MqlLanguageServer
                             {
                                 foreach (var folder in foldersContainer)
                                 {
-                                    var path = folder.Uri.ToUri().AbsolutePath;
+                                    // Issue #207: a workspace-folder URI must be
+                                    // converted to a filesystem path, not to its
+                                    // percent-encoded Uri path, or every path
+                                    // with a space or a non-ASCII character
+                                    // silently stops matching on disk (the
+                                    // project file and .mqlignore first).
+                                    var path = WorkspaceRoots.FromUri(folder.Uri);
                                     if (!string.IsNullOrEmpty(path))
                                     {
                                         workspaceFoldersSnapshot.Add(path);
@@ -408,7 +414,7 @@ namespace MqlLanguageServer
                             // declaring the single workspace root: honor it as one.
                             if (workspaceFoldersSnapshot.Count == 0 && request.RootUri is not null)
                             {
-                                var rootPath = request.RootUri.ToUri().AbsolutePath;
+                                var rootPath = WorkspaceRoots.FromUri(request.RootUri);
                                 if (!string.IsNullOrEmpty(rootPath) && System.IO.Directory.Exists(rootPath))
                                 {
                                     workspaceFoldersSnapshot.Add(rootPath);

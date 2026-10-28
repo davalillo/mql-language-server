@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using OmniSharp.Extensions.LanguageServer.Protocol;
 
 namespace MqlLanguageServer.Lsp.Server;
 
@@ -93,6 +94,40 @@ public static class WorkspaceRoots
             // declared system root are allowed too. With no system roots
             // configured this is a no-op (fail open).
             || SystemIncludeRoots.ContainsPath(filePath);
+    }
+
+    /// <summary>
+    /// Issue #207: converts a client-declared workspace-folder URI into the
+    /// filesystem path the rest of the server consumes.
+    /// </summary>
+    /// <remarks>
+    /// The conversion must go through <c>GetFileSystemPath()</c>, never through
+    /// <see cref="Uri.AbsolutePath"/>: <c>AbsolutePath</c> keeps
+    /// percent-encoding, so a workspace folder whose path carries a space or a
+    /// non-ASCII character (e.g. <c>e:\MT5编写</c>, which a client declares as
+    /// <c>file:///e:/MT5%E7%BC%96%E5%86%99</c>) reached
+    /// <see cref="ProjectConfiguration.TryLoad"/> and the workspace scan as the
+    /// escaped string. <c>File.Exists</c> then never matched and
+    /// <c>.mql-lsp.json</c> / <c>.mqlignore</c> were silently ignored instead of
+    /// failing loudly.
+    /// </remarks>
+    /// <returns>The filesystem path, or null when the URI is malformed or does
+    /// not yield a path (the caller skips it, as it did before).</returns>
+    public static string? FromUri(DocumentUri uri)
+    {
+        string? path;
+        try
+        {
+            path = uri.GetFileSystemPath();
+        }
+        catch
+        {
+            // Malformed URI from the client: drop it rather than poisoning the
+            // root set (same policy as Normalize).
+            return null;
+        }
+
+        return string.IsNullOrWhiteSpace(path) ? null : path;
     }
 
     private static string? Normalize(string folder)
