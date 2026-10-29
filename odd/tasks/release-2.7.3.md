@@ -45,3 +45,26 @@ Follows the v2.7.1 release contract (`odd/tasks/release-2.7.1.md`).
 - **L3** — date: local clock reads 2026-10-29 00:45 CET, so the section date is `2026-10-29`.
 - **L4** — the two CHANGELOG entries quote "Full suite 1,852 passing" from before the review commit
   `8886ca4` (+4 pins); S3 requires the released number, so they become 1,856.
+- **L5** — Release publicado. PR #226 CI verde (Build and Test, Analyze csharp, CodeQL, VS Code Extension) y
+  mergeado como `95bab48`; tag anotado `v2.7.3` (csproj dentro del tag = `2.7.3`). Run de release
+  `40790966942` = **success**: `Get effective tag`, `Smoke test win-arm64 (native runner)`,
+  `Smoke test linux-arm64 (native runner)` y `Publish all platforms` — los dos smoke son condición de
+  `publish-binaries` desde #223, así que la entrega está gateada, no confiada. Assets de la release:
+  `CHECKSUMS.txt`, VSIX `mql-language-server-v2.7.3.vsix`, `mql-language-server.2.7.3.nupkg` y los seis
+  binarios (linux-x64/arm64, osx-x64/arm64, win-x64/arm64).
+- **L6** — Distribución: `mql-lsp-server-linux-x64` descargado y verificado contra `CHECKSUMS.txt`
+  (sha256 `231b8e32b40a2b6ac3146d9c0a2027cdd1f0af5a0c1473dcd4a267384a53bf1`), instalado en
+  `~/.local/bin/mql-lsp-server` con rename atómico; `--version` = `2.7.3`, Build Date `20261029_000107`.
+  Respaldo del build previo (`1ff6a129…`, el fix compilado localmente) como
+  `mql-lsp-server.preview-fix-20261028_232854.bak`; el `.v2.7.2.bak` original sigue intacto. Gate A–H +
+  `A→B→A` ejecutado contra la ruta instalada: **GATE: PASS**. `agent-lsp doctor`: `mql →
+  /home/guillermo/.local/bin/mql-lsp-server`, `Status: ok`, resumen `7 ok, 0 failed` (Gortex consume
+  agent-lsp, así que la disponibilidad queda confirmada, no supuesta).
+- **L7** — Diferencia de sha256 esperada: el artefacto de la release (`231b8e32…`) no coincide byte a byte con
+  el build local del mismo commit (`1ff6a129…`) porque lo produjo el runner de CI. Fuente idéntica; la
+  verificación de entrega es contra `CHECKSUMS.txt`, no contra el build local.
+- **L8** — Pendiente fuera de este repositorio: el pin `DEFAULT_MQL_VERSION` del plugin `serena-mql-ls`
+  (`~/source/serena-mql-ls`) sigue en `v2.7.2`; moverlo a `v2.7.3` con los digests de esta release es un
+  destino distinto y requiere autorización explícita. Mientras tanto StratoX/Serena ya tienen la corrección
+  porque la copia estática `v2.7.2` fue reemplazado a mano con el build del fix (respaldo
+  `mql-lsp-server.v2.7.2.pre-fix.bak`), pero **no** es el artefacto firmado de la release.
