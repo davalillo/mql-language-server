@@ -118,10 +118,12 @@ public class UnresolvedIncludeDiagnosticTests : IDisposable
         Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
         Assert.Equal("mql-lsp", warning.Source);
 
-        // Names the include entry and BOTH remedies.
-        Assert.Contains("<Trade\\Trade.mqh>", warning.Message);
-        Assert.Contains("systemIncludeRoots", warning.Message);
-        Assert.Contains(".mql-lsp.json", warning.Message);
+        // Names the include entry and BOTH remedies. Diagnostic.Message is
+        // StringOrMarkupContent since OmniSharp 0.19.11 (LSP 3.18);
+        // ToString() yields the plain text our server writes.
+        Assert.Contains("<Trade\\Trade.mqh>", warning.Message.ToString());
+        Assert.Contains("systemIncludeRoots", warning.Message.ToString());
+        Assert.Contains(".mql-lsp.json", warning.Message.ToString());
 
         // Range covers the include directive (not the whole line).
         Assert.Equal(0, warning.Range.Start.Line);
@@ -175,8 +177,8 @@ public class UnresolvedIncludeDiagnosticTests : IDisposable
         Assert.Equal("1004", warning.Code); // MQL4 mirror of the pinned offset
         Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
         Assert.Equal("mql-lsp", warning.Source);
-        Assert.Contains("<Arrays\\ArrayObj.mqh>", warning.Message);
-        Assert.Contains(".mql-lsp.json", warning.Message);
+        Assert.Contains("<Arrays\\ArrayObj.mqh>", warning.Message.ToString());
+        Assert.Contains(".mql-lsp.json", warning.Message.ToString());
     }
 
     [Fact]
@@ -188,8 +190,8 @@ public class UnresolvedIncludeDiagnosticTests : IDisposable
         var warnings = IncludeWarnings(diagnostics);
 
         Assert.Equal(2, warnings.Count);
-        Assert.Contains(warnings, w => w.Message.Contains("<A\\One.mqh>"));
-        Assert.Contains(warnings, w => w.Message.Contains("<B\\Two.mqh>"));
+        Assert.Contains(warnings, w => w.Message.ToString().Contains("<A\\One.mqh>"));
+        Assert.Contains(warnings, w => w.Message.ToString().Contains("<B\\Two.mqh>"));
     }
 
     // --- No-suppression guard: 1070/5070 stay byte-for-byte unchanged ---
@@ -210,7 +212,7 @@ public class UnresolvedIncludeDiagnosticTests : IDisposable
         var unresolved = diagnostics.Where(d => d.Code == "5070").ToList();
         var symbolDiagnostic = Assert.Single(unresolved, d => d.Data != null && d.Data.ToString()!.Contains("TotallyUndeclaredHelper"));
         Assert.Equal(DiagnosticSeverity.Error, symbolDiagnostic.Severity);
-        Assert.Equal("Undeclared symbol 'TotallyUndeclaredHelper' is not defined in this document.", symbolDiagnostic.Message);
+        Assert.Equal("Undeclared symbol 'TotallyUndeclaredHelper' is not defined in this document.", symbolDiagnostic.Message.ToString());
         Assert.Equal("mql-lsp", symbolDiagnostic.Source);
 
         // And the new include warning coexists — the feature suppresses nothing.

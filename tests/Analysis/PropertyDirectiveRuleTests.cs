@@ -37,7 +37,7 @@ public class PropertyDirectiveRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1030", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains("bogus_thing", diagnostic.Message);
+        Assert.Contains("bogus_thing", diagnostic.Message.ToString());
         Assert.Equal("mql-lsp", diagnostic.Source);
     }
 
@@ -50,7 +50,7 @@ public class PropertyDirectiveRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1031", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains("MQL5-only", diagnostic.Message);
+        Assert.Contains("MQL5-only", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class PropertyDirectiveRuleTests
 
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1030", diagnostic.Code);
-        Assert.Contains("indicator_color9", diagnostic.Message);
+        Assert.Contains("indicator_color9", diagnostic.Message.ToString());
     }
 
     [Fact]

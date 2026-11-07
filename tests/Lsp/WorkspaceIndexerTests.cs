@@ -654,7 +654,7 @@ public class WorkspaceIndexerTests : IDisposable
         Assert.Equal(DocumentDiagnosticReportKind.Full, full.Kind);
         // Full analysis ran: the reference to UndefinedSymbol is reported
         // even though the file is excluded from the workspace index.
-        Assert.Contains(full.Items, d => d.Message.Contains("UndefinedSymbol"));
+        Assert.Contains(full.Items, d => d.Message.ToString().Contains("UndefinedSymbol"));
     }
 }
 

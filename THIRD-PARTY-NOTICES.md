@@ -28,7 +28,8 @@ The following packages are licensed under the Apache License, Version 2.0
 
 | Package | Version | Description |
 | --- | --- | --- |
-| MediatR | 8.1.0 | Simple, unambitious mediator implementation in .NET. Transitive dependency of OmniSharp.Extensions 0.19.9. Apache-2.0 for all versions up to and including 12.x; versions 13.0.0 and later of the same package name are distributed under a commercial / RPL-1.5 dual license by Lucky Penny Software (July 2025) and are NOT covered by this notice. |
+| MediatR | 12.4.1 | Simple, unambitious mediator implementation in .NET. Transitive dependency of OmniSharp.Extensions 0.19.11 (which itself targets 12.4.1 since v0.19.10), also pinned directly (see below). Apache-2.0 for all versions up to and including 12.x; versions 13.0.0 and later of the same package name are distributed under a commercial / RPL-1.5 dual license by Lucky Penny Software (July 2025) and are NOT covered by this notice. |
+| MediatR.Contracts | 2.0.1 | Request/response contract interfaces extracted from MediatR. Transitive dependency of MediatR. |
 | Serilog | 4.4.0 | Structured logging library for .NET. |
 | Serilog.Extensions.Hosting | 10.0.0 | Serilog integration for Microsoft.Extensions.Hosting. |
 | Serilog.Extensions.Logging | 10.0.0 | Serilog provider for Microsoft.Extensions.Logging. Transitive dependency. |
@@ -58,28 +59,26 @@ The following packages are licensed under the MIT License:
 
 | Package | Version | Description |
 | --- | --- | --- |
-| Microsoft.Bcl.AsyncInterfaces | 7.0.0 | Async interfaces (IAsyncEnumerable etc.) for older .NET targets. Transitive dependency. |
-| Microsoft.Extensions.* | 6.0.0 – 10.0.12 | Configuration, dependency injection, hosting abstractions, logging, and options primitives (Configuration.Abstractions, Configuration.Binder, Configuration, DependencyInjection.Abstractions, DependencyInjection, Diagnostics.Abstractions, FileProviders.Abstractions, Hosting.Abstractions, Logging.Abstractions, Logging, Options.ConfigurationExtensions, Options, Primitives). Direct and transitive dependencies. |
+| Microsoft.Extensions.* | 10.0.0 – 10.0.12 | Configuration, dependency injection, hosting abstractions, logging, and options primitives (Configuration.Abstractions, Configuration.Binder, Configuration, DependencyInjection.Abstractions, DependencyInjection, Diagnostics.Abstractions, FileProviders.Abstractions, Hosting.Abstractions, Logging.Abstractions, Logging, Options.ConfigurationExtensions, Options, Primitives). Direct and transitive dependencies. |
 | Microsoft.NET.ILLink.Tasks | 10.0.1 | IL trimming tasks for the .NET SDK. Tool/build-time dependency. |
 | Microsoft.NET.StringTools | 18.0.2 | String utilities used by MSBuild. Transitive build-time dependency. |
 | Microsoft.Build.Framework / Microsoft.Build.Utilities.Core | 18.0.2 | MSBuild framework and task-authoring APIs used by Antlr4BuildTasks. Transitive build-time dependencies. |
-| Microsoft.VisualStudio.Threading | 17.6.40 | Async threading utilities. Transitive dependency of OmniSharp.Extensions. |
-| Microsoft.VisualStudio.Threading.Analyzers | 17.6.40 | Roslyn analyzers for VS Threading usage. Transitive build-time dependency. |
-| Microsoft.VisualStudio.Validation | 17.6.11 | Argument validation helpers. Transitive dependency of OmniSharp.Extensions. |
-| Nerdbank.Streams | 2.10.69 | Streams and pipe utilities (multiplexing, full-duplex streams). Transitive dependency of OmniSharp.Extensions. |
-| Newtonsoft.Json | 13.0.3 | Popular high-performance JSON framework for .NET. Transitive dependency of OmniSharp.Extensions, pinned explicitly (see below). |
-| OmniSharp.Extensions.JsonRpc | 0.19.9 | JSON-RPC 2.0 messaging layer. |
-| OmniSharp.Extensions.JsonRpc.Generators | 0.19.9 | Roslyn source generators for OmniSharp.Extensions.JsonRpc. Transitive build-time dependency. |
-| OmniSharp.Extensions.LanguageProtocol | 0.19.9 | Shared protocol implementation for the Language Server Protocol. |
-| OmniSharp.Extensions.LanguageServer | 0.19.9 | Language Server Protocol server implementation. |
-| OmniSharp.Extensions.LanguageServer.Shared | 0.19.9 | Shared components of the OmniSharp language server implementation. |
+| Microsoft.VisualStudio.Threading.Only | 17.13.61 | Async threading utilities. Transitive dependency of OmniSharp.Extensions. |
+| Microsoft.VisualStudio.Validation | 17.8.8 | Argument validation helpers. Transitive dependency of OmniSharp.Extensions. |
+| Nerdbank.Streams | 2.13.16 | Streams and pipe utilities (multiplexing, full-duplex streams). Transitive dependency of OmniSharp.Extensions. |
+| Newtonsoft.Json | 13.0.4 | Popular high-performance JSON framework for .NET. Transitive dependency of OmniSharp.Extensions, pinned explicitly (see below). |
+| OmniSharp.Extensions.JsonRpc | 0.19.11 | JSON-RPC 2.0 messaging layer. |
+| OmniSharp.Extensions.JsonRpc.Generators | 0.19.11 | Roslyn source generators for OmniSharp.Extensions.JsonRpc. Transitive build-time dependency. |
+| OmniSharp.Extensions.LanguageProtocol | 0.19.11 | Shared protocol implementation for the Language Server Protocol. |
+| OmniSharp.Extensions.LanguageServer | 0.19.11 | Language Server Protocol server implementation. |
+| OmniSharp.Extensions.LanguageServer.Shared | 0.19.11 | Shared components of the OmniSharp language server implementation. |
 | System.Configuration.ConfigurationManager | 9.0.0 | Configuration manager types for .NET. Transitive dependency. |
 | System.Diagnostics.EventLog | 9.0.0 | Windows event log access. Transitive dependency. |
-| System.Reactive | 6.0.0 | Reactive Extensions (Rx) for .NET. Transitive dependency of OmniSharp.Extensions. |
+| System.Reactive | 7.0.0 | Reactive Extensions (Rx) for .NET. Transitive dependency of OmniSharp.Extensions. |
 | System.Security.Cryptography.ProtectedData | 9.0.6 | Data protection APIs. Transitive dependency. |
 
-**OmniSharp.Extensions packages (0.19.9):** these nuspecs embed a license file
-rather than a license expression. The license text at the `v0.19.9` tag of the
+**OmniSharp.Extensions packages (0.19.11):** these nuspecs embed a license file
+rather than a license expression. The license text at the `v0.19.11` tag of the
 official repository (https://github.com/OmniSharp/csharp-language-server-protocol)
 is the MIT License, Copyright (c) .NET Foundation and Contributors.
 
@@ -108,8 +107,10 @@ NuGet tool package. They are listed for completeness.
 - Newtonsoft.Json is pinned explicitly in `src/MqlLanguageServer.Server.csproj`
   to guard against transitive downgrades below 13.0.1
   (CVE-2024-21907 / GHSA-5crp-9r3c-p9vr affect versions < 13.0.1).
-- MediatR is pinned to the `[8.1.0, 9.0.0)` range. Versions up to 12.x are
-  Apache-2.0; the 13.x line introduced in July 2025 is commercial
-  (RPL-1.5 / Lucky Penny Software Commercial License). The pin keeps the
-  8.x surface OmniSharp.Extensions 0.19.9 was tested against and makes any
-  future upgrade past the ceiling an explicit, reviewed change.
+- MediatR is pinned to the `[12.4.1, 13.0.0)` range. Versions up to 12.x are
+  Apache-2.0 (12.4.1 is the version OmniSharp.Extensions 0.19.11 targets; its
+  own v0.19.11 release reverted a move to MediatR 14); the 13.x line introduced
+  in July 2025 is commercial (RPL-1.5 / Lucky Penny Software Commercial
+  License). The pin keeps the 12.4.1 surface OmniSharp.Extensions 0.19.11 was
+  built and tested against and makes any future upgrade past the ceiling an
+  explicit, reviewed change.

@@ -45,7 +45,7 @@ public class ConversionRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1050", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.Contains("double", diagnostic.Message);
+        Assert.Contains("double", diagnostic.Message.ToString());
     }
 
     [Fact]

@@ -185,7 +185,7 @@ public class Issue163BuiltinRegistryCoverageTests
 
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("5070", diagnostic.Code);
-        Assert.Contains("MyHelper", diagnostic.Message);
+        Assert.Contains("MyHelper", diagnostic.Message.ToString());
     }
 
     public static TheoryData<string> FileFunctionNames() => ToTheoryData(Mql5FileFunctions);

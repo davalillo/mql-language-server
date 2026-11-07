@@ -59,7 +59,7 @@ public class InputModifierRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1021", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains("input string arrays", diagnostic.Message);
+        Assert.Contains("input string arrays", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -80,7 +80,7 @@ public class InputModifierRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1022", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains("global or class scope", diagnostic.Message);
+        Assert.Contains("global or class scope", diagnostic.Message.ToString());
     }
 
     [Fact]

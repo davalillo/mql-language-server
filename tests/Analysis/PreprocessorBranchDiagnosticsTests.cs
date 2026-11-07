@@ -77,7 +77,7 @@ public class PreprocessorBranchDiagnosticsTests
         // S6: the absent cases carry no diagnostic at all — nothing else in the
         // snippet is undeclared, so a single leftover would be a regression.
         Assert.Empty(diagnostics);
-        Assert.DoesNotContain(diagnostics, d => d.Code == code && (d.Message ?? "").Contains(symbol));
+        Assert.DoesNotContain(diagnostics, d => d.Code == code && d.Message.ToString().Contains(symbol));
     }
 
     private static void AssertReported(List<Diagnostic> diagnostics, string code, string symbol, int line, int character)
@@ -86,7 +86,7 @@ public class PreprocessorBranchDiagnosticsTests
         Assert.Equal(code, diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Equal("mql-lsp", diagnostic.Source);
-        Assert.Equal($"Undeclared symbol '{symbol}' is not defined in this document.", diagnostic.Message);
+        Assert.Equal($"Undeclared symbol '{symbol}' is not defined in this document.", diagnostic.Message.ToString());
 
         // S5: the range covers exactly the identifier.
         Assert.Equal(line, diagnostic.Range.Start.Line);
@@ -251,7 +251,7 @@ public class PreprocessorBranchDiagnosticsTests
 
         var diagnostics = Unresolved(ParseMql5(content), content, MqlLanguage.Mql5);
 
-        Assert.Contains(diagnostics, d => d.Code == Mql5Code && (d.Message ?? "").Contains(symbol));
+        Assert.Contains(diagnostics, d => d.Code == Mql5Code && d.Message.ToString().Contains(symbol));
     }
 
     // --- S10: occurrences stay complete for navigation ---------------------

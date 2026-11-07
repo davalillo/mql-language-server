@@ -41,7 +41,7 @@ public class UnresolvedSymbolRuleTests
         Assert.Equal("1070", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
         Assert.Equal("mql-lsp", diagnostic.Source);
-        Assert.Contains("MyHelper", diagnostic.Message);
+        Assert.Contains("MyHelper", diagnostic.Message.ToString());
         Assert.NotNull(diagnostic.Data);
         Assert.Equal("MyHelper", ReadSymbol(diagnostic.Data));
     }
