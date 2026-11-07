@@ -62,8 +62,8 @@ public class MultiDeclaratorLocalsTests
 
         var diags = analyzer.Analyze(file, Fixture, MqlLanguage.Mql5, System.Threading.CancellationToken.None).ToList();
 
-        Assert.DoesNotContain(diags, d => d.Message.Contains("'dst'"));
-        Assert.DoesNotContain(diags, d => d.Message.Contains("'key'"));
-        Assert.DoesNotContain(diags, d => d.Message.Contains("'src'"));
+        Assert.DoesNotContain(diags, d => d.Message.ToString().Contains("'dst'"));
+        Assert.DoesNotContain(diags, d => d.Message.ToString().Contains("'key'"));
+        Assert.DoesNotContain(diags, d => d.Message.ToString().Contains("'src'"));
     }
 }

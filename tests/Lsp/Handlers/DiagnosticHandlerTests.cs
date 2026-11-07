@@ -284,7 +284,7 @@ public class DiagnosticHandlerTests
         var onInitWarning = report.Items.FirstOrDefault(d => d.Code?.String == "1002");
         Assert.NotNull(onInitWarning);
         Assert.Equal(DiagnosticSeverity.Warning, onInitWarning.Severity);
-        Assert.Contains("OnInit", onInitWarning.Message);
+        Assert.Contains("OnInit", onInitWarning.Message.ToString());
     }
 
     [Fact]

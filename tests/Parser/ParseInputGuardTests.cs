@@ -232,7 +232,7 @@ public class ParseInputGuardTests
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         var diagnostic = Assert.Single(report.Items);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.Contains("nesting too deep", diagnostic.Message);
+        Assert.Contains("nesting too deep", diagnostic.Message.ToString());
         Assert.Equal("1100", diagnostic.Code); // MQL4 syntax-error code (base 1000 + 100)
     }
 
@@ -261,7 +261,7 @@ public class ParseInputGuardTests
         var report = Assert.IsType<RelatedFullDocumentDiagnosticReport>(result);
         var diagnostic = Assert.Single(report.Items);
         Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.Contains("too large", diagnostic.Message);
+        Assert.Contains("too large", diagnostic.Message.ToString());
     }
 
     #endregion

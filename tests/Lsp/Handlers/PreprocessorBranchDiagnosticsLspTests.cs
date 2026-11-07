@@ -92,7 +92,7 @@ public class PreprocessorBranchDiagnosticsLspTests : IDisposable
 
     private static IEnumerable<Diagnostic> UnresolvedOf(IEnumerable<Diagnostic> diagnostics) =>
         diagnostics.Where(d => d.Code == "5070" &&
-                               (d.Message ?? string.Empty).Contains("WFA_PerformCalculations"));
+                               d.Message.ToString().Contains("WFA_PerformCalculations"));
 
     [Fact]
     public async Task DidOpenInactiveThenDefineThenInactiveAgain_DiagnosticAppearsAndDisappears()

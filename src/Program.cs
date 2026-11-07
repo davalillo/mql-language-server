@@ -244,17 +244,14 @@ namespace MqlLanguageServer
                 Log.Information("Phase 3.7: Complete LSP Server Implementation");
                 Log.Information("=================================================");
 
-                // Issue #91: OmniSharp 0.19.9's [JsonConverter] on the abstract
-                // RelatedDocumentDiagnosticReport throws NotImplementedException
-                // from WriteJson, so textDocument/diagnostic responses could never
-                // be serialized — the exception hit the OutputHandler loop, whose
-                // only recourse is a TRACE-level log plus disposing the output
-                // pipeline permanently (silent hang + permanent server wedge).
-                // Settings-level converters do NOT take precedence over the
-                // attribute (it is baked into the CONTRACT converter), so the fix
-                // subclasses LspSerializer and rewrites the contract via a wrapping
-                // contract resolver (MqlLspSerializer).
-                var lspSerializer = new MqlLspSerializer();
+                // Issue #91 (OmniSharp 0.19.9's diagnostic-report [JsonConverter]
+                // threw NotImplementedException from WriteJson and permanently wedged
+                // the output pipeline) is fixed upstream as of 0.19.11. The stock
+                // serializer is used again; the custom contract-resolver workaround
+                // (MqlLspSerializer) was removed, and the wire format of diagnostic
+                // reports is pinned against the stock path by
+                // DiagnosticReportJsonConverterTests.
+                var lspSerializer = new LspSerializer();
 
                 // Use 'From' instead of 'Create': it is asynchronous and
                 // guarantees the server initializes correctly.
@@ -528,17 +525,8 @@ namespace MqlLanguageServer
                             return Task.CompletedTask;
                         })
 
-                        // Issue #91: LspSerializer.SetClientCapabilities runs during
-                        // initialize handling (before the OnInitialize delegates above)
-                        // and its private Reset() REPLACES the ContractResolver on both
-                        // the settings and the serializer — silently discarding the
-                        // diagnostic-report contract wrapper installed by MqlLspSerializer.
-                        // Re-apply it here: OnInitialized runs after SetClientCapabilities
-                        // and before the first client request can be answered.
                         .OnInitialized((server, request, result, token) =>
                         {
-                            lspSerializer.ReapplyDiagnosticContractResolver();
-                            Log.Information("Diagnostic report contract resolver re-applied (issue #91)");
 
                             // Issue #116: resolve the real text-document-sync handlers
                             // once the container is built so the built-in
