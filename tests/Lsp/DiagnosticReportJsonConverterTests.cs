@@ -16,23 +16,23 @@ namespace MqlLanguageServer.Tests.Lsp;
 
 /// <summary>
 /// Issue #91: OmniSharp 0.19.9's [JsonConverter] on the abstract
-/// RelatedDocumentDiagnosticReport throws NotImplementedException from
+/// RelatedDocumentDiagnosticReport threw NotImplementedException from
 /// WriteJson — textDocument/diagnostic responses could never be serialized,
 /// and the exception killed the OutputHandler pipeline permanently (the
-/// silent hang + server wedge). These tests pin that the
-/// RelatedDocumentDiagnosticReportConverter — registered at settings level,
-/// which Newtonsoft takes precedence over the type attribute — produces the
-/// wire-correct report JSON, and that the broken attribute path is exactly
-/// what it replaces.
+/// silent hang + server wedge). A subclass-based workaround
+/// (MqlLspSerializer + RelatedDocumentDiagnosticReportConverter) patched it
+/// until OmniSharp 0.19.11 fixed the attribute converter upstream; the
+/// workaround was then removed. These tests now pin that the STOCK
+/// serializer produces the wire-correct report JSON, guarding the fix
+/// against regressions in future upgrades.
 /// </summary>
 public class DiagnosticReportJsonConverterTests
 {
-    private static LspSerializer CreateConfiguredSerializer()
+    private static LspSerializer CreateStockSerializer()
     {
-        // Mirror Program.cs registration (issue #91): the contract-resolver
-        // subclass, NOT settings-level converters (which lose to the type
-        // attribute's contract converter).
-        return new MqlLspSerializer();
+        // The stock OmniSharp serializer — the same instance shape Program.cs
+        // registers (.WithSerializer) since the 0.19.11 upgrade.
+        return new LspSerializer();
     }
 
     private static Diagnostic ExampleDiagnostic() => new Diagnostic
@@ -48,7 +48,7 @@ public class DiagnosticReportJsonConverterTests
     [Fact]
     public void FullReport_SerializesWireCorrectJson_WithoutThrowing()
     {
-        var serializer = CreateConfiguredSerializer();
+        var serializer = CreateStockSerializer();
 
         var report = new RelatedFullDocumentDiagnosticReport
         {
@@ -72,7 +72,7 @@ public class DiagnosticReportJsonConverterTests
     [Fact]
     public void FullReport_WithoutResultId_OmitsTheProperty()
     {
-        var serializer = CreateConfiguredSerializer();
+        var serializer = CreateStockSerializer();
 
         var report = new RelatedFullDocumentDiagnosticReport
         {
@@ -92,7 +92,7 @@ public class DiagnosticReportJsonConverterTests
     [Fact]
     public void UnchangedReport_SerializesWireCorrectJson()
     {
-        var serializer = CreateConfiguredSerializer();
+        var serializer = CreateStockSerializer();
 
         var report = new RelatedUnchangedDocumentDiagnosticReport { ResultId = "result-2" };
 
@@ -104,30 +104,12 @@ public class DiagnosticReportJsonConverterTests
     }
 
     [Fact]
-    public void WithoutTheRegisteredConverter_TheStockAttributeConverter_ThrowsNotImplemented()
-    {
-        // Pin the root cause: the 0.19.9 attribute converter is exactly the
-        // broken path this replacement fixes. A serializer upgrade that fixes
-        // the attribute converter makes this test fail — delete the custom
-        // converter with it.
-        var stock = new LspSerializer();
-
-        var report = new RelatedFullDocumentDiagnosticReport
-        {
-            ResultId = "result-1",
-            Items = new Container<Diagnostic>(Array.Empty<Diagnostic>())
-        };
-
-        Assert.Throws<NotImplementedException>(() => stock.SerializeObject(report));
-    }
-
-    [Fact]
     public void RoundTripThroughTheOutgoingResponseShape_UsesSettingsConverters()
     {
         // The OutputHandler serializes responses with JsonConvert.SerializeObject(
-        // value, Settings) — confirm the settings-level converter is picked up
+        // value, Settings) — confirm the stock serializer is picked up
         // through that exact entry point for a wrapper object too.
-        var serializer = CreateConfiguredSerializer();
+        var serializer = CreateStockSerializer();
 
         var wrapper = new
         {

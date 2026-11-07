@@ -113,8 +113,8 @@ public class Mql4OnlyApiRuleTests
         Assert.Equal("5060", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
         Assert.Equal("mql-lsp", diagnostic.Source);
-        Assert.Contains("TimeHour", diagnostic.Message);
-        Assert.Contains("TimeToStruct(time, dt); ... dt.hour", diagnostic.Message);
+        Assert.Contains("TimeHour", diagnostic.Message.ToString());
+        Assert.Contains("TimeToStruct(time, dt); ... dt.hour", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class Mql4OnlyApiRuleTests
         var diagnostics = _rule.Check(Context(file, content)).ToList();
 
         // Point is also MQL4-only; this test pins the Ask occurrences only.
-        var askDiagnostics = diagnostics.Where(d => d.Message.Contains("'Ask'")).ToList();
+        var askDiagnostics = diagnostics.Where(d => d.Message.ToString().Contains("'Ask'")).ToList();
         Assert.Equal(2, askDiagnostics.Count);
 
         // Each diagnostic ranges over exactly its own occurrence.
@@ -150,8 +150,8 @@ public class Mql4OnlyApiRuleTests
         var diagnostics = _rule.Check(Context(file, content)).ToList();
 
         var diagnostic = Assert.Single(diagnostics);
-        Assert.Contains("MarketInfo", diagnostic.Message);
-        Assert.Contains("SymbolInfoDouble", diagnostic.Message);
+        Assert.Contains("MarketInfo", diagnostic.Message.ToString());
+        Assert.Contains("SymbolInfoDouble", diagnostic.Message.ToString());
     }
 
     // ------------------------------------------------------------------
@@ -202,7 +202,7 @@ public class Mql4OnlyApiRuleTests
         var diagnostics = _rule.Check(Context(file, content)).ToList();
 
         var diagnostic = Assert.Single(diagnostics);
-        Assert.Contains("'Ask'", diagnostic.Message);
+        Assert.Contains("'Ask'", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class Mql4OnlyApiRuleTests
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("5060", diagnostic.Code);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains("Ask", diagnostic.Message);
+        Assert.Contains("Ask", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -422,15 +422,15 @@ public class Mql4OnlyApiRuleTests
 
         Assert.Equal(2, diagnostics.Count);
 
-        var bars = diagnostics.Single(d => d.Message.Contains("'Bars'"));
+        var bars = diagnostics.Single(d => d.Message.ToString().Contains("'Bars'"));
         Assert.Equal("5060", bars.Code);
-        Assert.DoesNotContain("not available in MQL5", bars.Message);
-        Assert.Contains("changed semantics", bars.Message);
-        Assert.Contains("iBars", bars.Message);
+        Assert.DoesNotContain("not available in MQL5", bars.Message.ToString());
+        Assert.Contains("changed semantics", bars.Message.ToString());
+        Assert.Contains("iBars", bars.Message.ToString());
 
-        var digits = diagnostics.Single(d => d.Message.Contains("'Digits'"));
-        Assert.DoesNotContain("not available in MQL5", digits.Message);
-        Assert.Contains("_Digits", digits.Message);
+        var digits = diagnostics.Single(d => d.Message.ToString().Contains("'Digits'"));
+        Assert.DoesNotContain("not available in MQL5", digits.Message.ToString());
+        Assert.Contains("_Digits", digits.Message.ToString());
     }
 
     [Fact]
@@ -446,7 +446,7 @@ public class Mql4OnlyApiRuleTests
         var diagnostics = _rule.Check(Context(file, content)).ToList();
 
         var diagnostic = Assert.Single(diagnostics);
-        Assert.Contains("not available in MQL5", diagnostic.Message);
+        Assert.Contains("not available in MQL5", diagnostic.Message.ToString());
     }
 
     [Fact]
@@ -462,7 +462,7 @@ public class Mql4OnlyApiRuleTests
         var diagnostics = _rule.Check(Context(file, content)).ToList();
 
         var diagnostic = Assert.Single(diagnostics);
-        Assert.Contains("'Bars'", diagnostic.Message);
+        Assert.Contains("'Bars'", diagnostic.Message.ToString());
         // Range covers the bare occurrence (lexer position 12..16), not the call.
         Assert.Equal(new Range(0, 12, 0, 16), diagnostic.Range);
     }

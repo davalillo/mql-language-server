@@ -38,7 +38,7 @@ public class LanguageMisuseRuleTests
         {
             Assert.Equal("1040", d.Code);
             Assert.Equal(DiagnosticSeverity.Warning, d.Severity);
-            Assert.Contains("union", d.Message);
+            Assert.Contains("union", d.Message.ToString());
         });
     }
 
@@ -56,7 +56,7 @@ public class LanguageMisuseRuleTests
 
         var diagnostic = Assert.Single(diagnostics);
         Assert.Equal("1040", diagnostic.Code);
-        Assert.Contains("enum class", diagnostic.Message);
+        Assert.Contains("enum class", diagnostic.Message.ToString());
     }
 
     [Fact]

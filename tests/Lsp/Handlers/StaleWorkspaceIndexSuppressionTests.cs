@@ -89,7 +89,7 @@ public class StaleWorkspaceIndexSuppressionTests : IDisposable
 
     private static int UnresolvedCount(IEnumerable<Diagnostic> diagnostics) =>
         diagnostics.Count(d => d.Code == "5070" &&
-                               (d.Message ?? string.Empty).Contains("MISSING_STALE"));
+                               d.Message.ToString().Contains("MISSING_STALE"));
 
     private Task ChangeAsync(int version, string text) =>
         _change.Handle(

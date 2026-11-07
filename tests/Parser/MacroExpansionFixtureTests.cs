@@ -163,9 +163,9 @@ public class MacroExpansionFixtureTests
         var diagnostics = analyzer.Analyze(file, content, MqlLanguage.Mql4, CancellationToken.None);
 
         Assert.DoesNotContain(diagnostics,
-            d => d.Message != null && d.Message.Contains("MAX_LOTS", StringComparison.Ordinal));
+            d => d.Message.ToString().Contains("MAX_LOTS", StringComparison.Ordinal));
         Assert.DoesNotContain(diagnostics,
-            d => d.Message != null && d.Message.Contains("True", StringComparison.Ordinal));
+            d => d.Message.ToString().Contains("True", StringComparison.Ordinal));
     }
 
     // ------------------------------------------------------------------
