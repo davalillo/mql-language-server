@@ -21,9 +21,9 @@ namespace MqlLanguageServer.Lsp.Server;
 /// camelCase JSON, <c>symbol</c> name — never text extraction).
 ///
 /// <para><b>Tier 1 — include closure</b>: the document's <see cref="MqlFile.Includes"/>
-/// entries are walked through <see cref="IncludePathResolver.TryResolveContained"/>
+/// entries are walked through <see cref="IncludePathResolver.TryResolveContained(string, string?, out string)"/>
 /// (quoted includes) and, for angle-bracket system includes, through
-/// <see cref="IncludePathResolver.TryResolveSystemInclude"/> (resolved against
+/// <see cref="IncludePathResolver.TryResolveSystemInclude(string?, out string)"/> (resolved against
 /// the configured system include roots — the MQL4/MQL5 Standard Library
 /// headers that the lazy didOpen indexing has already put into the index;
 /// entries no root can resolve degrade silently, as before). Each resolved header's own <c>#include</c> entries are extracted with a
@@ -252,7 +252,7 @@ public static class CrossFileSymbolCorrelator
     /// directives (no full parse). Returns the canonical stored-entry shape
     /// produced by <see cref="IncludePathResolver.ExtractFromDirective"/>;
     /// angle-bracket entries pass through and are rejected later by
-    /// <see cref="IncludePathResolver.TryResolveContained"/>. Unreadable files
+    /// <see cref="IncludePathResolver.TryResolveContained(string, string?, out string)"/>. Unreadable files
     /// yield nothing (fail open).
     /// </summary>
     private static IEnumerable<string> ExtractIncludesFromRawText(string headerPath, CancellationToken token)

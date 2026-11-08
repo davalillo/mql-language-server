@@ -87,7 +87,8 @@ public static class UnresolvedIncludeDiagnostic
                 // Canonical stored-entry shape (same as ExtractFromDirective's
                 // angle output), resolved by the shared resolver.
                 var entry = $"<{match.Groups[1].Value}>";
-                if (IncludePathResolver.ResolveWithSystemRoots(includingFile, entry, roots) != null)
+                if (IncludePathResolver.ResolveWithSystemRoots(
+                        includingFile, entry, roots, out _, token) != null)
                 {
                     continue;
                 }
