@@ -273,7 +273,8 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
             // IncludePathResolver consumes the stored-entry shape, applies
             // the PathSecurity containment guard, and returns false for
             // system includes.
-            if (!IncludePathResolver.TryResolveContained(includerFilePath, include, out var includeFullPath))
+            if (!IncludePathResolver.TryResolveContained(
+                    includerFilePath, include, out var includeFullPath, out _, cancellationToken))
             {
                 // Angle-bracket system includes (<Trade\Trade.mqh>): resolve
                 // against the configured system include roots (the terminal's
@@ -281,7 +282,7 @@ public class DidOpenTextDocumentHandler : LanguageAwareHandlerBase<DidOpenTextDo
                 // systemIncludeRoots initialization option) and LAZILY index
                 // the header. No roots configured or unresolvable header:
                 // today's behavior (skip, fail open).
-                if (!IncludePathResolver.TryResolveSystemInclude(include, out includeFullPath))
+                if (!IncludePathResolver.TryResolveSystemInclude(include, out includeFullPath, out _, cancellationToken))
                 {
                     continue;
                 }

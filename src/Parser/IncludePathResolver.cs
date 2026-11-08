@@ -3,10 +3,47 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 using MqlLanguageServer.Lsp.Server;
 
+using Serilog;
+
 namespace MqlLanguageServer.Parser;
+
+/// <summary>
+/// Issue #220: why a stored include entry failed to resolve. The public
+/// resolution contract (absolute path or null, fail-open) is unchanged — this
+/// only makes the degradation reason observable (returned to internal callers
+/// and logged at debug level) instead of collapsing "malformed", "missing",
+/// "unreadable" and "denied" into one anonymous null.
+/// </summary>
+internal enum IncludeResolveFailure
+{
+    /// <summary>Not applicable — the entry resolved, or was never attempted.</summary>
+    None = 0,
+
+    /// <summary>No system include roots are configured (fail-open mode).</summary>
+    RootSetNotConfigured,
+
+    /// <summary>The entry is not a well-formed stored include path.</summary>
+    MalformedEntry,
+
+    /// <summary>A configured root could not be normalized to an absolute path.</summary>
+    MalformedRoot,
+
+    /// <summary>The entry contains traversal segments ("<c>.</c>" / "<c>..</c>").</summary>
+    TraversalRejected,
+
+    /// <summary>The entry is well-formed but no configured root holds a matching file.</summary>
+    NotFound,
+
+    /// <summary>A directory that had to be walked could not be read.</summary>
+    DirectoryUnreadable,
+
+    /// <summary>The target exists but the containment guards refuse it.</summary>
+    ContainmentDenied
+}
 
 /// <summary>
 /// Single include-resolution service for <c>#include</c> directives (issue #25a).
@@ -50,14 +87,22 @@ namespace MqlLanguageServer.Parser;
 /// directories, delivered via the <c>systemIncludeRoots</c> initialization
 /// option — angle entries resolve against them (separator-normalized,
 /// Windows-style case-insensitive existence check, traversal rejected) via
-/// <see cref="ResolveWithSystemRoots"/> (named separately from
+/// <see cref="ResolveWithSystemRoots(string, string?, System.Collections.Generic.IReadOnlyList{string}?, System.Threading.CancellationToken)"/> (named separately from
 /// <see cref="Resolve(string, string?)"/> so its doc crefs stay unambiguous)
-/// or the process-wide provider consumed by <see cref="TryResolveSystemInclude"/>.
+/// or the process-wide provider consumed by <see cref="TryResolveSystemInclude(string?, out string)"/>.
 /// </item>
 /// <item>Resolution integrates the <see cref="PathSecurity.IsContainedInWorkspace"/>
 /// containment guard (symlink-aware, fail-closed per issue #21b) — the guard
 /// the didOpen path already applied and the parser copies lacked.</item>
 /// </list></para>
+///
+/// <para><b>Issue #220 hygiene</b>: system-include results (including misses)
+/// are memoized per root-set generation; failures degrade with an observable
+/// <see cref="IncludeResolveFailure"/> reason logged at debug level instead of
+/// an anonymous null; the declared-root union is cached per provider snapshot
+/// and de-duplicated with platform-appropriate case semantics; and angle
+/// entries must be balanced <c>&lt;...&gt;</c> (the symbol visitors' stored
+/// shape) to route to the system resolver.</para>
 /// </summary>
 public static class IncludePathResolver
 {
@@ -118,27 +163,80 @@ public static class IncludePathResolver
     /// candidate still has to hold BOTH sides of the hop on its own (see
     /// <see cref="MqlLanguageServer.Lsp.Server.PathSecurity.IsContainedInCommonSystemRoot"/>)
     /// so merging the two sets never admits a cross-root hop.
+    ///
+    /// <para>Issue #220: the union is rebuilt only when a provider snapshot
+    /// changes (the providers themselves are still invoked on every call —
+    /// they are cheap snapshot reads), not on every quoted hop of every
+    /// include of every document; and a root declared twice with different
+    /// casing is de-duplicated where the platform treats paths that way
+    /// (Windows).</para>
     /// </summary>
-    private static List<string> AllDeclaredRoots()
+    private static readonly object DeclaredRootsCacheLock = new();
+    private static string? _declaredRootsCacheKey;
+    private static IReadOnlyList<string> _declaredRootsCache = Array.Empty<string>();
+
+    private static IReadOnlyList<string> AllDeclaredRoots()
     {
+        var workspaceRoots = CurrentWorkspaceRoots;
+        var systemRoots = CurrentSystemIncludeRoots;
+        var key = string.Join("\u0001", workspaceRoots) + "\u0002" + string.Join("\u0001", systemRoots);
+
+        lock (DeclaredRootsCacheLock)
+        {
+            if (_declaredRootsCacheKey == key)
+            {
+                return _declaredRootsCache;
+            }
+
+            var rebuilt = BuildDeclaredRoots(workspaceRoots, systemRoots);
+            _declaredRootsCacheKey = key;
+            _declaredRootsCache = rebuilt;
+            return rebuilt;
+        }
+    }
+
+    private static IReadOnlyList<string> BuildDeclaredRoots(
+        IReadOnlyList<string> workspaceRoots, IReadOnlyList<string> systemRoots)
+    {
+        // Windows treats paths that differ only in case as the same directory;
+        // POSIX does not. De-duplicate with the platform's own semantics so a
+        // root declared twice with different casing is carried once, not twice
+        // through every containment check.
+        var comparer = OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+
         var result = new List<string>();
-        foreach (var root in CurrentWorkspaceRoots)
-        {
-            if (!string.IsNullOrEmpty(root) && result.IndexOf(root) < 0)
-            {
-                result.Add(root);
-            }
-        }
-
-        foreach (var root in CurrentSystemIncludeRoots)
-        {
-            if (!string.IsNullOrEmpty(root) && result.IndexOf(root) < 0)
-            {
-                result.Add(root);
-            }
-        }
-
+        AddDistinct(result, workspaceRoots, comparer);
+        AddDistinct(result, systemRoots, comparer);
         return result;
+    }
+
+    private static void AddDistinct(
+        List<string> result, IReadOnlyList<string> roots, StringComparer comparer)
+    {
+        foreach (var root in roots)
+        {
+            if (string.IsNullOrEmpty(root))
+            {
+                continue;
+            }
+
+            var duplicate = false;
+            foreach (var existing in result)
+            {
+                if (comparer.Equals(existing, root))
+                {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            if (!duplicate)
+            {
+                result.Add(root);
+            }
+        }
     }
 
     /// <summary>
@@ -208,28 +306,77 @@ public static class IncludePathResolver
     /// (separator-normalized, case-insensitive existence check, traversal
     /// rejected) and fall back to the historical "not resolved" result when
     /// no root matches or none are supplied (fail open).
+    ///
+    /// <para>Issue #220: an angle entry must be a BALANCED <c>&lt;...&gt;</c>
+    /// (the symbol visitors' stored shape) to route to the system resolver —
+    /// a half-bracket entry such as <c>&lt;foo</c> or <c>foo&gt;</c> is
+    /// malformed and no longer resolves by stripping whichever bracket is
+    /// present. Results, including misses, are memoized per root-set
+    /// generation (a changed root set is a new generation), and the
+    /// degradation reason is available to internal callers through the
+    /// <c>out</c> overload and logged at debug level. The optional
+    /// cancellation token is observed before each root walk and directory
+    /// read so an expensive resolution against absent or slow roots stays
+    /// cancellable.</para>
     /// </summary>
     /// <returns>The candidate absolute path, or <see langword="null"/> when the
     /// entry cannot be resolved.</returns>
     public static string? ResolveWithSystemRoots(
-        string includingFile, string? includeEntry, IReadOnlyList<string>? systemIncludeRoots)
+        string includingFile, string? includeEntry, IReadOnlyList<string>? systemIncludeRoots,
+        CancellationToken cancellationToken = default)
+        => ResolveWithSystemRoots(includingFile, includeEntry, systemIncludeRoots, out _, cancellationToken);
+
+    internal static string? ResolveWithSystemRoots(
+        string includingFile, string? includeEntry, IReadOnlyList<string>? systemIncludeRoots,
+        out IncludeResolveFailure failure, CancellationToken cancellationToken = default)
     {
+        failure = IncludeResolveFailure.None;
+
         if (string.IsNullOrEmpty(includeEntry))
         {
+            failure = IncludeResolveFailure.MalformedEntry;
             return null;
         }
 
         var relative = includeEntry.Trim();
         if (relative.Length == 0)
         {
+            failure = IncludeResolveFailure.MalformedEntry;
             return null;
         }
 
-        if (relative.StartsWith("<") || relative.EndsWith(">"))
+        var opensAngle = relative.StartsWith("<", StringComparison.Ordinal);
+        var closesAngle = relative.EndsWith(">", StringComparison.Ordinal);
+        if (opensAngle || closesAngle)
         {
+            // Issue #220: a half-bracket entry is malformed input, not a
+            // system include. The symbol visitors always store balanced
+            // "<...>" (see ExtractFromDirective); resolving "<foo" as "foo"
+            // under a root used to hide that.
+            if (!opensAngle || !closesAngle)
+            {
+                failure = IncludeResolveFailure.MalformedEntry;
+                Log.Debug(
+                    "IncludePathResolver: unbalanced angle entry {Entry} is malformed ({Reason})",
+                    includeEntry, failure);
+                return null;
+            }
+
             // Angle-bracket entry: resolve against the supplied roots, or keep
             // today's behavior (unresolved) when none are supplied.
-            return ResolveSystemIncludeEntry(relative, systemIncludeRoots ?? Array.Empty<string>());
+            var resolved = ResolveSystemIncludeEntry(
+                relative, systemIncludeRoots ?? Array.Empty<string>(), out failure, cancellationToken);
+            if (resolved == null && failure != IncludeResolveFailure.RootSetNotConfigured)
+            {
+                // The no-roots fail-open steady state stays silent (the #179
+                // diagnostic already tells the user what to configure); every
+                // other degradation reason is visible (issue #220).
+                Log.Debug(
+                    "IncludePathResolver: system include {Entry} not resolved ({Reason})",
+                    includeEntry, failure);
+            }
+
+            return resolved;
         }
 
         try
@@ -251,9 +398,15 @@ public static class IncludePathResolver
                 : normalized;
             return Path.GetFullPath(combined);
         }
-        catch
+        catch (Exception ex)
         {
-            // Malformed path (invalid chars, etc.): degrade to "not resolved".
+            // Malformed path (invalid chars, etc.): degrade to "not resolved",
+            // now with the reason visible (issue #220).
+            failure = IncludeResolveFailure.MalformedEntry;
+            Log.Debug(
+                ex,
+                "IncludePathResolver: quoted include entry {Entry} is malformed ({Reason})",
+                includeEntry, failure);
             return null;
         }
     }
@@ -261,45 +414,154 @@ public static class IncludePathResolver
     /// <summary>
     /// Resolve an angle-bracket entry (<c>&lt;Trade\Trade.mqh&gt;</c>) against
     /// the process-wide configured system include roots (see
-    /// <see cref="SetSystemIncludeRootsProvider"/>). Only angle entries are
-    /// handled — quoted entries keep their relative-to-includer semantics and
-    /// return false here. Missing roots or unresolvable headers return false
-    /// (fail open: callers keep today's behavior).
+    /// <see cref="SetSystemIncludeRootsProvider"/>). Only balanced angle
+    /// entries are handled — quoted entries keep their relative-to-includer
+    /// semantics and return false here. Missing roots or unresolvable headers
+    /// return false (fail open: callers keep today's behavior).
+    ///
+    /// <para>Issue #220: results (including misses) are memoized per root-set
+    /// generation, the entry must be balanced <c>&lt;...&gt;</c>, and the
+    /// degradation reason is logged at debug level (except the expected
+    /// no-roots fail-open steady state). Note the deliberate trade-off: a
+    /// header created or fixed on disk LATER, with an unchanged root set, is
+    /// not re-discovered until the root set changes or the server restarts —
+    /// the price of not re-walking absent roots on every didOpen and every
+    /// workspace scan.</para>
     /// </summary>
     public static bool TryResolveSystemInclude(string? includeEntry, out string resolvedPath)
+        => TryResolveSystemInclude(includeEntry, out resolvedPath, out _, default);
+
+    internal static bool TryResolveSystemInclude(
+        string? includeEntry, out string resolvedPath,
+        out IncludeResolveFailure failure, CancellationToken cancellationToken = default)
     {
-        resolvedPath = ResolveSystemIncludeEntry(includeEntry, CurrentSystemIncludeRoots) ?? string.Empty;
+        var resolved = ResolveSystemIncludeEntry(
+            includeEntry, CurrentSystemIncludeRoots, out failure, cancellationToken);
+        resolvedPath = resolved ?? string.Empty;
+
+        if (resolved == null && failure != IncludeResolveFailure.RootSetNotConfigured)
+        {
+            Log.Debug(
+                "IncludePathResolver: system include {Entry} not resolved ({Reason})",
+                includeEntry, failure);
+        }
+
         return !string.IsNullOrEmpty(resolvedPath);
     }
 
     /// <summary>
-    /// Root-based resolution for one angle-bracket entry: normalize both
+    /// Memoization of one system-include resolution outcome (issue #220): the
+    /// resolved path or the miss, keyed by (root-set generation, entry). A
+    /// changed root set is a new generation and starts a fresh cache, so a
+    /// misconfigured root that is later fixed (or a root added through the
+    /// #179 remedies) is picked up immediately. The cache is bounded; the
+    /// miss-stays-a-miss trade-off with an unchanged root set is documented on
+    /// <see cref="TryResolveSystemInclude(string?, out string)"/>.
+    /// </summary>
+    private sealed record SystemResolveOutcome(string? ResolvedPath, IncludeResolveFailure Failure);
+
+    private const int MaxSystemResolveCacheEntries = 2048;
+
+    private static readonly object SystemResolveCacheLock = new();
+    private static string? _systemResolveCacheGeneration;
+    private static readonly Dictionary<string, SystemResolveOutcome> SystemResolveCache = new();
+
+    /// <summary>
+    /// Root-based resolution for one angle-bracket entry: require the strict
+    /// balanced <c>&lt;...&gt;</c> stored-entry shape, normalize both
     /// separator forms, reject traversal segments, then try each root with an
     /// exact case-sensitive existence check first and a Windows-style
-    /// case-insensitive walk as fallback. Never throws (fail open).
+    /// case-insensitive walk as fallback. Results (including misses) are
+    /// memoized per root-set generation (issue #220). Never throws except on
+    /// cancellation (fail open).
     /// </summary>
-    private static string? ResolveSystemIncludeEntry(string? includeEntry, IReadOnlyList<string> systemIncludeRoots)
+    private static string? ResolveSystemIncludeEntry(
+        string? includeEntry, IReadOnlyList<string> systemIncludeRoots)
+        => ResolveSystemIncludeEntry(includeEntry, systemIncludeRoots, out _, default);
+
+    private static string? ResolveSystemIncludeEntry(
+        string? includeEntry, IReadOnlyList<string> systemIncludeRoots,
+        out IncludeResolveFailure failure, CancellationToken cancellationToken)
     {
-        if (includeEntry == null || systemIncludeRoots.Count == 0)
+        failure = IncludeResolveFailure.None;
+
+        if (string.IsNullOrWhiteSpace(includeEntry))
         {
+            failure = IncludeResolveFailure.MalformedEntry;
             return null;
         }
 
+        if (systemIncludeRoots.Count == 0)
+        {
+            // Fail-open: no configured roots keep the historical behavior.
+            failure = IncludeResolveFailure.RootSetNotConfigured;
+            return null;
+        }
+
+        // Issue #220: strict stored-entry shape. The symbol visitors always
+        // store balanced "<...>" (ExtractFromDirective); a bare or
+        // half-bracket entry is malformed input and must not resolve by
+        // stripping whichever bracket happens to be present.
         var relative = includeEntry.Trim();
-        if (relative.StartsWith("<"))
+        if (!relative.StartsWith("<") || !relative.EndsWith(">") || relative.Length < 2)
         {
-            relative = relative.Substring(1);
+            failure = IncludeResolveFailure.MalformedEntry;
+            return null;
         }
-        if (relative.EndsWith(">"))
-        {
-            relative = relative.Substring(0, relative.Length - 1);
-        }
-        relative = relative.Trim();
+
+        relative = relative.Substring(1, relative.Length - 2).Trim();
         if (relative.Length == 0)
         {
+            failure = IncludeResolveFailure.MalformedEntry;
             return null;
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var generationKey = string.Join("\u0001", systemIncludeRoots);
+        var cacheKey = generationKey + "\u0002" + relative;
+
+        lock (SystemResolveCacheLock)
+        {
+            if (_systemResolveCacheGeneration != generationKey)
+            {
+                SystemResolveCache.Clear();
+                _systemResolveCacheGeneration = generationKey;
+            }
+            else if (SystemResolveCache.TryGetValue(cacheKey, out var cached))
+            {
+                failure = cached.Failure;
+                return cached.ResolvedPath;
+            }
+        }
+
+        var (path, walkFailure) = WalkSystemRoots(relative, systemIncludeRoots, cancellationToken);
+        failure = walkFailure;
+
+        lock (SystemResolveCacheLock)
+        {
+            // Bounded memoization: a pathological stream of distinct entries
+            // must not grow the cache without limit.
+            if (SystemResolveCache.Count >= MaxSystemResolveCacheEntries)
+            {
+                SystemResolveCache.Clear();
+            }
+
+            SystemResolveCache[cacheKey] = new SystemResolveOutcome(path, walkFailure);
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// The uncached walk behind <see cref="ResolveSystemIncludeEntry(string?, System.Collections.Generic.IReadOnlyList{string})"/>:
+    /// try each root (a malformed root is skipped and logged instead of
+    /// aborting the remaining roots — issue #220) and report why the entry did
+    /// not resolve. Never throws except on cancellation.
+    /// </summary>
+    private static (string? Path, IncludeResolveFailure Failure) WalkSystemRoots(
+        string relative, IReadOnlyList<string> systemIncludeRoots, CancellationToken cancellationToken)
+    {
         try
         {
             var separator = Path.DirectorySeparatorChar;
@@ -307,58 +569,101 @@ public static class IncludePathResolver
             var segments = normalized.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             if (segments.Length == 0)
             {
-                return null;
+                return (null, IncludeResolveFailure.MalformedEntry);
             }
 
             // A system entry must never escape its root.
             if (segments.Any(s => s == "." || s == ".."))
             {
-                return null;
+                return (null, IncludeResolveFailure.TraversalRejected);
             }
+
+            var sawUnreadableDirectory = false;
 
             foreach (var root in systemIncludeRoots)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (string.IsNullOrWhiteSpace(root))
                 {
                     continue;
                 }
 
-                var fullRoot = Path.GetFullPath(root);
+                string fullRoot;
+                try
+                {
+                    fullRoot = Path.GetFullPath(root);
+                }
+                catch (Exception ex)
+                {
+                    // A malformed root must not block resolution via the
+                    // remaining roots; the reason is at least visible now
+                    // (issue #220).
+                    Log.Debug(
+                        ex,
+                        "IncludePathResolver: malformed system include root {Root} ({Reason})",
+                        root, IncludeResolveFailure.MalformedRoot);
+                    continue;
+                }
 
                 // Fast path: exact, case-sensitive hit.
                 var candidate = Path.Combine(new[] { fullRoot }.Concat(segments).ToArray());
                 if (File.Exists(candidate))
                 {
-                    return Path.GetFullPath(candidate);
+                    return (Path.GetFullPath(candidate), IncludeResolveFailure.None);
                 }
 
                 // Windows-style fallback: case-insensitive segment walk.
-                if (TryResolveCaseInsensitive(fullRoot, segments, out var resolved))
+                if (TryResolveCaseInsensitive(
+                        fullRoot, segments, out var resolved, out var rootUnreadable, cancellationToken))
                 {
-                    return resolved;
+                    return (resolved, IncludeResolveFailure.None);
                 }
-            }
-        }
-        catch
-        {
-            // Malformed root/entry: degrade to "not resolved" (fail open).
-        }
 
-        return null;
+                sawUnreadableDirectory |= rootUnreadable;
+            }
+
+            return (null, sawUnreadableDirectory
+                ? IncludeResolveFailure.DirectoryUnreadable
+                : IncludeResolveFailure.NotFound);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is not a resolution outcome: propagate it so the
+            // caller's normal cancellation handling applies (nothing was
+            // cached — see ResolveSystemIncludeEntry).
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(
+                ex,
+                "IncludePathResolver: system include {Entry} not resolved ({Reason})",
+                relative, IncludeResolveFailure.MalformedEntry);
+            return (null, IncludeResolveFailure.MalformedEntry);
+        }
     }
 
     /// <summary>
     /// Walks <paramref name="segments"/> under <paramref name="root"/>
     /// case-insensitively (Windows-style semantics, which also matches how
     /// MQL projects reference the stdlib). Returns the first existing match.
+    /// <paramref name="directoryUnreadable"/> reports whether a directory
+    /// walk failed because it could not be read (issue #220: the reason is
+    /// distinguishable from a plain miss at the call site).
     /// </summary>
-    private static bool TryResolveCaseInsensitive(string root, string[] segments, out string resolved)
+    private static bool TryResolveCaseInsensitive(
+        string root, string[] segments, out string resolved,
+        out bool directoryUnreadable, CancellationToken cancellationToken)
     {
         resolved = string.Empty;
+        directoryUnreadable = false;
         var current = root;
 
         for (var i = 0; i < segments.Length; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var isLast = i == segments.Length - 1;
             var candidate = Path.Combine(current, segments[i]);
 
@@ -370,9 +675,11 @@ public static class IncludePathResolver
                     return true;
                 }
 
-                var fileMatch = FindCaseInsensitiveMatch(current, segments[i], expectFile: true);
+                var fileMatch = FindCaseInsensitiveMatch(
+                    current, segments[i], expectFile: true, out var fileDirUnreadable, cancellationToken);
                 if (fileMatch == null)
                 {
+                    directoryUnreadable |= fileDirUnreadable;
                     return false;
                 }
 
@@ -386,9 +693,11 @@ public static class IncludePathResolver
                 continue;
             }
 
-            var dirMatch = FindCaseInsensitiveMatch(current, segments[i], expectFile: false);
+            var dirMatch = FindCaseInsensitiveMatch(
+                current, segments[i], expectFile: false, out var dirUnreadable, cancellationToken);
             if (dirMatch == null)
             {
+                directoryUnreadable |= dirUnreadable;
                 return false;
             }
 
@@ -400,14 +709,24 @@ public static class IncludePathResolver
 
     /// <summary>
     /// Case-insensitive single-segment lookup in one directory (null when the
-    /// directory is unreadable or no entry matches).
+    /// directory is unreadable or no entry matches; issue #220 distinguishes
+    /// the two via <paramref name="directoryUnreadable"/>).
     /// </summary>
-    private static string? FindCaseInsensitiveMatch(string directory, string name, bool expectFile)
+    private static string? FindCaseInsensitiveMatch(
+        string directory, string name, bool expectFile,
+        out bool directoryUnreadable, CancellationToken cancellationToken)
     {
+        directoryUnreadable = false;
         try
         {
+            // Issue #220: the token is observed before (and during) the
+            // directory read, so a large or slow walk stays cancellable.
+            cancellationToken.ThrowIfCancellationRequested();
+
             foreach (var entry in Directory.EnumerateFileSystemEntries(directory))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var fileName = Path.GetFileName(entry);
                 if (string.Equals(fileName, name, StringComparison.OrdinalIgnoreCase)
                     && (expectFile ? File.Exists(entry) : Directory.Exists(entry)))
@@ -416,9 +735,19 @@ public static class IncludePathResolver
                 }
             }
         }
-        catch
+        catch (OperationCanceledException)
         {
-            // Unreadable directory: no match (fail open).
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Unreadable directory: no match (fail open) — with the reason
+            // visible now (issue #220).
+            directoryUnreadable = true;
+            Log.Debug(
+                ex,
+                "IncludePathResolver: directory {Directory} could not be read during a case-insensitive include lookup",
+                directory);
         }
 
         return null;
@@ -449,17 +778,27 @@ public static class IncludePathResolver
     /// </summary>
     public static bool TryResolveContained(
         string includingFile, string? includeEntry, out string resolvedPath)
+        => TryResolveContained(includingFile, includeEntry, out resolvedPath, out _, default);
+
+    internal static bool TryResolveContained(
+        string includingFile, string? includeEntry, out string resolvedPath,
+        out IncludeResolveFailure failure, CancellationToken cancellationToken = default)
     {
-        var candidate = Resolve(includingFile, includeEntry) ?? string.Empty;
+        var candidate = ResolveWithSystemRoots(
+            includingFile, includeEntry, null, out var resolveFailure, cancellationToken) ?? string.Empty;
         if (string.IsNullOrEmpty(candidate) || !File.Exists(candidate))
         {
             resolvedPath = string.Empty;
+            failure = string.IsNullOrEmpty(candidate)
+                ? resolveFailure
+                : IncludeResolveFailure.NotFound;
             return false;
         }
 
         if (PathSecurity.IsContainedInWorkspace(includingFile, candidate))
         {
             resolvedPath = candidate;
+            failure = IncludeResolveFailure.None;
             return true;
         }
 
@@ -483,10 +822,20 @@ public static class IncludePathResolver
             includingFile, candidate, AllDeclaredRoots()))
         {
             resolvedPath = candidate;
+            failure = IncludeResolveFailure.None;
             return true;
         }
 
+        // Issue #220: the target exists but the containment rules refuse it —
+        // the one silent "false" that is genuinely surprising (a readable
+        // file a user expects to reach), so its reason is logged at debug
+        // level. Plain misses stay unlogged: a missing quoted include is a
+        // normal in-progress editing state.
+        Log.Debug(
+            "IncludePathResolver: include target {Candidate} reached from {IncludingFile} was rejected by the containment guards ({Reason})",
+            candidate, includingFile, IncludeResolveFailure.ContainmentDenied);
         resolvedPath = string.Empty;
+        failure = IncludeResolveFailure.ContainmentDenied;
         return false;
     }
 }
